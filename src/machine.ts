@@ -110,19 +110,6 @@ const _carmackCoderMachine = setup({
       };
     }),
 
-    assignTransformationResults: assign(({ context, event }) => {
-      if (event.type !== 'TRANSFORMATION_APPLIED' || !context.currentTransformation) return context;
-
-      return {
-        ...context,
-        currentTransformation: {
-          ...context.currentTransformation,
-          filesModified: event.filesModified,
-          status: 'applying' as const,
-        },
-      };
-    }),
-
     assignValidationResults: assign(({ context, event }) => {
       if (event.type !== 'VALIDATION_COMPLETE' || !context.currentTransformation) return context;
 
@@ -339,7 +326,20 @@ const _carmackCoderMachine = setup({
         }),
         onDone: {
           target: 'validatingFormat',
-          actions: ['assignTransformationResults'],
+          actions: assign(({ context, event }) => {
+            if (!context.currentTransformation) return context;
+            
+            const transformationResult = event.output as any;
+
+            return {
+              ...context,
+              currentTransformation: {
+                ...context.currentTransformation,
+                filesModified: transformationResult.filesModified || [],
+                status: 'applying' as const,
+              },
+            };
+          }),
         },
         onError: {
           target: 'retrying',
