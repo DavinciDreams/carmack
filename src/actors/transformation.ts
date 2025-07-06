@@ -1,3 +1,4 @@
+import { readFile, writeFile } from 'node:fs/promises';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
 import type { AstPattern, TransformationRequest } from '../types.js';
@@ -41,14 +42,61 @@ export const transformationActor = fromPromise(
 );
 
 async function applyTemplateTransformation(files: string[], patterns: AstPattern[]) {
-  // TODO: Implement template-based transformations
-  // Fast string replacements for simple patterns
   console.log('Applying template transformations...');
 
-  // Mock implementation
+  const filesModified: string[] = [];
+  let totalTransformations = 0;
+
+  for (const filePath of files) {
+    try {
+      // Read the file content
+      const content = await readFile(filePath, 'utf-8');
+      let modifiedContent = content;
+      let fileModified = false;
+
+      // Apply simple template patterns
+      for (const pattern of patterns) {
+        if (pattern.id === 'var-to-const' && pattern.complexity <= 2) {
+          // Simple regex replacement for var -> const
+          const varPattern = /\bvar\s+(\w+)\s*=\s*([^;]+);/g;
+          const newContent = modifiedContent.replace(varPattern, 'const $1 = $2;');
+
+          if (newContent !== modifiedContent) {
+            modifiedContent = newContent;
+            fileModified = true;
+            totalTransformations++;
+            console.log(`Applied ${pattern.id} to ${filePath}`);
+          }
+        }
+
+        if (pattern.id === 'strict-equality' && pattern.complexity <= 2) {
+          // Simple regex replacement for == -> ===
+          const eqPattern = /([^!=])(\s*==\s*)([^=])/g;
+          const newContent = modifiedContent.replace(eqPattern, '$1 === $3');
+
+          if (newContent !== modifiedContent) {
+            modifiedContent = newContent;
+            fileModified = true;
+            totalTransformations++;
+            console.log(`Applied ${pattern.id} to ${filePath}`);
+          }
+        }
+      }
+
+      // Write back if modified
+      if (fileModified) {
+        await writeFile(filePath, modifiedContent, 'utf-8');
+        filesModified.push(filePath);
+        console.log(`✅ Successfully transformed ${filePath}`);
+      }
+    } catch (error) {
+      console.error(`Failed to transform ${filePath}:`, error);
+    }
+  }
+
   return {
-    filesModified: files,
-    transformationsApplied: patterns.length,
+    filesModified,
+    transformationsApplied: totalTransformations,
     mode: 'template' as const,
   };
 }
