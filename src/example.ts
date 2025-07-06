@@ -1,13 +1,13 @@
 // Sample TypeScript code with various patterns that can be improved
-const userName = 'john_doe';
-const userAge = 25;
-const isActive = true;
+var userName = 'john_doe';
+var userAge = 25;
+var isActive = true;
 
 function getUserInfo(id: number): Promise<{ id: number; name: string; age: number; active: boolean }> {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       if (id === 0) {
-        // Test loose equality
+        // Test loose equality - should become ===
         reject('Invalid user ID');
       } else {
         resolve({
@@ -30,7 +30,7 @@ function processUser(userId: number): void {
       }
     })
     .catch((error) => {
-      console.log('Error:', error);
+      console.error('Error:', error);
     });
 }
 
@@ -41,8 +41,8 @@ for (let i = 0; i < userList.length; i++) {
 
 // Some more patterns to transform
 function calculateTotal(items: Array<{ price: number }>): number {
-  let total = 0;
-  for (let j = 0; j < items.length; j++) {
+  var total = 0;
+  for (var j = 0; j < items.length; j++) {
     total = total + items[j].price;
   }
   return total;
