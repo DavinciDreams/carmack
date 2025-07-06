@@ -1,13 +1,13 @@
 import { assign, setup } from 'xstate';
 // Actor imports
-import { analysisActor } from './actors/analysis.js';
-import { complexityActor } from './actors/complexity.js';
-import { dafnyActor } from './actors/dafny.js';
-import { gitActor } from './actors/git.js';
-import { transformationActor } from './actors/transformation.js';
-import { validationActor } from './actors/validation.js';
-import type { MachineContext, MachineEvent } from './types.js';
-import { MachineContextSchema, type TransformationMode } from './types.js';
+import { analysisActor } from './actors/analysis.ts';
+import { complexityActor } from './actors/complexity.ts';
+import { dafnyActor } from './actors/dafny.ts';
+import { gitActor } from './actors/git.ts';
+import { transformationActor } from './actors/transformation.ts';
+import { validationActor } from './actors/validation.ts';
+import type { MachineContext, MachineEvent } from './types.ts';
+import { MachineContextSchema, type TransformationMode } from './types.ts';
 
 /**
  * Carmack Coder State Machine
@@ -78,6 +78,7 @@ const _carmackCoderMachine = setup({
         ...context,
         currentTransformation: newTransformation,
         activeFiles: event.request.targetFiles,
+        patterns: event.request.patterns || context.patterns,
         currentRetries: 0,
       };
     }),
@@ -222,7 +223,7 @@ const _carmackCoderMachine = setup({
       invoke: {
         id: 'git-checkpoint',
         src: 'gitActor',
-        input: ({ context }) => ({
+        input: ({ context }: { context: MachineContext }) => ({
           operation: 'createCheckpoint',
           description: `Pre-transformation checkpoint - ${context.currentTransformation?.id}`,
         }),
@@ -250,7 +251,7 @@ const _carmackCoderMachine = setup({
       invoke: {
         id: 'analysis',
         src: 'analysisActor',
-        input: ({ context }) => ({
+        input: ({ context }: { context: MachineContext }) => ({
           files: context.activeFiles,
           patterns: context.patterns,
           request: context.currentTransformation?.request,
@@ -289,7 +290,7 @@ const _carmackCoderMachine = setup({
       invoke: {
         id: 'complexity-analysis',
         src: 'complexityActor',
-        input: ({ context }) => ({
+        input: ({ context }: { context: MachineContext }) => ({
           files: context.activeFiles,
           metrics: context.currentTransformation?.complexity,
         }),
@@ -317,7 +318,7 @@ const _carmackCoderMachine = setup({
       invoke: {
         id: 'transformation',
         src: 'transformationActor',
-        input: ({ context }) => ({
+        input: ({ context }: { context: MachineContext }) => ({
           mode: context.currentTransformation?.mode || 'template',
           files: context.activeFiles,
           patterns: context.patterns,
@@ -338,7 +339,7 @@ const _carmackCoderMachine = setup({
       invoke: {
         id: 'format-validation',
         src: 'validationActor',
-        input: ({ context }) => ({
+        input: ({ context }: { context: MachineContext }) => ({
           type: 'format',
           files: context.currentTransformation?.filesModified || [],
         }),
@@ -364,7 +365,7 @@ const _carmackCoderMachine = setup({
       invoke: {
         id: 'format-fixing',
         src: 'validationActor',
-        input: ({ context }) => ({
+        input: ({ context }: { context: MachineContext }) => ({
           type: 'formatFix',
           files: context.currentTransformation?.filesModified || [],
         }),
@@ -390,7 +391,7 @@ const _carmackCoderMachine = setup({
       invoke: {
         id: 'type-validation',
         src: 'validationActor',
-        input: ({ context }) => ({
+        input: ({ context }: { context: MachineContext }) => ({
           type: 'types',
           files: context.currentTransformation?.filesModified || [],
         }),
@@ -421,7 +422,7 @@ const _carmackCoderMachine = setup({
       invoke: {
         id: 'type-fixing',
         src: 'validationActor',
-        input: ({ context }) => ({
+        input: ({ context }: { context: MachineContext }) => ({
           type: 'typeFix',
           files: context.currentTransformation?.filesModified || [],
           errors: context.currentTransformation?.validation?.errors || [],
@@ -455,7 +456,7 @@ const _carmackCoderMachine = setup({
       invoke: {
         id: 'dafny-verification',
         src: 'dafnyActor',
-        input: ({ context }) => ({
+        input: ({ context }: { context: MachineContext }) => ({
           files: context.currentTransformation?.filesModified || [],
           transformationMode: context.currentTransformation?.mode,
         }),
@@ -481,7 +482,7 @@ const _carmackCoderMachine = setup({
       invoke: {
         id: 'final-complexity',
         src: 'complexityActor',
-        input: ({ context }) => ({
+        input: ({ context }: { context: MachineContext }) => ({
           files: context.currentTransformation?.filesModified || [],
           baseline: context.currentTransformation?.complexity,
         }),
@@ -525,7 +526,7 @@ const _carmackCoderMachine = setup({
       invoke: {
         id: 'quality-analysis',
         src: 'validationActor',
-        input: ({ context }) => ({
+        input: ({ context }: { context: MachineContext }) => ({
           type: 'quality',
           files: context.currentTransformation?.filesModified || [],
         }),
@@ -544,7 +545,7 @@ const _carmackCoderMachine = setup({
       invoke: {
         id: 'learning',
         src: 'analysisActor',
-        input: ({ context }) => ({
+        input: ({ context }: { context: MachineContext }) => ({
           operation: 'learn',
           transformation: context.currentTransformation,
           patterns: context.patterns,
@@ -567,7 +568,7 @@ const _carmackCoderMachine = setup({
       invoke: {
         id: 'summary',
         src: 'analysisActor',
-        input: ({ context }) => ({
+        input: ({ context }: { context: MachineContext }) => ({
           operation: 'summarize',
           transformation: context.currentTransformation,
         }),
@@ -595,7 +596,7 @@ const _carmackCoderMachine = setup({
       invoke: {
         id: 'git-commit',
         src: 'gitActor',
-        input: ({ context }) => ({
+        input: ({ context }: { context: MachineContext }) => ({
           operation: 'commit',
           message: context.currentTransformation?.summary || 'Automated code transformation',
           files: context.currentTransformation?.filesModified || [],
@@ -630,7 +631,7 @@ const _carmackCoderMachine = setup({
       invoke: {
         id: 'git-rollback',
         src: 'gitActor',
-        input: ({ context }) => ({
+        input: ({ context }: { context: MachineContext }) => ({
           operation: 'rollback',
           checkpoint: context.checkpoints[context.checkpoints.length - 1],
         }),
@@ -667,5 +668,7 @@ const _carmackCoderMachine = setup({
   },
 });
 
-// Export with type assertion to avoid XState inference issues
-export const carmackCoderMachine = _carmackCoderMachine;
+// Export with explicit any type to resolve XState complex type inference
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: Required for XState type inference compatibility
+export const carmackCoderMachine: any = _carmackCoderMachine;
