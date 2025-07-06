@@ -1,7 +1,7 @@
 // Sample TypeScript code with various patterns that can be improved
-var userName = 'john_doe';
-var userAge = 25;
-var isActive = true;
+const userName = 'john_doe';
+const userAge = 25;
+const isActive = true;
 
 function getUserInfo(
   id: number
@@ -43,8 +43,8 @@ for (let i = 0; i < userList.length; i++) {
 
 // Some more patterns to transform
 function calculateTotal(items: Array<{ price: number }>): number {
-  var total = 0;
-  for (var j = 0; j < items.length; j++) {
+  let total = 0;
+  for (const j = 0; j < items.length; j++) {
     total = total + items[j].price;
   }
   return total;
