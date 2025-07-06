@@ -27,6 +27,16 @@ const AnalysisInputSchema = z.union([
 
 type AnalysisInput = z.infer<typeof AnalysisInputSchema>;
 
+// Standardized analysis result
+export interface AnalysisResult {
+  complexity?: ComplexityMetrics;
+  recommendedMode?: TransformationMode;
+  analysisTimestamp?: number;
+  newPatterns?: AstPattern[];
+  insights?: string[];
+  summary?: string;
+}
+
 /**
  * Analysis Actor
  *
@@ -34,36 +44,43 @@ type AnalysisInput = z.infer<typeof AnalysisInputSchema>;
  * Uses pattern matching, complexity analysis, and risk assessment to recommend
  * the optimal transformation mode (template, AST, or LLM).
  */
-export const analysisActor = fromPromise(async ({ input }: { input: AnalysisInput }) => {
-  // Validate input
-  const validatedInput = AnalysisInputSchema.parse(input);
+export const analysisActor = fromPromise(
+  async ({ input }: { input: AnalysisInput }): Promise<AnalysisResult> => {
+    // Validate input
+    const validatedInput = AnalysisInputSchema.parse(input);
 
-  if ('operation' in validatedInput) {
-    if (validatedInput.operation === 'learn') {
-      // Type assertion since we know transformation exists for learn operation
-      return await handleLearning(validatedInput as any);
+    if ('operation' in validatedInput) {
+      if (validatedInput.operation === 'learn') {
+        // Type-safe handling for learn operation
+        const learningInput = validatedInput as Extract<AnalysisInput, { operation: 'learn' }>;
+        return await handleLearning(learningInput);
+      }
+      if (validatedInput.operation === 'summarize') {
+        // Type-safe handling for summarize operation
+        const summaryInput = validatedInput as Extract<AnalysisInput, { operation: 'summarize' }>;
+        return await handleSummarization(summaryInput);
+      }
     }
-    if (validatedInput.operation === 'summarize') {
-      // Type assertion since we know transformation exists for summarize operation
-      return await handleSummarization(validatedInput as any);
-    }
+
+    // Main analysis flow
+    const { files, patterns, request } = validatedInput as Extract<
+      AnalysisInput,
+      { files: string[] }
+    >;
+
+    // Analyze file complexity
+    const complexity = await analyzeComplexity(files);
+
+    // Determine recommended transformation mode
+    const recommendedMode = await determineTransformationMode(files, patterns, complexity, request);
+
+    return {
+      complexity,
+      recommendedMode,
+      analysisTimestamp: Date.now(),
+    };
   }
-
-  // Main analysis flow
-  const { files, patterns, request } = validatedInput;
-
-  // Analyze file complexity
-  const complexity = await analyzeComplexity(files);
-
-  // Determine recommended transformation mode
-  const recommendedMode = await determineTransformationMode(files, patterns, complexity, request);
-
-  return {
-    complexity,
-    recommendedMode,
-    analysisTimestamp: Date.now(),
-  };
-});
+);
 
 async function analyzeComplexity(_files: string[]): Promise<ComplexityMetrics> {
   // TODO: Implement actual complexity analysis
@@ -100,9 +117,9 @@ async function determineTransformationMode(
 
 async function handleLearning(_input: {
   operation: 'learn';
-  transformation: any;
-  patterns: AstPattern[];
-}) {
+  transformation?: unknown;
+  patterns: unknown[];
+}): Promise<AnalysisResult> {
   // TODO: Implement learning from transformation results
   // Extract patterns from successful transformations
   return {
@@ -111,9 +128,12 @@ async function handleLearning(_input: {
   };
 }
 
-async function handleSummarization(input: { operation: 'summarize'; transformation: any }) {
+async function handleSummarization(input: {
+  operation: 'summarize';
+  transformation?: unknown;
+}): Promise<AnalysisResult> {
   // TODO: Implement transformation summarization
-  const transformation = input.transformation;
+  const transformation = input.transformation as { id?: string; mode?: string } | undefined;
   return {
     summary: `Transformation ${transformation?.id || 'unknown'} completed with ${transformation?.mode || 'unknown'} mode`,
   };

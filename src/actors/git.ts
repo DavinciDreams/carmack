@@ -59,26 +59,23 @@ async function createCheckpoint(description: string): Promise<GitCheckpoint> {
   };
 }
 
-async function commitChanges(
-  message: string,
-  files: string[]
-): Promise<{ committed: boolean; hash: string }> {
+async function commitChanges(message: string, files: string[]): Promise<GitCheckpoint> {
   // TODO: Implement actual git commit using simple-git
   console.log(`Committing changes: ${message} (${files.length} files)`);
 
-  // Mock implementation
+  // Return GitCheckpoint format for consistency
   return {
-    committed: true,
     hash: 'b'.repeat(40), // Mock git hash
+    branch: 'main',
+    timestamp: Date.now(),
+    description: message,
   };
 }
 
-async function rollbackToCheckpoint(checkpoint: GitCheckpoint): Promise<{ rolledBack: boolean }> {
+async function rollbackToCheckpoint(checkpoint: GitCheckpoint): Promise<GitCheckpoint> {
   // TODO: Implement actual git rollback using simple-git
   console.log(`Rolling back to checkpoint: ${checkpoint.hash}`);
 
-  // Mock implementation
-  return {
-    rolledBack: true,
-  };
+  // Return the checkpoint we rolled back to
+  return checkpoint;
 }

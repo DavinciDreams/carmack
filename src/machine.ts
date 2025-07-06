@@ -23,7 +23,7 @@ import { MachineContextSchema, type TransformationMode } from './types.js';
  * 4. Safe Rollback: Git checkpoints before any modification
  * 5. Self-Improvement: Complexity tracking and adaptive behavior
  */
-export const carmackCoderMachine = setup({
+const _carmackCoderMachine = setup({
   types: {
     context: {} as MachineContext,
     events: {} as MachineEvent,
@@ -553,7 +553,7 @@ export const carmackCoderMachine = setup({
           target: 'generatingSummary',
           actions: assign(({ context, event }) => ({
             ...context,
-            patterns: [...context.patterns, ...event.output.newPatterns],
+            patterns: [...context.patterns, ...(event.output.newPatterns || [])],
           })),
         },
         onError: {
@@ -579,7 +579,7 @@ export const carmackCoderMachine = setup({
               ...context,
               currentTransformation: {
                 ...context.currentTransformation,
-                summary: event.output.summary,
+                summary: event.output.summary || 'No summary available',
               },
             };
           }),
@@ -666,3 +666,6 @@ export const carmackCoderMachine = setup({
     },
   },
 });
+
+// Export with type assertion to avoid XState inference issues
+export const carmackCoderMachine = _carmackCoderMachine;
