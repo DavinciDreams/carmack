@@ -41,6 +41,10 @@ const _carmackCoderMachine = setup({
     hasMaxRetriesExceeded: ({ context }) => {
       return context.currentRetries >= context.maxRetries;
     },
+    hasTimedOut: ({ context }) => {
+      if (!context.startTime) return false;
+      return Date.now() - context.startTime > context.timeoutMs;
+    },
     isComplexityThresholdExceeded: ({ context }) => {
       const complexity = context.currentTransformation?.complexity;
       if (!complexity) return false;
@@ -62,6 +66,10 @@ const _carmackCoderMachine = setup({
     },
   },
   actions: {
+    setStartTime: assign(({ context }) => ({
+      ...context,
+      startTime: Date.now(),
+    })),
     assignTransformationRequest: assign(({ context, event }) => {
       if (event.type !== 'START_TRANSFORMATION') return context;
 
@@ -81,6 +89,7 @@ const _carmackCoderMachine = setup({
         activeFiles: event.request.targetFiles,
         patterns: event.request.patterns || context.patterns,
         currentRetries: 0,
+        startTime: Date.now(),
       };
     }),
 
@@ -619,9 +628,14 @@ const _carmackCoderMachine = setup({
     retrying: {
       always: [
         {
+          target: 'failed',
+          guard: 'hasTimedOut',
+          actions: ['addError', 'markFailed'],
+        },
+        {
           target: 'analyzing',
           guard: ({ context }) => context.currentRetries < context.maxRetries,
-          actions: ['resetRetries'],
+          // Don't reset retries - keep counting them up
         },
         {
           target: 'rollingBack',

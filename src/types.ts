@@ -98,6 +98,8 @@ export const MachineContextSchema = z.object({
   patterns: z.array(AstPatternSchema),
   maxRetries: z.number().int().min(0).default(3),
   currentRetries: z.number().int().min(0).default(0),
+  startTime: z.number().optional(),
+  timeoutMs: z.number().int().min(1000).default(300000), // 5 minute default timeout
   config: z.object({
     maxComplexityThreshold: z.number().int().min(1).default(15),
     enableDafnyVerification: z.boolean().default(true),
