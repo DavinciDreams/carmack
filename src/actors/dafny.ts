@@ -1,6 +1,6 @@
+import { rm } from 'node:fs/promises';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
-import { rm } from 'node:fs/promises';
 import type { TransformationMode } from '../types.js';
 
 // Dafny input schema
@@ -54,7 +54,7 @@ async function generateVerificationConditions(
   // Load base verification conditions from the Dafny specification
   const baseConditions = [
     'valid_syntax(transformed)',
-    'no_security_vulnerabilities(transformed)', 
+    'no_security_vulnerabilities(transformed)',
     'no_infinite_loops(transformed)',
     'memory_safety(transformed)',
   ];
@@ -75,7 +75,7 @@ async function generateVerificationConditions(
   } else if (mode === 'llm') {
     conditions.push(
       'type_correctness(transformed)',
-      'intent_preservation(original, transformed)', 
+      'intent_preservation(original, transformed)',
       'no_regression(original, transformed)'
     );
   }
@@ -105,7 +105,7 @@ async function runDafnyVerification(conditions: string[]): Promise<{
   try {
     // Check if Dafny is available in the system
     const dafnyAvailable = await checkDafnyAvailable();
-    
+
     if (!dafnyAvailable) {
       console.warn('Dafny not available, using fallback verification');
       return await fallbackVerification(conditions, startTime);
@@ -113,11 +113,11 @@ async function runDafnyVerification(conditions: string[]): Promise<{
 
     // Create temporary Dafny verification file
     const verificationFile = await createDafnyVerificationFile(conditions);
-    
+
     try {
       // Run Dafny verification
       const result = await executeDafnyVerification(verificationFile);
-      
+
       return {
         verified: result.success,
         errors: result.errors,
@@ -142,7 +142,7 @@ async function checkDafnyAvailable(): Promise<boolean> {
     const { execFile } = await import('node:child_process');
     const { promisify } = await import('node:util');
     const execFileAsync = promisify(execFile);
-    
+
     // Try to run 'dafny --version' to check if Dafny is available
     await execFileAsync('dafny', ['--version'], { timeout: 5000 });
     return true;
@@ -155,23 +155,25 @@ async function createDafnyVerificationFile(conditions: string[]): Promise<string
   const { writeFile, mkdtemp } = await import('node:fs/promises');
   const { join } = await import('node:path');
   const { tmpdir } = await import('node:os');
-  
+
   const tempDir = await mkdtemp(join(tmpdir(), 'dafny-verification-'));
   const verificationFile = join(tempDir, 'verification.dfy');
-  
+
   // Generate Dafny verification code
   const dafnyCode = `
 // Auto-generated verification conditions
 method VerifyTransformationConditions()
 {
-${conditions.map(condition => `  assert ${condition};`).join('\n')}
+${conditions.map((condition) => `  assert ${condition};`).join('\n')}
 }
 
 // Stub predicates for verification conditions
-${conditions.map(condition => {
-  const predName = condition.split('(')[0];
-  return `predicate ${predName}(code: string) { true } // Simplified for verification`;
-}).join('\n')}
+${conditions
+  .map((condition) => {
+    const predName = condition.split('(')[0];
+    return `predicate ${predName}(code: string) { true } // Simplified for verification`;
+  })
+  .join('\n')}
 `;
 
   await writeFile(verificationFile, dafnyCode, 'utf8');
@@ -185,26 +187,26 @@ async function executeDafnyVerification(verificationFile: string): Promise<{
   const { execFile } = await import('node:child_process');
   const { promisify } = await import('node:util');
   const execFileAsync = promisify(execFile);
-  
+
   try {
     // Run Dafny verification
     const { stdout, stderr } = await execFileAsync('dafny', ['verify', verificationFile], {
       timeout: 30000, // 30 second timeout
     });
-    
+
     // Parse Dafny output
     const output = stdout + stderr;
     const success = !output.includes('Error:') && !output.includes('verification error');
-    
+
     const errors: string[] = [];
     if (!success) {
       // Extract error messages from Dafny output
-      const errorLines = output.split('\n').filter(line => 
-        line.includes('Error:') || line.includes('verification error')
-      );
+      const errorLines = output
+        .split('\n')
+        .filter((line) => line.includes('Error:') || line.includes('verification error'));
       errors.push(...errorLines);
     }
-    
+
     return { success, errors };
   } catch (error) {
     return {
@@ -224,23 +226,21 @@ async function fallbackVerification(
 }> {
   // Enhanced fallback verification with better heuristics
   console.log('Using enhanced fallback verification...');
-  
+
   // Simulate verification time based on complexity
   await new Promise((resolve) => setTimeout(resolve, Math.min(conditions.length * 50, 2000)));
 
   // Improved verification logic based on condition types
-  const criticalConditions = conditions.filter(c => 
-    c.includes('security') || 
-    c.includes('infinite_loops') || 
-    c.includes('memory_safety')
+  const criticalConditions = conditions.filter(
+    (c) => c.includes('security') || c.includes('infinite_loops') || c.includes('memory_safety')
   );
-  
+
   // Higher success rate for basic conditions, lower for critical ones
   const basicSuccess = Math.random() > 0.05; // 95% success for basic conditions
   const criticalSuccess = Math.random() > 0.15; // 85% success for critical conditions
-  
+
   const verified = basicSuccess && (criticalConditions.length === 0 || criticalSuccess);
-  
+
   const errors: string[] = [];
   if (!verified) {
     if (!basicSuccess) {
