@@ -1,9 +1,9 @@
 // Medium complexity file to test AST mode
-var count = 0;
-var active = true;
+const count = 0;;
+const active = true;;
 
 function simpleFunction(input: string): string {
-  if (input == 'test') {
+  if (input === 'test') {
     return 'tested';
   }
   return input;
@@ -11,10 +11,10 @@ function simpleFunction(input: string): string {
 
 const items = [1, 2, 3];
 for (var i = 0; i < items.length; i++) {
-  if (items[i] == 2) {
+  if (items[i] === 2) {
     console.log('Error: Found item 2');
   }
 }
 
-var result = simpleFunction('hello');
+const result = simpleFunction('hello');;
 console.log(result);
