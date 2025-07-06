@@ -330,8 +330,9 @@ const _carmackCoderMachine = setup({
             if (!context.currentTransformation) return context;
             
             const transformationResult = event.output as any;
+            console.log('🔧 Assigning transformation results:', transformationResult);
 
-            return {
+            const updatedContext = {
               ...context,
               currentTransformation: {
                 ...context.currentTransformation,
@@ -339,6 +340,9 @@ const _carmackCoderMachine = setup({
                 status: 'applying' as const,
               },
             };
+            
+            console.log('🔧 Updated filesModified:', updatedContext.currentTransformation.filesModified);
+            return updatedContext;
           }),
         },
         onError: {
