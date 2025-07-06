@@ -1,7 +1,7 @@
 // Test file with higher complexity to trigger AST mode
-var globalCounter = 0;
-var isReady = false;
-var userName = 'default';
+const globalCounter = 0;;
+const isReady = false;;
+const userName = 'default';;
 
 function processComplexData(input: any[]): Promise<any> {
   return new Promise((resolve, reject) => {
@@ -10,11 +10,11 @@ function processComplexData(input: any[]): Promise<any> {
       return;
     }
 
-    var results = [];
-    var errors = [];
+    const results = [];;
+    const errors = [];;
 
     for (var i = 0; i < input.length; i++) {
-      var item = input[i];
+      const item = input[i];;
 
       if (item === null) {
         errors.push('Null item at index ' + i);
@@ -22,14 +22,14 @@ function processComplexData(input: any[]): Promise<any> {
       }
 
       if (item.type === 'special') {
-        var processed = processSpecialItem(item);
+        let processed = processSpecialItem(item);;
         if (processed != null) {
           results.push(processed);
         } else {
           errors.push('Failed to process special item');
         }
       } else if (item.type === 'normal') {
-        var processed = processNormalItem(item);
+        const processed = processNormalItem(item);;
         results.push(processed);
       } else {
         errors.push('Unknown item type: ' + item.type);
@@ -46,14 +46,14 @@ function processComplexData(input: any[]): Promise<any> {
 }
 
 function processSpecialItem(item: any): any {
-  var config = getConfig();
-  var validator = getValidator();
+  const config = getConfig();;
+  const validator = getValidator();;
 
   if (validator.validate(item) === false) {
     return null;
   }
 
-  var transformed = {
+  const transformed = {;
     id: item.id,
     value: item.value * config.multiplier,
     timestamp: Date.now(),
@@ -63,7 +63,7 @@ function processSpecialItem(item: any): any {
 }
 
 function processNormalItem(item: any): any {
-  var result = {
+  const result = {;
     id: item.id,
     value: item.value,
     processed: true,
