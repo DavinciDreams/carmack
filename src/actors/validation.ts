@@ -87,29 +87,54 @@ async function fixFormat(_files: string[]): Promise<ValidationResult> {
 }
 
 async function validateTypes(files: string[]): Promise<ValidationResult> {
-  // TODO: Implement TypeScript type checking
-  console.log('Validating TypeScript types...');
+  console.log(`Validating TypeScript types for ${files.length} files...`);
 
-  // Mock implementation
-  const hasErrors = Math.random() > 0.7; // 30% chance of type errors
+  try {
+    // Run TypeScript compiler to check for errors
+    const { execSync } = await import('child_process');
+    
+    // Run tsc on the entire project (since individual file checking is complex)
+    execSync('bunx tsc --noEmit --pretty false', { 
+      encoding: 'utf8',
+      cwd: process.cwd(),
+    });
+    
+    return {
+      isValid: true,
+      errors: [],
+      warnings: [],
+      fixableIssues: 0,
+    };
+  } catch (error: any) {
+    // Parse TypeScript errors from stderr
+    const errorOutput = error.stdout || error.stderr || '';
+    const errors: ErrorInfo[] = [];
+    
+    // Parse TypeScript error format: filename(line,col): error TS####: message
+    const errorLines = errorOutput.split('\n').filter((line: string) => line.includes(': error TS'));
+    
+    for (const line of errorLines) {
+      const match = line.match(/^(.+?)\((\d+),(\d+)\): error (TS\d+): (.+)$/);
+      if (match) {
+        const [, file, lineStr, colStr, code, message] = match;
+        errors.push({
+          code,
+          message: message.trim(),
+          file: file.trim(),
+          line: parseInt(lineStr, 10),
+          column: parseInt(colStr, 10),
+          severity: 'error' as const,
+        });
+      }
+    }
 
-  return {
-    isValid: !hasErrors,
-    errors: hasErrors
-      ? [
-          {
-            code: 'TS2322',
-            message: 'Type string is not assignable to type number',
-            file: files[0],
-            line: 42,
-            column: 10,
-            severity: 'error' as const,
-          },
-        ]
-      : [],
-    warnings: [],
-    fixableIssues: hasErrors ? 1 : 0,
-  };
+    return {
+      isValid: false,
+      errors,
+      warnings: [],
+      fixableIssues: errors.length, // Assume all TypeScript errors are fixable
+    };
+  }
 }
 
 async function fixTypes(_files: string[], _errors: ErrorInfo[]): Promise<ValidationResult> {

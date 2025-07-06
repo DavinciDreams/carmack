@@ -3,7 +3,7 @@ const userName = 'john_doe';
 const userAge = 25;
 const isActive = true;
 
-function getUserInfo(id) {
+function getUserInfo(id: number): Promise<{ id: number; name: string; age: number; active: boolean }> {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       if (id === 0) {
@@ -21,7 +21,7 @@ function getUserInfo(id) {
   });
 }
 
-function processUser(userId) {
+function processUser(userId: number): void {
   getUserInfo(userId)
     .then((user) => {
       console.log('User found:', user.name);
@@ -35,21 +35,21 @@ function processUser(userId) {
 }
 
 const userList = [1, 2, 3, 4, 5];
-for (const i = 0; i < userList.length; i++) {
+for (let i = 0; i < userList.length; i++) {
   processUser(userList[i]);
 }
 
 // Some more patterns to transform
-function calculateTotal(items) {
-  const total = 0;
-  for (const j = 0; j < items.length; j++) {
+function calculateTotal(items: Array<{ price: number }>): number {
+  let total = 0;
+  for (let j = 0; j < items.length; j++) {
     total = total + items[j].price;
   }
   return total;
 }
 
 // Legacy callback pattern
-function fetchData(callback) {
+function fetchData(callback: (err: Error | null, result?: { data: string }) => void): void {
   setTimeout(() => {
     callback(null, { data: 'sample data' });
   }, 500);
@@ -59,7 +59,7 @@ function fetchData(callback) {
 fetchData((err, result) => {
   if (err) {
     console.error('Error:', err);
-  } else {
+  } else if (result) {
     console.log('Data:', result.data);
   }
 });
