@@ -1,131 +1,72 @@
 {
-  "version": "1.0.0",
-  "description": "AST transformation patterns for common code refactoring operations",
+  "version": "2.0.0",
+  "description": "Enhanced AST transformation patterns with semantic context awareness",
   "patterns": [
     {
-      "id": "var-to-const",
+      "id": "smart-var-to-const-let",
       "language": "typescript",
       "pattern": "var $NAME = $VALUE",
       "replacement": "const $NAME = $VALUE",
-      "description": "Convert var declarations to const for immutable values",
-      "complexity": 1,
-      "riskLevel": "low"
-    },
-    {
-      "id": "arrow-function-conversion",
-      "language": "typescript",
-      "pattern": "function $NAME($PARAMS) { return $BODY; }",
-      "replacement": "const $NAME = ($PARAMS) => $BODY",
-      "description": "Convert simple functions to arrow functions",
-      "complexity": 2,
-      "riskLevel": "low"
-    },
-    {
-      "id": "async-await-conversion",
-      "language": "typescript",
-      "pattern": "$PROMISE.then($CALLBACK)",
-      "replacement": "await $PROMISE",
-      "description": "Convert Promise.then() to async/await syntax",
-      "complexity": 4,
-      "riskLevel": "medium"
-    },
-    {
-      "id": "optional-chaining",
-      "language": "typescript",
-      "pattern": "$OBJ && $OBJ.$PROP",
-      "replacement": "$OBJ?.$PROP",
-      "description": "Use optional chaining operator for safe property access",
-      "complexity": 2,
-      "riskLevel": "low"
-    },
-    {
-      "id": "nullish-coalescing",
-      "language": "typescript",
-      "pattern": "$VALUE === null || $VALUE === undefined ? $DEFAULT : $VALUE",
-      "replacement": "$VALUE ?? $DEFAULT",
-      "description": "Use nullish coalescing operator for default values",
-      "complexity": 2,
-      "riskLevel": "low"
-    },
-    {
-      "id": "destructuring-assignment",
-      "language": "typescript",
-      "pattern": "const $VAR1 = $OBJ.$PROP1; const $VAR2 = $OBJ.$PROP2;",
-      "replacement": "const { $PROP1: $VAR1, $PROP2: $VAR2 } = $OBJ;",
-      "description": "Convert property access to destructuring assignment",
+      "description": "Smart conversion of var to const/let based on usage analysis",
       "complexity": 3,
-      "riskLevel": "low"
-    },
-    {
-      "id": "template-literals",
-      "language": "typescript",
-      "pattern": "$STR1 + $VAR + $STR2",
-      "replacement": "`${$STR1}${$VAR}${$STR2}`",
-      "description": "Convert string concatenation to template literals",
-      "complexity": 2,
-      "riskLevel": "low"
-    },
-    {
-      "id": "array-methods",
-      "language": "typescript",
-      "pattern": "for (let $I = 0; $I < $ARRAY.length; $I++) { $BODY }",
-      "replacement": "$ARRAY.forEach(($ITEM, $I) => { $BODY })",
-      "description": "Convert for loops to array methods where appropriate",
-      "complexity": 5,
       "riskLevel": "medium"
-    },
-    {
-      "id": "type-annotations",
-      "language": "typescript",
-      "pattern": "function $NAME($PARAMS) { $BODY }",
-      "replacement": "function $NAME($PARAMS): $RETURN_TYPE { $BODY }",
-      "description": "Add explicit return type annotations to functions",
-      "complexity": 6,
-      "riskLevel": "medium"
-    },
-    {
-      "id": "interface-over-type",
-      "language": "typescript",
-      "pattern": "type $NAME = { $PROPS }",
-      "replacement": "interface $NAME { $PROPS }",
-      "description": "Prefer interfaces over type aliases for object shapes",
-      "complexity": 3,
-      "riskLevel": "low"
     },
     {
       "id": "strict-equality",
       "language": "typescript",
       "pattern": "$LEFT == $RIGHT",
       "replacement": "$LEFT === $RIGHT",
-      "description": "Use strict equality operator instead of loose equality",
+      "description": "Convert loose equality to strict equality",
       "complexity": 1,
       "riskLevel": "low"
     },
     {
-      "id": "error-handling",
+      "id": "console-log-to-console-error",
       "language": "typescript",
-      "pattern": "try { $BODY } catch (e) { console.log(e); }",
-      "replacement": "try { $BODY } catch (error: unknown) { console.error('Error:', error); }",
-      "description": "Improve error handling with proper typing and logging",
+      "pattern": "console.log('Error:",
+      "replacement": "console.error('Error:",
+      "description": "Convert console.log for errors to console.error",
+      "complexity": 1,
+      "riskLevel": "low"
+    },
+    {
+      "id": "promise-to-async-await",
+      "language": "typescript",
+      "pattern": "$PROMISE.then(($RESULT) => { $BODY })",
+      "replacement": "const $RESULT = await $PROMISE;\n$BODY",
+      "description": "Convert Promise.then() chains to async/await",
       "complexity": 4,
       "riskLevel": "medium"
+    },
+    {
+      "id": "enhanced-object-destructuring",
+      "language": "typescript",
+      "pattern": "const $VAR1 = $OBJ.$PROP1;\nconst $VAR2 = $OBJ.$PROP2;",
+      "replacement": "const { $PROP1: $VAR1, $PROP2: $VAR2 } = $OBJ;",
+      "description": "Convert multiple property access to destructuring",
+      "complexity": 3,
+      "riskLevel": "low"
+    },
+    {
+      "id": "remove-unnecessary-returns",
+      "language": "typescript",
+      "pattern": "($PARAMS) => { return $EXPR; }",
+      "replacement": "($PARAMS) => $EXPR",
+      "description": "Remove unnecessary return statements from arrow functions",
+      "complexity": 2,
+      "riskLevel": "low"
     }
   ],
   "categories": {
-    "modernization": [
-      "var-to-const",
-      "arrow-function-conversion",
-      "optional-chaining",
-      "nullish-coalescing",
-      "template-literals"
-    ],
-    "typescript": ["type-annotations", "interface-over-type"],
-    "performance": ["array-methods", "destructuring-assignment"],
-    "safety": ["strict-equality", "error-handling", "async-await-conversion"]
+    "modernization": ["smart-var-to-const-let", "strict-equality", "promise-to-async-await"],
+    "optimization": ["enhanced-object-destructuring", "remove-unnecessary-returns"],
+    "logging": ["console-log-to-console-error"]
   },
   "metadata": {
     "created": "2025-01-06",
-    "author": "Carmack Coder System",
-    "license": "MIT"
+    "author": "Carmack Coder",
+    "license": "MIT",
+    "lastUpdated": "2025-01-06",
+    "totalPatterns": 6
   }
 }
