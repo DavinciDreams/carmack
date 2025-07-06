@@ -7,6 +7,19 @@
 datatype Code = Code(content: string, syntax: SyntaxTree)
 datatype SyntaxTree = Node(nodeType: string, children: seq<SyntaxTree>) | Leaf(value: string)
 
+// Transformation modes enumeration
+datatype TransformationMode = Template | AST | LLM
+
+// Complexity metrics data structure
+datatype ComplexityMetrics = ComplexityMetrics(
+  cyclomaticComplexity: int,
+  cognitiveComplexity: int,
+  linesOfCode: int,
+  nestingDepth: int,
+  functionCount: int,
+  classCount: int
+)
+
 // Semantic equivalence predicate
 predicate semantic_equivalence(original: Code, transformed: Code)
 
