@@ -22,6 +22,10 @@ import { loadPatterns } from './src/utils/index.js';
 async function main() {
   console.log('🚀 Starting Carmack Coder...');
 
+  // Parse command line arguments
+  const args = process.argv.slice(2);
+  const targetFiles = args.length > 0 ? args : ['./src/example.ts'];
+
   // Load transformation patterns
   const patterns = await loadPatterns('./patterns.json');
   console.log(`📋 Loaded ${patterns.length} transformation patterns`);
@@ -39,12 +43,12 @@ async function main() {
 
   actor.start();
 
-  // Example transformation request
-  const exampleRequest: TransformationRequest = {
-    targetFiles: ['./src/example.ts'],
-    transformationType: 'template',
-    patterns: patterns.filter((p) => p.complexity <= 2), // Use simple patterns for template mode
-    maxComplexity: 10,
+  // Dynamic transformation request based on CLI args
+  const transformationRequest: TransformationRequest = {
+    targetFiles,
+    transformationType: 'template', // Will be determined by analysis
+    patterns: patterns, // Include all patterns for mode selection
+    maxComplexity: 15, // Allow higher complexity for AST/LLM modes
     dryRun: false,
   };
 
@@ -52,7 +56,7 @@ async function main() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   actor.send({
     type: 'START_TRANSFORMATION',
-    request: exampleRequest,
+    request: transformationRequest,
     // biome-ignore lint/suspicious/noExplicitAny: Required for XState event type compatibility
   } as any);
 
