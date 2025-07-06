@@ -1,7 +1,7 @@
 // Simple file to test var transformations
-var userName = 'John';
-var userAge = 25;
-var isActiveUser = true;
+const userName = 'John';;
+const userAge = 25;;
+const isActiveUser = true;;
 
 function test() {
   if (userName === 'John') {
