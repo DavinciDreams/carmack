@@ -1,10 +1,9 @@
 import { readFile, writeFile } from 'node:fs/promises';
+// Import AST-grep for syntax tree parsing
+import { js, ts } from '@ast-grep/napi';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
 import type { AstPattern, TransformationRequest } from '../types.js';
-
-// Import AST-grep for syntax tree parsing
-import { js, ts } from '@ast-grep/napi';
 
 // Transformation input schema
 const TransformationInputSchema = z.object({
@@ -51,7 +50,7 @@ async function applyTemplateTransformation(files: string[], patterns: AstPattern
   let totalTransformations = 0;
 
   // Get only template-mode patterns (low complexity, safe transformations)
-  const templatePatterns = patterns.filter(p => p.complexity <= 2 && p.riskLevel === 'low');
+  const templatePatterns = patterns.filter((p) => p.complexity <= 2 && p.riskLevel === 'low');
 
   for (const filePath of files) {
     try {
@@ -158,32 +157,32 @@ async function enhancedVarTransformation(content: string): Promise<string> {
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    
+
     // Handle undefined lines
     if (line === undefined) {
       result.push('');
       continue;
     }
-    
+
     if (!line) {
       result.push(line);
       continue;
     }
-    
+
     // Match var declarations
     const varMatch = line.match(/^(\s*)var\s+(\w+)\s*=\s*(.+);?\s*$/);
-    
+
     if (varMatch) {
       const [, indent, varName, value] = varMatch;
-      
+
       // Check if variable is reassigned later
-      const isReassigned = lines.slice(i + 1).some(laterLine => 
-        laterLine && new RegExp(`\\b${varName}\\s*=\\s*[^=]`).test(laterLine)
-      );
-      
+      const isReassigned = lines
+        .slice(i + 1)
+        .some((laterLine) => laterLine && new RegExp(`\\b${varName}\\s*=\\s*[^=]`).test(laterLine));
+
       // Check if it's in a for loop context
       const isInForLoop = line.includes('for (') || line.includes('for(');
-      
+
       // Decide between const and let
       if (isReassigned || isInForLoop) {
         result.push(`${indent}let ${varName} = ${value};`);
@@ -205,7 +204,7 @@ async function applyAstTransformation(files: string[], patterns: AstPattern[]) {
   let totalTransformations = 0;
 
   // Get AST-mode patterns (medium complexity, more sophisticated transformations)
-  const astPatterns = patterns.filter(p => p.complexity >= 2 && p.complexity <= 4);
+  const astPatterns = patterns.filter((p) => p.complexity >= 2 && p.complexity <= 4);
 
   for (const filePath of files) {
     try {
@@ -217,7 +216,7 @@ async function applyAstTransformation(files: string[], patterns: AstPattern[]) {
       // Parse with AST-grep based on file extension
       const isTypeScript = filePath.endsWith('.ts') || filePath.endsWith('.tsx');
       const lang = isTypeScript ? ts : js;
-      
+
       // Parse the source code into AST
       const root = lang.parse(content);
 
@@ -266,7 +265,7 @@ async function applyAstTransformation(files: string[], patterns: AstPattern[]) {
           fileModified = true;
           totalTransformations++;
           console.log(`Applied ${pattern.id} to ${filePath}`);
-          
+
           // Re-parse after modification for subsequent patterns
           const newRoot = lang.parse(modifiedContent);
           Object.assign(root, newRoot);
@@ -298,10 +297,10 @@ async function smartVarToConstLetAST(root: any, content: string, _lang: any): Pr
   try {
     // Simplified AST transformation using regex-based approach
     let modifiedContent = content;
-    
+
     // Smart var to const/let conversion
     const varRegex = /\bvar\s+(\w+)\s*=\s*([^;]+);/g;
-    
+
     modifiedContent = modifiedContent.replace(varRegex, (match, varName, value) => {
       // Use const for literals, let for other cases
       if (/^(\d+|'[^']*'|"[^"]*"|true|false|null|undefined|\[|\{)/.test(value.trim())) {
@@ -309,7 +308,7 @@ async function smartVarToConstLetAST(root: any, content: string, _lang: any): Pr
       }
       return `let ${varName} = ${value};`;
     });
-    
+
     return modifiedContent;
   } catch (error) {
     console.error('Error in smartVarToConstLetAST:', error);
@@ -324,14 +323,14 @@ async function promiseToAsyncAwaitAST(_root: any, content: string, _lang: any): 
   try {
     // Simplified Promise to async/await transformation using regex
     let modifiedContent = content;
-    
+
     // Basic .then() to async/await conversion
     const thenRegex = /(\w+)\.then\(\s*\((\w+)\)\s*=>\s*\{([^}]+)\}\s*\)/g;
-    
+
     modifiedContent = modifiedContent.replace(thenRegex, (_match, promise, param, body) => {
       return `const ${param} = await ${promise};\n${body.trim()}`;
     });
-    
+
     return modifiedContent;
   } catch (error) {
     console.error('Error in promiseToAsyncAwaitAST:', error);
@@ -342,7 +341,11 @@ async function promiseToAsyncAwaitAST(_root: any, content: string, _lang: any): 
 /**
  * Enhance object destructuring
  */
-async function enhanceObjectDestructuring(_root: any, content: string, _lang: any): Promise<string> {
+async function enhanceObjectDestructuring(
+  _root: any,
+  content: string,
+  _lang: any
+): Promise<string> {
   try {
     // Simplified implementation - return content as-is for now
     return content;
@@ -359,10 +362,10 @@ async function removeUnnecessaryReturns(_root: any, content: string, _lang: any)
   try {
     // Remove unnecessary return statements from arrow functions
     let modifiedContent = content;
-    
+
     // Pattern: (params) => { return expression; } -> (params) => expression
     const arrowReturnPattern = /\(([^)]*)\)\s*=>\s*{\s*return\s+([^;]+);\s*}/g;
-    
+
     modifiedContent = modifiedContent.replace(arrowReturnPattern, (_match, params, expression) => {
       return `(${params}) => ${expression}`;
     });
@@ -377,7 +380,11 @@ async function removeUnnecessaryReturns(_root: any, content: string, _lang: any)
 /**
  * Combine variable declarations
  */
-async function combineVariableDeclarations(_root: any, content: string, _lang: any): Promise<string> {
+async function combineVariableDeclarations(
+  _root: any,
+  content: string,
+  _lang: any
+): Promise<string> {
   try {
     // Find consecutive const/let declarations that can be combined
     const lines = content.split('\n');
@@ -386,11 +393,11 @@ async function combineVariableDeclarations(_root: any, content: string, _lang: a
 
     while (i < lines.length) {
       const line = lines[i];
-      
+
       if (line && (line.trim().startsWith('const ') || line.trim().startsWith('let '))) {
         const declarations = [line];
         const declType = line.trim().startsWith('const ') ? 'const' : 'let';
-        
+
         // Look for consecutive declarations of the same type
         let j = i + 1;
         while (j < lines.length && lines[j] && lines[j]?.trim().startsWith(`${declType} `)) {
@@ -400,11 +407,16 @@ async function combineVariableDeclarations(_root: any, content: string, _lang: a
           }
           j++;
         }
-        
+
         if (declarations.length > 1) {
           // Combine declarations
           const combined = declarations
-            .map(decl => decl.trim().replace(/^(const|let)\s+/, '').replace(/;$/, ''))
+            .map((decl) =>
+              decl
+                .trim()
+                .replace(/^(const|let)\s+/, '')
+                .replace(/;$/, '')
+            )
             .join(', ');
           result.push(`${declType} ${combined};`);
           i = j;
@@ -433,24 +445,28 @@ async function callbackToPromise(_root: any, content: string, _lang: any): Promi
     // Find callback patterns and suggest Promise conversions
     // This is a complex transformation, so we'll do basic pattern matching
     let modifiedContent = content;
-    
+
     // Pattern: function(callback) { ... callback(error, result) ... }
-    const callbackPattern = /function\s+(\w+)\s*\(\s*callback\s*\)\s*{([^}]+)callback\(([^)]+)\);?([^}]*)}/g;
-    
-    modifiedContent = modifiedContent.replace(callbackPattern, (match, funcName, beforeCallback, callbackArgs, afterCallback) => {
-      const args = callbackArgs.split(',').map((arg: string) => arg.trim());
-      
-      if (args.length === 2) {
-        // Assume error-first callback pattern
-        const [error, result] = args;
-        return `function ${funcName}(): Promise<any> {${beforeCallback}return new Promise((resolve, reject) => {
+    const callbackPattern =
+      /function\s+(\w+)\s*\(\s*callback\s*\)\s*{([^}]+)callback\(([^)]+)\);?([^}]*)}/g;
+
+    modifiedContent = modifiedContent.replace(
+      callbackPattern,
+      (match, funcName, beforeCallback, callbackArgs, afterCallback) => {
+        const args = callbackArgs.split(',').map((arg: string) => arg.trim());
+
+        if (args.length === 2) {
+          // Assume error-first callback pattern
+          const [error, result] = args;
+          return `function ${funcName}(): Promise<any> {${beforeCallback}return new Promise((resolve, reject) => {
           if (${error}) reject(${error});
           else resolve(${result});
         });${afterCallback}}`;
+        }
+
+        return match; // Return unchanged if pattern doesn't match expectations
       }
-      
-      return match; // Return unchanged if pattern doesn't match expectations
-    });
+    );
 
     return modifiedContent;
   } catch (error) {
@@ -462,17 +478,24 @@ async function callbackToPromise(_root: any, content: string, _lang: any): Promi
 /**
  * Modernize function declarations
  */
-async function modernizeFunctionDeclarations(_root: any, content: string, _lang: any): Promise<string> {
+async function modernizeFunctionDeclarations(
+  _root: any,
+  content: string,
+  _lang: any
+): Promise<string> {
   try {
     // Convert simple function declarations to arrow functions where appropriate
     let modifiedContent = content;
-    
+
     // Pattern: function name(params) { return expression; }
     const simpleFunctionPattern = /function\s+(\w+)\s*\(([^)]*)\)\s*{\s*return\s+([^;]+);\s*}/g;
-    
-    modifiedContent = modifiedContent.replace(simpleFunctionPattern, (_match, name, params, expression) => {
-      return `const ${name} = (${params}) => ${expression};`;
-    });
+
+    modifiedContent = modifiedContent.replace(
+      simpleFunctionPattern,
+      (_match, name, params, expression) => {
+        return `const ${name} = (${params}) => ${expression};`;
+      }
+    );
 
     return modifiedContent;
   } catch (error) {
@@ -484,12 +507,17 @@ async function modernizeFunctionDeclarations(_root: any, content: string, _lang:
 /**
  * Apply generic AST pattern using AST-grep syntax
  */
-async function applyGenericASTPattern(_root: any, content: string, pattern: AstPattern, _lang: any): Promise<string> {
+async function applyGenericASTPattern(
+  _root: any,
+  content: string,
+  pattern: AstPattern,
+  _lang: any
+): Promise<string> {
   try {
     // Simplified pattern matching using regex for now
     // This would normally use AST-grep's sophisticated pattern matching
     let modifiedContent = content;
-    
+
     // Simple regex replacement based on pattern
     if (pattern.pattern && pattern.replacement) {
       const regex = new RegExp(pattern.pattern, 'g');
@@ -509,34 +537,34 @@ async function applyLlmTransformation(files: string[], request?: TransformationR
   try {
     // Check if we have a specific LLM transformation pattern
     const prompt = request?.prompt || generateDefaultPrompt(files);
-    
+
     // For now, implement a basic rule-based transformation that mimics LLM behavior
     // This can be replaced with actual LLM API calls (OpenAI, Anthropic, etc.)
-    
+
     const transformedFiles: string[] = [];
-    
+
     for (const filePath of files) {
       const content = await readFile(filePath, 'utf-8');
-      
+
       // Apply intelligent transformations based on content analysis
       let transformedContent = content;
-      
+
       // Advanced var-to-const/let with usage analysis
       transformedContent = await smartVarTransformation(transformedContent);
-      
+
       // Complex callback-to-promise-to-async transformations
       transformedContent = await advancedCallbackToAsync(transformedContent);
-      
+
       // Smart class modernization
       transformedContent = await modernizeClasses(transformedContent);
-      
+
       // Only write if content changed
       if (transformedContent !== content) {
         await writeFile(filePath, transformedContent, 'utf-8');
         transformedFiles.push(filePath);
       }
     }
-    
+
     return {
       filesModified: transformedFiles,
       transformationsApplied: transformedFiles.length,
@@ -567,38 +595,39 @@ function generateDefaultPrompt(files: string[]): string {
 async function smartVarTransformation(content: string): Promise<string> {
   // Advanced var analysis with scope tracking
   let transformed = content;
-  
+
   // Find all var declarations and analyze their usage
   const varDeclarations = content.match(/var\s+(\w+)\s*=\s*[^;]+;/g) || [];
-  
+
   for (const declaration of varDeclarations) {
     const varMatch = declaration.match(/var\s+(\w+)\s*=\s*(.+);/);
     if (varMatch) {
       const [fullDecl, varName, value] = varMatch;
-      
+
       // Check if variable is reassigned
       const reassignPattern = new RegExp(`\\b${varName}\\s*=\\s*[^=]`, 'g');
       const reassignments = content.match(reassignPattern) || [];
-      
+
       // Use const if not reassigned, let if reassigned
-      const replacement = reassignments.length > 1 ? 
-        fullDecl.replace('var', 'let') : 
-        fullDecl.replace('var', 'const');
-      
+      const replacement =
+        reassignments.length > 1
+          ? fullDecl.replace('var', 'let')
+          : fullDecl.replace('var', 'const');
+
       transformed = transformed.replace(fullDecl, replacement);
     }
   }
-  
+
   return transformed;
 }
 
 async function advancedCallbackToAsync(content: string): Promise<string> {
   // Transform complex callback patterns to async/await
   let transformed = content;
-  
+
   // Pattern: function(callback) where callback is (err, result) => {}
   const callbackPattern = /(\w+)\(\s*\(([^)]*err[^)]*)\)\s*=>\s*\{([^}]+)\}\s*\)/g;
-  
+
   transformed = transformed.replace(callbackPattern, (match, funcName, params, body) => {
     if (params.includes('err') && params.includes('result')) {
       return `try {
@@ -610,29 +639,27 @@ async function advancedCallbackToAsync(content: string): Promise<string> {
     }
     return match;
   });
-  
+
   return transformed;
 }
 
 async function modernizeClasses(content: string): Promise<string> {
   // Transform old-style constructor functions to modern classes
   let transformed = content;
-  
+
   // Pattern: function Constructor() { this.prop = value; }
   const constructorPattern = /function\s+(\w+)\s*\([^)]*\)\s*\{([^}]*this\.[^}]+)\}/g;
-  
+
   transformed = transformed.replace(constructorPattern, (match, className, body) => {
     const properties = body.match(/this\.(\w+)\s*=\s*([^;]+);/g) || [];
-    const constructorBody = properties.map(prop => 
-      prop.replace('this.', '    this.')
-    ).join('\n');
-    
+    const constructorBody = properties.map((prop) => prop.replace('this.', '    this.')).join('\n');
+
     return `class ${className} {
   constructor() {
 ${constructorBody}
   }
 }`;
   });
-  
+
   return transformed;
 }

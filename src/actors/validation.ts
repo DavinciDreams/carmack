@@ -66,23 +66,37 @@ async function validateFormat(files: string[]): Promise<ValidationResult> {
   try {
     // Use Biome for format validation
     const { execSync } = await import('child_process');
-    
+
     let hasErrors = false;
-    const errors: Array<{ code: string; message: string; severity: 'error' | 'warning' | 'info'; file?: string; line?: number; column?: number }> = [];
-    const warnings: Array<{ code: string; message: string; severity: 'error' | 'warning' | 'info'; file?: string; line?: number; column?: number }> = [];
+    const errors: Array<{
+      code: string;
+      message: string;
+      severity: 'error' | 'warning' | 'info';
+      file?: string;
+      line?: number;
+      column?: number;
+    }> = [];
+    const warnings: Array<{
+      code: string;
+      message: string;
+      severity: 'error' | 'warning' | 'info';
+      file?: string;
+      line?: number;
+      column?: number;
+    }> = [];
     let fixableIssues = 0;
 
     for (const file of files) {
       try {
         // Run biome check on the file
-        execSync(`bunx biome check ${file}`, { 
+        execSync(`bunx biome check ${file}`, {
           stdio: 'pipe',
-          encoding: 'utf8'
+          encoding: 'utf8',
         });
       } catch (error: any) {
         hasErrors = true;
         const output = error.stdout || error.stderr || error.message;
-        
+
         // Parse biome output for issues
         if (output.includes('Format')) {
           fixableIssues++;
@@ -127,16 +141,30 @@ async function fixFormat(files: string[]): Promise<ValidationResult> {
   try {
     // Use Biome to fix formatting
     const { execSync } = await import('child_process');
-    
-    const errors: Array<{ code: string; message: string; severity: 'error' | 'warning' | 'info'; file?: string; line?: number; column?: number }> = [];
-    const warnings: Array<{ code: string; message: string; severity: 'error' | 'warning' | 'info'; file?: string; line?: number; column?: number }> = [];
-    
+
+    const errors: Array<{
+      code: string;
+      message: string;
+      severity: 'error' | 'warning' | 'info';
+      file?: string;
+      line?: number;
+      column?: number;
+    }> = [];
+    const warnings: Array<{
+      code: string;
+      message: string;
+      severity: 'error' | 'warning' | 'info';
+      file?: string;
+      line?: number;
+      column?: number;
+    }> = [];
+
     for (const file of files) {
       try {
         // Run biome format --write on the file
-        execSync(`bunx biome format --write ${file}`, { 
+        execSync(`bunx biome format --write ${file}`, {
           stdio: 'pipe',
-          encoding: 'utf8'
+          encoding: 'utf8',
         });
       } catch (error: any) {
         const output = error.stdout || error.stderr || error.message;
@@ -173,13 +201,13 @@ async function validateTypes(files: string[]): Promise<ValidationResult> {
   try {
     // Run TypeScript compiler to check for errors
     const { execSync } = await import('child_process');
-    
+
     // Run tsc on the entire project (since individual file checking is complex)
-    execSync('bunx tsc --noEmit --pretty false', { 
+    execSync('bunx tsc --noEmit --pretty false', {
       encoding: 'utf8',
       cwd: process.cwd(),
     });
-    
+
     return {
       isValid: true,
       errors: [],
@@ -190,10 +218,12 @@ async function validateTypes(files: string[]): Promise<ValidationResult> {
     // Parse TypeScript errors from stderr
     const errorOutput = error.stdout || error.stderr || '';
     const errors: ErrorInfo[] = [];
-    
+
     // Parse TypeScript error format: filename(line,col): error TS####: message
-    const errorLines = errorOutput.split('\n').filter((line: string) => line.includes(': error TS'));
-    
+    const errorLines = errorOutput
+      .split('\n')
+      .filter((line: string) => line.includes(': error TS'));
+
     for (const line of errorLines) {
       const match = line.match(/^(.+?)\((\d+),(\d+)\): error (TS\d+): (.+)$/);
       if (match) {
@@ -202,8 +232,8 @@ async function validateTypes(files: string[]): Promise<ValidationResult> {
           code,
           message: message.trim(),
           file: file.trim(),
-          line: parseInt(lineStr, 10),
-          column: parseInt(colStr, 10),
+          line: Number.parseInt(lineStr, 10),
+          column: Number.parseInt(colStr, 10),
           severity: 'error' as const,
         });
       }

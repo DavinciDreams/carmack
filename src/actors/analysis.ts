@@ -93,12 +93,12 @@ async function analyzeComplexity(files: string[]): Promise<ComplexityMetrics> {
 
   try {
     const { readFile } = await import('fs/promises');
-    
+
     for (const filePath of files) {
       try {
         const content = await readFile(filePath, 'utf-8');
         const metrics = analyzeFileComplexity(content);
-        
+
         totalCyclomaticComplexity += metrics.cyclomaticComplexity;
         totalCognitiveComplexity += metrics.cognitiveComplexity;
         totalLinesOfCode += metrics.linesOfCode;
@@ -109,7 +109,7 @@ async function analyzeComplexity(files: string[]): Promise<ComplexityMetrics> {
         console.warn(`Warning: Could not analyze file ${filePath}:`, error);
       }
     }
-    
+
     return {
       cyclomaticComplexity: totalCyclomaticComplexity,
       cognitiveComplexity: totalCognitiveComplexity,
@@ -143,7 +143,7 @@ function analyzeFileComplexity(content: string): ComplexityMetrics {
 
   for (const line of lines) {
     const trimmed = line.trim();
-    
+
     // Skip comments and empty lines
     if (trimmed.startsWith('//') || trimmed.startsWith('/*') || trimmed === '') {
       continue;
@@ -168,8 +168,18 @@ function analyzeFileComplexity(content: string): ComplexityMetrics {
 
     // Complexity indicators
     const complexityPatterns = [
-      /\bif\b/, /\belse\b/, /\bwhile\b/, /\bfor\b/, /\bswitch\b/, /\bcase\b/,
-      /\btry\b/, /\bcatch\b/, /\bfinally\b/, /\?\s*.*\s*:/, /\&\&/, /\|\|/
+      /\bif\b/,
+      /\belse\b/,
+      /\bwhile\b/,
+      /\bfor\b/,
+      /\bswitch\b/,
+      /\bcase\b/,
+      /\btry\b/,
+      /\bcatch\b/,
+      /\bfinally\b/,
+      /\?\s*.*\s*:/,
+      /&&/,
+      /\|\|/,
     ];
 
     for (const pattern of complexityPatterns) {
@@ -198,7 +208,7 @@ function analyzeFileComplexity(content: string): ComplexityMetrics {
   return {
     cyclomaticComplexity,
     cognitiveComplexity,
-    linesOfCode: lines.filter(line => line.trim() !== '' && !line.trim().startsWith('//')).length,
+    linesOfCode: lines.filter((line) => line.trim() !== '' && !line.trim().startsWith('//')).length,
     nestingDepth: maxNestingDepth,
     functionCount,
     classCount,

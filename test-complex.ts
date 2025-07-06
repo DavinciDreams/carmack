@@ -12,15 +12,15 @@ function processComplexData(input: any[]): Promise<any> {
 
     var results = [];
     var errors = [];
-    
+
     for (var i = 0; i < input.length; i++) {
       var item = input[i];
-      
+
       if (item === null) {
         errors.push('Null item at index ' + i);
         continue;
       }
-      
+
       if (item.type === 'special') {
         var processed = processSpecialItem(item);
         if (processed != null) {
@@ -35,7 +35,7 @@ function processComplexData(input: any[]): Promise<any> {
         errors.push('Unknown item type: ' + item.type);
       }
     }
-    
+
     if (errors.length > 0) {
       console.log('Error: Processing completed with errors:', errors);
       resolve({ results, errors });
@@ -48,17 +48,17 @@ function processComplexData(input: any[]): Promise<any> {
 function processSpecialItem(item: any): any {
   var config = getConfig();
   var validator = getValidator();
-  
+
   if (validator.validate(item) === false) {
     return null;
   }
-  
+
   var transformed = {
     id: item.id,
     value: item.value * config.multiplier,
-    timestamp: Date.now()
+    timestamp: Date.now(),
   };
-  
+
   return transformed;
 }
 
@@ -66,16 +66,16 @@ function processNormalItem(item: any): any {
   var result = {
     id: item.id,
     value: item.value,
-    processed: true
+    processed: true,
   };
-  
+
   return result;
 }
 
 function getConfig(): any {
   return {
     multiplier: 2,
-    threshold: 100
+    threshold: 100,
   };
 }
 
@@ -86,7 +86,7 @@ function getValidator(): any {
       if (item.value === undefined) return false;
       if (item.id === null) return false;
       return true;
-    }
+    },
   };
 }
 

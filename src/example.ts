@@ -3,7 +3,9 @@ var userName = 'john_doe';
 var userAge = 25;
 var isActive = true;
 
-function getUserInfo(id: number): Promise<{ id: number; name: string; age: number; active: boolean }> {
+function getUserInfo(
+  id: number
+): Promise<{ id: number; name: string; age: number; active: boolean }> {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       if (id === 0) {
