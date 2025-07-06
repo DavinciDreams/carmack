@@ -1,6 +1,7 @@
 import { assign, setup } from 'xstate';
 // Actor imports
 import { analysisActor } from './actors/analysis.ts';
+import type { AnalysisResult } from './actors/analysis.ts';
 import { complexityActor } from './actors/complexity.ts';
 import { dafnyActor } from './actors/dafny.ts';
 import { gitActor } from './actors/git.ts';
@@ -84,14 +85,16 @@ const _carmackCoderMachine = setup({
     }),
 
     assignAnalysisResults: assign(({ context, event }) => {
-      if (event.type !== 'ANALYSIS_COMPLETE' || !context.currentTransformation) return context;
+      if (event.type !== 'xstate.done.actor.analysis' || !context.currentTransformation) return context;
+
+      const analysisResult = event.output as AnalysisResult;
 
       return {
         ...context,
         currentTransformation: {
           ...context.currentTransformation,
-          mode: event.recommendedMode,
-          complexity: event.complexity,
+          mode: analysisResult.recommendedMode || context.currentTransformation.mode,
+          complexity: analysisResult.complexity || context.currentTransformation.complexity,
           status: 'analyzing' as const,
         },
       };
