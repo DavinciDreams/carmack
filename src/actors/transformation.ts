@@ -49,8 +49,10 @@ async function applyTemplateTransformation(files: string[], patterns: AstPattern
   const filesModified: string[] = [];
   let totalTransformations = 0;
 
-  // Get only template-mode patterns (low complexity, safe transformations)
-  const templatePatterns = patterns.filter((p) => p.complexity <= 2 && p.riskLevel === 'low');
+  // Get template-mode patterns (safe transformations with reasonable complexity)
+  const templatePatterns = patterns.filter((p) => 
+    p.complexity <= 3 && (p.riskLevel === 'low' || p.riskLevel === 'medium')
+  );
 
   for (const filePath of files) {
     try {
