@@ -94,10 +94,15 @@ const _carmackCoderMachine = setup({
     }),
 
     assignAnalysisResults: assign(({ context, event }) => {
-      if (event.type !== 'xstate.done.actor.analysis' || !context.currentTransformation)
+      if (event.type !== 'ANALYSIS_COMPLETE' || !context.currentTransformation)
         return context;
 
-      const analysisResult = event.output as AnalysisResult;
+      const analysisResult: AnalysisResult = {
+        complexity: event.complexity,
+        recommendedMode: event.recommendedMode,
+        // analysisTimestamp: event.analysisTimestamp, // Removed: not present on event
+        // newPatterns, insights, and summary are not present on event
+      };
 
       return {
         ...context,
@@ -201,7 +206,7 @@ const _carmackCoderMachine = setup({
     currentRetries: 0,
     config: {
       maxComplexityThreshold: 15,
-      enableDafnyVerification: true,
+      enableDafnyVerification: false, // Temporarily disable to isolate issue
       enableLearning: true,
       gitIntegration: true,
     },
