@@ -775,6 +775,9 @@ ${constructorBody}
 async function strictEqualityAST(_root: any, content: string, _lang: any): Promise<string> {
   try {
     console.log('🔄 Processing strict equality conversions...');
+    console.log('📝 Content length:', content.length);
+    console.log('📝 Content preview:', content.substring(0, 200));
+    
     let modifiedContent = content;
 
     // Convert == to === but avoid already strict comparisons
@@ -782,6 +785,9 @@ async function strictEqualityAST(_root: any, content: string, _lang: any): Promi
 
     if (modifiedContent !== content) {
       console.log('✅ Strict equality transformations applied');
+      console.log('📝 Modified content preview:', modifiedContent.substring(0, 200));
+    } else {
+      console.log('⚠️ No strict equality patterns found to transform');
     }
 
     return modifiedContent;
