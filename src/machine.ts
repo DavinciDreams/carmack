@@ -77,7 +77,7 @@ const _carmackCoderMachine = setup({
         id: crypto.randomUUID(),
         request: event.request,
         status: 'pending' as const,
-        mode: 'template' as TransformationMode, // Default, will be determined by analysis
+        mode: event.request.transformationType, // Use the requested transformation mode
         startTime: Date.now(),
         filesModified: [],
         errors: [],
