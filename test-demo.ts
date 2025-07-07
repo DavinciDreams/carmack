@@ -20,4 +20,4 @@ getData().then((result) => {
 const greeting = 'Hello ' + userName + '!';
 
 // Unnecessary return
-const add = (a, b) => { return a + b; };
+const add = (a, b) => a + b;
