@@ -1,15 +1,31 @@
 import { readFile, writeFile } from 'node:fs/promises';
 // Import AST-grep for syntax tree parsing
-import { js, ts } from '@ast-grep/napi';
+import { js, ts, type SgNode } from '@ast-grep/napi';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
 import type { AstPattern, TransformationRequest } from '../types.js';
+
+// Enhanced pattern schema with ast-grep support
+const AstPatternSchema = z.object({
+  id: z.string(),
+  language: z.enum(['typescript', 'javascript']),
+  mode: z.enum(['template', 'ast', 'llm']),
+  astPattern: z.object({
+    rule: z.any()
+  }).optional(),
+  pattern: z.string().optional(),
+  replacement: z.string(),
+  description: z.string(),
+  complexity: z.number(),
+  riskLevel: z.enum(['low', 'medium', 'high']),
+  categories: z.array(z.string()).optional()
+});
 
 // Transformation input schema
 const TransformationInputSchema = z.object({
   mode: z.enum(['template', 'ast', 'llm']),
   files: z.array(z.string()),
-  patterns: z.array(z.any()), // AstPattern schema
+  patterns: z.array(AstPatternSchema),
   request: z.any().optional(), // TransformationRequest schema
 });
 

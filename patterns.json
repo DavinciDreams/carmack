@@ -1,28 +1,74 @@
 {
-  "version": "2.0.0",
-  "description": "Enhanced AST transformation patterns with semantic context awareness",
+  "version": "3.0.0",
+  "description": "Robust AST-grep powered transformation patterns with semantic context awareness",
   "patterns": [
     {
       "id": "smart-var-to-const-let",
       "language": "typescript",
-      "pattern": "var $NAME = $VALUE",
+      "mode": "ast",
+      "pattern": {
+        "rule": {
+          "pattern": "var $NAME = $VALUE"
+        }
+      },
       "replacement": "const $NAME = $VALUE",
       "description": "Smart conversion of var to const/let based on usage analysis",
       "complexity": 3,
-      "riskLevel": "medium"
+      "riskLevel": "medium",
+      "astGrep": {
+        "rule": {
+          "pattern": "var $NAME = $VALUE",
+          "kind": "variable_declarator"
+        },
+        "fix": "const $NAME = $VALUE"
+      }
     },
     {
       "id": "strict-equality",
-      "language": "typescript",
-      "pattern": "$LEFT == $RIGHT",
+      "language": "typescript", 
+      "mode": "ast",
+      "pattern": {
+        "rule": {
+          "pattern": "$LEFT == $RIGHT"
+        }
+      },
       "replacement": "$LEFT === $RIGHT",
       "description": "Convert loose equality to strict equality",
       "complexity": 1,
-      "riskLevel": "low"
+      "riskLevel": "low",
+      "astGrep": {
+        "rule": {
+          "pattern": "$LEFT == $RIGHT",
+          "kind": "binary_expression"
+        },
+        "fix": "$LEFT === $RIGHT"
+      }
+    },
+    {
+      "id": "strict-inequality",
+      "language": "typescript",
+      "mode": "ast", 
+      "pattern": {
+        "rule": {
+          "pattern": "$LEFT != $RIGHT"
+        }
+      },
+      "replacement": "$LEFT !== $RIGHT",
+      "description": "Convert loose inequality to strict inequality",
+      "complexity": 1,
+      "riskLevel": "low",
+      "astGrep": {
+        "rule": {
+          "pattern": "$LEFT != $RIGHT",
+          "kind": "binary_expression"
+        },
+        "fix": "$LEFT !== $RIGHT"
+      }
     },
     {
       "id": "console-log-to-console-error",
       "language": "typescript",
+      "mode": "template",
       "pattern": "console.log('Error:",
       "replacement": "console.error('Error:",
       "description": "Convert console.log for errors to console.error",
@@ -32,34 +78,140 @@
     {
       "id": "promise-to-async-await",
       "language": "typescript",
-      "pattern": "$PROMISE.then(($RESULT) => { $BODY })",
-      "replacement": "const $RESULT = await $PROMISE;\n$BODY",
+      "mode": "ast",
+      "pattern": {
+        "rule": {
+          "pattern": "$PROMISE.then($CALLBACK)",
+          "kind": "call_expression"
+        }
+      },
+      "replacement": "const $RESULT = await $PROMISE;",
       "description": "Convert Promise.then() chains to async/await",
       "complexity": 4,
-      "riskLevel": "medium"
+      "riskLevel": "medium",
+      "astGrep": {
+        "rule": {
+          "pattern": "$PROMISE.then(($RESULT) => { $$$BODY })",
+          "kind": "call_expression"
+        },
+        "fix": "const $RESULT = await $PROMISE;\n$$$BODY"
+      }
     },
     {
-      "id": "enhanced-object-destructuring",
+      "id": "object-property-shorthand",
       "language": "typescript",
-      "pattern": "const $VAR1 = $OBJ.$PROP1;\nconst $VAR2 = $OBJ.$PROP2;",
-      "replacement": "const { $PROP1: $VAR1, $PROP2: $VAR2 } = $OBJ;",
-      "description": "Convert multiple property access to destructuring",
+      "mode": "ast",
+      "pattern": {
+        "rule": {
+          "pattern": "{ $KEY: $KEY }",
+          "kind": "object_expression"
+        }
+      },
+      "replacement": "{ $KEY }",
+      "description": "Use object property shorthand syntax",
+      "complexity": 1,
+      "riskLevel": "low",
+      "astGrep": {
+        "rule": {
+          "pattern": "{ $KEY: $KEY }",
+          "kind": "object_expression"
+        },
+        "fix": "{ $KEY }"
+      }
+    },
+    {
+      "id": "array-includes-instead-of-indexof",
+      "language": "typescript", 
+      "mode": "ast",
+      "pattern": {
+        "rule": {
+          "pattern": "$ARR.indexOf($ITEM) !== -1",
+          "kind": "binary_expression"
+        }
+      },
+      "replacement": "$ARR.includes($ITEM)",
+      "description": "Use Array.includes() instead of indexOf() !== -1",
+      "complexity": 2,
+      "riskLevel": "low",
+      "astGrep": {
+        "rule": {
+          "pattern": "$ARR.indexOf($ITEM) !== -1",
+          "kind": "binary_expression"
+        },
+        "fix": "$ARR.includes($ITEM)"
+      }
+    },
+    {
+      "id": "const-loop-variable",
+      "language": "typescript",
+      "mode": "ast", 
+      "pattern": {
+        "rule": {
+          "pattern": "for (const $VAR = $INIT; $COND; $UPDATE)",
+          "kind": "for_statement"
+        }
+      },
+      "replacement": "for (let $VAR = $INIT; $COND; $UPDATE)",
+      "description": "Fix const loop variables that get reassigned",
+      "complexity": 2,
+      "riskLevel": "medium",
+      "astGrep": {
+        "rule": {
+          "pattern": "for (const $VAR = $INIT; $COND; $UPDATE)",
+          "kind": "for_statement"
+        },
+        "fix": "for (let $VAR = $INIT; $COND; $UPDATE)"
+      }
+    },
+    {
+      "id": "template-literal-conversion",
+      "language": "typescript",
+      "mode": "ast",
+      "pattern": {
+        "rule": {
+          "pattern": "$STR1 + $VAR + $STR2",
+          "kind": "binary_expression"
+        }
+      },
+      "replacement": "`${$STR1}${$VAR}${$STR2}`",
+      "description": "Convert string concatenation to template literals",
       "complexity": 3,
-      "riskLevel": "low"
+      "riskLevel": "low",
+      "astGrep": {
+        "rule": {
+          "pattern": "$STR1 + $VAR + $STR2",
+          "kind": "binary_expression"
+        },
+        "fix": "`${$STR1}${$VAR}${$STR2}`"
+      }
     },
     {
       "id": "remove-unnecessary-returns",
       "language": "typescript",
-      "pattern": "($PARAMS) => { return $EXPR; }",
-      "replacement": "($PARAMS) => $EXPR",
+      "mode": "ast",
+      "pattern": {
+        "rule": {
+          "pattern": "($$$PARAMS) => { return $EXPR; }",
+          "kind": "arrow_function"
+        }
+      },
+      "replacement": "($$$PARAMS) => $EXPR",
       "description": "Remove unnecessary return statements from arrow functions",
       "complexity": 2,
-      "riskLevel": "low"
+      "riskLevel": "low",
+      "astGrep": {
+        "rule": {
+          "pattern": "($$$PARAMS) => { return $EXPR; }",
+          "kind": "arrow_function"
+        },
+        "fix": "($$$PARAMS) => $EXPR"
+      }
     }
   ],
   "categories": {
-    "modernization": ["smart-var-to-const-let", "strict-equality", "promise-to-async-await"],
-    "optimization": ["enhanced-object-destructuring", "remove-unnecessary-returns"],
+    "modernization": ["smart-var-to-const-let", "strict-equality", "strict-inequality", "promise-to-async-await"],
+    "optimization": ["object-property-shorthand", "remove-unnecessary-returns", "template-literal-conversion"],
+    "safety": ["array-includes-instead-of-indexof", "const-loop-variable"],
     "logging": ["console-log-to-console-error"]
   },
   "metadata": {
@@ -67,6 +219,8 @@
     "author": "Carmack Coder",
     "license": "MIT",
     "lastUpdated": "2025-01-06",
-    "totalPatterns": 6
+    "totalPatterns": 10,
+    "astGrepVersion": "0.38.6",
+    "features": ["AST-aware transformations", "Semantic analysis", "Pattern validation"]
   }
 }

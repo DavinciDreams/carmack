@@ -27,15 +27,20 @@ export const ComplexityMetricsSchema = z.object({
   classCount: z.number().int().min(0),
 });
 
-// AST pattern schema
+// AST pattern schema with enhanced ast-grep support
 export const AstPatternSchema = z.object({
   id: z.string(),
-  language: z.string(),
-  pattern: z.string(),
+  language: z.enum(['typescript', 'javascript']),
+  mode: z.enum(['template', 'ast', 'llm']),
+  astPattern: z.object({
+    rule: z.any()
+  }).optional(),
+  pattern: z.string().optional(),
   replacement: z.string(),
   description: z.string(),
   complexity: z.number().int().min(1).max(10),
   riskLevel: z.enum(['low', 'medium', 'high']),
+  categories: z.array(z.string()).optional(),
 });
 
 // Error handling
