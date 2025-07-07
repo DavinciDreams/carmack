@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  carmack-coder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: carmack-production
+    environment:
+      - NODE_ENV=production
+      - CARMACK_WORKSPACE=/workspace
+      - CARMACK_LOG_LEVEL=info
+      - CARMACK_TELEMETRY_ENABLED=true
+    volumes:
+      # Mount workspace for persistent storage
+      - carmack-workspace:/workspace
+      # Mount git credentials if needed
+      - ${HOME}/.gitconfig:/home/carmack/.gitconfig:ro
+      - ${HOME}/.ssh:/home/carmack/.ssh:ro
+      # Mount custom configuration
+      - ./production.config.ts:/app/production.config.ts:ro
+    networks:
+      - carmack-network
+    restart: unless-stopped
+    command: >
+      --repository https://github.com/your-org/your-repo.git
+      --branch main
+      --auto-commit
+      --risk-level low
+      --verbose
+
+  carmack-monitor:
+    image: grafana/grafana:latest
+    container_name: carmack-monitor
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=carmack123
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana:/etc/grafana/provisioning
+    networks:
+      - carmack-network
+    restart: unless-stopped
+
+  carmack-metrics:
+    image: prom/prometheus:latest
+    container_name: carmack-metrics
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    networks:
+      - carmack-network
+    restart: unless-stopped
+
+networks:
+  carmack-network:
+    driver: bridge
+
+volumes:
+  carmack-workspace:
+    driver: local
+  grafana-data:
+    driver: local
+  prometheus-data:
+    driver: local

@@ -1,0 +1,56 @@
+groups:
+- name: carmack_coder_alerts
+  rules:
+  - alert: TransformationFailed
+    expr: carmack_transformation_failures_total > 0
+    for: 0m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Carmack Coder transformation failed"
+      description: "A transformation has failed with {{ $value }} failures in the last 5 minutes"
+
+  - alert: HighComplexityIncrease
+    expr: carmack_complexity_increase_ratio > 0.2
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High complexity increase detected"
+      description: "Complexity increased by {{ $value }}% which exceeds the threshold"
+
+  - alert: TransformationTimeout
+    expr: carmack_transformation_duration_seconds > 300
+    for: 0m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Transformation taking too long"
+      description: "Transformation has been running for {{ $value }} seconds"
+
+  - alert: LowTestCoverage
+    expr: carmack_test_coverage_ratio < 0.8
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Test coverage below threshold"
+      description: "Test coverage is {{ $value }}% which is below the 80% threshold"
+
+  - alert: HighMemoryUsage
+    expr: carmack_memory_usage_bytes / (1024*1024*1024) > 1
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High memory usage"
+      description: "Memory usage is {{ $value }}GB which exceeds the threshold"
+
+  - alert: GitOperationFailed
+    expr: carmack_git_operation_failures_total > 0
+    for: 0m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Git operation failed"
+      description: "A git operation has failed {{ $value }} times"

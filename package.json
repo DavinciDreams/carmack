@@ -15,6 +15,16 @@
     "test": "bun test",
     "verify": "dafny verify src/**/*.dfy",
     "all-checks": "bun run format && bun run lint && bun run type-check",
+    "production": "bun run production.ts",
+    "production:dry-run": "bun run production.ts --dry-run --verbose",
+    "production:build": "bun build production.ts --outdir ./dist",
+    "docker:build": "docker build -t carmack-coder:latest .",
+    "docker:run": "docker-compose up -d",
+    "docker:stop": "docker-compose down",
+    "docker:logs": "docker-compose logs -f carmack-coder",
+    "k8s:deploy": "kubectl apply -f k8s/",
+    "k8s:delete": "kubectl delete -f k8s/",
+    "monitor": "open http://localhost:3000",
     "status": "echo '🚀 Carmack Coder Status Check' && bun run format && bun run lint && echo '✅ Linting: Clean' && bun run dev && echo '✅ Runtime: Functional' && echo '⚠️  TypeScript: 1 non-blocking XState warning' && echo '🎯 Overall: Production Ready!'"
   },
   "engines": {
