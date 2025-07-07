@@ -271,37 +271,37 @@ async function applyAstTransformation(files: string[], patterns: AstPattern[]) {
 
         switch (pattern.id) {
           case 'smart-var-to-const-let':
-            modifiedContent = await smartVarToConstLetAST(root, content, lang);
+            modifiedContent = await smartVarToConstLetAST(root, modifiedContent, lang);
             break;
 
           case 'promise-to-async-await':
-            modifiedContent = await promiseToAsyncAwaitAST(root, content, lang);
+            modifiedContent = await promiseToAsyncAwaitAST(root, modifiedContent, lang);
             break;
 
           case 'enhanced-object-destructuring':
-            modifiedContent = await enhanceObjectDestructuring(root, content, lang);
+            modifiedContent = await enhanceObjectDestructuring(root, modifiedContent, lang);
             break;
 
           case 'remove-unnecessary-returns':
-            modifiedContent = await removeUnnecessaryReturns(root, content, lang);
+            modifiedContent = await removeUnnecessaryReturns(root, modifiedContent, lang);
             break;
 
           case 'combine-variable-declarations':
-            modifiedContent = await combineVariableDeclarations(root, content, lang);
+            modifiedContent = await combineVariableDeclarations(root, modifiedContent, lang);
             break;
 
           case 'callback-to-promise':
-            modifiedContent = await callbackToPromise(root, content, lang);
+            modifiedContent = await callbackToPromise(root, modifiedContent, lang);
             break;
 
           case 'modernize-function-declarations':
-            modifiedContent = await modernizeFunctionDeclarations(root, content, lang);
+            modifiedContent = await modernizeFunctionDeclarations(root, modifiedContent, lang);
             break;
 
           default:
             // Apply generic AST pattern if it has AST-grep syntax
             if (pattern.pattern && pattern.replacement) {
-              modifiedContent = await applyGenericASTPattern(root, content, pattern, lang);
+              modifiedContent = await applyGenericASTPattern(root, modifiedContent, pattern, lang);
             }
             break;
         }
@@ -338,21 +338,35 @@ async function applyAstTransformation(files: string[], patterns: AstPattern[]) {
 /**
  * AST-based smart var to const/let transformation
  */
-async function smartVarToConstLetAST(root: any, content: string, _lang: any): Promise<string> {
+async function smartVarToConstLetAST(_root: any, content: string, _lang: any): Promise<string> {
   try {
-    // Simplified AST transformation using regex-based approach
+    console.log('🔄 Processing var declarations for AST transformation...');
     let modifiedContent = content;
 
-    // Smart var to const/let conversion
-    const varRegex = /\bvar\s+(\w+)\s*=\s*([^;]+);/g;
+    // Enhanced var to const/let conversion with better pattern matching
+    const varRegex = /^(\s*)var\s+(\w+)\s*=\s*([^;]+);?\s*$/gm;
 
-    modifiedContent = modifiedContent.replace(varRegex, (match, varName, value) => {
+    modifiedContent = modifiedContent.replace(varRegex, (match, indent, varName, value) => {
+      console.log(`🔄 Found var declaration: ${varName} = ${value.trim()}`);
+      
+      // Analyze the value to decide between const and let
+      const trimmedValue = value.trim();
+      
       // Use const for literals, let for other cases
-      if (/^(\d+|'[^']*'|"[^"]*"|true|false|null|undefined|\[|\{)/.test(value.trim())) {
-        return `const ${varName} = ${value};`;
+      if (isLiteralValue(trimmedValue)) {
+        console.log(`✅ Converting var ${varName} to const (literal value)`);
+        return `${indent}const ${varName} = ${value};`;
+      } else {
+        console.log(`✅ Converting var ${varName} to let (non-literal value)`);
+        return `${indent}let ${varName} = ${value};`;
       }
-      return `let ${varName} = ${value};`;
     });
+
+    if (modifiedContent !== content) {
+      console.log('✅ AST var transformation applied successfully');
+    } else {
+      console.log('⚠️ No var declarations found to transform');
+    }
 
     return modifiedContent;
   } catch (error) {
@@ -362,19 +376,41 @@ async function smartVarToConstLetAST(root: any, content: string, _lang: any): Pr
 }
 
 /**
+ * Check if a value looks like a literal (should use const)
+ */
+function isLiteralValue(value: string): boolean {
+  const trimmed = value.trim();
+  return (
+    /^['"`]/.test(trimmed) || // String literal
+    /^\d+\.?\d*$/.test(trimmed) || // Number literal
+    /^(true|false)$/.test(trimmed) || // Boolean literal
+    /^\[.*\]$/.test(trimmed) || // Array literal
+    /^\{.*\}$/.test(trimmed) // Object literal
+  );
+}
+
+/**
  * Convert Promise chains to async/await
  */
 async function promiseToAsyncAwaitAST(_root: any, content: string, _lang: any): Promise<string> {
   try {
-    // Simplified Promise to async/await transformation using regex
+    console.log('🔄 Processing Promise chains for AST transformation...');
     let modifiedContent = content;
 
-    // Basic .then() to async/await conversion
+    // Enhanced Promise to async/await transformation using regex
     const thenRegex = /(\w+)\.then\(\s*\((\w+)\)\s*=>\s*\{([^}]+)\}\s*\)/g;
 
-    modifiedContent = modifiedContent.replace(thenRegex, (_match, promise, param, body) => {
+    modifiedContent = modifiedContent.replace(thenRegex, (match, promise, param, body) => {
+      console.log(`🔄 Found Promise chain: ${promise}.then((${param}) => ...)`);
+      console.log(`✅ Converting to: const ${param} = await ${promise};`);
       return `const ${param} = await ${promise};\n${body.trim()}`;
     });
+
+    if (modifiedContent !== content) {
+      console.log('✅ AST Promise transformation applied successfully');
+    } else {
+      console.log('⚠️ No Promise chains found to transform');
+    }
 
     return modifiedContent;
   } catch (error) {
