@@ -1,31 +1,15 @@
 import { readFile, writeFile } from 'node:fs/promises';
 // Import AST-grep for syntax tree parsing
-import { js, ts, type SgNode } from '@ast-grep/napi';
+import { js, ts } from '@ast-grep/napi';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
 import type { AstPattern, TransformationRequest } from '../types.js';
-
-// Enhanced pattern schema with ast-grep support
-const AstPatternSchema = z.object({
-  id: z.string(),
-  language: z.enum(['typescript', 'javascript']),
-  mode: z.enum(['template', 'ast', 'llm']),
-  astPattern: z.object({
-    rule: z.any()
-  }).optional(),
-  pattern: z.string().optional(),
-  replacement: z.string(),
-  description: z.string(),
-  complexity: z.number(),
-  riskLevel: z.enum(['low', 'medium', 'high']),
-  categories: z.array(z.string()).optional()
-});
 
 // Transformation input schema
 const TransformationInputSchema = z.object({
   mode: z.enum(['template', 'ast', 'llm']),
   files: z.array(z.string()),
-  patterns: z.array(AstPatternSchema),
+  patterns: z.array(z.any()), // AstPattern schema
   request: z.any().optional(), // TransformationRequest schema
 });
 
@@ -77,58 +61,86 @@ async function applyTemplateTransformation(files: string[], patterns: AstPattern
       let modifiedContent = content;
       let fileModified = false;
 
-      // Apply enhanced template patterns
+      // Apply enhanced template patterns with robust matching
       for (const pattern of templatePatterns) {
         const beforeContent = modifiedContent;
 
         switch (pattern.id) {
           case 'smart-var-to-const-let':
-            // Use enhanced var conversion
+            // Enhanced var conversion with better scoping analysis
             modifiedContent = await enhancedVarTransformation(modifiedContent);
             break;
 
           case 'strict-equality':
-            // Enhanced == to === with better regex
-            modifiedContent = modifiedContent.replace(/([^!=])\s*==\s*([^=])/g, '$1 === $2');
+            // Enhanced == to === with better regex that avoids operators
+            modifiedContent = modifiedContent.replace(/([a-zA-Z_$][\w.]*|\)|\])\s*==\s*([a-zA-Z_$][\w.]*|['"`][^'"`]*['"`]|\d+|true|false|null|undefined|\()/g, '$1 === $2');
+            break;
+
+          case 'strict-inequality':
+            // Enhanced != to !== with better regex
+            modifiedContent = modifiedContent.replace(/([a-zA-Z_$][\w.]*|\)|\])\s*!=\s*([a-zA-Z_$][\w.]*|['"`][^'"`]*['"`]|\d+|true|false|null|undefined|\()/g, '$1 !== $2');
             break;
 
           case 'console-log-to-console-error':
-            // Convert console.log('Error:') to console.error()
+            // Convert console.log('Error:') to console.error() with flexible quotes
             modifiedContent = modifiedContent.replace(
-              /console\.log\(\s*['"`]Error:['"`]/g,
-              "console.error('Error:'"
+              /console\.log\(\s*(['"`])Error:/g,
+              "console.error($1Error:"
             );
             break;
 
-          case 'object-shorthand-properties':
-            // Convert { id: id, name: name } to { id, name }
+          case 'object-property-shorthand':
+            // Convert { id: id, name: name } to { id, name } with robust matching
             modifiedContent = modifiedContent.replace(
-              /{\s*(\w+):\s*\1\s*,\s*(\w+):\s*\2\s*}/g,
+              /{\s*([a-zA-Z_$]\w*)\s*:\s*\1\s*}/g,
+              '{ $1 }'
+            );
+            // Handle multiple properties
+            modifiedContent = modifiedContent.replace(
+              /{\s*([a-zA-Z_$]\w*)\s*:\s*\1\s*,\s*([a-zA-Z_$]\w*)\s*:\s*\2\s*}/g,
               '{ $1, $2 }'
             );
             break;
 
-          case 'template-literals-simple':
-            // Convert 'str' + var + 'str' to `str${var}str`
+          case 'template-literal-conversion':
+            // Convert 'str' + var + 'str' to `str${var}str` with proper escaping
             modifiedContent = modifiedContent.replace(
-              /'([^']*?)'\s*\+\s*(\w+)\s*\+\s*'([^']*?)'/g,
+              /['"`]([^'"`]*?)['"`]\s*\+\s*([a-zA-Z_$][\w.]*)\s*\+\s*['"`]([^'"`]*?)['"`]/g,
               '`$1${$2}$3`'
             );
             break;
 
-          case 'array-includes-over-indexof':
+          case 'array-includes-instead-of-indexof':
             // Convert array.indexOf(item) !== -1 to array.includes(item)
             modifiedContent = modifiedContent.replace(
-              /(\w+)\.indexOf\(([^)]+)\)\s*!==\s*-1/g,
+              /([a-zA-Z_$][\w.]*|\))\.indexOf\(([^)]+)\)\s*!==\s*-1/g,
               '$1.includes($2)'
             );
             break;
 
-          case 'for-loop-to-foreach':
-            // Convert simple for loops that just call a function
+          case 'const-loop-variable-fix':
+            // Fix const loop variables to let
             modifiedContent = modifiedContent.replace(
-              /for\s*\(\s*let\s+\w+\s*=\s*0;\s*\w+\s*<\s*(\w+)\.length;\s*\w+\+\+\s*\)\s*{\s*(\w+)\((\w+)\[\w+\]\);\s*}/g,
-              '$1.forEach($2);'
+              /for\s*\(\s*const\s+([a-zA-Z_$]\w*)\s*=\s*([^;]+);\s*([^;]+);\s*([^)]+)\)/g,
+              'for (let $1 = $2; $3; $4)'
+            );
+            break;
+
+          case 'remove-unnecessary-returns':
+            // Remove unnecessary return from arrow functions
+            modifiedContent = modifiedContent.replace(
+              /\(\s*([^)]*)\s*\)\s*=>\s*{\s*return\s+([^;]+);\s*}/g,
+              '($1) => $2'
+            );
+            break;
+
+          case 'promise-to-async-await':
+            // Enhanced Promise.then() to async/await conversion
+            modifiedContent = modifiedContent.replace(
+              /([a-zA-Z_$][\w.]*|\))\.then\(\s*\(\s*([a-zA-Z_$]\w*)\s*\)\s*=>\s*{\s*([^}]+)\s*}\s*\)/g,
+              (match, promise, param, body) => {
+                return `const ${param} = await ${promise};\n${body.trim()}`;
+              }
             );
             break;
         }
