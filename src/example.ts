@@ -44,7 +44,7 @@ for (let i = 0; i < userList.length; i++) {
 // Some more patterns to transform
 function calculateTotal(items: Array<{ price: number }>): number {
   let total = 0;
-  for (const j = 0; j < items.length; j++) {
+  for (let j = 0; j < items.length; j++) {
     total = total + items[j].price;
   }
   return total;
