@@ -14,7 +14,7 @@ function testPatterns() {
   
   // Array includes pattern
   const items = [1, 2, 3, 4, 5];
-  if (items.indexOf(3) !== -1) {  // Should become items.includes(3)
+  if (items.includes(3)) {  // Should become items.includes(3)
     console.log('Found 3');
   }
   
@@ -27,10 +27,10 @@ function testPatterns() {
   };
   
   // Template literal conversion
-  const greeting = 'Hello ' + name + '!';  // Should become template literal
+  const greeting = `Hello ${name}!`;  // Should become template literal
   
   // Unnecessary return
-  const double = (x) => { return x * 2; };  // Should remove return
+  const double = (x) => x * 2;  // Should remove return
   
   return user;
 }
