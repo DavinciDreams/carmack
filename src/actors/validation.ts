@@ -1,6 +1,37 @@
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
+import { execSync } from 'node:child_process';
+import { join } from 'node:path';
 import type { ErrorInfo, ValidationResult } from '../types.js';
+
+// Utility function to get the correct Bun executable path
+function getBunExecutable(): string {
+  // Check if bunx is available in PATH
+  try {
+    execSync('bunx --version', { stdio: 'pipe' });
+    return 'bunx';
+  } catch {
+    // Fall back to direct bun path or full path on Windows
+    const possiblePaths = [
+      'bun',
+      'C:\\Users\\lmwat\\.bun\\bin\\bun.exe',
+      join(process.env.HOME || process.env.USERPROFILE || '', '.bun', 'bin', 'bun'),
+      join(process.env.HOME || process.env.USERPROFILE || '', '.bun', 'bin', 'bun.exe'),
+    ];
+    
+    for (const path of possiblePaths) {
+      try {
+        execSync(`"${path}" --version`, { stdio: 'pipe' });
+        return `"${path}" x`; // Use 'bun x' instead of 'bunx'
+      } catch {
+        // Continue to next path
+      }
+    }
+    
+    // Final fallback
+    return 'bunx';
+  }
+}
 
 // Validation input schema
 const ValidationInputSchema = z.union([
@@ -89,7 +120,8 @@ async function validateFormat(files: string[]): Promise<ValidationResult> {
     for (const file of files) {
       try {
         // Run biome check on the file
-        execSync(`bunx biome check ${file}`, {
+        const bunCmd = getBunExecutable();
+        execSync(`${bunCmd} biome check ${file}`, {
           stdio: 'pipe',
           encoding: 'utf8',
         });
@@ -162,7 +194,8 @@ async function fixFormat(files: string[]): Promise<ValidationResult> {
     for (const file of files) {
       try {
         // Run biome format --write on the file
-        execSync(`bunx biome format --write ${file}`, {
+        const bunCmd = getBunExecutable();
+        execSync(`${bunCmd} biome format --write ${file}`, {
           stdio: 'pipe',
           encoding: 'utf8',
         });
@@ -203,7 +236,8 @@ async function validateTypes(files: string[]): Promise<ValidationResult> {
     const { execSync } = await import('child_process');
 
     // Run tsc on the entire project (since individual file checking is complex)
-    execSync('bunx tsc --noEmit --pretty false', {
+    const bunCmd = getBunExecutable();
+    execSync(`${bunCmd} tsc --noEmit --pretty false`, {
       encoding: 'utf8',
       cwd: process.cwd(),
     });
