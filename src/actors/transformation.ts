@@ -9,7 +9,16 @@ import type { AstPattern, TransformationRequest } from '../types.js';
 const TransformationInputSchema = z.object({
   mode: z.enum(['template', 'ast', 'llm']),
   files: z.array(z.string()),
-  patterns: z.array(z.any()), // AstPattern schema
+  patterns: z.array(z.object({
+    id: z.string(),
+    language: z.string(),
+    pattern: z.string(),
+    replacement: z.string(),
+    description: z.string(),
+    complexity: z.number(),
+    riskLevel: z.enum(['low', 'medium', 'high']),
+    mode: z.enum(['template', 'ast', 'llm']).optional().default('template'),
+  })),
   request: z.any().optional(), // TransformationRequest schema
 });
 
@@ -51,7 +60,9 @@ async function applyTemplateTransformation(files: string[], patterns: AstPattern
 
   // Get template-mode patterns (safe transformations with reasonable complexity)
   const templatePatterns = patterns.filter((p) => 
-    p.complexity <= 3 && (p.riskLevel === 'low' || p.riskLevel === 'medium')
+    p.complexity <= 3 && 
+    (p.riskLevel === 'low' || p.riskLevel === 'medium') &&
+    (p.mode === 'template' || !p.mode) // Include patterns without mode (defaults to template)
   );
 
   for (const filePath of files) {
@@ -234,7 +245,11 @@ async function applyAstTransformation(files: string[], patterns: AstPattern[]) {
   let totalTransformations = 0;
 
   // Get AST-mode patterns (medium complexity, more sophisticated transformations)
-  const astPatterns = patterns.filter((p) => p.complexity >= 2 && p.complexity <= 4);
+  const astPatterns = patterns.filter((p) => 
+    p.complexity >= 2 && 
+    p.complexity <= 4 &&
+    p.mode === 'ast' // Only include explicitly marked AST patterns
+  );
 
   for (const filePath of files) {
     try {
