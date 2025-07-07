@@ -1,8 +1,7 @@
 // Fresh test file to show AST vs Template differences
-var counter = 0;
-var isActive = true;
-var userData = { id: id, name: name, active: active };
-
+const counter = 0;
+const isActive = true;
+const userData = { id: id, name: name, active: active };
 function doSomething() {
   for (const i = 0; i < 10; i++) {
     counter++;
