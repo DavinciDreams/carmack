@@ -22,7 +22,7 @@ function processComplexData(input: any[]): Promise<any> {
       }
 
       if (item.type === 'special') {
-        let processed = processSpecialItem(item);;
+        const processed = processSpecialItem(item);;
         if (processed != null) {
           results.push(processed);
         } else {

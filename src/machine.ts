@@ -94,8 +94,7 @@ const _carmackCoderMachine = setup({
     }),
 
     assignAnalysisResults: assign(({ context, event }) => {
-      if (event.type !== 'ANALYSIS_COMPLETE' || !context.currentTransformation)
-        return context;
+      if (event.type !== 'ANALYSIS_COMPLETE' || !context.currentTransformation) return context;
 
       const analysisResult: AnalysisResult = {
         complexity: event.complexity,
@@ -333,7 +332,7 @@ const _carmackCoderMachine = setup({
           target: 'validatingFormat',
           actions: assign(({ context, event }) => {
             if (!context.currentTransformation) return context;
-            
+
             const transformationResult = event.output as any;
 
             return {

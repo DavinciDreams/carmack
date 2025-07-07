@@ -1,6 +1,6 @@
 // Medium complexity file to test AST mode
-const count = 0;;
-const active = true;;
+const count = 0;
+const active = true;
 
 function simpleFunction(input: string): string {
   if (input === 'test') {
@@ -16,5 +16,5 @@ for (var i = 0; i < items.length; i++) {
   }
 }
 
-const result = simpleFunction('hello');;
+const result = simpleFunction('hello');
 console.log(result);

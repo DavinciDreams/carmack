@@ -654,7 +654,7 @@ async function modernizeClasses(content: string): Promise<string> {
 
   transformed = transformed.replace(constructorPattern, (match, className, body) => {
     const properties = body.match(/this\.(\w+)\s*=\s*([^;]+);/g) || [];
-    const constructorBody = properties.map((prop) => prop.replace('this.', '    this.')).join('\n');
+    const constructorBody: string = (properties as string[]).map((prop: string) => prop.replace('this.', '    this.')).join('\n');
 
     return `class ${className} {
   constructor() {
