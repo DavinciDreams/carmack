@@ -358,7 +358,7 @@ const _carmackCoderMachine = setup({
         src: 'validationActor',
         input: ({ context }: { context: MachineContext }) => ({
           type: 'format',
-          files: context.currentTransformation?.filesModified || [],
+          files: context.currentTransformation?.request?.targetFiles || [],
         }),
         onDone: [
           {
@@ -384,7 +384,7 @@ const _carmackCoderMachine = setup({
         src: 'validationActor',
         input: ({ context }: { context: MachineContext }) => ({
           type: 'formatFix',
-          files: context.currentTransformation?.filesModified || [],
+          files: context.currentTransformation?.request?.targetFiles || [],
         }),
         onDone: {
           target: 'validatingTypes',
@@ -410,7 +410,7 @@ const _carmackCoderMachine = setup({
         src: 'validationActor',
         input: ({ context }: { context: MachineContext }) => ({
           type: 'types',
-          files: context.currentTransformation?.filesModified || [],
+          files: context.currentTransformation?.request?.targetFiles || [],
         }),
         onDone: [
           {
@@ -441,7 +441,7 @@ const _carmackCoderMachine = setup({
         src: 'validationActor',
         input: ({ context }: { context: MachineContext }) => ({
           type: 'typeFix',
-          files: context.currentTransformation?.filesModified || [],
+          files: context.currentTransformation?.request?.targetFiles || [],
           errors: context.currentTransformation?.validation?.errors || [],
         }),
         onDone: [
@@ -474,7 +474,7 @@ const _carmackCoderMachine = setup({
         id: 'dafny-verification',
         src: 'dafnyActor',
         input: ({ context }: { context: MachineContext }) => ({
-          files: context.currentTransformation?.filesModified || [],
+          files: context.currentTransformation?.request?.targetFiles || [],
           transformationMode: context.currentTransformation?.mode,
         }),
         onDone: {
@@ -493,7 +493,7 @@ const _carmackCoderMachine = setup({
         id: 'final-complexity',
         src: 'complexityActor',
         input: ({ context }: { context: MachineContext }) => ({
-          files: context.currentTransformation?.filesModified || [],
+          files: context.currentTransformation?.request?.targetFiles || [],
           baseline: context.currentTransformation?.complexity,
         }),
         onDone: [
@@ -538,7 +538,7 @@ const _carmackCoderMachine = setup({
         src: 'validationActor',
         input: ({ context }: { context: MachineContext }) => ({
           type: 'quality',
-          files: context.currentTransformation?.filesModified || [],
+          files: context.currentTransformation?.request?.targetFiles || [],
         }),
         onDone: {
           target: 'learningFromFeedback',
