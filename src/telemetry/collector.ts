@@ -608,6 +608,14 @@ export class TelemetryCollector extends EventEmitter {
   }
 
   /**
+   * Force flush all buffered events
+   */
+  async flush(): Promise<void> {
+    if (!this.isEnabled) return;
+    await this.buffer.flush();
+  }
+
+  /**
    * Graceful shutdown with final flush
    */
   async shutdown(): Promise<void> {

@@ -261,6 +261,12 @@ describe('Telemetry System', () => {
       behaviorSampleRate: 1.0,
       batchSize: 10,
       flushInterval: 1000,
+      maxBufferSize: 100,
+      privacy: {
+        collectUserIds: false,
+        collectFilePaths: true,
+        retentionDays: 30,
+      },
     });
 
     // Capture all events for validation
@@ -581,7 +587,14 @@ describe('Telemetry System', () => {
 
 describe('Telemetry Integration', () => {
   test('integration with transformation pipeline should work seamlessly', async () => {
-    const collector = initializeTelemetry({ enabled: true });
+    const collector = initializeTelemetry({
+      enabled: true,
+      privacy: {
+        collectUserIds: false,
+        collectFilePaths: true,
+        retentionDays: 30,
+      },
+    });
     const capturedEvents: any[] = [];
     
     collector.on('batchFlush', (events) => {
@@ -616,6 +629,9 @@ describe('Telemetry Integration', () => {
     // Complete transformation
     const transformedCode = originalCode.replace(/var\s+/g, 'const ').replace(/==/g, '===');
     await telemetry.completeTransformation(transformedCode, 2);
+    
+    // Force flush events before validation
+    await collector.flush();
     
     await collector.shutdown();
 
