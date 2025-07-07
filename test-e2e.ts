@@ -1,12 +1,11 @@
 // Test file for comprehensive end-to-end validation
-var oldStyleVar = "this should be const";
-var anotherVar = 42;
-
+const oldStyleVar = "this should be const";
+const anotherVar = 42;
 if (value == null) {
   console.log("This should use strict equality");
 }
 
-if (array.indexOf(item) !== -1) {
+if (array.includes(item)) {
   console.log("This should use array.includes()");
 }
 
