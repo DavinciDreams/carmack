@@ -9,7 +9,7 @@ function testFunction() {
 
 function processItems(items) {
   for (const i = 0; i < items.length; i++) {
-    if (items.indexOf('test') !== -1) {
+    if (items.includes('test')) {
       console.log('Found test item');
     }
   }
@@ -31,7 +31,7 @@ getData().then((result) => {
 });
 
 // Arrow function with unnecessary return
-const calculate = (x, y) => { return x + y; };
+const calculate = (x, y) => x + y;
 
 // String concatenation
 const message = 'Hello ' + userName + ', welcome!';
