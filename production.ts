@@ -8,6 +8,7 @@
 import { parseArgs } from 'node:util';
 import { existsSync, mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { readdir, stat } from 'node:fs/promises';
 import { simpleGit } from 'simple-git';
 import { ProductionConfigSchema, defaultProductionConfig, type ProductionConfig } from './production.config.ts';
 import { createActor } from 'xstate';
@@ -160,26 +161,79 @@ async function validateRepository(repoDir: string, config: ProductionConfig): Pr
   }
 
   // Count eligible files
-  const { execSync } = await import('child_process');
-  const extensions = config.transformation.allowedFileExtensions.join(',');
-  const findCommand = process.platform === 'win32' 
-    ? `dir /s /b *.ts *.tsx *.js *.jsx 2>nul | find /c /v ""` 
-    : `find . -type f \\( ${config.transformation.allowedFileExtensions.map(ext => `-name "*${ext}"`).join(' -o ')} \\) | wc -l`;
+  const eligibleFiles = await discoverEligibleFiles(repoDir, config, { verbose: false });
+  console.log(`📊 Found ${eligibleFiles.length} eligible files for transformation`);
   
-  try {
-    const fileCount = parseInt(execSync(findCommand, { cwd: repoDir, encoding: 'utf8' }).trim());
-    console.log(`📊 Found ${fileCount} eligible files for transformation`);
-    
-    if (fileCount === 0) {
-      throw new ProductionError(
-        'No eligible files found for transformation',
-        'NO_FILES_FOUND',
-        { extensions: config.transformation.allowedFileExtensions }
-      );
-    }
-  } catch (error) {
-    console.warn('⚠️  Could not count files, proceeding with transformation');
+  if (eligibleFiles.length === 0) {
+    throw new ProductionError(
+      'No eligible files found for transformation',
+      'NO_FILES_FOUND',
+      { extensions: config.transformation.allowedFileExtensions }
+    );
   }
+}
+
+async function discoverEligibleFiles(repoDir: string, config: ProductionConfig, options: { verbose: boolean } = { verbose: false }): Promise<string[]> {
+  const eligibleFiles: string[] = [];
+  const { allowedFileExtensions, maxFilesPerBatch } = config.transformation;
+  const { excludePatterns } = config.repository;
+
+  // Normalize repository directory path
+  const normalizedRepoDir = repoDir.replace(/\\/g, '/');
+
+  async function walkDirectory(dirPath: string): Promise<void> {
+    try {
+      const entries = await readdir(dirPath);
+      
+      for (const entry of entries) {
+        const fullPath = join(dirPath, entry);
+        const normalizedFullPath = fullPath.replace(/\\/g, '/');
+        const relativePath = normalizedFullPath.replace(normalizedRepoDir, '').replace(/^\//, '');
+        
+        // Check if path matches any exclude pattern
+        const isExcluded = excludePatterns.some(pattern => {
+          // Convert glob pattern to regex
+          const regexPattern = pattern
+            .replace(/\*\*/g, '.*')
+            .replace(/\*/g, '[^/]*')
+            .replace(/\?/g, '[^/]');
+          const regex = new RegExp(`^${regexPattern}$`);
+          return regex.test(relativePath) || regex.test(entry) || relativePath.includes(pattern.replace('/**', ''));
+        });
+
+        if (isExcluded) {
+          if (options.verbose) {
+            console.log(`   ⏭️  Excluding: ${relativePath}`);
+          }
+          continue;
+        }
+
+        const stats = await stat(fullPath);
+        
+        if (stats.isDirectory()) {
+          await walkDirectory(fullPath);
+        } else if (stats.isFile()) {
+          // Check if file extension is allowed
+          const hasAllowedExtension = allowedFileExtensions.some(ext => 
+            fullPath.endsWith(ext)
+          );
+          
+          if (hasAllowedExtension && eligibleFiles.length < maxFilesPerBatch) {
+            eligibleFiles.push(fullPath);
+            if (options.verbose) {
+              console.log(`   ✅ Including: ${relativePath}`);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      // Skip directories we can't read (permissions, etc.)
+      console.warn(`⚠️  Skipping directory ${dirPath}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  await walkDirectory(repoDir);
+  return eligibleFiles.slice(0, maxFilesPerBatch);
 }
 
 async function runProductionTransformation(config: ProductionConfig, args: CLIArgs): Promise<void> {
@@ -192,7 +246,20 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
     await validateRepository(repoDir, config);
   }
 
-  console.log('🚀 Starting production transformation...');
+  // Discover eligible files for transformation
+  console.log('� Discovering eligible files...');
+  const eligibleFiles = await discoverEligibleFiles(repoDir, config);
+  console.log(`📁 Selected ${eligibleFiles.length} files for transformation`);
+  
+  if (args.verbose) {
+    console.log('📄 Files to process:');
+    eligibleFiles.forEach((file, index) => {
+      const relativePath = file.replace(repoDir, '').replace(/^[/\\]/, '');
+      console.log(`   ${index + 1}. ${relativePath}`);
+    });
+  }
+
+  console.log('�🚀 Starting production transformation...');
   console.log(`📁 Working directory: ${repoDir}`);
   console.log(`🎯 Risk level filter: ${config.transformation.riskLevelFilter}`);
   console.log(`🔧 Max files per batch: ${config.transformation.maxFilesPerBatch}`);
@@ -200,7 +267,7 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
   // Create transformation actor with production configuration
   const transformationActor = createActor(carmackCoderMachine, {
     input: {
-      targetFiles: [], // Will be populated by file discovery
+      targetFiles: eligibleFiles, // Use discovered files instead of directory
       transformationType: 'ast' as const,
       patterns: [], // Will be loaded from patterns.json
       maxComplexity: config.transformation.maxComplexityThreshold,
@@ -247,12 +314,12 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
       }
     });
 
-    // Send start event with repository directory
+    // Send start event with discovered files
     // biome-ignore lint/suspicious/noExplicitAny: Required for XState event type compatibility
     transformationActor.send({
       type: 'START_TRANSFORMATION',
       request: {
-        targetFiles: [repoDir], // Will be expanded to actual files by the machine
+        targetFiles: eligibleFiles, // Use discovered files
         transformationType: 'ast' as const,
         patterns: [], // Will be loaded from patterns
         maxComplexity: config.transformation.maxComplexityThreshold,
