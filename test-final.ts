@@ -6,9 +6,8 @@ declare const name: string;
 declare const userName: string;
 declare const appName: string;
 
-var problematicVar = "this should become const";
-var numericVar = 42;
-
+const problematicVar = "this should become const";
+const numericVar = 42;
 if (value == null) {
   console.log("loose equality should become strict");
 }
@@ -17,8 +16,8 @@ if (items.indexOf(target) != -1) {
   console.log("should use includes and strict inequality");
 }
 
-const unnecessaryReturn = (x: number) => { return x * 2; };
+const unnecessaryReturn = (x: number) => x * 2;
 
-const message = "Hello " + userName + ", welcome!";
+const message = `Hello ${userName}, welcome!`;
 
 export { problematicVar, numericVar, unnecessaryReturn, message };
