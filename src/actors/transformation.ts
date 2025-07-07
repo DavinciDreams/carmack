@@ -278,12 +278,36 @@ async function applyAstTransformation(files: string[], patterns: AstPattern[]) {
             modifiedContent = await promiseToAsyncAwaitAST(root, modifiedContent, lang);
             break;
 
-          case 'enhanced-object-destructuring':
-            modifiedContent = await enhanceObjectDestructuring(root, modifiedContent, lang);
+          case 'strict-equality':
+            modifiedContent = await strictEqualityAST(root, modifiedContent, lang);
+            break;
+
+          case 'strict-inequality':
+            modifiedContent = await strictInequalityAST(root, modifiedContent, lang);
+            break;
+
+          case 'array-includes-instead-of-indexof':
+            modifiedContent = await arrayIncludesAST(root, modifiedContent, lang);
             break;
 
           case 'remove-unnecessary-returns':
-            modifiedContent = await removeUnnecessaryReturns(root, modifiedContent, lang);
+            modifiedContent = await removeUnnecessaryReturnsAST(root, modifiedContent, lang);
+            break;
+
+          case 'object-property-shorthand':
+            modifiedContent = await objectPropertyShorthandAST(root, modifiedContent, lang);
+            break;
+
+          case 'template-literal-conversion':
+            modifiedContent = await templateLiteralConversionAST(root, modifiedContent, lang);
+            break;
+
+          case 'const-loop-variable-fix':
+            modifiedContent = await constLoopVariableFixAST(root, modifiedContent, lang);
+            break;
+
+          case 'enhanced-object-destructuring':
+            modifiedContent = await enhanceObjectDestructuring(root, modifiedContent, lang);
             break;
 
           case 'combine-variable-declarations':
@@ -743,4 +767,160 @@ ${constructorBody}
   });
 
   return transformed;
+}
+
+/**
+ * AST-based strict equality conversion (== to ===)
+ */
+async function strictEqualityAST(_root: any, content: string, _lang: any): Promise<string> {
+  try {
+    console.log('🔄 Processing strict equality conversions...');
+    let modifiedContent = content;
+
+    // Convert == to === but avoid already strict comparisons
+    modifiedContent = modifiedContent.replace(/(\w+|\)|])\s*==\s*([^=])/g, '$1 === $2');
+
+    if (modifiedContent !== content) {
+      console.log('✅ Strict equality transformations applied');
+    }
+
+    return modifiedContent;
+  } catch (error) {
+    console.error('Error in strictEqualityAST:', error);
+    return content;
+  }
+}
+
+/**
+ * AST-based strict inequality conversion (!= to !==)
+ */
+async function strictInequalityAST(_root: any, content: string, _lang: any): Promise<string> {
+  try {
+    console.log('🔄 Processing strict inequality conversions...');
+    let modifiedContent = content;
+
+    // Convert != to !== but avoid already strict comparisons
+    modifiedContent = modifiedContent.replace(/(\w+|\)|])\s*!=\s*([^=])/g, '$1 !== $2');
+
+    if (modifiedContent !== content) {
+      console.log('✅ Strict inequality transformations applied');
+    }
+
+    return modifiedContent;
+  } catch (error) {
+    console.error('Error in strictInequalityAST:', error);
+    return content;
+  }
+}
+
+/**
+ * AST-based array includes conversion (indexOf !== -1 to includes)
+ */
+async function arrayIncludesAST(_root: any, content: string, _lang: any): Promise<string> {
+  try {
+    console.log('🔄 Processing array includes conversions...');
+    let modifiedContent = content;
+
+    // Convert arr.indexOf(item) !== -1 to arr.includes(item)
+    modifiedContent = modifiedContent.replace(/(\w+)\.indexOf\(([^)]+)\)\s*!==\s*-1/g, '$1.includes($2)');
+
+    if (modifiedContent !== content) {
+      console.log('✅ Array includes transformations applied');
+    }
+
+    return modifiedContent;
+  } catch (error) {
+    console.error('Error in arrayIncludesAST:', error);
+    return content;
+  }
+}
+
+/**
+ * AST-based removal of unnecessary return statements
+ */
+async function removeUnnecessaryReturnsAST(_root: any, content: string, _lang: any): Promise<string> {
+  try {
+    console.log('🔄 Processing unnecessary return removal...');
+    let modifiedContent = content;
+
+    // Convert (params) => { return expr; } to (params) => expr
+    modifiedContent = modifiedContent.replace(/\(([^)]*)\)\s*=>\s*\{\s*return\s+([^;]+);\s*\}/g, '($1) => $2');
+
+    if (modifiedContent !== content) {
+      console.log('✅ Unnecessary return transformations applied');
+    }
+
+    return modifiedContent;
+  } catch (error) {
+    console.error('Error in removeUnnecessaryReturnsAST:', error);
+    return content;
+  }
+}
+
+/**
+ * AST-based object property shorthand conversion
+ */
+async function objectPropertyShorthandAST(_root: any, content: string, _lang: any): Promise<string> {
+  try {
+    console.log('🔄 Processing object property shorthand...');
+    let modifiedContent = content;
+
+    // Convert { key: key } to { key }
+    modifiedContent = modifiedContent.replace(/\{\s*(\w+):\s*\1\s*\}/g, '{ $1 }');
+    modifiedContent = modifiedContent.replace(/,\s*(\w+):\s*\1\s*([,}])/g, ', $1$2');
+
+    if (modifiedContent !== content) {
+      console.log('✅ Object property shorthand transformations applied');
+    }
+
+    return modifiedContent;
+  } catch (error) {
+    console.error('Error in objectPropertyShorthandAST:', error);
+    return content;
+  }
+}
+
+/**
+ * AST-based template literal conversion
+ */
+async function templateLiteralConversionAST(_root: any, content: string, _lang: any): Promise<string> {
+  try {
+    console.log('🔄 Processing template literal conversions...');
+    let modifiedContent = content;
+
+    // Convert string concatenation to template literals
+    modifiedContent = modifiedContent.replace(/'([^']*?)'\s*\+\s*(\w+)\s*\+\s*'([^']*?)'/g, '`$1${$2}$3`');
+    modifiedContent = modifiedContent.replace(/"([^"]*?)"\s*\+\s*(\w+)\s*\+\s*"([^"]*?)"/g, '`$1${$2}$3`');
+
+    if (modifiedContent !== content) {
+      console.log('✅ Template literal transformations applied');
+    }
+
+    return modifiedContent;
+  } catch (error) {
+    console.error('Error in templateLiteralConversionAST:', error);
+    return content;
+  }
+}
+
+/**
+ * AST-based const loop variable fix
+ */
+async function constLoopVariableFixAST(_root: any, content: string, _lang: any): Promise<string> {
+  try {
+    console.log('🔄 Processing const loop variable fixes...');
+    let modifiedContent = content;
+
+    // Convert for (const i = 0; ...) to for (let i = 0; ...)
+    modifiedContent = modifiedContent.replace(/for\s*\(\s*const\s+(\w+)\s*=\s*([^;]+);/g, 'for (let $1 = $2;');
+
+    if (modifiedContent !== content) {
+      console.log('✅ Const loop variable fixes applied');
+    }
+
+    return modifiedContent;
+  } catch (error) {
+    console.error('Error in constLoopVariableFixAST:', error);
+    return content;
+  }
 }

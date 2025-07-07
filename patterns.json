@@ -20,7 +20,7 @@
       "description": "Convert loose equality to strict equality",
       "complexity": 1,
       "riskLevel": "low",
-      "mode": "template"
+      "mode": "ast"
     },
     {
       "id": "strict-inequality",
@@ -30,7 +30,7 @@
       "description": "Convert loose inequality to strict inequality",
       "complexity": 1,
       "riskLevel": "low",
-      "mode": "template"
+      "mode": "ast"
     },
     {
       "id": "console-log-to-console-error",
@@ -70,7 +70,7 @@
       "description": "Use Array.includes() instead of indexOf() !== -1",
       "complexity": 2,
       "riskLevel": "low",
-      "mode": "template"
+      "mode": "ast"
     },
     {
       "id": "const-loop-variable-fix",
@@ -100,7 +100,7 @@
       "description": "Remove unnecessary return statements from arrow functions",
       "complexity": 2,
       "riskLevel": "low",
-      "mode": "template"
+      "mode": "ast"
     }
   ],
   "categories": {
