@@ -1,7 +1,6 @@
 // Test file with obvious TypeScript/code quality issues that should be auto-fixed
-var oldVar = "should be const";
-var anotherOldVar = 42;
-
+const oldVar = "should be const";
+const anotherOldVar = 42;
 if (value == null) {
   console.log("should use strict equality");
 }
@@ -32,7 +31,7 @@ function fetchUserData() {
 }
 
 // Arrow function with unnecessary return
-const mapper = (item) => { return item.name; };
+const mapper = (item) => item.name;
 
 // String concatenation that should be template literal
-const message = "Hello " + userName + ", welcome to " + appName + "!";
+const message = `Hello ${userName}, welcome to ` + appName + "!";
