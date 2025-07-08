@@ -1,0 +1,408 @@
+{
+  "version": "4.0.0",
+  "description": "Ultra-fast template patterns for efficient code transformations",
+  "patterns": [
+    {
+      "id": "smart-var-to-const-let",
+      "language": "typescript",
+      "pattern": {
+        "template": "var $IDENTIFIER = $VALUE",
+        "context": {
+          "notInside": ["comment", "string"]
+        }
+      },
+      "replacement": {
+        "template": "const $IDENTIFIER = $VALUE",
+        "conditionals": [
+          {
+            "condition": "$VALUE.includes('=') || $VALUE.includes('++') || $VALUE.includes('--')",
+            "replacement": "let $IDENTIFIER = $VALUE"
+          }
+        ]
+      },
+      "description": "Smart conversion of var to const/let based on value analysis",
+      "complexity": 2,
+      "riskLevel": "low",
+      "category": "modernization",
+      "performance": {
+        "priority": 8,
+        "batchable": true
+      },
+      "testCases": [
+        {
+          "input": "var name = 'John';",
+          "expected": "const name = 'John';",
+          "description": "Simple string literal should use const"
+        },
+        {
+          "input": "var counter = i + 1;",
+          "expected": "let counter = i + 1;",
+          "description": "Expression with operator should use let"
+        }
+      ]
+    },
+    {
+      "id": "strict-equality-comprehensive",
+      "language": "typescript",
+      "pattern": {
+        "template": "$LEFT == $RIGHT",
+        "context": {
+          "notInside": ["comment", "string"]
+        }
+      },
+      "replacement": {
+        "template": "$LEFT === $RIGHT"
+      },
+      "description": "Convert loose equality to strict equality",
+      "complexity": 1,
+      "riskLevel": "low",
+      "category": "safety",
+      "performance": {
+        "priority": 9,
+        "batchable": true,
+        "conflicts": ["strict-inequality-comprehensive"]
+      },
+      "testCases": [
+        {
+          "input": "if (a == b) return true;",
+          "expected": "if (a === b) return true;",
+          "description": "Basic equality check"
+        }
+      ]
+    },
+    {
+      "id": "strict-inequality-comprehensive",
+      "language": "typescript",
+      "pattern": {
+        "template": "$LEFT != $RIGHT",
+        "context": {
+          "notInside": ["comment", "string"]
+        }
+      },
+      "replacement": {
+        "template": "$LEFT !== $RIGHT"
+      },
+      "description": "Convert loose inequality to strict inequality",
+      "complexity": 1,
+      "riskLevel": "low",
+      "category": "safety",
+      "performance": {
+        "priority": 9,
+        "batchable": true,
+        "conflicts": ["strict-equality-comprehensive"]
+      },
+      "testCases": [
+        {
+          "input": "if (a != null) return true;",
+          "expected": "if (a !== null) return true;",
+          "description": "Basic inequality check"
+        }
+      ]
+    },
+    {
+      "id": "template-literal-advanced",
+      "language": "typescript",
+      "pattern": {
+        "template": "$STRING + $IDENTIFIER + $STRING",
+        "context": {
+          "notInside": ["comment"]
+        }
+      },
+      "replacement": {
+        "template": "`${$STRING.slice(1, -1)}${$IDENTIFIER}${$STRING.slice(1, -1)}`",
+        "transformers": {
+          "STRING": "trim"
+        }
+      },
+      "description": "Convert string concatenation to template literals with smart quote handling",
+      "complexity": 3,
+      "riskLevel": "low",
+      "category": "modernization",
+      "performance": {
+        "priority": 7,
+        "batchable": true
+      },
+      "testCases": [
+        {
+          "input": "'Hello ' + name + '!'",
+          "expected": "`Hello ${name}!`",
+          "description": "Basic string concatenation with variables"
+        }
+      ]
+    },
+    {
+      "id": "object-shorthand-enhanced",
+      "language": "typescript",
+      "pattern": {
+        "template": "{ $KEY: $KEY }",
+        "context": {
+          "notInside": ["comment", "string"]
+        }
+      },
+      "replacement": {
+        "template": "{ $KEY }"
+      },
+      "description": "Use object property shorthand syntax",
+      "complexity": 1,
+      "riskLevel": "low",
+      "category": "optimization",
+      "performance": {
+        "priority": 8,
+        "batchable": true
+      },
+      "testCases": [
+        {
+          "input": "const obj = { name: name, age: age };",
+          "expected": "const obj = { name, age };",
+          "description": "Multiple property shorthand"
+        }
+      ]
+    },
+    {
+      "id": "arrow-function-optimization",
+      "language": "typescript",
+      "pattern": {
+        "template": "($PARAMS) => { return $EXPRESSION; }",
+        "context": {
+          "notInside": ["comment"]
+        }
+      },
+      "replacement": {
+        "template": "($PARAMS) => $EXPRESSION"
+      },
+      "description": "Remove unnecessary return from arrow functions",
+      "complexity": 2,
+      "riskLevel": "low",
+      "category": "optimization",
+      "performance": {
+        "priority": 7,
+        "batchable": true
+      },
+      "testCases": [
+        {
+          "input": "const double = (x) => { return x * 2; };",
+          "expected": "const double = (x) => x * 2;",
+          "description": "Simple expression return"
+        }
+      ]
+    },
+    {
+      "id": "array-includes-modernization",
+      "language": "typescript",
+      "pattern": {
+        "template": "$ARRAY.indexOf($ITEM) !== -1",
+        "context": {
+          "notInside": ["comment", "string"]
+        }
+      },
+      "replacement": {
+        "template": "$ARRAY.includes($ITEM)"
+      },
+      "description": "Use Array.includes() instead of indexOf() !== -1",
+      "complexity": 2,
+      "riskLevel": "low",
+      "category": "modernization",
+      "performance": {
+        "priority": 8,
+        "batchable": true
+      },
+      "testCases": [
+        {
+          "input": "if (items.indexOf('test') !== -1) { console.log('found'); }",
+          "expected": "if (items.includes('test')) { console.log('found'); }",
+          "description": "Basic indexOf to includes conversion"
+        }
+      ]
+    },
+    {
+      "id": "console-error-conversion",
+      "language": "typescript",
+      "pattern": {
+        "template": "console.log($ERROR_MSG)",
+        "context": {
+          "notInside": ["comment"]
+        }
+      },
+      "replacement": {
+        "template": "console.error($ERROR_MSG)",
+        "conditionals": [
+          {
+            "condition": "$ERROR_MSG.toLowerCase().includes('error') || $ERROR_MSG.toLowerCase().includes('fail')",
+            "replacement": "console.error($ERROR_MSG)"
+          }
+        ]
+      },
+      "description": "Convert console.log to console.error for error messages",
+      "complexity": 2,
+      "riskLevel": "low",
+      "category": "logging",
+      "performance": {
+        "priority": 6,
+        "batchable": true
+      },
+      "testCases": [
+        {
+          "input": "console.log('Error: something went wrong');",
+          "expected": "console.error('Error: something went wrong');",
+          "description": "Error message detection"
+        }
+      ]
+    },
+    {
+      "id": "const-to-let-loops",
+      "language": "typescript",
+      "pattern": {
+        "template": "for (const $VARIABLE = $INIT; $CONDITION; $UPDATE)",
+        "context": {
+          "notInside": ["comment", "string"]
+        }
+      },
+      "replacement": {
+        "template": "for (let $VARIABLE = $INIT; $CONDITION; $UPDATE)"
+      },
+      "description": "Fix const loop variables that need reassignment",
+      "complexity": 2,
+      "riskLevel": "medium",
+      "category": "safety",
+      "performance": {
+        "priority": 8,
+        "batchable": true
+      },
+      "testCases": [
+        {
+          "input": "for (const i = 0; i < 10; i++) { console.log(i); }",
+          "expected": "for (let i = 0; i < 10; i++) { console.log(i); }",
+          "description": "Basic for loop with const variable"
+        }
+      ]
+    },
+    {
+      "id": "null-coalescing-opportunity",
+      "language": "typescript",
+      "pattern": {
+        "template": "$VARIABLE || $DEFAULT",
+        "context": {
+          "notInside": ["comment", "string"]
+        }
+      },
+      "replacement": {
+        "template": "$VARIABLE ?? $DEFAULT",
+        "conditionals": [
+          {
+            "condition": "$VARIABLE.includes('null') || $VARIABLE.includes('undefined')",
+            "replacement": "$VARIABLE ?? $DEFAULT"
+          }
+        ]
+      },
+      "description": "Use nullish coalescing operator for null/undefined checks",
+      "complexity": 3,
+      "riskLevel": "medium",
+      "category": "modernization",
+      "performance": {
+        "priority": 6,
+        "batchable": true
+      },
+      "testCases": [
+        {
+          "input": "const value = input || 'default';",
+          "expected": "const value = input ?? 'default';",
+          "description": "Null coalescing conversion"
+        }
+      ]
+    },
+    {
+      "id": "destructuring-opportunity",
+      "language": "typescript",
+      "pattern": {
+        "template": "const $VAR1 = $OBJECT.$PROP1;\\nconst $VAR2 = $OBJECT.$PROP2;",
+        "context": {
+          "notInside": ["comment"]
+        }
+      },
+      "replacement": {
+        "template": "const { $PROP1: $VAR1, $PROP2: $VAR2 } = $OBJECT;"
+      },
+      "description": "Convert multiple property access to destructuring",
+      "complexity": 4,
+      "riskLevel": "medium",
+      "category": "modernization",
+      "performance": {
+        "priority": 5,
+        "batchable": false
+      },
+      "testCases": [
+        {
+          "input": "const name = user.name;\nconst age = user.age;",
+          "expected": "const { name, age } = user;",
+          "description": "Basic destructuring opportunity"
+        }
+      ]
+    },
+    {
+      "id": "optional-chaining-opportunity",
+      "language": "typescript",
+      "pattern": {
+        "template": "$OBJECT && $OBJECT.$PROPERTY",
+        "context": {
+          "notInside": ["comment", "string"]
+        }
+      },
+      "replacement": {
+        "template": "$OBJECT?.$PROPERTY"
+      },
+      "description": "Use optional chaining instead of guard checks",
+      "complexity": 3,
+      "riskLevel": "medium",
+      "category": "modernization",
+      "performance": {
+        "priority": 7,
+        "batchable": true
+      },
+      "testCases": [
+        {
+          "input": "user && user.profile && user.profile.name",
+          "expected": "user?.profile?.name",
+          "description": "Nested optional chaining"
+        }
+      ]
+    }
+  ],
+  "categories": {
+    "modernization": [
+      "smart-var-to-const-let",
+      "template-literal-advanced", 
+      "array-includes-modernization",
+      "null-coalescing-opportunity",
+      "destructuring-opportunity",
+      "optional-chaining-opportunity"
+    ],
+    "optimization": [
+      "object-shorthand-enhanced",
+      "arrow-function-optimization"
+    ],
+    "safety": [
+      "strict-equality-comprehensive",
+      "strict-inequality-comprehensive",
+      "const-to-let-loops"
+    ],
+    "logging": [
+      "console-error-conversion"
+    ]
+  },
+  "metadata": {
+    "created": "2025-01-07",
+    "author": "Carmack Coder Template Engine",
+    "license": "MIT",
+    "lastUpdated": "2025-01-07",
+    "totalPatterns": 12,
+    "templateEngineVersion": "4.0.0",
+    "features": [
+      "Advanced pattern matching with context",
+      "Variable transformers",
+      "Conditional replacements",
+      "Conflict resolution",
+      "Format preservation",
+      "Batch processing optimization"
+    ]
+  }
+}
