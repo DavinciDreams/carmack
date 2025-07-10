@@ -191,6 +191,7 @@ export class CarmackPipelineOrchestrator {
 
   /**
    * STAGE 4: Code Transformation with XState machine
+   * Implements Carmack's hierarchy: Template → AST → LLM
    */
   private async executeTransformation(repoState: any, args: EnhancedCLIArgs): Promise<any> {
     console.log('⚡ STAGE 4: Code Transformation');
@@ -201,12 +202,54 @@ export class CarmackPipelineOrchestrator {
     const patterns = await this.loadConsolidatedPatterns();
     console.log(`   🎯 Loaded ${patterns.length} transformation patterns`);
     
+    // Run all three modes in Carmack hierarchy: Template → AST → LLM
+    let totalFilesModified = 0;
+    let allResults: any[] = [];
+    
+    // PHASE 1: Template transformations (fastest, safest)
+    console.log('   🚀 Phase 1: Template Transformations');
+    const templateResult = await this.runTransformationMode('template', targetFiles, patterns, args);
+    totalFilesModified += templateResult.filesModified?.length || 0;
+    allResults.push(templateResult);
+    
+    // PHASE 2: AST transformations (more sophisticated)
+    console.log('   🌳 Phase 2: AST Transformations');
+    const astResult = await this.runTransformationMode('ast', targetFiles, patterns, args);
+    totalFilesModified += astResult.filesModified?.length || 0;
+    allResults.push(astResult);
+    
+    // PHASE 3: LLM transformations (fallback for complex cases)
+    if (args['risk-level'] !== 'low') {
+      console.log('   🧠 Phase 3: LLM Transformations');
+      const llmResult = await this.runTransformationMode('llm', targetFiles, patterns, args);
+      totalFilesModified += llmResult.filesModified?.length || 0;
+      allResults.push(llmResult);
+    }
+    
+    console.log(`   ✅ Total files modified across all modes: ${totalFilesModified}`);
+    
+    return {
+      phases: allResults,
+      totalFilesModified,
+      summary: `Completed ${allResults.length} transformation phases`,
+    };
+  }
+
+  /**
+   * Run a single transformation mode
+   */
+  private async runTransformationMode(
+    mode: 'template' | 'ast' | 'llm',
+    targetFiles: string[],
+    patterns: any[],
+    args: EnhancedCLIArgs
+  ): Promise<any> {
     const transformationRequest = {
       targetFiles,
-      transformationType: this.selectTransformationMode(args),
-      maxComplexity: args['max-files'] || 10,
+      transformationType: mode,
+      maxComplexity: mode === 'template' ? 3 : mode === 'ast' ? 10 : 15, // Progressive complexity
       dryRun: args['dry-run'],
-      patterns, // Add patterns to the request
+      patterns: patterns.filter(p => p.mode === mode || (!p.mode && mode === 'template')), // Filter patterns by mode
     };
     
     // Create XState actor with proper input (like the working production.ts)
@@ -217,23 +260,24 @@ export class CarmackPipelineOrchestrator {
     return new Promise((resolve, reject) => {
       actor.subscribe((state) => {
         if (args.verbose) {
-          console.log(`   🔄 State: ${state.value} | Status: ${state.context.currentTransformation?.status || 'pending'}`);
+          console.log(`     🔄 ${mode.toUpperCase()} State: ${state.value} | Status: ${state.context.currentTransformation?.status || 'pending'}`);
         }
 
         // Log significant events
         if (state.matches('succeeded')) {
-          console.log('   ✅ Transformation completed successfully');
+          console.log(`     ✅ ${mode.toUpperCase()} transformation completed`);
           const transformation = state.context.currentTransformation;
           if (transformation) {
-            console.log(`   📊 Files modified: ${transformation.filesModified.length}`);
-            console.log(`   ⏱️  Duration: ${transformation.endTime! - transformation.startTime}ms`);
+            console.log(`     📊 Files modified: ${transformation.filesModified.length}`);
+            console.log(`     ⏱️  Duration: ${transformation.endTime! - transformation.startTime}ms`);
           }
           resolve(state.context);
         } else if (state.matches('failed')) {
-          console.error('   ❌ Transformation failed');
+          console.error(`     ❌ ${mode.toUpperCase()} transformation failed`);
           const errors = state.context.currentTransformation?.errors || [];
-          errors.forEach((error) => console.error(`   ${error}`));
-          reject(new Error(`Transformation failed: ${state.value}`));
+          errors.forEach((error) => console.error(`     ${error}`));
+          // Don't reject - continue with next mode
+          resolve(state.context);
         }
       });
 
