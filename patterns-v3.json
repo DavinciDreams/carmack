@@ -94,8 +94,17 @@
     }
   ],
   "categories": {
-    "modernization": ["smart-var-to-const-let", "strict-equality", "strict-inequality", "promise-to-async-await"],
-    "optimization": ["object-property-shorthand", "remove-unnecessary-returns", "template-literal-conversion"],
+    "modernization": [
+      "smart-var-to-const-let",
+      "strict-equality",
+      "strict-inequality",
+      "promise-to-async-await"
+    ],
+    "optimization": [
+      "object-property-shorthand",
+      "remove-unnecessary-returns",
+      "template-literal-conversion"
+    ],
     "safety": ["array-includes-instead-of-indexof", "const-loop-variable-fix"],
     "logging": ["console-log-to-console-error"]
   },

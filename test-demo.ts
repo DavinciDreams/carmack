@@ -9,11 +9,13 @@ function doSomething() {
 }
 
 // Promise chain
-getData().then((result) => {
-  console.log('Got result:', result);
-}).catch((err) => {
-  console.error('Error:', err);
-});
+getData()
+  .then((result) => {
+    console.log('Got result:', result);
+  })
+  .catch((err) => {
+    console.error('Error:', err);
+  });
 
 // String concatenation
 const greeting = 'Hello ' + userName + '!';

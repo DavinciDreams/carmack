@@ -10,26 +10,32 @@ import { existsSync, mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { readdir, stat } from 'node:fs/promises';
 import { simpleGit } from 'simple-git';
-import { ProductionConfigSchema, defaultProductionConfig, type ProductionConfig } from './production.config.ts';
+import {
+  ProductionConfigSchema,
+  defaultProductionConfig,
+  type ProductionConfig,
+} from './production.config.ts';
 import { createActor } from 'xstate';
 import { carmackCoderMachine } from './src/machine.ts';
 import { z } from 'zod';
 
 // CLI Schema
-const CLIArgsSchema = z.object({
-  config: z.string().optional(),
-  repository: z.string().url().optional(),
-  branch: z.string().optional(),
-  'dry-run': z.boolean().default(false),
-  'max-files': z.number().min(1).max(1000).optional(),
-  'risk-level': z.enum(['low', 'medium', 'high']).optional(),
-  verbose: z.boolean().default(false),
-  'skip-tests': z.boolean().default(false),
-  'skip-verification': z.boolean().default(false),
-  'auto-commit': z.boolean().default(false),
-  'workspace': z.string().optional(),
-  help: z.boolean().default(false)
-}).strict();
+const CLIArgsSchema = z
+  .object({
+    config: z.string().optional(),
+    repository: z.string().url().optional(),
+    branch: z.string().optional(),
+    'dry-run': z.boolean().default(false),
+    'max-files': z.number().min(1).max(1000).optional(),
+    'risk-level': z.enum(['low', 'medium', 'high']).optional(),
+    verbose: z.boolean().default(false),
+    'skip-tests': z.boolean().default(false),
+    'skip-verification': z.boolean().default(false),
+    'auto-commit': z.boolean().default(false),
+    workspace: z.string().optional(),
+    help: z.boolean().default(false),
+  })
+  .strict();
 
 type CLIArgs = z.infer<typeof CLIArgsSchema>;
 
@@ -94,11 +100,9 @@ async function loadConfig(configPath?: string): Promise<ProductionConfig> {
   }
 
   if (!existsSync(configPath)) {
-    throw new ProductionError(
-      `Configuration file not found: ${configPath}`,
-      'CONFIG_NOT_FOUND',
-      { configPath }
-    );
+    throw new ProductionError(`Configuration file not found: ${configPath}`, 'CONFIG_NOT_FOUND', {
+      configPath,
+    });
   }
 
   try {
@@ -116,7 +120,7 @@ async function loadConfig(configPath?: string): Promise<ProductionConfig> {
 
 async function setupWorkspace(config: ProductionConfig, customWorkspace?: string): Promise<string> {
   const workspaceDir = customWorkspace || config.repository.workingDirectory;
-  
+
   if (!existsSync(workspaceDir)) {
     console.log(`📁 Creating workspace directory: ${workspaceDir}`);
     mkdirSync(workspaceDir, { recursive: true });
@@ -125,7 +129,11 @@ async function setupWorkspace(config: ProductionConfig, customWorkspace?: string
   return workspaceDir;
 }
 
-async function cloneRepository(repoUrl: string, branch: string, workspaceDir: string): Promise<void> {
+async function cloneRepository(
+  repoUrl: string,
+  branch: string,
+  workspaceDir: string
+): Promise<void> {
   const git = simpleGit();
   const repoDir = join(workspaceDir, 'repository');
 
@@ -147,33 +155,34 @@ async function cloneRepository(repoUrl: string, branch: string, workspaceDir: st
 
 async function validateRepository(repoDir: string, config: ProductionConfig): Promise<void> {
   console.log('🔍 Validating repository structure...');
-  
+
   // Check for package.json or similar project indicators
   const indicators = ['package.json', 'tsconfig.json', 'pyproject.toml', 'Cargo.toml', 'pom.xml'];
-  const hasProjectFile = indicators.some(file => existsSync(join(repoDir, file)));
-  
+  const hasProjectFile = indicators.some((file) => existsSync(join(repoDir, file)));
+
   if (!hasProjectFile) {
-    throw new ProductionError(
-      'No recognized project structure found',
-      'INVALID_PROJECT',
-      { repoDir, checkedFiles: indicators }
-    );
+    throw new ProductionError('No recognized project structure found', 'INVALID_PROJECT', {
+      repoDir,
+      checkedFiles: indicators,
+    });
   }
 
   // Count eligible files
   const eligibleFiles = await discoverEligibleFiles(repoDir, config, { verbose: false });
   console.log(`📊 Found ${eligibleFiles.length} eligible files for transformation`);
-  
+
   if (eligibleFiles.length === 0) {
-    throw new ProductionError(
-      'No eligible files found for transformation',
-      'NO_FILES_FOUND',
-      { extensions: config.transformation.allowedFileExtensions }
-    );
+    throw new ProductionError('No eligible files found for transformation', 'NO_FILES_FOUND', {
+      extensions: config.transformation.allowedFileExtensions,
+    });
   }
 }
 
-async function discoverEligibleFiles(repoDir: string, config: ProductionConfig, options: { verbose: boolean } = { verbose: false }): Promise<string[]> {
+async function discoverEligibleFiles(
+  repoDir: string,
+  config: ProductionConfig,
+  options: { verbose: boolean } = { verbose: false }
+): Promise<string[]> {
   const eligibleFiles: string[] = [];
   const { allowedFileExtensions, maxFilesPerBatch } = config.transformation;
   const { excludePatterns } = config.repository;
@@ -184,21 +193,25 @@ async function discoverEligibleFiles(repoDir: string, config: ProductionConfig, 
   async function walkDirectory(dirPath: string): Promise<void> {
     try {
       const entries = await readdir(dirPath);
-      
+
       for (const entry of entries) {
         const fullPath = join(dirPath, entry);
         const normalizedFullPath = fullPath.replace(/\\/g, '/');
         const relativePath = normalizedFullPath.replace(normalizedRepoDir, '').replace(/^\//, '');
-        
+
         // Check if path matches any exclude pattern
-        const isExcluded = excludePatterns.some(pattern => {
+        const isExcluded = excludePatterns.some((pattern) => {
           // Convert glob pattern to regex
           const regexPattern = pattern
             .replace(/\*\*/g, '.*')
             .replace(/\*/g, '[^/]*')
             .replace(/\?/g, '[^/]');
           const regex = new RegExp(`^${regexPattern}$`);
-          return regex.test(relativePath) || regex.test(entry) || relativePath.includes(pattern.replace('/**', ''));
+          return (
+            regex.test(relativePath) ||
+            regex.test(entry) ||
+            relativePath.includes(pattern.replace('/**', ''))
+          );
         });
 
         if (isExcluded) {
@@ -209,15 +222,13 @@ async function discoverEligibleFiles(repoDir: string, config: ProductionConfig, 
         }
 
         const stats = await stat(fullPath);
-        
+
         if (stats.isDirectory()) {
           await walkDirectory(fullPath);
         } else if (stats.isFile()) {
           // Check if file extension is allowed
-          const hasAllowedExtension = allowedFileExtensions.some(ext => 
-            fullPath.endsWith(ext)
-          );
-          
+          const hasAllowedExtension = allowedFileExtensions.some((ext) => fullPath.endsWith(ext));
+
           if (hasAllowedExtension && eligibleFiles.length < maxFilesPerBatch) {
             eligibleFiles.push(fullPath);
             if (options.verbose) {
@@ -228,7 +239,9 @@ async function discoverEligibleFiles(repoDir: string, config: ProductionConfig, 
       }
     } catch (error) {
       // Skip directories we can't read (permissions, etc.)
-      console.warn(`⚠️  Skipping directory ${dirPath}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.warn(
+        `⚠️  Skipping directory ${dirPath}: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -242,7 +255,11 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
 
   // Clone/update repository
   if (config.repository.url) {
-    await cloneRepository(config.repository.url, args.branch || config.repository.branch, workspaceDir);
+    await cloneRepository(
+      config.repository.url,
+      args.branch || config.repository.branch,
+      workspaceDir
+    );
     await validateRepository(repoDir, config);
   }
 
@@ -250,7 +267,7 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
   console.log('� Discovering eligible files...');
   const eligibleFiles = await discoverEligibleFiles(repoDir, config);
   console.log(`📁 Selected ${eligibleFiles.length} files for transformation`);
-  
+
   if (args.verbose) {
     console.log('📄 Files to process:');
     eligibleFiles.forEach((file, index) => {
@@ -272,14 +289,16 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
       patterns: [], // Will be loaded from patterns.json
       maxComplexity: config.transformation.maxComplexityThreshold,
       dryRun: args['dry-run'] || config.transformation.dryRunFirst,
-      productionConfig: config
-    }
+      productionConfig: config,
+    },
   });
 
   // Set up monitoring
   transformationActor.subscribe((state) => {
     if (args.verbose) {
-      console.log(`🔄 State: ${state.value} | Status: ${state.context.currentTransformation?.status || 'pending'}`);
+      console.log(
+        `🔄 State: ${state.value} | Status: ${state.context.currentTransformation?.status || 'pending'}`
+      );
     }
 
     // Log significant events
@@ -294,7 +313,7 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
     } else if (state.matches('failed')) {
       console.error('❌ Transformation failed');
       const errors = state.context.currentTransformation?.errors || [];
-      errors.forEach(error => console.error(`   ${error}`));
+      errors.forEach((error) => console.error(`   ${error}`));
     }
   });
 
@@ -306,11 +325,12 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
       if (state.matches('succeeded')) {
         resolve();
       } else if (state.matches('failed')) {
-        reject(new ProductionError(
-          'Transformation failed',
-          'TRANSFORMATION_FAILED',
-          { state: state.value, errors: state.context.currentTransformation?.errors }
-        ));
+        reject(
+          new ProductionError('Transformation failed', 'TRANSFORMATION_FAILED', {
+            state: state.value,
+            errors: state.context.currentTransformation?.errors,
+          })
+        );
       }
     });
 
@@ -323,8 +343,8 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
         transformationType: 'ast' as const,
         patterns: [], // Will be loaded from patterns
         maxComplexity: config.transformation.maxComplexityThreshold,
-        dryRun: args['dry-run'] || config.transformation.dryRunFirst
-      }
+        dryRun: args['dry-run'] || config.transformation.dryRunFirst,
+      },
     } as any);
   });
 }
@@ -346,15 +366,15 @@ async function main(): Promise<void> {
         'skip-verification': { type: 'boolean' },
         'auto-commit': { type: 'boolean' },
         workspace: { type: 'string' },
-        help: { type: 'boolean' }
+        help: { type: 'boolean' },
       },
-      allowPositionals: false
+      allowPositionals: false,
     });
 
     // Convert max-files to number if provided
     const processedArgs = {
       ...rawArgs,
-      'max-files': rawArgs['max-files'] ? parseInt(rawArgs['max-files']) : undefined
+      'max-files': rawArgs['max-files'] ? parseInt(rawArgs['max-files']) : undefined,
     };
 
     const args = CLIArgsSchema.parse(processedArgs);
@@ -389,7 +409,7 @@ async function main(): Promise<void> {
 
     console.log('🚀 Carmack Coder Production Deployment');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    
+
     if (!config.repository.url) {
       throw new ProductionError(
         'Repository URL is required. Use --repository or provide in config file.',
@@ -400,10 +420,9 @@ async function main(): Promise<void> {
     await runProductionTransformation(config, args);
 
     console.log('🎉 Production deployment completed successfully!');
-
   } catch (error) {
     console.error('💥 Production deployment failed:');
-    
+
     if (error instanceof ProductionError) {
       console.error(`   Error: ${error.message}`);
       console.error(`   Code: ${error.code}`);
@@ -413,7 +432,7 @@ async function main(): Promise<void> {
     } else {
       console.error(`   ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-    
+
     process.exit(1);
   }
 }

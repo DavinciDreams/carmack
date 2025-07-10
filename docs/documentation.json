@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-07-10T20:19:54.244Z",
+  "timestamp": "2025-07-10T20:25:17.510Z",
   "version": "1.0.0",
   "items": [
     {
@@ -1686,6 +1686,25 @@
       }
     },
     {
+      "id": "function-endToEndTestFunction",
+      "type": "function",
+      "name": "endToEndTestFunction",
+      "description": "Test function for end-to-end documentation system validation",
+      "file": "src\\test-e2e-function.ts",
+      "line": 6,
+      "category": "api",
+      "metadata": {
+        "parameters": [
+          {
+            "name": "testId",
+            "description": "Unique identifier for this test"
+          }
+        ],
+        "returns": "Success confirmation message",
+        "language": "typescript"
+      }
+    },
+    {
       "id": "schema-FilePathSchema",
       "type": "type",
       "name": "FilePathSchema",
@@ -3185,6 +3204,25 @@
         "category": "api"
       },
       {
+        "id": "function-endToEndTestFunction",
+        "type": "function",
+        "name": "endToEndTestFunction",
+        "description": "Test function for end-to-end documentation system validation",
+        "file": "src\\test-e2e-function.ts",
+        "line": 6,
+        "category": "api",
+        "metadata": {
+          "parameters": [
+            {
+              "name": "testId",
+              "description": "Unique identifier for this test"
+            }
+          ],
+          "returns": "Success confirmation message",
+          "language": "typescript"
+        }
+      },
+      {
         "id": "function-loadPatterns",
         "type": "function",
         "name": "loadPatterns",
@@ -3459,11 +3497,11 @@
     ]
   },
   "stats": {
-    "totalFiles": 20,
-    "totalItems": 163,
+    "totalFiles": 21,
+    "totalItems": 164,
     "byType": {
       "type": 38,
-      "function": 90,
+      "function": 91,
       "interface": 7,
       "class": 15,
       "state": 1,

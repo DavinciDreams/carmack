@@ -115,7 +115,7 @@ export const CodeQualityDeltaSchema = TelemetryEventBaseSchema.extend({
   /** Calculated improvement values (positive = better) */
   improvement: z.object({
     cyclomaticComplexity: z.number(), // negative = improvement
-    cognitiveComplexity: z.number(), // negative = improvement  
+    cognitiveComplexity: z.number(), // negative = improvement
     maintainabilityIndex: z.number(), // positive = improvement
     duplicationRatio: z.number(), // negative = improvement
   }),
@@ -411,9 +411,9 @@ export const PatternAdoptionMetricSchema = TelemetryEventBaseSchema.extend({
 export type PatternAdoptionMetric = z.infer<typeof PatternAdoptionMetricSchema>;
 
 // Union type for all telemetry metrics
-export type TelemetryMetric = 
+export type TelemetryMetric =
   | PatternSuccessMetric
-  | SemanticCorrectnessMetric  
+  | SemanticCorrectnessMetric
   | CodeQualityDelta
   | LatencyMetric
   | MemoryProfileMetric

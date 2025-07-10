@@ -20,7 +20,7 @@ export class DocumentationCLI {
   async run(args: string[] = process.argv.slice(2)): Promise<void> {
     try {
       const parsed = this.parseArguments(args);
-      
+
       if (parsed.help) {
         this.showHelp();
         return;
@@ -29,7 +29,7 @@ export class DocumentationCLI {
       const config: Partial<DocConfig> = {
         sourceDir: parsed.sourceDir || './src',
         outputDir: parsed.outputDir || './docs',
-        formats: parsed.formats as any || ['markdown'],
+        formats: (parsed.formats as any) || ['markdown'],
       };
 
       // Validate source directory exists
@@ -44,7 +44,6 @@ export class DocumentationCLI {
       } else {
         await this.generateOnce(generator);
       }
-
     } catch (error) {
       console.error('❌ Documentation generation failed:', error);
       process.exit(1);
@@ -57,10 +56,10 @@ export class DocumentationCLI {
       options: {
         'source-dir': { type: 'string', short: 's' },
         'output-dir': { type: 'string', short: 'o' },
-        'formats': { type: 'string', multiple: true, short: 'f' },
-        'watch': { type: 'boolean', short: 'w' },
-        'verbose': { type: 'boolean', short: 'v' },
-        'help': { type: 'boolean', short: 'h' },
+        formats: { type: 'string', multiple: true, short: 'f' },
+        watch: { type: 'boolean', short: 'w' },
+        verbose: { type: 'boolean', short: 'v' },
+        help: { type: 'boolean', short: 'h' },
       },
       allowPositionals: true, // Allow positional arguments for formats
     });
@@ -80,11 +79,11 @@ export class DocumentationCLI {
     const startTime = Date.now();
 
     const result = await generator.generateDocumentation();
-    
+
     const duration = Date.now() - startTime;
     console.log(`✅ Documentation generated successfully in ${duration}ms`);
     console.log(`   📊 ${result.stats.totalItems} items from ${result.stats.totalFiles} files`);
-    
+
     // Show breakdown by type
     for (const [type, count] of Object.entries(result.stats.byType)) {
       const pluralType = this.pluralizeType(type, count);
@@ -96,7 +95,7 @@ export class DocumentationCLI {
     if (count === 1) {
       return type;
     }
-    
+
     // Handle special cases for proper pluralization
     switch (type) {
       case 'class':
@@ -116,14 +115,17 @@ export class DocumentationCLI {
     }
   }
 
-  private async watchMode(generator: DocumentationGenerator, config: Partial<DocConfig>): Promise<void> {
+  private async watchMode(
+    generator: DocumentationGenerator,
+    config: Partial<DocConfig>
+  ): Promise<void> {
     console.log('👀 Starting watch mode...');
     console.log(`   📁 Watching: ${config.sourceDir}`);
     console.log(`   📝 Output: ${config.outputDir}`);
-    
+
     // Initial generation
     await this.generateOnce(generator);
-    
+
     // Set up file watcher
     const watcher = chokidar.watch(config.sourceDir!, {
       ignored: /(^|[\\/\\])\../, // ignore dotfiles
@@ -137,7 +139,7 @@ export class DocumentationCLI {
       if (timeout) {
         clearTimeout(timeout);
       }
-      
+
       timeout = setTimeout(async () => {
         console.log('\n🔄 Files changed, regenerating documentation...');
         try {
@@ -231,7 +233,11 @@ export async function runDocsCLI(args?: string[]): Promise<void> {
 }
 
 // If this file is run directly (works with both Bun and Node)
-if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith('/docs/cli.ts') || process.argv[1]?.endsWith('\\docs\\cli.ts')) {
+if (
+  import.meta.url === `file://${process.argv[1]}` ||
+  process.argv[1]?.endsWith('/docs/cli.ts') ||
+  process.argv[1]?.endsWith('\\docs\\cli.ts')
+) {
   runDocsCLI().catch((error) => {
     console.error('Fatal error:', error);
     process.exit(1);

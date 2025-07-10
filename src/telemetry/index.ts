@@ -7,13 +7,13 @@
 export { TelemetryCollector, getTelemetryCollector, initializeTelemetry } from './collector.js';
 
 // Integration helpers
-export { 
+export {
   createTransformationTelemetry,
   PerformanceTimer,
   MemoryTracker,
   CacheMonitor,
   QualityAnalyzer,
-  TransformationTelemetry
+  TransformationTelemetry,
 } from './integration.js';
 
 // Type definitions
@@ -33,7 +33,7 @@ export type {
   TransformationMode,
   PipelineStages,
   QualityMetrics,
-  TelemetryEventBase
+  TelemetryEventBase,
 } from './types.js';
 
 /**
@@ -42,14 +42,14 @@ export type {
 export const DEFAULT_TELEMETRY_CONFIG = {
   enabled: true,
   performanceSampleRate: 0.1, // 10% sampling for performance
-  behaviorSampleRate: 1.0,    // 100% sampling for behavior
+  behaviorSampleRate: 1.0, // 100% sampling for behavior
   batchSize: 100,
-  flushInterval: 5000,        // 5 seconds
+  flushInterval: 5000, // 5 seconds
   maxBufferSize: 1000,
   privacy: {
-    collectUserIds: false,    // Privacy-first default
-    collectFilePaths: true,   // Needed for debugging
-    retentionDays: 90,        // 3 months retention
+    collectUserIds: false, // Privacy-first default
+    collectFilePaths: true, // Needed for debugging
+    retentionDays: 90, // 3 months retention
   },
 };
 
@@ -60,13 +60,13 @@ export const DEVELOPMENT_TELEMETRY_CONFIG = {
   enabled: true,
   performanceSampleRate: 1.0, // 100% sampling for development
   behaviorSampleRate: 1.0,
-  batchSize: 10,              // Smaller batches for immediate feedback
-  flushInterval: 1000,        // 1 second flush
+  batchSize: 10, // Smaller batches for immediate feedback
+  flushInterval: 1000, // 1 second flush
   maxBufferSize: 100,
   privacy: {
-    collectUserIds: true,     // For development debugging
+    collectUserIds: true, // For development debugging
     collectFilePaths: true,
-    retentionDays: 7,         // Short retention for development
+    retentionDays: 7, // Short retention for development
   },
 };
 

@@ -1,7 +1,7 @@
 // Test file with higher complexity to trigger AST mode
-const globalCounter = 0;;
-const isReady = false;;
-const userName = 'default';;
+const globalCounter = 0;
+const isReady = false;
+const userName = 'default';
 
 function processComplexData(input: any[]): Promise<any> {
   return new Promise((resolve, reject) => {
@@ -10,8 +10,8 @@ function processComplexData(input: any[]): Promise<any> {
       return;
     }
 
-    const results = [];;
-    const errors = [];;
+    const results: any[] = [];
+    const errors: string[] = [];
 
     for (var i = 0; i < input.length; i++) {
       const item = input[i];;

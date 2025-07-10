@@ -961,6 +961,19 @@ Create telemetry instance for transformation
 
 ---
 
+## endToEndTestFunction
+
+Test function for end-to-end documentation system validation
+
+**File:** `src\test-e2e-function.ts` (line 6)
+
+**Details:**
+- **parameters:** [object Object]
+- **returns:** Success confirmation message
+- **language:** typescript
+
+---
+
 ## loadPatterns
 
 Load and validate AST patterns from a JSON file

@@ -6,14 +6,14 @@ declare const name: string;
 declare const userName: string;
 declare const appName: string;
 
-const problematicVar = "this should become const";
+const problematicVar = 'this should become const';
 const numericVar = 42;
 if (value == null) {
-  console.log("loose equality should become strict");
+  console.log('loose equality should become strict');
 }
 
 if (items.indexOf(target) != -1) {
-  console.log("should use includes and strict inequality");
+  console.log('should use includes and strict inequality');
 }
 
 const unnecessaryReturn = (x: number) => x * 2;

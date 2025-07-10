@@ -2,6 +2,6 @@
 const clickCount = 0;
 const isEnabled = true;
 function exampleFunction() {
-  // String concatenation  
+  // String concatenation
   const msg = 'Welcome ' + username + ' to the app';
 }

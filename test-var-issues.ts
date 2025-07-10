@@ -6,13 +6,13 @@ var userName = 'default';
 function processData() {
   var localData = 'test';
   var count = 0;
-  
+
   for (var i = 0; i < 10; i++) {
     if (localData == 'test') {
       count++;
     }
   }
-  
+
   return count;
 }
 

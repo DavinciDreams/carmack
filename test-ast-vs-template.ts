@@ -19,16 +19,18 @@ function processItems(items) {
 const user = {
   id: id,
   name: name,
-  active: active
+  active: active,
 };
 
 // Promise chain that could be async/await
-getData().then((result) => {
-  console.log('Data received:', result);
-  processData(result);
-}).catch((error) => {
-  console.error('Error:', error);
-});
+getData()
+  .then((result) => {
+    console.log('Data received:', result);
+    processData(result);
+  })
+  .catch((error) => {
+    console.error('Error:', error);
+  });
 
 // Arrow function with unnecessary return
 const calculate = (x, y) => x + y;
