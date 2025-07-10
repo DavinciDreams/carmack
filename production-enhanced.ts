@@ -197,7 +197,7 @@ export class CarmackPipelineOrchestrator {
   private async executeTransformation(repoState: any, args: EnhancedCLIArgs): Promise<any> {
     console.log('⚡ STAGE 4: Code Transformation');
     
-    const targetFiles = await this.discoverEligibleFiles(repoState.localPath);
+    const targetFiles = await this.discoverEligibleFiles(repoState.localPath, args);
     
     // Load consolidated patterns for transformation
     const patterns = await this.loadConsolidatedPatterns();
@@ -432,7 +432,7 @@ export class CarmackPipelineOrchestrator {
     return { fileCount: 42, complexity: 'medium' };
   }
 
-  private async discoverEligibleFiles(repoPath: string): Promise<string[]> {
+  private async discoverEligibleFiles(repoPath: string, args: EnhancedCLIArgs): Promise<string[]> {
     // Use existing file discovery logic from production.ts
     const { readdir, stat } = await import('node:fs/promises');
     const { join } = await import('node:path');
@@ -484,7 +484,7 @@ export class CarmackPipelineOrchestrator {
     await walkDirectory(repoPath);
     
     // Limit files for testing
-    const maxFiles = 10;
+    const maxFiles = args['max-files'];
     const selectedFiles = files.slice(0, maxFiles);
     
     console.log(`   📁 Discovered ${files.length} eligible files, selected ${selectedFiles.length} for processing`);
