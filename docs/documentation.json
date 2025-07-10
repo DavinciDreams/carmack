@@ -1,0 +1,3473 @@
+{
+  "timestamp": "2025-07-10T20:19:54.244Z",
+  "version": "1.0.0",
+  "items": [
+    {
+      "id": "schema-AnalysisInputSchema",
+      "type": "type",
+      "name": "AnalysisInputSchema",
+      "description": "Zod validation schema: union([...",
+      "file": "src\\actors\\analysis.ts",
+      "line": 11,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "union([",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-analyzeComplexity",
+      "type": "function",
+      "name": "analyzeComplexity",
+      "description": "",
+      "file": "src\\actors\\analysis.ts",
+      "line": 85,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-analyzeFileComplexity",
+      "type": "function",
+      "name": "analyzeFileComplexity",
+      "description": "",
+      "file": "src\\actors\\analysis.ts",
+      "line": 135,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-determineTransformationMode",
+      "type": "function",
+      "name": "determineTransformationMode",
+      "description": "",
+      "file": "src\\actors\\analysis.ts",
+      "line": 218,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-handleLearning",
+      "type": "function",
+      "name": "handleLearning",
+      "description": "",
+      "file": "src\\actors\\analysis.ts",
+      "line": 238,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-handleSummarization",
+      "type": "function",
+      "name": "handleSummarization",
+      "description": "",
+      "file": "src\\actors\\analysis.ts",
+      "line": 251,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "interface-AnalysisResult",
+      "type": "interface",
+      "name": "AnalysisResult",
+      "file": "src\\actors\\analysis.ts",
+      "line": 31,
+      "category": "api"
+    },
+    {
+      "id": "schema-ComplexityInputSchema",
+      "type": "type",
+      "name": "ComplexityInputSchema",
+      "description": "Zod validation schema: union([...",
+      "file": "src\\actors\\complexity.ts",
+      "line": 6,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "union([",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-calculateComplexityMetrics",
+      "type": "function",
+      "name": "calculateComplexityMetrics",
+      "description": "",
+      "file": "src\\actors\\complexity.ts",
+      "line": 44,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-compareWithBaseline",
+      "type": "function",
+      "name": "compareWithBaseline",
+      "description": "",
+      "file": "src\\actors\\complexity.ts",
+      "line": 60,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "class-counts",
+      "type": "class",
+      "name": "counts",
+      "file": "src\\actors\\complexity.ts",
+      "line": 27,
+      "category": "api"
+    },
+    {
+      "id": "schema-DafnyInputSchema",
+      "type": "type",
+      "name": "DafnyInputSchema",
+      "description": "Zod validation schema: object({...",
+      "file": "src\\actors\\dafny.ts",
+      "line": 7,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "object({",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-generateVerificationConditions",
+      "type": "function",
+      "name": "generateVerificationConditions",
+      "description": "",
+      "file": "src\\actors\\dafny.ts",
+      "line": 46,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-runDafnyVerification",
+      "type": "function",
+      "name": "runDafnyVerification",
+      "description": "",
+      "file": "src\\actors\\dafny.ts",
+      "line": 96,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-checkDafnyAvailable",
+      "type": "function",
+      "name": "checkDafnyAvailable",
+      "description": "",
+      "file": "src\\actors\\dafny.ts",
+      "line": 140,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-createDafnyVerificationFile",
+      "type": "function",
+      "name": "createDafnyVerificationFile",
+      "description": "",
+      "file": "src\\actors\\dafny.ts",
+      "line": 154,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-executeDafnyVerification",
+      "type": "function",
+      "name": "executeDafnyVerification",
+      "description": "",
+      "file": "src\\actors\\dafny.ts",
+      "line": 183,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-fallbackVerification",
+      "type": "function",
+      "name": "fallbackVerification",
+      "description": "",
+      "file": "src\\actors\\dafny.ts",
+      "line": 219,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "schema-GitInputSchema",
+      "type": "type",
+      "name": "GitInputSchema",
+      "description": "Zod validation schema: union([...",
+      "file": "src\\actors\\git.ts",
+      "line": 7,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "union([",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-createCheckpoint",
+      "type": "function",
+      "name": "createCheckpoint",
+      "description": "",
+      "file": "src\\actors\\git.ts",
+      "line": 50,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-commitChanges",
+      "type": "function",
+      "name": "commitChanges",
+      "description": "",
+      "file": "src\\actors\\git.ts",
+      "line": 100,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-rollbackToCheckpoint",
+      "type": "function",
+      "name": "rollbackToCheckpoint",
+      "description": "",
+      "file": "src\\actors\\git.ts",
+      "line": 144,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "schema-TemplatePatternSchema",
+      "type": "type",
+      "name": "TemplatePatternSchema",
+      "description": "Zod validation schema: object({\r...",
+      "file": "src\\actors\\template-engine.ts",
+      "line": 20,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "object({\r",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "schema-TemplateTransformationRequestSchema",
+      "type": "type",
+      "name": "TemplateTransformationRequestSchema",
+      "description": "Zod validation schema: object({\r...",
+      "file": "src\\actors\\template-engine.ts",
+      "line": 76,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "object({\r",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-applyTemplateTransformations",
+      "type": "function",
+      "name": "applyTemplateTransformations",
+      "description": "Apply template transformations with advanced pattern matching",
+      "file": "src\\actors\\template-engine.ts",
+      "line": 142,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-preparePatterns",
+      "type": "function",
+      "name": "preparePatterns",
+      "description": "Prepare patterns for optimal processing",
+      "file": "src\\actors\\template-engine.ts",
+      "line": 194,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-transformFileWithTemplates",
+      "type": "function",
+      "name": "transformFileWithTemplates",
+      "description": "Transform a single file with template patterns",
+      "file": "src\\actors\\template-engine.ts",
+      "line": 213,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-applyTemplatePattern",
+      "type": "function",
+      "name": "applyTemplatePattern",
+      "description": "Apply a single template pattern with advanced matching",
+      "file": "src\\actors\\template-engine.ts",
+      "line": 265,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-findTemplateMatches",
+      "type": "function",
+      "name": "findTemplateMatches",
+      "description": "Find all template matches in content using sophisticated pattern matching",
+      "file": "src\\actors\\template-engine.ts",
+      "line": 313,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-templateToRegex",
+      "type": "function",
+      "name": "templateToRegex",
+      "description": "Convert template pattern to regex with variable capture groups",
+      "file": "src\\actors\\template-engine.ts",
+      "line": 373,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-inferVariableType",
+      "type": "function",
+      "name": "inferVariableType",
+      "description": "Infer the type of a captured variable",
+      "file": "src\\actors\\template-engine.ts",
+      "line": 430,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-extractVariableContext",
+      "type": "function",
+      "name": "extractVariableContext",
+      "description": "Extract variable context for formatting preservation",
+      "file": "src\\actors\\template-engine.ts",
+      "line": 451,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-extractIndentation",
+      "type": "function",
+      "name": "extractIndentation",
+      "description": "Extract indentation from content at a given position",
+      "file": "src\\actors\\template-engine.ts",
+      "line": 468,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-matchesContext",
+      "type": "function",
+      "name": "matchesContext",
+      "description": "Check if a match satisfies contextual constraints",
+      "file": "src\\actors\\template-engine.ts",
+      "line": 477,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-generateReplacement",
+      "type": "function",
+      "name": "generateReplacement",
+      "description": "Generate replacement text from a match and pattern",
+      "file": "src\\actors\\template-engine.ts",
+      "line": 514,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-evaluateCondition",
+      "type": "function",
+      "name": "evaluateCondition",
+      "description": "Simple condition evaluator (safe subset of JavaScript)",
+      "file": "src\\actors\\template-engine.ts",
+      "line": 558,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-applyTransformer",
+      "type": "function",
+      "name": "applyTransformer",
+      "description": "Apply text transformers to variable values",
+      "file": "src\\actors\\template-engine.ts",
+      "line": 582,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-preserveFormatting",
+      "type": "function",
+      "name": "preserveFormatting",
+      "description": "Preserve formatting from the original match",
+      "file": "src\\actors\\template-engine.ts",
+      "line": 606,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "interface-TemplateVariable",
+      "type": "interface",
+      "name": "TemplateVariable",
+      "file": "src\\actors\\template-engine.ts",
+      "line": 94,
+      "category": "api"
+    },
+    {
+      "id": "interface-TemplateMatch",
+      "type": "interface",
+      "name": "TemplateMatch",
+      "file": "src\\actors\\template-engine.ts",
+      "line": 108,
+      "category": "api"
+    },
+    {
+      "id": "schema-EnhancedPatternSchema",
+      "type": "type",
+      "name": "EnhancedPatternSchema",
+      "description": "Zod validation schema: object({\r...",
+      "file": "src\\actors\\transformation-enhanced.ts",
+      "line": 7,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "object({\r",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "schema-EnhancedTransformationRequestSchema",
+      "type": "type",
+      "name": "EnhancedTransformationRequestSchema",
+      "description": "Zod validation schema: object({\r...",
+      "file": "src\\actors\\transformation-enhanced.ts",
+      "line": 49,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "object({\r",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-applyEnhancedTemplateTransformation",
+      "type": "function",
+      "name": "applyEnhancedTemplateTransformation",
+      "description": "Apply enhanced template-based transformations with better pattern matching",
+      "file": "src\\actors\\transformation-enhanced.ts",
+      "line": 98,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-applyRealASTTransformation",
+      "type": "function",
+      "name": "applyRealASTTransformation",
+      "description": "Apply REAL AST-grep transformations using the native API",
+      "file": "src\\actors\\transformation-enhanced.ts",
+      "line": 153,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-applyEnhancedTemplatePattern",
+      "type": "function",
+      "name": "applyEnhancedTemplatePattern",
+      "description": "Apply enhanced template pattern with robust matching",
+      "file": "src\\actors\\transformation-enhanced.ts",
+      "line": 215,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-applyRealASTPattern",
+      "type": "function",
+      "name": "applyRealASTPattern",
+      "description": "Apply REAL AST pattern using ast-grep native API",
+      "file": "src\\actors\\transformation-enhanced.ts",
+      "line": 274,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-applySmartVarTransformation",
+      "type": "function",
+      "name": "applySmartVarTransformation",
+      "description": "Enhanced smart var transformation with proper scoping analysis",
+      "file": "src\\actors\\transformation-enhanced.ts",
+      "line": 341,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-applyStrictEqualityTransformation",
+      "type": "function",
+      "name": "applyStrictEqualityTransformation",
+      "description": "Apply strict equality transformation",
+      "file": "src\\actors\\transformation-enhanced.ts",
+      "line": 369,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-applyStrictInequalityTransformation",
+      "type": "function",
+      "name": "applyStrictInequalityTransformation",
+      "description": "Apply strict inequality transformation",
+      "file": "src\\actors\\transformation-enhanced.ts",
+      "line": 382,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-applyConsoleErrorTransformation",
+      "type": "function",
+      "name": "applyConsoleErrorTransformation",
+      "description": "Apply console.error transformation for error messages",
+      "file": "src\\actors\\transformation-enhanced.ts",
+      "line": 395,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-applyEnhancedLLMTransformation",
+      "type": "function",
+      "name": "applyEnhancedLLMTransformation",
+      "description": "Enhanced LLM transformation (placeholder for future implementation)",
+      "file": "src\\actors\\transformation-enhanced.ts",
+      "line": 408,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "schema-TransformationInputSchema",
+      "type": "type",
+      "name": "TransformationInputSchema",
+      "description": "Zod validation schema: object({...",
+      "file": "src\\actors\\transformation.ts",
+      "line": 9,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "object({",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-applyTemplateTransformation",
+      "type": "function",
+      "name": "applyTemplateTransformation",
+      "description": "",
+      "file": "src\\actors\\transformation.ts",
+      "line": 55,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-enhancedTemplateTransformation",
+      "type": "function",
+      "name": "enhancedTemplateTransformation",
+      "description": "Enhanced template transformation with smart heuristics",
+      "file": "src\\actors\\transformation.ts",
+      "line": 187,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-enhancedVarTransformation",
+      "type": "function",
+      "name": "enhancedVarTransformation",
+      "description": "Enhanced var transformation that properly handles async",
+      "file": "src\\actors\\transformation.ts",
+      "line": 195,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-applyAstTransformation",
+      "type": "function",
+      "name": "applyAstTransformation",
+      "description": "",
+      "file": "src\\actors\\transformation.ts",
+      "line": 241,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-smartVarToConstLetAST",
+      "type": "function",
+      "name": "smartVarToConstLetAST",
+      "description": "AST-based smart var to const/let transformation",
+      "file": "src\\actors\\transformation.ts",
+      "line": 365,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-isLiteralValue",
+      "type": "function",
+      "name": "isLiteralValue",
+      "description": "Check if a value looks like a literal (should use const)",
+      "file": "src\\actors\\transformation.ts",
+      "line": 405,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-promiseToAsyncAwaitAST",
+      "type": "function",
+      "name": "promiseToAsyncAwaitAST",
+      "description": "Convert Promise chains to async/await",
+      "file": "src\\actors\\transformation.ts",
+      "line": 419,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-enhanceObjectDestructuring",
+      "type": "function",
+      "name": "enhanceObjectDestructuring",
+      "description": "Enhance object destructuring",
+      "file": "src\\actors\\transformation.ts",
+      "line": 449,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-removeUnnecessaryReturns",
+      "type": "function",
+      "name": "removeUnnecessaryReturns",
+      "description": "Remove unnecessary return statements",
+      "file": "src\\actors\\transformation.ts",
+      "line": 466,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-combineVariableDeclarations",
+      "type": "function",
+      "name": "combineVariableDeclarations",
+      "description": "Combine variable declarations",
+      "file": "src\\actors\\transformation.ts",
+      "line": 488,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-callbackToPromise",
+      "type": "function",
+      "name": "callbackToPromise",
+      "description": "Convert callback patterns to Promises",
+      "file": "src\\actors\\transformation.ts",
+      "line": 548,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-modernizeFunctionDeclarations",
+      "type": "function",
+      "name": "modernizeFunctionDeclarations",
+      "description": "Modernize function declarations",
+      "file": "src\\actors\\transformation.ts",
+      "line": 586,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-name",
+      "type": "function",
+      "name": "name",
+      "description": "",
+      "file": "src\\actors\\transformation.ts",
+      "line": 595,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-applyGenericASTPattern",
+      "type": "function",
+      "name": "applyGenericASTPattern",
+      "description": "Apply generic AST pattern using AST-grep syntax",
+      "file": "src\\actors\\transformation.ts",
+      "line": 615,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-applyLlmTransformation",
+      "type": "function",
+      "name": "applyLlmTransformation",
+      "description": "",
+      "file": "src\\actors\\transformation.ts",
+      "line": 639,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-generateDefaultPrompt",
+      "type": "function",
+      "name": "generateDefaultPrompt",
+      "description": "",
+      "file": "src\\actors\\transformation.ts",
+      "line": 691,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-smartVarTransformation",
+      "type": "function",
+      "name": "smartVarTransformation",
+      "description": "",
+      "file": "src\\actors\\transformation.ts",
+      "line": 700,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-advancedCallbackToAsync",
+      "type": "function",
+      "name": "advancedCallbackToAsync",
+      "description": "",
+      "file": "src\\actors\\transformation.ts",
+      "line": 729,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-modernizeClasses",
+      "type": "function",
+      "name": "modernizeClasses",
+      "description": "",
+      "file": "src\\actors\\transformation.ts",
+      "line": 751,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-Constructor",
+      "type": "function",
+      "name": "Constructor",
+      "description": "",
+      "file": "src\\actors\\transformation.ts",
+      "line": 755,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-strictEqualityAST",
+      "type": "function",
+      "name": "strictEqualityAST",
+      "description": "AST-based strict equality conversion (== to ===)",
+      "file": "src\\actors\\transformation.ts",
+      "line": 775,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-strictInequalityAST",
+      "type": "function",
+      "name": "strictInequalityAST",
+      "description": "AST-based strict inequality conversion (!= to !==)",
+      "file": "src\\actors\\transformation.ts",
+      "line": 803,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-arrayIncludesAST",
+      "type": "function",
+      "name": "arrayIncludesAST",
+      "description": "AST-based array includes conversion (indexOf !== -1 to includes)",
+      "file": "src\\actors\\transformation.ts",
+      "line": 825,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-removeUnnecessaryReturnsAST",
+      "type": "function",
+      "name": "removeUnnecessaryReturnsAST",
+      "description": "AST-based removal of unnecessary return statements",
+      "file": "src\\actors\\transformation.ts",
+      "line": 847,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-objectPropertyShorthandAST",
+      "type": "function",
+      "name": "objectPropertyShorthandAST",
+      "description": "AST-based object property shorthand conversion",
+      "file": "src\\actors\\transformation.ts",
+      "line": 869,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-templateLiteralConversionAST",
+      "type": "function",
+      "name": "templateLiteralConversionAST",
+      "description": "AST-based template literal conversion",
+      "file": "src\\actors\\transformation.ts",
+      "line": 892,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-constLoopVariableFixAST",
+      "type": "function",
+      "name": "constLoopVariableFixAST",
+      "description": "AST-based const loop variable fix",
+      "file": "src\\actors\\transformation.ts",
+      "line": 915,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "class-modernization",
+      "type": "class",
+      "name": "modernization",
+      "file": "src\\actors\\transformation.ts",
+      "line": 663,
+      "category": "api"
+    },
+    {
+      "id": "class-syntax",
+      "type": "class",
+      "name": "syntax",
+      "file": "src\\actors\\transformation.ts",
+      "line": 695,
+      "category": "api"
+    },
+    {
+      "id": "schema-ValidationInputSchema",
+      "type": "type",
+      "name": "ValidationInputSchema",
+      "description": "Zod validation schema: union([...",
+      "file": "src\\actors\\validation.ts",
+      "line": 37,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "union([",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-getBunExecutable",
+      "type": "function",
+      "name": "getBunExecutable",
+      "description": "",
+      "file": "src\\actors\\validation.ts",
+      "line": 8,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-validateFormat",
+      "type": "function",
+      "name": "validateFormat",
+      "description": "",
+      "file": "src\\actors\\validation.ts",
+      "line": 94,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-fixFormat",
+      "type": "function",
+      "name": "fixFormat",
+      "description": "",
+      "file": "src\\actors\\validation.ts",
+      "line": 170,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-validateTypes",
+      "type": "function",
+      "name": "validateTypes",
+      "description": "",
+      "file": "src\\actors\\validation.ts",
+      "line": 231,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-fixTypes",
+      "type": "function",
+      "name": "fixTypes",
+      "description": "",
+      "file": "src\\actors\\validation.ts",
+      "line": 285,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-validateQuality",
+      "type": "function",
+      "name": "validateQuality",
+      "description": "",
+      "file": "src\\actors\\validation.ts",
+      "line": 298,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-runDocsCLI",
+      "type": "function",
+      "name": "runDocsCLI",
+      "description": "",
+      "file": "src\\docs\\cli.ts",
+      "line": 228,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "class-DocumentationCLI",
+      "type": "class",
+      "name": "DocumentationCLI",
+      "file": "src\\docs\\cli.ts",
+      "line": 19,
+      "category": "api"
+    },
+    {
+      "id": "interface-for",
+      "type": "interface",
+      "name": "for",
+      "file": "src\\docs\\cli.ts",
+      "line": 2,
+      "category": "api"
+    },
+    {
+      "id": "interface-DocCLIOptions",
+      "type": "interface",
+      "name": "DocCLIOptions",
+      "file": "src\\docs\\cli.ts",
+      "line": 10,
+      "category": "api"
+    },
+    {
+      "id": "schema-DocConfigSchema",
+      "type": "type",
+      "name": "DocConfigSchema",
+      "description": "Zod validation schema: object({\r...",
+      "file": "src\\docs\\generator.ts",
+      "line": 14,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "object({\r",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-walkDir",
+      "type": "function",
+      "name": "walkDir",
+      "description": "",
+      "file": "src\\docs\\generator.ts",
+      "line": 115,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-showSection",
+      "type": "function",
+      "name": "showSection",
+      "description": "",
+      "file": "src\\docs\\generator.ts",
+      "line": 610,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "class-DocumentationGenerator",
+      "type": "class",
+      "name": "DocumentationGenerator",
+      "file": "src\\docs\\generator.ts",
+      "line": 64,
+      "category": "api"
+    },
+    {
+      "id": "interface-DocumentationItem",
+      "type": "interface",
+      "name": "DocumentationItem",
+      "file": "src\\docs\\generator.ts",
+      "line": 33,
+      "category": "api"
+    },
+    {
+      "id": "interface-GeneratedDocumentation",
+      "type": "interface",
+      "name": "GeneratedDocumentation",
+      "file": "src\\docs\\generator.ts",
+      "line": 44,
+      "category": "api"
+    },
+    {
+      "id": "function-getUserInfo",
+      "type": "function",
+      "name": "getUserInfo",
+      "description": "",
+      "file": "src\\example.ts",
+      "line": 6,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-processUser",
+      "type": "function",
+      "name": "processUser",
+      "description": "",
+      "file": "src\\example.ts",
+      "line": 26,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-calculateTotal",
+      "type": "function",
+      "name": "calculateTotal",
+      "description": "",
+      "file": "src\\example.ts",
+      "line": 45,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-fetchData",
+      "type": "function",
+      "name": "fetchData",
+      "description": "",
+      "file": "src\\example.ts",
+      "line": 54,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "machine-_carmackCoderMachine",
+      "type": "state",
+      "name": "_carmackCoderMachine",
+      "description": "XState machine with 0 states: ",
+      "file": "src\\machine.ts",
+      "line": 27,
+      "category": "state-machine",
+      "metadata": {
+        "machineType": "xstate",
+        "states": [],
+        "stateCount": 0,
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "pattern-smart-var-to-const-let",
+      "type": "pattern",
+      "name": "smart-var-to-const-let",
+      "description": "Smart conversion of var to const/let based on value analysis",
+      "file": "src\\patterns\\enhanced-templates.json",
+      "category": "modernization",
+      "metadata": {
+        "complexity": 2,
+        "riskLevel": "low",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "pattern-strict-equality-comprehensive",
+      "type": "pattern",
+      "name": "strict-equality-comprehensive",
+      "description": "Convert loose equality to strict equality",
+      "file": "src\\patterns\\enhanced-templates.json",
+      "category": "safety",
+      "metadata": {
+        "complexity": 1,
+        "riskLevel": "low",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "pattern-strict-inequality-comprehensive",
+      "type": "pattern",
+      "name": "strict-inequality-comprehensive",
+      "description": "Convert loose inequality to strict inequality",
+      "file": "src\\patterns\\enhanced-templates.json",
+      "category": "safety",
+      "metadata": {
+        "complexity": 1,
+        "riskLevel": "low",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "pattern-template-literal-advanced",
+      "type": "pattern",
+      "name": "template-literal-advanced",
+      "description": "Convert string concatenation to template literals with smart quote handling",
+      "file": "src\\patterns\\enhanced-templates.json",
+      "category": "modernization",
+      "metadata": {
+        "complexity": 3,
+        "riskLevel": "low",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "pattern-object-shorthand-enhanced",
+      "type": "pattern",
+      "name": "object-shorthand-enhanced",
+      "description": "Use object property shorthand syntax",
+      "file": "src\\patterns\\enhanced-templates.json",
+      "category": "optimization",
+      "metadata": {
+        "complexity": 1,
+        "riskLevel": "low",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "pattern-arrow-function-optimization",
+      "type": "pattern",
+      "name": "arrow-function-optimization",
+      "description": "Remove unnecessary return from arrow functions",
+      "file": "src\\patterns\\enhanced-templates.json",
+      "category": "optimization",
+      "metadata": {
+        "complexity": 2,
+        "riskLevel": "low",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "pattern-array-includes-modernization",
+      "type": "pattern",
+      "name": "array-includes-modernization",
+      "description": "Use Array.includes() instead of indexOf() !== -1",
+      "file": "src\\patterns\\enhanced-templates.json",
+      "category": "modernization",
+      "metadata": {
+        "complexity": 2,
+        "riskLevel": "low",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "pattern-console-error-conversion",
+      "type": "pattern",
+      "name": "console-error-conversion",
+      "description": "Convert console.log to console.error for error messages",
+      "file": "src\\patterns\\enhanced-templates.json",
+      "category": "logging",
+      "metadata": {
+        "complexity": 2,
+        "riskLevel": "low",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "pattern-const-to-let-loops",
+      "type": "pattern",
+      "name": "const-to-let-loops",
+      "description": "Fix const loop variables that need reassignment",
+      "file": "src\\patterns\\enhanced-templates.json",
+      "category": "safety",
+      "metadata": {
+        "complexity": 2,
+        "riskLevel": "medium",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "pattern-null-coalescing-opportunity",
+      "type": "pattern",
+      "name": "null-coalescing-opportunity",
+      "description": "Use nullish coalescing operator for null/undefined checks",
+      "file": "src\\patterns\\enhanced-templates.json",
+      "category": "modernization",
+      "metadata": {
+        "complexity": 3,
+        "riskLevel": "medium",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "pattern-destructuring-opportunity",
+      "type": "pattern",
+      "name": "destructuring-opportunity",
+      "description": "Convert multiple property access to destructuring",
+      "file": "src\\patterns\\enhanced-templates.json",
+      "category": "modernization",
+      "metadata": {
+        "complexity": 4,
+        "riskLevel": "medium",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "pattern-optional-chaining-opportunity",
+      "type": "pattern",
+      "name": "optional-chaining-opportunity",
+      "description": "Use optional chaining instead of guard checks",
+      "file": "src\\patterns\\enhanced-templates.json",
+      "category": "modernization",
+      "metadata": {
+        "complexity": 3,
+        "riskLevel": "medium",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-getTelemetryCollector",
+      "type": "function",
+      "name": "getTelemetryCollector",
+      "description": "Get or create global telemetry collector instance",
+      "file": "src\\telemetry\\collector.ts",
+      "line": 641,
+      "category": "api",
+      "metadata": {
+        "parameters": [
+          {
+            "name": "config",
+            "description": "Optional configuration override"
+          }
+        ],
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-initializeTelemetry",
+      "type": "function",
+      "name": "initializeTelemetry",
+      "description": "Initialize telemetry system with configuration",
+      "file": "src\\telemetry\\collector.ts",
+      "line": 652,
+      "category": "api",
+      "metadata": {
+        "parameters": [
+          {
+            "name": "config",
+            "description": "Telemetry configuration"
+          }
+        ],
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "class-TelemetryBuffer",
+      "type": "class",
+      "name": "TelemetryBuffer",
+      "file": "src\\telemetry\\collector.ts",
+      "line": 27,
+      "category": "api"
+    },
+    {
+      "id": "class-PrivacyManager",
+      "type": "class",
+      "name": "PrivacyManager",
+      "file": "src\\telemetry\\collector.ts",
+      "line": 88,
+      "category": "api"
+    },
+    {
+      "id": "class-PerformanceMonitor",
+      "type": "class",
+      "name": "PerformanceMonitor",
+      "file": "src\\telemetry\\collector.ts",
+      "line": 135,
+      "category": "api"
+    },
+    {
+      "id": "class-TelemetryCollector",
+      "type": "class",
+      "name": "TelemetryCollector",
+      "file": "src\\telemetry\\collector.ts",
+      "line": 177,
+      "category": "api"
+    },
+    {
+      "id": "function-createTransformationTelemetry",
+      "type": "function",
+      "name": "createTransformationTelemetry",
+      "description": "Create telemetry instance for transformation",
+      "file": "src\\telemetry\\integration.ts",
+      "line": 644,
+      "category": "api",
+      "metadata": {
+        "parameters": [
+          {
+            "name": "transformationId",
+            "description": "Unique transformation ID"
+          },
+          {
+            "name": "mode",
+            "description": "Transformation mode"
+          },
+          {
+            "name": "filePath",
+            "description": "File being transformed"
+          },
+          {
+            "name": "code",
+            "description": "Original source code"
+          }
+        ],
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "class-PerformanceTimer",
+      "type": "class",
+      "name": "PerformanceTimer",
+      "file": "src\\telemetry\\integration.ts",
+      "line": 19,
+      "category": "api"
+    },
+    {
+      "id": "class-MemoryTracker",
+      "type": "class",
+      "name": "MemoryTracker",
+      "file": "src\\telemetry\\integration.ts",
+      "line": 67,
+      "category": "api"
+    },
+    {
+      "id": "class-CacheMonitor",
+      "type": "class",
+      "name": "CacheMonitor",
+      "file": "src\\telemetry\\integration.ts",
+      "line": 165,
+      "category": "api"
+    },
+    {
+      "id": "class-QualityAnalyzer",
+      "type": "class",
+      "name": "QualityAnalyzer",
+      "file": "src\\telemetry\\integration.ts",
+      "line": 259,
+      "category": "api"
+    },
+    {
+      "id": "class-for",
+      "type": "class",
+      "name": "for",
+      "file": "src\\telemetry\\integration.ts",
+      "line": 431,
+      "category": "api"
+    },
+    {
+      "id": "class-TransformationTelemetry",
+      "type": "class",
+      "name": "TransformationTelemetry",
+      "file": "src\\telemetry\\integration.ts",
+      "line": 433,
+      "category": "api"
+    },
+    {
+      "id": "schema-TelemetryEventBaseSchema",
+      "type": "type",
+      "name": "TelemetryEventBaseSchema",
+      "description": "Zod validation schema: object({\r...",
+      "file": "src\\telemetry\\types.ts",
+      "line": 9,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "object({\r",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "schema-TransformationModeSchema",
+      "type": "type",
+      "name": "TransformationModeSchema",
+      "description": "Zod validation schema: enum(['template', 'ast', 'llm'])...",
+      "file": "src\\telemetry\\types.ts",
+      "line": 25,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "enum(['template', 'ast', 'llm'])",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "schema-QualityMetricsSchema",
+      "type": "type",
+      "name": "QualityMetricsSchema",
+      "description": "Zod validation schema: object({\r...",
+      "file": "src\\telemetry\\types.ts",
+      "line": 83,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "object({\r",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "schema-PipelineStagesSchema",
+      "type": "type",
+      "name": "PipelineStagesSchema",
+      "description": "Zod validation schema: object({\r...",
+      "file": "src\\telemetry\\types.ts",
+      "line": 131,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "object({\r",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "schema-MemoryTimelinePointSchema",
+      "type": "type",
+      "name": "MemoryTimelinePointSchema",
+      "description": "Zod validation schema: object({\r...",
+      "file": "src\\telemetry\\types.ts",
+      "line": 176,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "object({\r",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "schema-UserActionSchema",
+      "type": "type",
+      "name": "UserActionSchema",
+      "description": "Zod validation schema: object({\r...",
+      "file": "src\\telemetry\\types.ts",
+      "line": 242,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "object({\r",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "schema-RecoveryActionSchema",
+      "type": "type",
+      "name": "RecoveryActionSchema",
+      "description": "Zod validation schema: object({\r...",
+      "file": "src\\telemetry\\types.ts",
+      "line": 283,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "object({\r",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "schema-ProductivityMeasurementSchema",
+      "type": "type",
+      "name": "ProductivityMeasurementSchema",
+      "description": "Zod validation schema: object({\r...",
+      "file": "src\\telemetry\\types.ts",
+      "line": 322,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "object({\r",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "schema-PatternLifecycleSchema",
+      "type": "type",
+      "name": "PatternLifecycleSchema",
+      "description": "Zod validation schema: object({\r...",
+      "file": "src\\telemetry\\types.ts",
+      "line": 363,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "object({\r",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "schema-PatternFeedbackSchema",
+      "type": "type",
+      "name": "PatternFeedbackSchema",
+      "description": "Zod validation schema: object({\r...",
+      "file": "src\\telemetry\\types.ts",
+      "line": 379,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "object({\r",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "schema-TelemetryMetricSchema",
+      "type": "type",
+      "name": "TelemetryMetricSchema",
+      "description": "Zod validation schema: discriminatedUnion('id', [\r...",
+      "file": "src\\telemetry\\types.ts",
+      "line": 427,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "discriminatedUnion('id', [\r",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "schema-TelemetryConfigSchema",
+      "type": "type",
+      "name": "TelemetryConfigSchema",
+      "description": "Zod validation schema: object({\r...",
+      "file": "src\\telemetry\\types.ts",
+      "line": 443,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "object({\r",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "schema-FilePathSchema",
+      "type": "type",
+      "name": "FilePathSchema",
+      "description": "Zod validation schema: string().min(1)...",
+      "file": "src\\types.ts",
+      "line": 4,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "string().min(1)",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "schema-GitHashSchema",
+      "type": "type",
+      "name": "GitHashSchema",
+      "description": "Zod validation schema: string().regex(/^[a-f0-9]{40}$/)...",
+      "file": "src\\types.ts",
+      "line": 5,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "string().regex(/^[a-f0-9]{40}$/)",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "schema-TimestampSchema",
+      "type": "type",
+      "name": "TimestampSchema",
+      "description": "Zod validation schema: number().int().positive()...",
+      "file": "src\\types.ts",
+      "line": 6,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "number().int().positive()",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "schema-TransformationModeSchema",
+      "type": "type",
+      "name": "TransformationModeSchema",
+      "description": "Zod validation schema: enum(['template', 'ast', 'llm'])...",
+      "file": "src\\types.ts",
+      "line": 9,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "enum(['template', 'ast', 'llm'])",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "schema-TransformationStatusSchema",
+      "type": "type",
+      "name": "TransformationStatusSchema",
+      "description": "Zod validation schema: enum([...",
+      "file": "src\\types.ts",
+      "line": 10,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "enum([",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "schema-ComplexityMetricsSchema",
+      "type": "type",
+      "name": "ComplexityMetricsSchema",
+      "description": "Zod validation schema: object({...",
+      "file": "src\\types.ts",
+      "line": 21,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "object({",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "schema-AstPatternSchema",
+      "type": "type",
+      "name": "AstPatternSchema",
+      "description": "Zod validation schema: object({...",
+      "file": "src\\types.ts",
+      "line": 31,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "object({",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "schema-ErrorInfoSchema",
+      "type": "type",
+      "name": "ErrorInfoSchema",
+      "description": "Zod validation schema: object({...",
+      "file": "src\\types.ts",
+      "line": 43,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "object({",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "schema-ValidationResultSchema",
+      "type": "type",
+      "name": "ValidationResultSchema",
+      "description": "Zod validation schema: object({...",
+      "file": "src\\types.ts",
+      "line": 53,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "object({",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "schema-GitCheckpointSchema",
+      "type": "type",
+      "name": "GitCheckpointSchema",
+      "description": "Zod validation schema: object({...",
+      "file": "src\\types.ts",
+      "line": 61,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "object({",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "schema-TransformationRequestSchema",
+      "type": "type",
+      "name": "TransformationRequestSchema",
+      "description": "Zod validation schema: object({...",
+      "file": "src\\types.ts",
+      "line": 69,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "object({",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "schema-TransformationResultSchema",
+      "type": "type",
+      "name": "TransformationResultSchema",
+      "description": "Zod validation schema: object({...",
+      "file": "src\\types.ts",
+      "line": 79,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "object({",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "schema-MachineContextSchema",
+      "type": "type",
+      "name": "MachineContextSchema",
+      "description": "Zod validation schema: object({...",
+      "file": "src\\types.ts",
+      "line": 95,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "object({",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "schema-MachineEventSchema",
+      "type": "type",
+      "name": "MachineEventSchema",
+      "description": "Zod validation schema: union([...",
+      "file": "src\\types.ts",
+      "line": 113,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "union([",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "schema-PatternsFileSchema",
+      "type": "type",
+      "name": "PatternsFileSchema",
+      "description": "Zod validation schema: object({...",
+      "file": "src\\utils\\index.ts",
+      "line": 10,
+      "category": "validation",
+      "metadata": {
+        "schemaType": "zod",
+        "definition": "object({",
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-loadPatterns",
+      "type": "function",
+      "name": "loadPatterns",
+      "description": "Load and validate AST patterns from a JSON file",
+      "file": "src\\utils\\index.ts",
+      "line": 27,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-savePatterns",
+      "type": "function",
+      "name": "savePatterns",
+      "description": "Save patterns to a JSON file",
+      "file": "src\\utils\\index.ts",
+      "line": 42,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-filterPatternsByComplexity",
+      "type": "function",
+      "name": "filterPatternsByComplexity",
+      "description": "Filter patterns by complexity level",
+      "file": "src\\utils\\index.ts",
+      "line": 67,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-filterPatternsByRisk",
+      "type": "function",
+      "name": "filterPatternsByRisk",
+      "description": "Filter patterns by risk level",
+      "file": "src\\utils\\index.ts",
+      "line": 77,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-filterPatternsByLanguage",
+      "type": "function",
+      "name": "filterPatternsByLanguage",
+      "description": "Filter patterns by programming language",
+      "file": "src\\utils\\index.ts",
+      "line": 90,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-createSafeFilename",
+      "type": "function",
+      "name": "createSafeFilename",
+      "description": "Create a safe filename from a transformation ID",
+      "file": "src\\utils\\index.ts",
+      "line": 97,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-isValidFilePath",
+      "type": "function",
+      "name": "isValidFilePath",
+      "description": "Check if a string is a valid file path",
+      "file": "src\\utils\\index.ts",
+      "line": 163,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-sanitizeForLog",
+      "type": "function",
+      "name": "sanitizeForLog",
+      "description": "Sanitize a string for safe logging",
+      "file": "src\\utils\\index.ts",
+      "line": 171,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    }
+  ],
+  "structure": {
+    "api": [
+      {
+        "id": "function-analyzeComplexity",
+        "type": "function",
+        "name": "analyzeComplexity",
+        "description": "",
+        "file": "src\\actors\\analysis.ts",
+        "line": 85,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-analyzeFileComplexity",
+        "type": "function",
+        "name": "analyzeFileComplexity",
+        "description": "",
+        "file": "src\\actors\\analysis.ts",
+        "line": 135,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-determineTransformationMode",
+        "type": "function",
+        "name": "determineTransformationMode",
+        "description": "",
+        "file": "src\\actors\\analysis.ts",
+        "line": 218,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-handleLearning",
+        "type": "function",
+        "name": "handleLearning",
+        "description": "",
+        "file": "src\\actors\\analysis.ts",
+        "line": 238,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-handleSummarization",
+        "type": "function",
+        "name": "handleSummarization",
+        "description": "",
+        "file": "src\\actors\\analysis.ts",
+        "line": 251,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "interface-AnalysisResult",
+        "type": "interface",
+        "name": "AnalysisResult",
+        "file": "src\\actors\\analysis.ts",
+        "line": 31,
+        "category": "api"
+      },
+      {
+        "id": "function-calculateComplexityMetrics",
+        "type": "function",
+        "name": "calculateComplexityMetrics",
+        "description": "",
+        "file": "src\\actors\\complexity.ts",
+        "line": 44,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-compareWithBaseline",
+        "type": "function",
+        "name": "compareWithBaseline",
+        "description": "",
+        "file": "src\\actors\\complexity.ts",
+        "line": 60,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "class-counts",
+        "type": "class",
+        "name": "counts",
+        "file": "src\\actors\\complexity.ts",
+        "line": 27,
+        "category": "api"
+      },
+      {
+        "id": "function-generateVerificationConditions",
+        "type": "function",
+        "name": "generateVerificationConditions",
+        "description": "",
+        "file": "src\\actors\\dafny.ts",
+        "line": 46,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-runDafnyVerification",
+        "type": "function",
+        "name": "runDafnyVerification",
+        "description": "",
+        "file": "src\\actors\\dafny.ts",
+        "line": 96,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-checkDafnyAvailable",
+        "type": "function",
+        "name": "checkDafnyAvailable",
+        "description": "",
+        "file": "src\\actors\\dafny.ts",
+        "line": 140,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-createDafnyVerificationFile",
+        "type": "function",
+        "name": "createDafnyVerificationFile",
+        "description": "",
+        "file": "src\\actors\\dafny.ts",
+        "line": 154,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-executeDafnyVerification",
+        "type": "function",
+        "name": "executeDafnyVerification",
+        "description": "",
+        "file": "src\\actors\\dafny.ts",
+        "line": 183,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-fallbackVerification",
+        "type": "function",
+        "name": "fallbackVerification",
+        "description": "",
+        "file": "src\\actors\\dafny.ts",
+        "line": 219,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-createCheckpoint",
+        "type": "function",
+        "name": "createCheckpoint",
+        "description": "",
+        "file": "src\\actors\\git.ts",
+        "line": 50,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-commitChanges",
+        "type": "function",
+        "name": "commitChanges",
+        "description": "",
+        "file": "src\\actors\\git.ts",
+        "line": 100,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-rollbackToCheckpoint",
+        "type": "function",
+        "name": "rollbackToCheckpoint",
+        "description": "",
+        "file": "src\\actors\\git.ts",
+        "line": 144,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-applyTemplateTransformations",
+        "type": "function",
+        "name": "applyTemplateTransformations",
+        "description": "Apply template transformations with advanced pattern matching",
+        "file": "src\\actors\\template-engine.ts",
+        "line": 142,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-preparePatterns",
+        "type": "function",
+        "name": "preparePatterns",
+        "description": "Prepare patterns for optimal processing",
+        "file": "src\\actors\\template-engine.ts",
+        "line": 194,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-transformFileWithTemplates",
+        "type": "function",
+        "name": "transformFileWithTemplates",
+        "description": "Transform a single file with template patterns",
+        "file": "src\\actors\\template-engine.ts",
+        "line": 213,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-applyTemplatePattern",
+        "type": "function",
+        "name": "applyTemplatePattern",
+        "description": "Apply a single template pattern with advanced matching",
+        "file": "src\\actors\\template-engine.ts",
+        "line": 265,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-findTemplateMatches",
+        "type": "function",
+        "name": "findTemplateMatches",
+        "description": "Find all template matches in content using sophisticated pattern matching",
+        "file": "src\\actors\\template-engine.ts",
+        "line": 313,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-templateToRegex",
+        "type": "function",
+        "name": "templateToRegex",
+        "description": "Convert template pattern to regex with variable capture groups",
+        "file": "src\\actors\\template-engine.ts",
+        "line": 373,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-inferVariableType",
+        "type": "function",
+        "name": "inferVariableType",
+        "description": "Infer the type of a captured variable",
+        "file": "src\\actors\\template-engine.ts",
+        "line": 430,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-extractVariableContext",
+        "type": "function",
+        "name": "extractVariableContext",
+        "description": "Extract variable context for formatting preservation",
+        "file": "src\\actors\\template-engine.ts",
+        "line": 451,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-extractIndentation",
+        "type": "function",
+        "name": "extractIndentation",
+        "description": "Extract indentation from content at a given position",
+        "file": "src\\actors\\template-engine.ts",
+        "line": 468,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-matchesContext",
+        "type": "function",
+        "name": "matchesContext",
+        "description": "Check if a match satisfies contextual constraints",
+        "file": "src\\actors\\template-engine.ts",
+        "line": 477,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-generateReplacement",
+        "type": "function",
+        "name": "generateReplacement",
+        "description": "Generate replacement text from a match and pattern",
+        "file": "src\\actors\\template-engine.ts",
+        "line": 514,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-evaluateCondition",
+        "type": "function",
+        "name": "evaluateCondition",
+        "description": "Simple condition evaluator (safe subset of JavaScript)",
+        "file": "src\\actors\\template-engine.ts",
+        "line": 558,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-applyTransformer",
+        "type": "function",
+        "name": "applyTransformer",
+        "description": "Apply text transformers to variable values",
+        "file": "src\\actors\\template-engine.ts",
+        "line": 582,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-preserveFormatting",
+        "type": "function",
+        "name": "preserveFormatting",
+        "description": "Preserve formatting from the original match",
+        "file": "src\\actors\\template-engine.ts",
+        "line": 606,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "interface-TemplateVariable",
+        "type": "interface",
+        "name": "TemplateVariable",
+        "file": "src\\actors\\template-engine.ts",
+        "line": 94,
+        "category": "api"
+      },
+      {
+        "id": "interface-TemplateMatch",
+        "type": "interface",
+        "name": "TemplateMatch",
+        "file": "src\\actors\\template-engine.ts",
+        "line": 108,
+        "category": "api"
+      },
+      {
+        "id": "function-applyEnhancedTemplateTransformation",
+        "type": "function",
+        "name": "applyEnhancedTemplateTransformation",
+        "description": "Apply enhanced template-based transformations with better pattern matching",
+        "file": "src\\actors\\transformation-enhanced.ts",
+        "line": 98,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-applyRealASTTransformation",
+        "type": "function",
+        "name": "applyRealASTTransformation",
+        "description": "Apply REAL AST-grep transformations using the native API",
+        "file": "src\\actors\\transformation-enhanced.ts",
+        "line": 153,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-applyEnhancedTemplatePattern",
+        "type": "function",
+        "name": "applyEnhancedTemplatePattern",
+        "description": "Apply enhanced template pattern with robust matching",
+        "file": "src\\actors\\transformation-enhanced.ts",
+        "line": 215,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-applyRealASTPattern",
+        "type": "function",
+        "name": "applyRealASTPattern",
+        "description": "Apply REAL AST pattern using ast-grep native API",
+        "file": "src\\actors\\transformation-enhanced.ts",
+        "line": 274,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-applySmartVarTransformation",
+        "type": "function",
+        "name": "applySmartVarTransformation",
+        "description": "Enhanced smart var transformation with proper scoping analysis",
+        "file": "src\\actors\\transformation-enhanced.ts",
+        "line": 341,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-applyStrictEqualityTransformation",
+        "type": "function",
+        "name": "applyStrictEqualityTransformation",
+        "description": "Apply strict equality transformation",
+        "file": "src\\actors\\transformation-enhanced.ts",
+        "line": 369,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-applyStrictInequalityTransformation",
+        "type": "function",
+        "name": "applyStrictInequalityTransformation",
+        "description": "Apply strict inequality transformation",
+        "file": "src\\actors\\transformation-enhanced.ts",
+        "line": 382,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-applyConsoleErrorTransformation",
+        "type": "function",
+        "name": "applyConsoleErrorTransformation",
+        "description": "Apply console.error transformation for error messages",
+        "file": "src\\actors\\transformation-enhanced.ts",
+        "line": 395,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-applyEnhancedLLMTransformation",
+        "type": "function",
+        "name": "applyEnhancedLLMTransformation",
+        "description": "Enhanced LLM transformation (placeholder for future implementation)",
+        "file": "src\\actors\\transformation-enhanced.ts",
+        "line": 408,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-applyTemplateTransformation",
+        "type": "function",
+        "name": "applyTemplateTransformation",
+        "description": "",
+        "file": "src\\actors\\transformation.ts",
+        "line": 55,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-enhancedTemplateTransformation",
+        "type": "function",
+        "name": "enhancedTemplateTransformation",
+        "description": "Enhanced template transformation with smart heuristics",
+        "file": "src\\actors\\transformation.ts",
+        "line": 187,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-enhancedVarTransformation",
+        "type": "function",
+        "name": "enhancedVarTransformation",
+        "description": "Enhanced var transformation that properly handles async",
+        "file": "src\\actors\\transformation.ts",
+        "line": 195,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-applyAstTransformation",
+        "type": "function",
+        "name": "applyAstTransformation",
+        "description": "",
+        "file": "src\\actors\\transformation.ts",
+        "line": 241,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-smartVarToConstLetAST",
+        "type": "function",
+        "name": "smartVarToConstLetAST",
+        "description": "AST-based smart var to const/let transformation",
+        "file": "src\\actors\\transformation.ts",
+        "line": 365,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-isLiteralValue",
+        "type": "function",
+        "name": "isLiteralValue",
+        "description": "Check if a value looks like a literal (should use const)",
+        "file": "src\\actors\\transformation.ts",
+        "line": 405,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-promiseToAsyncAwaitAST",
+        "type": "function",
+        "name": "promiseToAsyncAwaitAST",
+        "description": "Convert Promise chains to async/await",
+        "file": "src\\actors\\transformation.ts",
+        "line": 419,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-enhanceObjectDestructuring",
+        "type": "function",
+        "name": "enhanceObjectDestructuring",
+        "description": "Enhance object destructuring",
+        "file": "src\\actors\\transformation.ts",
+        "line": 449,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-removeUnnecessaryReturns",
+        "type": "function",
+        "name": "removeUnnecessaryReturns",
+        "description": "Remove unnecessary return statements",
+        "file": "src\\actors\\transformation.ts",
+        "line": 466,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-combineVariableDeclarations",
+        "type": "function",
+        "name": "combineVariableDeclarations",
+        "description": "Combine variable declarations",
+        "file": "src\\actors\\transformation.ts",
+        "line": 488,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-callbackToPromise",
+        "type": "function",
+        "name": "callbackToPromise",
+        "description": "Convert callback patterns to Promises",
+        "file": "src\\actors\\transformation.ts",
+        "line": 548,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-modernizeFunctionDeclarations",
+        "type": "function",
+        "name": "modernizeFunctionDeclarations",
+        "description": "Modernize function declarations",
+        "file": "src\\actors\\transformation.ts",
+        "line": 586,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-name",
+        "type": "function",
+        "name": "name",
+        "description": "",
+        "file": "src\\actors\\transformation.ts",
+        "line": 595,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-applyGenericASTPattern",
+        "type": "function",
+        "name": "applyGenericASTPattern",
+        "description": "Apply generic AST pattern using AST-grep syntax",
+        "file": "src\\actors\\transformation.ts",
+        "line": 615,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-applyLlmTransformation",
+        "type": "function",
+        "name": "applyLlmTransformation",
+        "description": "",
+        "file": "src\\actors\\transformation.ts",
+        "line": 639,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-generateDefaultPrompt",
+        "type": "function",
+        "name": "generateDefaultPrompt",
+        "description": "",
+        "file": "src\\actors\\transformation.ts",
+        "line": 691,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-smartVarTransformation",
+        "type": "function",
+        "name": "smartVarTransformation",
+        "description": "",
+        "file": "src\\actors\\transformation.ts",
+        "line": 700,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-advancedCallbackToAsync",
+        "type": "function",
+        "name": "advancedCallbackToAsync",
+        "description": "",
+        "file": "src\\actors\\transformation.ts",
+        "line": 729,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-modernizeClasses",
+        "type": "function",
+        "name": "modernizeClasses",
+        "description": "",
+        "file": "src\\actors\\transformation.ts",
+        "line": 751,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-Constructor",
+        "type": "function",
+        "name": "Constructor",
+        "description": "",
+        "file": "src\\actors\\transformation.ts",
+        "line": 755,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-strictEqualityAST",
+        "type": "function",
+        "name": "strictEqualityAST",
+        "description": "AST-based strict equality conversion (== to ===)",
+        "file": "src\\actors\\transformation.ts",
+        "line": 775,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-strictInequalityAST",
+        "type": "function",
+        "name": "strictInequalityAST",
+        "description": "AST-based strict inequality conversion (!= to !==)",
+        "file": "src\\actors\\transformation.ts",
+        "line": 803,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-arrayIncludesAST",
+        "type": "function",
+        "name": "arrayIncludesAST",
+        "description": "AST-based array includes conversion (indexOf !== -1 to includes)",
+        "file": "src\\actors\\transformation.ts",
+        "line": 825,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-removeUnnecessaryReturnsAST",
+        "type": "function",
+        "name": "removeUnnecessaryReturnsAST",
+        "description": "AST-based removal of unnecessary return statements",
+        "file": "src\\actors\\transformation.ts",
+        "line": 847,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-objectPropertyShorthandAST",
+        "type": "function",
+        "name": "objectPropertyShorthandAST",
+        "description": "AST-based object property shorthand conversion",
+        "file": "src\\actors\\transformation.ts",
+        "line": 869,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-templateLiteralConversionAST",
+        "type": "function",
+        "name": "templateLiteralConversionAST",
+        "description": "AST-based template literal conversion",
+        "file": "src\\actors\\transformation.ts",
+        "line": 892,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-constLoopVariableFixAST",
+        "type": "function",
+        "name": "constLoopVariableFixAST",
+        "description": "AST-based const loop variable fix",
+        "file": "src\\actors\\transformation.ts",
+        "line": 915,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "class-modernization",
+        "type": "class",
+        "name": "modernization",
+        "file": "src\\actors\\transformation.ts",
+        "line": 663,
+        "category": "api"
+      },
+      {
+        "id": "class-syntax",
+        "type": "class",
+        "name": "syntax",
+        "file": "src\\actors\\transformation.ts",
+        "line": 695,
+        "category": "api"
+      },
+      {
+        "id": "function-getBunExecutable",
+        "type": "function",
+        "name": "getBunExecutable",
+        "description": "",
+        "file": "src\\actors\\validation.ts",
+        "line": 8,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-validateFormat",
+        "type": "function",
+        "name": "validateFormat",
+        "description": "",
+        "file": "src\\actors\\validation.ts",
+        "line": 94,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-fixFormat",
+        "type": "function",
+        "name": "fixFormat",
+        "description": "",
+        "file": "src\\actors\\validation.ts",
+        "line": 170,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-validateTypes",
+        "type": "function",
+        "name": "validateTypes",
+        "description": "",
+        "file": "src\\actors\\validation.ts",
+        "line": 231,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-fixTypes",
+        "type": "function",
+        "name": "fixTypes",
+        "description": "",
+        "file": "src\\actors\\validation.ts",
+        "line": 285,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-validateQuality",
+        "type": "function",
+        "name": "validateQuality",
+        "description": "",
+        "file": "src\\actors\\validation.ts",
+        "line": 298,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-runDocsCLI",
+        "type": "function",
+        "name": "runDocsCLI",
+        "description": "",
+        "file": "src\\docs\\cli.ts",
+        "line": 228,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "class-DocumentationCLI",
+        "type": "class",
+        "name": "DocumentationCLI",
+        "file": "src\\docs\\cli.ts",
+        "line": 19,
+        "category": "api"
+      },
+      {
+        "id": "interface-for",
+        "type": "interface",
+        "name": "for",
+        "file": "src\\docs\\cli.ts",
+        "line": 2,
+        "category": "api"
+      },
+      {
+        "id": "interface-DocCLIOptions",
+        "type": "interface",
+        "name": "DocCLIOptions",
+        "file": "src\\docs\\cli.ts",
+        "line": 10,
+        "category": "api"
+      },
+      {
+        "id": "function-walkDir",
+        "type": "function",
+        "name": "walkDir",
+        "description": "",
+        "file": "src\\docs\\generator.ts",
+        "line": 115,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-showSection",
+        "type": "function",
+        "name": "showSection",
+        "description": "",
+        "file": "src\\docs\\generator.ts",
+        "line": 610,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "class-DocumentationGenerator",
+        "type": "class",
+        "name": "DocumentationGenerator",
+        "file": "src\\docs\\generator.ts",
+        "line": 64,
+        "category": "api"
+      },
+      {
+        "id": "interface-DocumentationItem",
+        "type": "interface",
+        "name": "DocumentationItem",
+        "file": "src\\docs\\generator.ts",
+        "line": 33,
+        "category": "api"
+      },
+      {
+        "id": "interface-GeneratedDocumentation",
+        "type": "interface",
+        "name": "GeneratedDocumentation",
+        "file": "src\\docs\\generator.ts",
+        "line": 44,
+        "category": "api"
+      },
+      {
+        "id": "function-getUserInfo",
+        "type": "function",
+        "name": "getUserInfo",
+        "description": "",
+        "file": "src\\example.ts",
+        "line": 6,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-processUser",
+        "type": "function",
+        "name": "processUser",
+        "description": "",
+        "file": "src\\example.ts",
+        "line": 26,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-calculateTotal",
+        "type": "function",
+        "name": "calculateTotal",
+        "description": "",
+        "file": "src\\example.ts",
+        "line": 45,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-fetchData",
+        "type": "function",
+        "name": "fetchData",
+        "description": "",
+        "file": "src\\example.ts",
+        "line": 54,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-getTelemetryCollector",
+        "type": "function",
+        "name": "getTelemetryCollector",
+        "description": "Get or create global telemetry collector instance",
+        "file": "src\\telemetry\\collector.ts",
+        "line": 641,
+        "category": "api",
+        "metadata": {
+          "parameters": [
+            {
+              "name": "config",
+              "description": "Optional configuration override"
+            }
+          ],
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-initializeTelemetry",
+        "type": "function",
+        "name": "initializeTelemetry",
+        "description": "Initialize telemetry system with configuration",
+        "file": "src\\telemetry\\collector.ts",
+        "line": 652,
+        "category": "api",
+        "metadata": {
+          "parameters": [
+            {
+              "name": "config",
+              "description": "Telemetry configuration"
+            }
+          ],
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "class-TelemetryBuffer",
+        "type": "class",
+        "name": "TelemetryBuffer",
+        "file": "src\\telemetry\\collector.ts",
+        "line": 27,
+        "category": "api"
+      },
+      {
+        "id": "class-PrivacyManager",
+        "type": "class",
+        "name": "PrivacyManager",
+        "file": "src\\telemetry\\collector.ts",
+        "line": 88,
+        "category": "api"
+      },
+      {
+        "id": "class-PerformanceMonitor",
+        "type": "class",
+        "name": "PerformanceMonitor",
+        "file": "src\\telemetry\\collector.ts",
+        "line": 135,
+        "category": "api"
+      },
+      {
+        "id": "class-TelemetryCollector",
+        "type": "class",
+        "name": "TelemetryCollector",
+        "file": "src\\telemetry\\collector.ts",
+        "line": 177,
+        "category": "api"
+      },
+      {
+        "id": "function-createTransformationTelemetry",
+        "type": "function",
+        "name": "createTransformationTelemetry",
+        "description": "Create telemetry instance for transformation",
+        "file": "src\\telemetry\\integration.ts",
+        "line": 644,
+        "category": "api",
+        "metadata": {
+          "parameters": [
+            {
+              "name": "transformationId",
+              "description": "Unique transformation ID"
+            },
+            {
+              "name": "mode",
+              "description": "Transformation mode"
+            },
+            {
+              "name": "filePath",
+              "description": "File being transformed"
+            },
+            {
+              "name": "code",
+              "description": "Original source code"
+            }
+          ],
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "class-PerformanceTimer",
+        "type": "class",
+        "name": "PerformanceTimer",
+        "file": "src\\telemetry\\integration.ts",
+        "line": 19,
+        "category": "api"
+      },
+      {
+        "id": "class-MemoryTracker",
+        "type": "class",
+        "name": "MemoryTracker",
+        "file": "src\\telemetry\\integration.ts",
+        "line": 67,
+        "category": "api"
+      },
+      {
+        "id": "class-CacheMonitor",
+        "type": "class",
+        "name": "CacheMonitor",
+        "file": "src\\telemetry\\integration.ts",
+        "line": 165,
+        "category": "api"
+      },
+      {
+        "id": "class-QualityAnalyzer",
+        "type": "class",
+        "name": "QualityAnalyzer",
+        "file": "src\\telemetry\\integration.ts",
+        "line": 259,
+        "category": "api"
+      },
+      {
+        "id": "class-for",
+        "type": "class",
+        "name": "for",
+        "file": "src\\telemetry\\integration.ts",
+        "line": 431,
+        "category": "api"
+      },
+      {
+        "id": "class-TransformationTelemetry",
+        "type": "class",
+        "name": "TransformationTelemetry",
+        "file": "src\\telemetry\\integration.ts",
+        "line": 433,
+        "category": "api"
+      },
+      {
+        "id": "function-loadPatterns",
+        "type": "function",
+        "name": "loadPatterns",
+        "description": "Load and validate AST patterns from a JSON file",
+        "file": "src\\utils\\index.ts",
+        "line": 27,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-savePatterns",
+        "type": "function",
+        "name": "savePatterns",
+        "description": "Save patterns to a JSON file",
+        "file": "src\\utils\\index.ts",
+        "line": 42,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-filterPatternsByComplexity",
+        "type": "function",
+        "name": "filterPatternsByComplexity",
+        "description": "Filter patterns by complexity level",
+        "file": "src\\utils\\index.ts",
+        "line": 67,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-filterPatternsByRisk",
+        "type": "function",
+        "name": "filterPatternsByRisk",
+        "description": "Filter patterns by risk level",
+        "file": "src\\utils\\index.ts",
+        "line": 77,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-filterPatternsByLanguage",
+        "type": "function",
+        "name": "filterPatternsByLanguage",
+        "description": "Filter patterns by programming language",
+        "file": "src\\utils\\index.ts",
+        "line": 90,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-createSafeFilename",
+        "type": "function",
+        "name": "createSafeFilename",
+        "description": "Create a safe filename from a transformation ID",
+        "file": "src\\utils\\index.ts",
+        "line": 97,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-isValidFilePath",
+        "type": "function",
+        "name": "isValidFilePath",
+        "description": "Check if a string is a valid file path",
+        "file": "src\\utils\\index.ts",
+        "line": 163,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-sanitizeForLog",
+        "type": "function",
+        "name": "sanitizeForLog",
+        "description": "Sanitize a string for safe logging",
+        "file": "src\\utils\\index.ts",
+        "line": 171,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      }
+    ],
+    "patterns": [
+      {
+        "id": "pattern-smart-var-to-const-let",
+        "type": "pattern",
+        "name": "smart-var-to-const-let",
+        "description": "Smart conversion of var to const/let based on value analysis",
+        "file": "src\\patterns\\enhanced-templates.json",
+        "category": "modernization",
+        "metadata": {
+          "complexity": 2,
+          "riskLevel": "low",
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "pattern-strict-equality-comprehensive",
+        "type": "pattern",
+        "name": "strict-equality-comprehensive",
+        "description": "Convert loose equality to strict equality",
+        "file": "src\\patterns\\enhanced-templates.json",
+        "category": "safety",
+        "metadata": {
+          "complexity": 1,
+          "riskLevel": "low",
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "pattern-strict-inequality-comprehensive",
+        "type": "pattern",
+        "name": "strict-inequality-comprehensive",
+        "description": "Convert loose inequality to strict inequality",
+        "file": "src\\patterns\\enhanced-templates.json",
+        "category": "safety",
+        "metadata": {
+          "complexity": 1,
+          "riskLevel": "low",
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "pattern-template-literal-advanced",
+        "type": "pattern",
+        "name": "template-literal-advanced",
+        "description": "Convert string concatenation to template literals with smart quote handling",
+        "file": "src\\patterns\\enhanced-templates.json",
+        "category": "modernization",
+        "metadata": {
+          "complexity": 3,
+          "riskLevel": "low",
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "pattern-object-shorthand-enhanced",
+        "type": "pattern",
+        "name": "object-shorthand-enhanced",
+        "description": "Use object property shorthand syntax",
+        "file": "src\\patterns\\enhanced-templates.json",
+        "category": "optimization",
+        "metadata": {
+          "complexity": 1,
+          "riskLevel": "low",
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "pattern-arrow-function-optimization",
+        "type": "pattern",
+        "name": "arrow-function-optimization",
+        "description": "Remove unnecessary return from arrow functions",
+        "file": "src\\patterns\\enhanced-templates.json",
+        "category": "optimization",
+        "metadata": {
+          "complexity": 2,
+          "riskLevel": "low",
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "pattern-array-includes-modernization",
+        "type": "pattern",
+        "name": "array-includes-modernization",
+        "description": "Use Array.includes() instead of indexOf() !== -1",
+        "file": "src\\patterns\\enhanced-templates.json",
+        "category": "modernization",
+        "metadata": {
+          "complexity": 2,
+          "riskLevel": "low",
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "pattern-console-error-conversion",
+        "type": "pattern",
+        "name": "console-error-conversion",
+        "description": "Convert console.log to console.error for error messages",
+        "file": "src\\patterns\\enhanced-templates.json",
+        "category": "logging",
+        "metadata": {
+          "complexity": 2,
+          "riskLevel": "low",
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "pattern-const-to-let-loops",
+        "type": "pattern",
+        "name": "const-to-let-loops",
+        "description": "Fix const loop variables that need reassignment",
+        "file": "src\\patterns\\enhanced-templates.json",
+        "category": "safety",
+        "metadata": {
+          "complexity": 2,
+          "riskLevel": "medium",
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "pattern-null-coalescing-opportunity",
+        "type": "pattern",
+        "name": "null-coalescing-opportunity",
+        "description": "Use nullish coalescing operator for null/undefined checks",
+        "file": "src\\patterns\\enhanced-templates.json",
+        "category": "modernization",
+        "metadata": {
+          "complexity": 3,
+          "riskLevel": "medium",
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "pattern-destructuring-opportunity",
+        "type": "pattern",
+        "name": "destructuring-opportunity",
+        "description": "Convert multiple property access to destructuring",
+        "file": "src\\patterns\\enhanced-templates.json",
+        "category": "modernization",
+        "metadata": {
+          "complexity": 4,
+          "riskLevel": "medium",
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "pattern-optional-chaining-opportunity",
+        "type": "pattern",
+        "name": "optional-chaining-opportunity",
+        "description": "Use optional chaining instead of guard checks",
+        "file": "src\\patterns\\enhanced-templates.json",
+        "category": "modernization",
+        "metadata": {
+          "complexity": 3,
+          "riskLevel": "medium",
+          "language": "typescript"
+        }
+      }
+    ],
+    "configs": [],
+    "states": [
+      {
+        "id": "machine-_carmackCoderMachine",
+        "type": "state",
+        "name": "_carmackCoderMachine",
+        "description": "XState machine with 0 states: ",
+        "file": "src\\machine.ts",
+        "line": 27,
+        "category": "state-machine",
+        "metadata": {
+          "machineType": "xstate",
+          "states": [],
+          "stateCount": 0,
+          "language": "typescript"
+        }
+      }
+    ]
+  },
+  "stats": {
+    "totalFiles": 20,
+    "totalItems": 163,
+    "byType": {
+      "type": 38,
+      "function": 90,
+      "interface": 7,
+      "class": 15,
+      "state": 1,
+      "pattern": 12
+    }
+  }
+}
