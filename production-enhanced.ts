@@ -396,7 +396,9 @@ export class CarmackPipelineOrchestrator {
       for (const phase of transformationResult.phases) {
         if (phase.currentTransformation) {
           const transformation = phase.currentTransformation;
-          totalFilesProcessed += transformation.filesModified?.length || 0;
+          // Take the max files processed (both phases process same files, don't double count)
+          const filesInThisPhase = transformation.request?.targetFiles?.length || 0;
+          totalFilesProcessed = Math.max(totalFilesProcessed, filesInThisPhase);
           totalPatternsApplied += transformation.request?.patterns?.length || 0;
           totalDuration += (transformation.endTime || 0) - (transformation.startTime || 0);
         }
