@@ -182,11 +182,17 @@ export class CarmackPipelineOrchestrator {
     console.log('⚡ STAGE 4: Code Transformation');
     
     const targetFiles = await this.discoverEligibleFiles(repoState.localPath);
+    
+    // Load consolidated patterns for transformation
+    const patterns = await this.loadConsolidatedPatterns();
+    console.log(`   🎯 Loaded ${patterns.length} transformation patterns`);
+    
     const transformationRequest = {
       targetFiles,
       transformationType: this.selectTransformationMode(args),
       maxComplexity: args['max-files'] || 10,
       dryRun: args['dry-run'],
+      patterns, // Add patterns to the request
     };
     
     // Create XState actor for transformation
@@ -447,6 +453,28 @@ export class CarmackPipelineOrchestrator {
 
   private async updateConsolidatedPatterns(newPatterns: any[]): Promise<void> {
     // Update the consolidated pattern file with new learned patterns
+  }
+
+  private async loadConsolidatedPatterns(): Promise<any[]> {
+    // Load patterns from patterns-consolidated.json
+    const { readFile } = await import('node:fs/promises');
+    const { existsSync } = await import('node:fs');
+    const { resolve } = await import('node:path');
+    
+    const consolidatedPath = resolve('patterns-consolidated.json');
+    if (!existsSync(consolidatedPath)) {
+      console.log('   ⚠️ No consolidated patterns found, using empty array');
+      return [];
+    }
+    
+    try {
+      const content = await readFile(consolidatedPath, 'utf-8');
+      const data = JSON.parse(content);
+      return data.patterns || [];
+    } catch (error) {
+      console.error('   ❌ Failed to load consolidated patterns:', error);
+      return [];
+    }
   }
 
   private async loadPreviouslyLearnedPatterns(): Promise<any[]> {
