@@ -15,13 +15,14 @@ import { RepositoryManager, defaultRepositoryConfig, type RepositoryState } from
 import { carmackCoderMachine } from './src/machine.ts';
 import { DocumentationGenerator } from './src/docs/generator.ts';
 import { ProductionConfigSchema, defaultProductionConfig } from './production.config.ts';
+import { carmackConfig, CARMACK_REPOSITORY_URL, getCarmackRepositoryUrl } from './carmack.config.ts';
 
 // ===== ENHANCED CLI SCHEMA =====
 
 const EnhancedCLIArgsSchema = z.object({
   // Repository Management
-  repository: z.string().url().optional(),
-  branch: z.string().default('main'),
+  repository: z.string().url().optional().default(CARMACK_REPOSITORY_URL),
+  branch: z.string().default(carmackConfig.project.repository.branch),
   workspace: z.string().optional(),
   'cleanup-after': z.boolean().default(true),
   

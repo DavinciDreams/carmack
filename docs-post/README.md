@@ -7,9 +7,9 @@
 This documentation is automatically generated from the codebase and stays in sync with code changes.
 
 **Statistics:**
-- **Total Files Scanned:** 161
-- **Total Items Documented:** 700
-- **Functions:** 393
+- **Total Files Scanned:** 163
+- **Total Items Documented:** 701
+- **Functions:** 394
 - **Classes:** 58
 - **Patterns:** 110
 - **Configurations:** 0
@@ -23,7 +23,7 @@ This documentation is automatically generated from the codebase and stays in syn
 
 ## Recent Updates
 
-- 7/10/2025: Documentation regenerated with 700 items
+- 7/10/2025: Documentation regenerated with 701 items
 
 ---
 

@@ -18,6 +18,7 @@ import {
 import { createActor } from 'xstate';
 import { carmackCoderMachine } from './src/machine.ts';
 import { z } from 'zod';
+import { carmackConfig } from './carmack.config.ts';
 
 // CLI Schema
 const CLIArgsSchema = z
@@ -79,7 +80,7 @@ SAFETY FEATURES:
   - Comprehensive validation pipeline
   - Telemetry and performance monitoring
 
-For more information, visit: https://github.com/DavinciDreams/carmack
+For more information, visit: ${carmackConfig.project.repository.url}
 `;
 
 class ProductionError extends Error {

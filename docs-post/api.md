@@ -84,7 +84,7 @@ Carmack Coder Documentation Generator CLI Usage: bun run docs-generate.ts [optio
 
 ## walkDirectory
 
-**File:** `production-enhanced.ts` (line 407)
+**File:** `production-enhanced.ts` (line 451)
 
 **Details:**
 - **language:** typescript
@@ -93,7 +93,7 @@ Carmack Coder Documentation Generator CLI Usage: bun run docs-generate.ts [optio
 
 ## main
 
-**File:** `production-enhanced.ts` (line 561)
+**File:** `production-enhanced.ts` (line 605)
 
 **Details:**
 - **language:** typescript
@@ -1537,6 +1537,17 @@ Test script to consolidate patterns and clean up duplicates
 ## main
 
 **File:** `test-template-engine.ts` (line 244)
+
+**Details:**
+- **language:** typescript
+
+---
+
+## testTemplatePatterns
+
+Debug script to test individual transformation patterns
+
+**File:** `test-transformation-debug.ts` (line 10)
 
 **Details:**
 - **language:** typescript

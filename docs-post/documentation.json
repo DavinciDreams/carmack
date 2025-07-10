@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-07-10T22:53:23.921Z",
+  "timestamp": "2025-07-10T23:06:29.344Z",
   "version": "1.0.0",
   "items": [
     {
@@ -568,7 +568,7 @@
       "name": "walkDirectory",
       "description": "",
       "file": "production-enhanced.ts",
-      "line": 407,
+      "line": 451,
       "category": "api",
       "metadata": {
         "language": "typescript"
@@ -580,7 +580,7 @@
       "name": "main",
       "description": "",
       "file": "production-enhanced.ts",
-      "line": 561,
+      "line": 605,
       "category": "api",
       "metadata": {
         "language": "typescript"
@@ -3131,6 +3131,18 @@
       "description": "",
       "file": "test-template-engine.ts",
       "line": 244,
+      "category": "api",
+      "metadata": {
+        "language": "typescript"
+      }
+    },
+    {
+      "id": "function-testTemplatePatterns",
+      "type": "function",
+      "name": "testTemplatePatterns",
+      "description": "Debug script to test individual transformation patterns",
+      "file": "test-transformation-debug.ts",
+      "line": 10,
       "category": "api",
       "metadata": {
         "language": "typescript"
@@ -8675,7 +8687,7 @@
         "name": "walkDirectory",
         "description": "",
         "file": "production-enhanced.ts",
-        "line": 407,
+        "line": 451,
         "category": "api",
         "metadata": {
           "language": "typescript"
@@ -8687,7 +8699,7 @@
         "name": "main",
         "description": "",
         "file": "production-enhanced.ts",
-        "line": 561,
+        "line": 605,
         "category": "api",
         "metadata": {
           "language": "typescript"
@@ -10493,6 +10505,18 @@
         "description": "",
         "file": "test-template-engine.ts",
         "line": 244,
+        "category": "api",
+        "metadata": {
+          "language": "typescript"
+        }
+      },
+      {
+        "id": "function-testTemplatePatterns",
+        "type": "function",
+        "name": "testTemplatePatterns",
+        "description": "Debug script to test individual transformation patterns",
+        "file": "test-transformation-debug.ts",
+        "line": 10,
         "category": "api",
         "metadata": {
           "language": "typescript"
@@ -15453,10 +15477,10 @@
     ]
   },
   "stats": {
-    "totalFiles": 161,
-    "totalItems": 700,
+    "totalFiles": 163,
+    "totalItems": 701,
     "byType": {
-      "function": 393,
+      "function": 394,
       "interface": 16,
       "pattern": 110,
       "type": 120,
