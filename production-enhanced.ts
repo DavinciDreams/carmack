@@ -11,7 +11,7 @@ import { existsSync } from 'node:fs';
 import { createActor } from 'xstate';
 import { z } from 'zod';
 
-import { RepositoryManager, defaultRepositoryConfig } from './src/repository-manager.ts';
+import { RepositoryManager, defaultRepositoryConfig, type RepositoryState } from './src/repository-manager.ts';
 import { carmackCoderMachine } from './src/machine.ts';
 import { DocumentationGenerator } from './src/docs/generator.ts';
 import { ProductionConfigSchema, defaultProductionConfig } from './production.config.ts';
@@ -113,11 +113,25 @@ export class CarmackPipelineOrchestrator {
   /**
    * STAGE 1: Repository Acquisition with verification
    */
-  private async acquireRepository(args: EnhancedCLIArgs) {
+  private async acquireRepository(args: EnhancedCLIArgs): Promise<RepositoryState> {
     // For testing purposes, use current directory if no repository URL provided
     if (!args.repository) {
       console.log('   🏠 Using current directory for testing');
-      return process.cwd();
+      // Create a mock repository state for current directory
+      return {
+        id: crypto.randomUUID(),
+        url: 'file://current-directory',
+        branch: 'main',
+        localPath: process.cwd(),
+        status: 'active' as const,
+        created: Date.now(),
+        lastAccessed: Date.now(),
+        metadata: {
+          fileCount: 0,
+          diskSize: 0,
+          patterns: [],
+        },
+      };
     }
 
     console.log('📥 STAGE 1: Repository Acquisition');
@@ -195,35 +209,42 @@ export class CarmackPipelineOrchestrator {
       patterns, // Add patterns to the request
     };
     
-    // Create XState actor for transformation
+    // Create XState actor with proper input (like the working production.ts)
     const actor = createActor(carmackCoderMachine, {
-      input: transformationRequest,
+      input: transformationRequest, // This was the missing piece!
     });
 
     return new Promise((resolve, reject) => {
-      actor.subscribe({
-        next: (state) => {
-          if (args.verbose) {
-            console.log(`   🔄 State: ${state.value}`);
+      actor.subscribe((state) => {
+        if (args.verbose) {
+          console.log(`   🔄 State: ${state.value} | Status: ${state.context.currentTransformation?.status || 'pending'}`);
+        }
+
+        // Log significant events
+        if (state.matches('succeeded')) {
+          console.log('   ✅ Transformation completed successfully');
+          const transformation = state.context.currentTransformation;
+          if (transformation) {
+            console.log(`   📊 Files modified: ${transformation.filesModified.length}`);
+            console.log(`   ⏱️  Duration: ${transformation.endTime! - transformation.startTime}ms`);
           }
-        },
-        complete: () => {
-          const finalState = actor.getSnapshot();
-          if (finalState.value === 'succeeded') {
-            resolve(finalState.context);
-          } else {
-            reject(new Error(`Transformation failed: ${finalState.value}`));
-          }
-        },
+          resolve(state.context);
+        } else if (state.matches('failed')) {
+          console.error('   ❌ Transformation failed');
+          const errors = state.context.currentTransformation?.errors || [];
+          errors.forEach((error) => console.error(`   ${error}`));
+          reject(new Error(`Transformation failed: ${state.value}`));
+        }
       });
 
+      // Start the actor first
       actor.start();
       
-      // Send start event with the request
+      // Then send the transformation event
       actor.send({
         type: 'START_TRANSFORMATION',
         request: transformationRequest,
-      } as any); // Type assertion to bypass TypeScript issues
+      } as any);
     });
   }
 
