@@ -7,11 +7,11 @@
 This documentation is automatically generated from the codebase and stays in sync with code changes.
 
 **Statistics:**
-- **Total Files Scanned:** 21
-- **Total Items Documented:** 164
-- **Functions:** 91
-- **Classes:** 15
-- **Patterns:** 12
+- **Total Files Scanned:** 161
+- **Total Items Documented:** 700
+- **Functions:** 393
+- **Classes:** 58
+- **Patterns:** 110
 - **Configurations:** 0
 
 ## Quick Navigation
@@ -23,7 +23,7 @@ This documentation is automatically generated from the codebase and stays in syn
 
 ## Recent Updates
 
-- 7/10/2025: Documentation regenerated with 164 items
+- 7/10/2025: Documentation regenerated with 700 items
 
 ---
 

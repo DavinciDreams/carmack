@@ -163,6 +163,16 @@ async function applyTemplateTransformation(files: string[], patterns: AstPattern
               }
             );
             break;
+
+          case 'fix-double-semicolons':
+            // Fix double semicolons syntax errors
+            modifiedContent = modifiedContent.replace(/;;/g, ';');
+            break;
+
+          case 'fix-malformed-object-literal':
+            // Fix malformed object literals with semicolon
+            modifiedContent = modifiedContent.replace(/=\s*\{\s*;/g, '= {');
+            break;
         }
 
         if (beforeContent !== modifiedContent) {
