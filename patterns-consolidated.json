@@ -1,6 +1,6 @@
 {
-  "version": "3.0.0",
-  "description": "Robust transformation patterns with enhanced AST-grep support",
+  "version": "4.0.0",
+  "description": "Consolidated transformation patterns - single source of truth",
   "patterns": [
     {
       "id": "smart-var-to-const-let",
@@ -135,17 +135,26 @@
       "remove-unnecessary-returns",
       "template-literal-conversion"
     ],
-    "safety": ["array-includes-instead-of-indexof", "const-loop-variable-fix"],
-    "logging": ["console-log-to-console-error"],
-    "syntax-fixes": ["fix-double-semicolons", "fix-malformed-object-literal"]
+    "safety": [
+      "array-includes-instead-of-indexof",
+      "const-loop-variable-fix"
+    ],
+    "logging": [
+      "console-log-to-console-error"
+    ],
+    "syntax-fixes": [
+      "fix-double-semicolons",
+      "fix-malformed-object-literal"
+    ]
   },
   "metadata": {
-    "created": "2025-01-06",
+    "consolidated": "2025-07-10T21:43:24.871Z",
+    "sources": [
+      "patterns-consolidated.json"
+    ],
     "author": "Carmack Coder",
     "license": "MIT",
-    "lastUpdated": "2025-01-06",
     "totalPatterns": 12,
-    "astGrepVersion": "0.38.6",
-    "features": ["Enhanced pattern matching", "Semantic analysis", "Robust transformations"]
+    "lastUpdated": "2025-07-10T21:43:24.872Z"
   }
 }

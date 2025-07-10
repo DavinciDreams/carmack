@@ -1,0 +1,17 @@
+[
+  {
+    "id": "85f64c2b-0050-4636-815e-9f73bc93c7c4",
+    "url": "https://github.com/DavinciDreams/carmack.git",
+    "branch": "main",
+    "localPath": "C:\\Users\\lmwat\\carmack\\workspace\\85f64c2b-0050-4636-815e-9f73bc93c7c4\\repository",
+    "status": "active",
+    "created": 1752183802839,
+    "lastAccessed": 1752183804867,
+    "metadata": {
+      "fileCount": 60,
+      "diskSize": 420533,
+      "lastCommit": "509558aa704fa1ba9c8502c0e75c3e7fadf7fddd",
+      "patterns": []
+    }
+  }
+]
