@@ -37,7 +37,7 @@ function processComplexData(input: any[]): Promise<any> {
     }
 
     if (errors.length > 0) {
-      console.log('Error: Processing completed with errors:', errors);
+      console.error('Error: Processing completed with errors:', errors);
       resolve({ results, errors });
     } else {
       resolve({ results });
@@ -104,7 +104,7 @@ function fetchUserData(userId: number, callback: (err: Error | null, data?: any)
 // Using the callback
 fetchUserData(123, (err, data) => {
   if (err) {
-    console.log('Error: ' + err.message);
+    console.error('Error: ' + err.message);
   } else {
     console.log('Data:', data);
   }
