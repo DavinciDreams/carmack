@@ -536,8 +536,8 @@ const _carmackCoderMachine = setup({
       invoke: {
         id: 'quality-analysis',
         src: 'validationActor',
-        input: ({ context }: { context: MachineContext }) => ({
-          type: 'quality',
+input: ({ context }: { context: MachineContext }) => ({
+  type: 'quality',
           files: context.currentTransformation?.request?.targetFiles || [],
         }),
         onDone: {
@@ -558,8 +558,8 @@ const _carmackCoderMachine = setup({
         input: ({ context }: { context: MachineContext }) => ({
           operation: 'learn',
           transformation: context.currentTransformation,
-          patterns: context.patterns,
-        }),
+  patterns: context.patterns,
+}),
         onDone: {
           target: 'generatingSummary',
           actions: assign(({ context, event }) => ({

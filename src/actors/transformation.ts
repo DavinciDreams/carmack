@@ -10,14 +10,14 @@ const TransformationInputSchema = z.object({
   mode: z.enum(['template', 'ast', 'llm']),
   files: z.array(z.string()),
   patterns: z.array(z.object({
-    id: z.string(),
-    language: z.string(),
-    pattern: z.string(),
-    replacement: z.string(),
-    description: z.string(),
-    complexity: z.number(),
-    riskLevel: z.enum(['low', 'medium', 'high']),
-    mode: z.enum(['template', 'ast', 'llm']).optional().default('template'),
+      id: z.string(),
+      language: z.string(),
+      pattern: z.string(),
+      replacement: z.string(),
+      description: z.string(),
+      complexity: z.number(),
+      riskLevel: z.enum(['low', 'medium', 'high']),
+      mode: z.enum(['template', 'ast', 'llm']).optional().default('template'),
   })),
   request: z.any().optional(), // TransformationRequest schema
 });
@@ -60,9 +60,9 @@ async function applyTemplateTransformation(files: string[], patterns: AstPattern
 
   // Get template-mode patterns (safe transformations with reasonable complexity)
   const templatePatterns = patterns.filter((p) => 
-    p.complexity <= 3 && 
-    (p.riskLevel === 'low' || p.riskLevel === 'medium') &&
-    (p.mode === 'template' || !p.mode) // Include patterns without mode (defaults to template)
+      p.complexity <= 3 &&
+      (p.riskLevel === 'low' || p.riskLevel === 'medium') &&
+      (p.mode === 'template' || !p.mode) // Include patterns without mode (defaults to template)
   );
 
   for (const filePath of files) {
@@ -153,6 +153,16 @@ async function applyTemplateTransformation(files: string[], patterns: AstPattern
                 return `const ${param} = await ${promise};\n${body.trim()}`;
               }
             );
+            break;
+
+          case 'fix-double-semicolons':
+            // Fix double semicolons syntax errors
+            modifiedContent = modifiedContent.replace(/;;/g, ';');
+            break;
+
+          case 'fix-malformed-object-literal':
+            // Fix malformed object literals with semicolon
+            modifiedContent = modifiedContent.replace(/=\s*\{\s*;/g, '= {');
             break;
         }
 
@@ -372,10 +382,10 @@ async function smartVarToConstLetAST(_root: any, content: string, _lang: any): P
 
     modifiedContent = modifiedContent.replace(varRegex, (match, indent, varName, value) => {
       console.log(`🔄 Found var declaration: ${varName} = ${value.trim()}`);
-      
+
       // Analyze the value to decide between const and let
       const trimmedValue = value.trim();
-      
+
       // Use const for literals, let for other cases
       if (isLiteralValue(trimmedValue)) {
         console.log(`✅ Converting var ${varName} to const (literal value)`);
@@ -777,7 +787,7 @@ async function strictEqualityAST(_root: any, content: string, _lang: any): Promi
     console.log('🔄 Processing strict equality conversions...');
     console.log('📝 Content length:', content.length);
     console.log('📝 Content preview:', content.substring(0, 200));
-    
+
     let modifiedContent = content;
 
     // Convert == to === but avoid already strict comparisons
