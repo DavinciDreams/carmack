@@ -22,6 +22,7 @@ const TransformationInputSchema = z.object({
     })
   ),
   request: z.any().optional(), // TransformationRequest schema
+  dryRun: z.boolean().optional().default(false), // Add dry-run support
 });
 
 type TransformationInput = z.infer<typeof TransformationInputSchema>;
@@ -37,25 +38,25 @@ type TransformationInput = z.infer<typeof TransformationInputSchema>;
 export const transformationActor = fromPromise(
   async ({ input }: { input: TransformationInput }) => {
     const validatedInput = TransformationInputSchema.parse(input);
-    const { mode, files, patterns, request } = validatedInput;
+    const { mode, files, patterns, request, dryRun } = validatedInput;
 
-    console.log(`Applying ${mode} transformation to ${files.length} files`);
+    console.log(`Applying ${mode} transformation to ${files.length} files${dryRun ? ' (DRY RUN)' : ''}`);
 
     switch (mode) {
       case 'template':
-        return await applyTemplateTransformation(files, patterns);
+        return await applyTemplateTransformation(files, patterns, dryRun);
       case 'ast':
-        return await applyAstTransformation(files, patterns);
+        return await applyAstTransformation(files, patterns, dryRun);
       case 'llm':
-        return await applyLlmTransformation(files, request);
+        return await applyLlmTransformation(files, request, dryRun);
       default:
         throw new Error(`Unknown transformation mode: ${mode}`);
     }
   }
 );
 
-async function applyTemplateTransformation(files: string[], patterns: AstPattern[]) {
-  console.log('Applying template transformations...');
+async function applyTemplateTransformation(files: string[], patterns: AstPattern[], dryRun: boolean = false) {
+  console.log(`Applying template transformations...${dryRun ? ' (DRY RUN)' : ''}`);
 
   const filesModified: string[] = [];
   let totalTransformations = 0;

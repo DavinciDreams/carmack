@@ -42,7 +42,7 @@ export const ProductionConfigSchema = z
         .default(['.ts', '.tsx', '.js', '.jsx', '.mts', '.cts']),
       riskLevelFilter: z.enum(['low', 'medium', 'high']).default('medium'),
       enableBackups: z.boolean().default(true),
-      dryRunFirst: z.boolean().default(true),
+      dryRunFirst: z.boolean().default(false),
     }),
 
     // CI/CD Integration
@@ -115,7 +115,7 @@ export const defaultProductionConfig: ProductionConfig = {
     allowedFileExtensions: ['.ts', '.tsx', '.js', '.jsx', '.mts', '.cts'],
     riskLevelFilter: 'medium',
     enableBackups: true,
-    dryRunFirst: true,
+    dryRunFirst: false,
   },
   cicd: {
     platform: 'github',
