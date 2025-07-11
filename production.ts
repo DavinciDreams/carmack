@@ -8,7 +8,7 @@
 import { parseArgs } from 'node:util';
 import { existsSync, mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { readdir, stat } from 'node:fs/promises';
+import { readdir, stat, readFile } from 'node:fs/promises';
 import { simpleGit } from 'simple-git';
 import {
   ProductionConfigSchema,
@@ -19,6 +19,7 @@ import { createActor } from 'xstate';
 import { carmackCoderMachine } from './src/machine.ts';
 import { z } from 'zod';
 import { carmackConfig } from './carmack.config.ts';
+import { loadPatterns } from './src/utils/index.js';
 
 // CLI Schema
 const CLIArgsSchema = z
@@ -321,7 +322,11 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
   transformationActor.start();
 
   // Wait for completion
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
+  // Load transformation patterns
+  const patterns = await loadPatterns('./patterns-consolidated.json');
+    console.log(`📋 Loaded ${patterns.length} transformation patterns for production`);
+
     transformationActor.subscribe((state) => {
       if (state.matches('succeeded')) {
         resolve();
@@ -342,7 +347,7 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
       request: {
         targetFiles: eligibleFiles, // Use discovered files
         transformationType: 'ast' as const,
-        patterns: [], // Will be loaded from patterns
+        patterns: patterns, // Use loaded patterns
         maxComplexity: config.transformation.maxComplexityThreshold,
         dryRun: args['dry-run'] || config.transformation.dryRunFirst,
       },
