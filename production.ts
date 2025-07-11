@@ -388,7 +388,10 @@ async function main(): Promise<void> {
     // Load configuration
     const config = await loadConfig(args.config);
 
-    // Override config with CLI arguments
+    // Override config with environment variables first, then CLI arguments
+    if (process.env.CARMACK_REPOSITORY_URL || process.env.REPOSITORY_URL) {
+      config.repository.url = process.env.CARMACK_REPOSITORY_URL || process.env.REPOSITORY_URL || config.repository.url;
+    }
     if (args.repository) {
       config.repository.url = args.repository;
     }
