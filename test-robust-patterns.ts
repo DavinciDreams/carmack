@@ -21,5 +21,9 @@ for (const i = 0; i < items.length; i++) {
 }
 
 // Arrow function with unnecessary return
-const double = (x) => { return x * 2; };
-const isEven = (n) => { return n % 2 === 0; };
+const double = (x) => {
+  return x * 2;
+};
+const isEven = (n) => {
+  return n % 2 === 0;
+};

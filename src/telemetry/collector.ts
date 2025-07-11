@@ -7,9 +7,9 @@ import { randomUUID } from 'crypto';
 import { createHash } from 'crypto';
 import { performance } from 'perf_hooks';
 import { EventEmitter } from 'events';
-import type { 
-  TelemetryMetric, 
-  TelemetryConfig, 
+import type {
+  TelemetryMetric,
+  TelemetryConfig,
   PatternSuccessMetric,
   LatencyMetric,
   MemoryProfileMetric,
@@ -17,7 +17,7 @@ import type {
   ModeSelectionMetric,
   ErrorRecoveryMetric,
   TransformationMode,
-  PipelineStages
+  PipelineStages,
 } from './types.js';
 import { TelemetryConfigSchema, TelemetryMetricSchema } from './types.js';
 
@@ -27,7 +27,7 @@ import { TelemetryConfigSchema, TelemetryMetricSchema } from './types.js';
 class TelemetryBuffer {
   private events: TelemetryMetric[] = [];
   private lastFlush = performance.now();
-  
+
   constructor(
     private config: TelemetryConfig,
     private flushCallback: (events: TelemetryMetric[]) => Promise<void>
@@ -43,10 +43,10 @@ class TelemetryBuffer {
     this.events.push(validated);
 
     // Check flush conditions
-    const shouldFlush = 
+    const shouldFlush =
       this.events.length >= this.config.batchSize ||
       this.events.length >= this.config.maxBufferSize ||
-      (performance.now() - this.lastFlush) >= this.config.flushInterval;
+      performance.now() - this.lastFlush >= this.config.flushInterval;
 
     if (shouldFlush) {
       this.flush();
@@ -91,9 +91,12 @@ class PrivacyManager {
 
   constructor(private config: TelemetryConfig) {
     // Rotate salt every 24 hours for privacy
-    this.saltRotationInterval = setInterval(() => {
-      this.userSalt = randomUUID();
-    }, 24 * 60 * 60 * 1000);
+    this.saltRotationInterval = setInterval(
+      () => {
+        this.userSalt = randomUUID();
+      },
+      24 * 60 * 60 * 1000
+    );
   }
 
   /**
@@ -104,7 +107,7 @@ class PrivacyManager {
     if (!this.config.privacy.collectUserIds) {
       return 'anonymous';
     }
-    
+
     return createHash('sha256')
       .update(userId + this.userSalt)
       .digest('hex')
@@ -142,7 +145,7 @@ class PerformanceMonitor {
    */
   recordTiming(duration: number): void {
     this.samples.push(duration);
-    
+
     // Keep only recent samples to prevent memory growth
     if (this.samples.length > this.maxSamples) {
       this.samples = this.samples.slice(-this.maxSamples);
@@ -159,7 +162,7 @@ class PerformanceMonitor {
 
     const sorted = [...this.samples].sort((a, b) => a - b);
     const len = sorted.length;
-    
+
     return {
       p50: sorted[Math.floor(len * 0.5)] ?? 0,
       p95: sorted[Math.floor(len * 0.95)] ?? 0,
@@ -184,11 +187,11 @@ export class TelemetryCollector extends EventEmitter {
 
   constructor(config?: Partial<TelemetryConfig>) {
     super();
-    
+
     // Validate and apply configuration
     this.config = TelemetryConfigSchema.parse(config || {});
     this.isEnabled = this.config.enabled;
-    
+
     if (!this.isEnabled) {
       // Create no-op implementation if disabled
       return;
@@ -222,7 +225,7 @@ export class TelemetryCollector extends EventEmitter {
     if (!this.isEnabled) return;
 
     const startTime = performance.now();
-    
+
     try {
       const metric: PatternSuccessMetric = {
         id: 'TEL-001',
@@ -272,10 +275,10 @@ export class TelemetryCollector extends EventEmitter {
     }
 
     const startTime = performance.now();
-    
+
     try {
       const totalLatency = Object.values(pipelineStages).reduce((a, b) => a + b, 0);
-      
+
       // Determine percentile bucket based on latency
       let percentile: 'p50' | 'p95' | 'p99';
       if (totalLatency < 100) percentile = 'p50';
@@ -328,13 +331,16 @@ export class TelemetryCollector extends EventEmitter {
     if (Math.random() > this.config.performanceSampleRate) return;
 
     const startTime = performance.now();
-    
+
     try {
-      const peakMemory = Math.max(...memoryTimeline.map(t => t.rss));
-      const memoryGrowthRate = memoryTimeline.length > 1
-        ? (memoryTimeline[memoryTimeline.length - 1]!.rss - memoryTimeline[0]!.rss) / 
-          (memoryTimeline[memoryTimeline.length - 1]!.timestamp - memoryTimeline[0]!.timestamp) * 1000
-        : 0;
+      const peakMemory = Math.max(...memoryTimeline.map((t) => t.rss));
+      const memoryGrowthRate =
+        memoryTimeline.length > 1
+          ? ((memoryTimeline[memoryTimeline.length - 1]!.rss - memoryTimeline[0]!.rss) /
+              (memoryTimeline[memoryTimeline.length - 1]!.timestamp -
+                memoryTimeline[0]!.timestamp)) *
+            1000
+          : 0;
 
       const metric: MemoryProfileMetric = {
         id: 'TEL-005',
@@ -379,18 +385,17 @@ export class TelemetryCollector extends EventEmitter {
     if (!this.isEnabled) return;
 
     const startTime = performance.now();
-    
+
     try {
       const total = hits + misses;
       const hitRate = total > 0 ? hits / total : 0;
       const missRate = total > 0 ? misses / total : 0;
       const evictionRate = cacheSize > 0 ? evictions / cacheSize : 0;
-      const averageLookupTime = lookupTimes.length > 0 
-        ? lookupTimes.reduce((a, b) => a + b, 0) / lookupTimes.length 
-        : 0;
-      
+      const averageLookupTime =
+        lookupTimes.length > 0 ? lookupTimes.reduce((a, b) => a + b, 0) / lookupTimes.length : 0;
+
       // Calculate effectiveness score (weighted combination of hit rate and lookup speed)
-      const effectivenessScore = (hitRate * 0.7) + ((1 - (averageLookupTime / 1000)) * 0.3);
+      const effectivenessScore = hitRate * 0.7 + (1 - averageLookupTime / 1000) * 0.3;
 
       const metric: CacheEfficiencyMetric = {
         id: 'TEL-006',
@@ -420,12 +425,12 @@ export class TelemetryCollector extends EventEmitter {
    */
   startSession(userId?: string): string {
     this.sessionId = randomUUID();
-    
+
     if (userId) {
       const anonymizedId = this.privacyManager.anonymizeUserId(userId);
       this.emit('sessionStarted', { sessionId: this.sessionId, userId: anonymizedId });
     }
-    
+
     return this.sessionId;
   }
 
@@ -449,17 +454,21 @@ export class TelemetryCollector extends EventEmitter {
     if (Math.random() > this.config.behaviorSampleRate) return;
 
     const startTime = performance.now();
-    
+
     try {
       // Analyze patterns in user behavior
-      const modeCounts = actions.reduce((acc, action) => {
-        acc[action.mode] = (acc[action.mode] || 0) + 1;
-        return acc;
-      }, {} as Record<TransformationMode, number>);
-      
-      const dominantMode = Object.entries(modeCounts)
-        .sort(([,a], [,b]) => b - a)[0]?.[0] as TransformationMode || 'template';
-      
+      const modeCounts = actions.reduce(
+        (acc, action) => {
+          acc[action.mode] = (acc[action.mode] || 0) + 1;
+          return acc;
+        },
+        {} as Record<TransformationMode, number>
+      );
+
+      const dominantMode =
+        (Object.entries(modeCounts).sort(([, a], [, b]) => b - a)[0]?.[0] as TransformationMode) ||
+        'template';
+
       const modeSwitches = actions.reduce((count, action, i) => {
         if (i > 0 && actions[i - 1] && action.mode !== actions[i - 1]!.mode) {
           return count + 1;
@@ -470,7 +479,8 @@ export class TelemetryCollector extends EventEmitter {
       // Detect patterns (this could be enhanced with ML in the future)
       const patterns: string[] = [];
       if (modeSwitches > actions.length * 0.3) patterns.push('frequent-mode-switching');
-      if (actions.filter(a => a.outcome === 'failure').length > actions.length * 0.2) patterns.push('high-failure-rate');
+      if (actions.filter((a) => a.outcome === 'failure').length > actions.length * 0.2)
+        patterns.push('high-failure-rate');
       if (sessionDuration > 30 * 60 * 1000) patterns.push('long-session');
 
       const metric: ModeSelectionMetric = {
@@ -520,7 +530,7 @@ export class TelemetryCollector extends EventEmitter {
     if (!this.isEnabled) return;
 
     const startTime = performance.now();
-    
+
     try {
       const metric: ErrorRecoveryMetric = {
         id: 'TEL-008',
@@ -552,7 +562,7 @@ export class TelemetryCollector extends EventEmitter {
     if (!this.isEnabled) return;
 
     const startTime = performance.now();
-    
+
     try {
       const metric: import('./types.js').CodeQualityDelta = {
         ...qualityDelta,
@@ -585,7 +595,13 @@ export class TelemetryCollector extends EventEmitter {
   } {
     return {
       bufferSize: this.buffer?.getBufferSize() || 0,
-      performanceStats: this.performanceMonitor?.getStats() || { p50: 0, p95: 0, p99: 0, avg: 0, overhead: 0 },
+      performanceStats: this.performanceMonitor?.getStats() || {
+        p50: 0,
+        p95: 0,
+        p99: 0,
+        avg: 0,
+        overhead: 0,
+      },
       sessionId: this.sessionId,
       eventsCollected: this.listenerCount('*'), // Rough approximation
       isEnabled: this.isEnabled,
@@ -600,7 +616,7 @@ export class TelemetryCollector extends EventEmitter {
     // In production, this would send to analytics service
     // For development, emit events for local processing
     this.emit('batchFlush', events);
-    
+
     // Example: Log to console in development
     if (process.env.NODE_ENV === 'development') {
       console.log(`[Telemetry] Flushed ${events.length} events`);
@@ -620,7 +636,7 @@ export class TelemetryCollector extends EventEmitter {
    */
   async shutdown(): Promise<void> {
     if (!this.isEnabled) return;
-    
+
     try {
       await this.buffer.flush();
       this.privacyManager.destroy();

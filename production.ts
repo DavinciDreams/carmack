@@ -390,7 +390,8 @@ async function main(): Promise<void> {
 
     // Override config with environment variables first, then CLI arguments
     if (process.env.CARMACK_REPOSITORY_URL || process.env.REPOSITORY_URL) {
-      config.repository.url = process.env.CARMACK_REPOSITORY_URL || process.env.REPOSITORY_URL || config.repository.url;
+      config.repository.url =
+        process.env.CARMACK_REPOSITORY_URL || process.env.REPOSITORY_URL || config.repository.url;
     }
     if (args.repository) {
       config.repository.url = args.repository;

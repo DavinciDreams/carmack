@@ -5,13 +5,16 @@
 // Imports must come first
 import { z } from 'zod';
 
-export const ProductionConfigSchema = z.object({
+export const ProductionConfigSchema = z
+  .object({
     // Target repository configuration
     repository: z.object({
       url: z.string().url(),
       branch: z.string().default('main'),
       workingDirectory: z.string(),
-    excludePatterns: z.array(z.string()).default([
+      excludePatterns: z
+        .array(z.string())
+        .default([
           'node_modules/**',
           'dist/**',
           'build/**',
@@ -97,8 +100,8 @@ export const defaultProductionConfig: ProductionConfig = {
       '**/*.bundle.js',
       'coverage/**',
       'docs/**',
-      '**/*.d.ts'
-    ]
+      '**/*.d.ts',
+    ],
   },
   transformation: {
     maxFilesPerBatch: 10,

@@ -18,7 +18,7 @@ function getBunExecutable(): string {
       join(process.env.HOME || process.env.USERPROFILE || '', '.bun', 'bin', 'bun'),
       join(process.env.HOME || process.env.USERPROFILE || '', '.bun', 'bin', 'bun.exe'),
     ];
-    
+
     for (const path of possiblePaths) {
       try {
         execSync(`"${path}" --version`, { stdio: 'pipe' });
@@ -27,7 +27,7 @@ function getBunExecutable(): string {
         // Continue to next path
       }
     }
-    
+
     // Final fallback
     return 'bunx';
   }

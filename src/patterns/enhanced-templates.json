@@ -370,24 +370,19 @@
   "categories": {
     "modernization": [
       "smart-var-to-const-let",
-      "template-literal-advanced", 
+      "template-literal-advanced",
       "array-includes-modernization",
       "null-coalescing-opportunity",
       "destructuring-opportunity",
       "optional-chaining-opportunity"
     ],
-    "optimization": [
-      "object-shorthand-enhanced",
-      "arrow-function-optimization"
-    ],
+    "optimization": ["object-shorthand-enhanced", "arrow-function-optimization"],
     "safety": [
       "strict-equality-comprehensive",
       "strict-inequality-comprehensive",
       "const-to-let-loops"
     ],
-    "logging": [
-      "console-error-conversion"
-    ]
+    "logging": ["console-error-conversion"]
   },
   "metadata": {
     "created": "2025-01-07",

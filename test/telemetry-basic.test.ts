@@ -100,15 +100,10 @@ describe('Telemetry Basic Tests', () => {
     };
 
     const collector = new TelemetryCollector(config);
-    
+
     // Record pattern success using the correct method signature
-    collector.recordPatternSuccess(
-      'test-pattern',
-      true,
-      'ast',
-      '/test/file.ts'
-    );
-    
+    collector.recordPatternSuccess('test-pattern', true, 'ast', '/test/file.ts');
+
     // Test passes if we reach this point without hanging
     expect(true).toBe(true);
   });
@@ -129,7 +124,7 @@ describe('Telemetry Basic Tests', () => {
     };
 
     const collector = new TelemetryCollector(config);
-    
+
     // Record multiple events
     for (let i = 0; i < 5; i++) {
       collector.recordPatternSuccess(
@@ -140,7 +135,7 @@ describe('Telemetry Basic Tests', () => {
         i % 2 === 1 ? 'Test error' : undefined
       );
     }
-    
+
     // Should complete without hanging
     expect(true).toBe(true);
   });

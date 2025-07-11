@@ -6,11 +6,11 @@
 import { performance } from 'perf_hooks';
 import { createHash } from 'crypto';
 import { getTelemetryCollector } from './collector.js';
-import type { 
-  TransformationMode, 
+import type {
+  TransformationMode,
   PipelineStages,
   QualityMetrics,
-  CodeQualityDelta
+  CodeQualityDelta,
 } from './types.js';
 
 /**
@@ -82,13 +82,13 @@ export class MemoryTracker {
    */
   start(intervalMs: number = 100): void {
     if (this.isTracking) return;
-    
+
     this.isTracking = true;
     this.timeline = [];
-    
+
     /** Record initial memory state */
     this.recordSample();
-    
+
     /** Set up periodic sampling */
     this.samplingInterval = setInterval(() => {
       this.recordSample();
@@ -100,17 +100,17 @@ export class MemoryTracker {
    */
   stop(): typeof this.timeline {
     if (!this.isTracking) return [];
-    
+
     this.isTracking = false;
-    
+
     if (this.samplingInterval) {
       clearInterval(this.samplingInterval);
       this.samplingInterval = null;
     }
-    
+
     /** Record final memory state */
     this.recordSample();
-    
+
     return [...this.timeline];
   }
 
@@ -139,22 +139,23 @@ export class MemoryTracker {
     /** Look for significant heap drops that indicate GC */
     let gcTriggered = false;
     let estimatedGCTime = 0;
-    
+
     for (let i = 1; i < this.timeline.length; i++) {
       const prev = this.timeline[i - 1]!;
       const curr = this.timeline[i]!;
-      
+
       /** Detect significant heap reduction (likely GC) */
       const heapReduction = prev.heapUsed - curr.heapUsed;
       const reductionPercentage = heapReduction / prev.heapUsed;
-      
-      if (reductionPercentage > 0.1) { // >10% heap reduction
+
+      if (reductionPercentage > 0.1) {
+        // >10% heap reduction
         gcTriggered = true;
         /** Estimate GC time based on timeline gap */
         estimatedGCTime += curr.timestamp - prev.timestamp;
       }
     }
-    
+
     return { triggered: gcTriggered, estimatedGCTime };
   }
 }
@@ -163,14 +164,17 @@ export class MemoryTracker {
  * Cache performance monitor for AST and pattern caches
  */
 export class CacheMonitor {
-  private stats: Map<string, {
-    hits: number;
-    misses: number;
-    evictions: number;
-    lookupTimes: number[];
-    size: number;
-    memoryUsage: number;
-  }> = new Map();
+  private stats: Map<
+    string,
+    {
+      hits: number;
+      misses: number;
+      evictions: number;
+      lookupTimes: number[];
+      size: number;
+      memoryUsage: number;
+    }
+  > = new Map();
 
   /**
    * Record cache hit
@@ -264,8 +268,8 @@ export class QualityAnalyzer {
   async analyzeCode(code: string): Promise<QualityMetrics> {
     /** Basic metrics that can be calculated statically */
     const lines = code.split('\n');
-    const linesOfCode = lines.filter(line => 
-      line.trim().length > 0 && !line.trim().startsWith('//')
+    const linesOfCode = lines.filter(
+      (line) => line.trim().length > 0 && !line.trim().startsWith('//')
     ).length;
 
     /** Count functions (simplified regex approach) */
@@ -308,7 +312,7 @@ export class QualityAnalyzer {
   private calculateNestingDepth(code: string): number {
     let maxDepth = 0;
     let currentDepth = 0;
-    
+
     for (const char of code) {
       if (char === '{') {
         currentDepth++;
@@ -317,7 +321,7 @@ export class QualityAnalyzer {
         currentDepth = Math.max(0, currentDepth - 1);
       }
     }
-    
+
     return maxDepth;
   }
 
@@ -327,7 +331,7 @@ export class QualityAnalyzer {
   private calculateCyclomaticComplexity(code: string): number {
     /** Base complexity is 1 */
     let complexity = 1;
-    
+
     /** Add complexity for control flow statements */
     const controlFlowPatterns = [
       /\bif\b/g,
@@ -339,14 +343,14 @@ export class QualityAnalyzer {
       /\bcatch\b/g,
       /\b\?\s*.*?\s*:/g, // ternary operator
     ];
-    
+
     for (const pattern of controlFlowPatterns) {
       const matches = code.match(pattern);
       if (matches) {
         complexity += matches.length;
       }
     }
-    
+
     return complexity;
   }
 
@@ -356,18 +360,18 @@ export class QualityAnalyzer {
   private calculateCognitiveComplexity(code: string): number {
     let complexity = 0;
     let nestingLevel = 0;
-    
+
     /** Split into tokens for analysis */
     const tokens = code.split(/\s+/);
-    
+
     for (let i = 0; i < tokens.length; i++) {
       const token = tokens[i];
-      
+
       /** Increment for control structures */
       if (['if', 'while', 'for', 'switch'].includes(token || '')) {
         complexity += 1 + nestingLevel;
       }
-      
+
       /** Track nesting level */
       if (token?.includes('{')) {
         nestingLevel++;
@@ -375,7 +379,7 @@ export class QualityAnalyzer {
         nestingLevel = Math.max(0, nestingLevel - 1);
       }
     }
-    
+
     return complexity;
   }
 
@@ -390,12 +394,16 @@ export class QualityAnalyzer {
     /** Simplified version of Maintainability Index calculation */
     const halsteadVolume = Math.log2(code.length); // Simplified Halstead volume
     const commentRatio = (code.match(/\/\*[\s\S]*?\*\/|\/\/.*$/gm) || []).length / linesOfCode;
-    
-    const maintainabilityIndex = Math.max(0, 
-      171 - 5.2 * Math.log(halsteadVolume) - 0.23 * cyclomaticComplexity 
-      - 16.2 * Math.log(linesOfCode) + 50 * Math.sin(Math.sqrt(2.4 * commentRatio))
+
+    const maintainabilityIndex = Math.max(
+      0,
+      171 -
+        5.2 * Math.log(halsteadVolume) -
+        0.23 * cyclomaticComplexity -
+        16.2 * Math.log(linesOfCode) +
+        50 * Math.sin(Math.sqrt(2.4 * commentRatio))
     );
-    
+
     return Math.min(100, maintainabilityIndex);
   }
 
@@ -405,24 +413,24 @@ export class QualityAnalyzer {
   private calculateDuplicationRatio(lines: string[]): number {
     const lineMap = new Map<string, number>();
     let duplicateLines = 0;
-    
+
     /** Count non-empty, non-comment lines */
-    const meaningfulLines = lines.filter(line => {
+    const meaningfulLines = lines.filter((line) => {
       const trimmed = line.trim();
       return trimmed.length > 3 && !trimmed.startsWith('//') && !trimmed.startsWith('/*');
     });
-    
+
     /** Count duplicates */
     for (const line of meaningfulLines) {
       const normalized = line.trim();
       const count = lineMap.get(normalized) || 0;
       lineMap.set(normalized, count + 1);
-      
+
       if (count > 0) {
         duplicateLines++;
       }
     }
-    
+
     return meaningfulLines.length > 0 ? duplicateLines / meaningfulLines.length : 0;
   }
 }
@@ -436,7 +444,7 @@ export class TransformationTelemetry {
   private memoryTracker = new MemoryTracker();
   private cacheMonitor = new CacheMonitor();
   private qualityAnalyzer = new QualityAnalyzer();
-  
+
   private transformationId: string;
   private mode: TransformationMode;
   private filePath: string;
@@ -462,7 +470,7 @@ export class TransformationTelemetry {
   startTransformation(): void {
     /** Start performance timing */
     this.timer.start('parsing');
-    
+
     /** Start memory tracking */
     this.memoryTracker.start();
   }
@@ -472,12 +480,7 @@ export class TransformationTelemetry {
    * @param patternId - Pattern that was applied
    */
   recordPatternSuccess(patternId: string): void {
-    this.collector.recordPatternSuccess(
-      patternId,
-      true,
-      this.mode,
-      this.filePath
-    );
+    this.collector.recordPatternSuccess(patternId, true, this.mode, this.filePath);
   }
 
   /**
@@ -486,13 +489,7 @@ export class TransformationTelemetry {
    * @param errorReason - Reason for failure
    */
   recordPatternFailure(patternId: string, errorReason: string): void {
-    this.collector.recordPatternSuccess(
-      patternId,
-      false,
-      this.mode,
-      this.filePath,
-      errorReason
-    );
+    this.collector.recordPatternSuccess(patternId, false, this.mode, this.filePath, errorReason);
   }
 
   /**
@@ -540,11 +537,11 @@ export class TransformationTelemetry {
   ): Promise<void> {
     /** Complete final timing */
     this.timer.end('serialization');
-    
+
     /** Stop memory tracking */
     const memoryTimeline = this.memoryTracker.stop();
     const gcInfo = this.memoryTracker.detectGC();
-    
+
     /** Record latency metrics */
     this.collector.recordLatency(
       this.transformationId,
@@ -554,7 +551,7 @@ export class TransformationTelemetry {
       patternsApplied,
       cacheHit
     );
-    
+
     /** Record memory profile */
     if (memoryTimeline.length > 0) {
       this.collector.recordMemoryProfile(
@@ -564,32 +561,30 @@ export class TransformationTelemetry {
         gcInfo.estimatedGCTime
       );
     }
-    
+
     /** Analyze code quality changes */
     try {
-      const originalQuality = await this.qualityAnalyzer.analyzeCode(
-        this.originalCode
-      );
-      const transformedQuality = await this.qualityAnalyzer.analyzeCode(
-        transformedCode
-      );
-      
+      const originalQuality = await this.qualityAnalyzer.analyzeCode(this.originalCode);
+      const transformedQuality = await this.qualityAnalyzer.analyzeCode(transformedCode);
+
       /** Calculate quality improvements */
       const improvement = {
-        cyclomaticComplexity: originalQuality.cyclomaticComplexity - transformedQuality.cyclomaticComplexity,
-        cognitiveComplexity: originalQuality.cognitiveComplexity - transformedQuality.cognitiveComplexity,
-        maintainabilityIndex: transformedQuality.maintainabilityIndex - originalQuality.maintainabilityIndex,
+        cyclomaticComplexity:
+          originalQuality.cyclomaticComplexity - transformedQuality.cyclomaticComplexity,
+        cognitiveComplexity:
+          originalQuality.cognitiveComplexity - transformedQuality.cognitiveComplexity,
+        maintainabilityIndex:
+          transformedQuality.maintainabilityIndex - originalQuality.maintainabilityIndex,
         duplicationRatio: originalQuality.duplicationRatio - transformedQuality.duplicationRatio,
       };
-      
+
       /** Calculate overall quality delta */
-      const overallQualityDelta = (
+      const overallQualityDelta =
         (improvement.cyclomaticComplexity > 0 ? 0.3 : -0.3) +
         (improvement.cognitiveComplexity > 0 ? 0.2 : -0.2) +
         (improvement.maintainabilityIndex > 0 ? 0.3 : -0.3) +
-        (improvement.duplicationRatio > 0 ? 0.2 : -0.2)
-      );
-      
+        (improvement.duplicationRatio > 0 ? 0.2 : -0.2);
+
       /** Record quality metrics (TEL-003) */
       this.collector.recordQualityDelta({
         id: 'TEL-003',
@@ -611,7 +606,9 @@ export class TransformationTelemetry {
    * Record cache performance metrics
    * @param cacheType - Type of cache measured
    */
-  recordCacheMetrics(cacheType: 'ast-parse' | 'pattern-match' | 'verification' | 'quality-analysis'): void {
+  recordCacheMetrics(
+    cacheType: 'ast-parse' | 'pattern-match' | 'verification' | 'quality-analysis'
+  ): void {
     const stats = this.cacheMonitor.getStats(cacheType);
     if (stats) {
       this.collector.recordCacheEfficiency(

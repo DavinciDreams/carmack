@@ -41,9 +41,9 @@ function parseCliArgs(): CliOptions {
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    
+
     if (!arg) continue;
-    
+
     switch (arg) {
       case '--mode':
       case '-m':
@@ -61,7 +61,7 @@ function parseCliArgs(): CliOptions {
           process.exit(1);
         }
         break;
-      
+
       case '--complexity':
       case '-c':
         i++;
@@ -77,22 +77,22 @@ function parseCliArgs(): CliOptions {
         }
         options.maxComplexity = complexity;
         break;
-      
+
       case '--dry-run':
       case '-d':
         options.dryRun = true;
         break;
-      
+
       case '--verbose':
       case '-v':
         options.verbose = true;
         break;
-      
+
       case '--help':
       case '-h':
         options.help = true;
         break;
-      
+
       default:
         if (arg.startsWith('-')) {
           console.error(`❌ Unknown option: ${arg}`);
@@ -146,21 +146,21 @@ PATTERN CATEGORIES:
 
 async function main() {
   const options = parseCliArgs();
-  
+
   if (options.help) {
     showHelp();
     return;
   }
 
   console.log('🚀 Starting Carmack Coder...');
-  
+
   if (options.verbose) {
     console.log('🔧 CLI Options:', JSON.stringify(options, null, 2));
   }
 
   // Use provided files or default to example
   const targetFiles = options.files.length > 0 ? options.files : ['./src/example.ts'];
-  
+
   if (options.verbose) {
     console.log(`📁 Target files: ${targetFiles.join(', ')}`);
   }
@@ -172,8 +172,8 @@ async function main() {
   // Filter patterns by mode if specified
   let filteredPatterns = patterns;
   if (options.mode) {
-    filteredPatterns = patterns.filter(p => 
-      p.mode === options.mode || (!p.mode && options.mode === 'template')
+    filteredPatterns = patterns.filter(
+      (p) => p.mode === options.mode || (!p.mode && options.mode === 'template')
     );
     console.log(`🎯 Filtered to ${filteredPatterns.length} patterns for ${options.mode} mode`);
   }

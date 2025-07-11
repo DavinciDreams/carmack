@@ -9,7 +9,8 @@ import type { AstPattern, TransformationRequest } from '../types.js';
 const TransformationInputSchema = z.object({
   mode: z.enum(['template', 'ast', 'llm']),
   files: z.array(z.string()),
-  patterns: z.array(z.object({
+  patterns: z.array(
+    z.object({
       id: z.string(),
       language: z.string(),
       pattern: z.string(),
@@ -18,7 +19,8 @@ const TransformationInputSchema = z.object({
       complexity: z.number(),
       riskLevel: z.enum(['low', 'medium', 'high']),
       mode: z.enum(['template', 'ast', 'llm']).optional().default('template'),
-  })),
+    })
+  ),
   request: z.any().optional(), // TransformationRequest schema
 });
 
@@ -59,7 +61,8 @@ async function applyTemplateTransformation(files: string[], patterns: AstPattern
   let totalTransformations = 0;
 
   // Get template-mode patterns (safe transformations with reasonable complexity)
-  const templatePatterns = patterns.filter((p) => 
+  const templatePatterns = patterns.filter(
+    (p) =>
       p.complexity <= 3 &&
       (p.riskLevel === 'low' || p.riskLevel === 'medium') &&
       (p.mode === 'template' || !p.mode) // Include patterns without mode (defaults to template)
@@ -84,19 +87,25 @@ async function applyTemplateTransformation(files: string[], patterns: AstPattern
 
           case 'strict-equality':
             // Enhanced == to === with better regex that avoids operators
-            modifiedContent = modifiedContent.replace(/([a-zA-Z_$][\w.]*|\)|\])\s*==\s*([a-zA-Z_$][\w.]*|['"`][^'"`]*['"`]|\d+|true|false|null|undefined|\()/g, '$1 === $2');
+            modifiedContent = modifiedContent.replace(
+              /([a-zA-Z_$][\w.]*|\)|\])\s*==\s*([a-zA-Z_$][\w.]*|['"`][^'"`]*['"`]|\d+|true|false|null|undefined|\()/g,
+              '$1 === $2'
+            );
             break;
 
           case 'strict-inequality':
             // Enhanced != to !== with better regex
-            modifiedContent = modifiedContent.replace(/([a-zA-Z_$][\w.]*|\)|\])\s*!=\s*([a-zA-Z_$][\w.]*|['"`][^'"`]*['"`]|\d+|true|false|null|undefined|\()/g, '$1 !== $2');
+            modifiedContent = modifiedContent.replace(
+              /([a-zA-Z_$][\w.]*|\)|\])\s*!=\s*([a-zA-Z_$][\w.]*|['"`][^'"`]*['"`]|\d+|true|false|null|undefined|\()/g,
+              '$1 !== $2'
+            );
             break;
 
           case 'console-log-to-console-error':
             // Convert console.log('Error:') to console.error() with flexible quotes
             modifiedContent = modifiedContent.replace(
               /console\.log\(\s*(['"`])Error:/g,
-              "console.error($1Error:"
+              'console.error($1Error:'
             );
             break;
 
@@ -255,10 +264,8 @@ async function applyAstTransformation(files: string[], patterns: AstPattern[]) {
   let totalTransformations = 0;
 
   // Get AST-mode patterns (medium complexity, more sophisticated transformations)
-  const astPatterns = patterns.filter((p) => 
-    p.complexity >= 2 && 
-    p.complexity <= 4 &&
-    p.mode === 'ast' // Only include explicitly marked AST patterns
+  const astPatterns = patterns.filter(
+    (p) => p.complexity >= 2 && p.complexity <= 4 && p.mode === 'ast' // Only include explicitly marked AST patterns
   );
 
   for (const filePath of files) {
@@ -767,7 +774,9 @@ async function modernizeClasses(content: string): Promise<string> {
 
   transformed = transformed.replace(constructorPattern, (match, className, body) => {
     const properties = body.match(/this\.(\w+)\s*=\s*([^;]+);/g) || [];
-    const constructorBody: string = (properties as string[]).map((prop: string) => prop.replace('this.', '    this.')).join('\n');
+    const constructorBody: string = (properties as string[])
+      .map((prop: string) => prop.replace('this.', '    this.'))
+      .join('\n');
 
     return `class ${className} {
   constructor() {
@@ -838,7 +847,10 @@ async function arrayIncludesAST(_root: any, content: string, _lang: any): Promis
     let modifiedContent = content;
 
     // Convert arr.indexOf(item) !== -1 to arr.includes(item)
-    modifiedContent = modifiedContent.replace(/(\w+)\.indexOf\(([^)]+)\)\s*!==\s*-1/g, '$1.includes($2)');
+    modifiedContent = modifiedContent.replace(
+      /(\w+)\.indexOf\(([^)]+)\)\s*!==\s*-1/g,
+      '$1.includes($2)'
+    );
 
     if (modifiedContent !== content) {
       console.log('✅ Array includes transformations applied');
@@ -854,13 +866,20 @@ async function arrayIncludesAST(_root: any, content: string, _lang: any): Promis
 /**
  * AST-based removal of unnecessary return statements
  */
-async function removeUnnecessaryReturnsAST(_root: any, content: string, _lang: any): Promise<string> {
+async function removeUnnecessaryReturnsAST(
+  _root: any,
+  content: string,
+  _lang: any
+): Promise<string> {
   try {
     console.log('🔄 Processing unnecessary return removal...');
     let modifiedContent = content;
 
     // Convert (params) => { return expr; } to (params) => expr
-    modifiedContent = modifiedContent.replace(/\(([^)]*)\)\s*=>\s*\{\s*return\s+([^;]+);\s*\}/g, '($1) => $2');
+    modifiedContent = modifiedContent.replace(
+      /\(([^)]*)\)\s*=>\s*\{\s*return\s+([^;]+);\s*\}/g,
+      '($1) => $2'
+    );
 
     if (modifiedContent !== content) {
       console.log('✅ Unnecessary return transformations applied');
@@ -876,7 +895,11 @@ async function removeUnnecessaryReturnsAST(_root: any, content: string, _lang: a
 /**
  * AST-based object property shorthand conversion
  */
-async function objectPropertyShorthandAST(_root: any, content: string, _lang: any): Promise<string> {
+async function objectPropertyShorthandAST(
+  _root: any,
+  content: string,
+  _lang: any
+): Promise<string> {
   try {
     console.log('🔄 Processing object property shorthand...');
     let modifiedContent = content;
@@ -899,14 +922,24 @@ async function objectPropertyShorthandAST(_root: any, content: string, _lang: an
 /**
  * AST-based template literal conversion
  */
-async function templateLiteralConversionAST(_root: any, content: string, _lang: any): Promise<string> {
+async function templateLiteralConversionAST(
+  _root: any,
+  content: string,
+  _lang: any
+): Promise<string> {
   try {
     console.log('🔄 Processing template literal conversions...');
     let modifiedContent = content;
 
     // Convert string concatenation to template literals
-    modifiedContent = modifiedContent.replace(/'([^']*?)'\s*\+\s*(\w+)\s*\+\s*'([^']*?)'/g, '`$1${$2}$3`');
-    modifiedContent = modifiedContent.replace(/"([^"]*?)"\s*\+\s*(\w+)\s*\+\s*"([^"]*?)"/g, '`$1${$2}$3`');
+    modifiedContent = modifiedContent.replace(
+      /'([^']*?)'\s*\+\s*(\w+)\s*\+\s*'([^']*?)'/g,
+      '`$1${$2}$3`'
+    );
+    modifiedContent = modifiedContent.replace(
+      /"([^"]*?)"\s*\+\s*(\w+)\s*\+\s*"([^"]*?)"/g,
+      '`$1${$2}$3`'
+    );
 
     if (modifiedContent !== content) {
       console.log('✅ Template literal transformations applied');
@@ -928,7 +961,10 @@ async function constLoopVariableFixAST(_root: any, content: string, _lang: any):
     let modifiedContent = content;
 
     // Convert for (const i = 0; ...) to for (let i = 0; ...)
-    modifiedContent = modifiedContent.replace(/for\s*\(\s*const\s+(\w+)\s*=\s*([^;]+);/g, 'for (let $1 = $2;');
+    modifiedContent = modifiedContent.replace(
+      /for\s*\(\s*const\s+(\w+)\s*=\s*([^;]+);/g,
+      'for (let $1 = $2;'
+    );
 
     if (modifiedContent !== content) {
       console.log('✅ Const loop variable fixes applied');

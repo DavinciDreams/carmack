@@ -22,8 +22,8 @@ export const enterpriseConfig: ProductionConfig = {
       '**/*.bundle.js',
       '**/*.d.ts',
       'vendor/**',
-      'third-party/**'
-    ]
+      'third-party/**',
+    ],
   },
   transformation: {
     maxFilesPerBatch: 15,
@@ -31,13 +31,13 @@ export const enterpriseConfig: ProductionConfig = {
     allowedFileExtensions: ['.ts', '.tsx', '.js', '.jsx'],
     riskLevelFilter: 'low',
     enableBackups: true,
-    dryRunFirst: true
+    dryRunFirst: true,
   },
   cicd: {
     platform: 'github',
     triggerOnPush: false,
     triggerOnPR: true,
-    autoMerge: false
+    autoMerge: false,
   },
   qualityGates: {
     requireTypeCheck: true,
@@ -45,7 +45,7 @@ export const enterpriseConfig: ProductionConfig = {
     requireTests: true,
     requireDafnyVerification: false,
     maxComplexityIncrease: 10,
-    minTestCoverage: 85
+    minTestCoverage: 85,
   },
   monitoring: {
     enableTelemetry: true,
@@ -55,16 +55,16 @@ export const enterpriseConfig: ProductionConfig = {
     performanceThresholds: {
       maxTransformationTime: 600000, // 10 minutes
       maxMemoryUsage: 2048, // 2GB
-      maxCpuUsage: 70
-    }
+      maxCpuUsage: 70,
+    },
   },
   rollback: {
     enableAutoRollback: true,
     rollbackOnTestFailure: true,
     rollbackOnComplexityIncrease: true,
     maxRollbackAttempts: 2,
-    rollbackTimeoutMs: 120000
-  }
+    rollbackTimeoutMs: 120000,
+  },
 };
 
 // Example: Open Source Project
@@ -79,8 +79,8 @@ export const openSourceConfig: ProductionConfig = {
       'packages/**/dist/**',
       'fixtures/**',
       'scripts/**',
-      '**/*.min.js'
-    ]
+      '**/*.min.js',
+    ],
   },
   transformation: {
     maxFilesPerBatch: 10,
@@ -88,13 +88,13 @@ export const openSourceConfig: ProductionConfig = {
     allowedFileExtensions: ['.js', '.jsx', '.ts', '.tsx'],
     riskLevelFilter: 'low',
     enableBackups: true,
-    dryRunFirst: true
+    dryRunFirst: true,
   },
   cicd: {
     platform: 'github',
     triggerOnPush: false,
     triggerOnPR: false, // Don't auto-trigger on OSS projects
-    autoMerge: false
+    autoMerge: false,
   },
   qualityGates: {
     requireTypeCheck: false, // React uses Flow
@@ -102,7 +102,7 @@ export const openSourceConfig: ProductionConfig = {
     requireTests: true,
     requireDafnyVerification: false,
     maxComplexityIncrease: 5,
-    minTestCoverage: 80
+    minTestCoverage: 80,
   },
   monitoring: {
     enableTelemetry: false, // Respect privacy for OSS
@@ -110,16 +110,16 @@ export const openSourceConfig: ProductionConfig = {
     performanceThresholds: {
       maxTransformationTime: 300000,
       maxMemoryUsage: 1024,
-      maxCpuUsage: 80
-    }
+      maxCpuUsage: 80,
+    },
   },
   rollback: {
     enableAutoRollback: true,
     rollbackOnTestFailure: true,
     rollbackOnComplexityIncrease: true,
     maxRollbackAttempts: 3,
-    rollbackTimeoutMs: 60000
-  }
+    rollbackTimeoutMs: 60000,
+  },
 };
 
 // Example: Microservices Architecture
@@ -135,8 +135,8 @@ export const microserviceConfig: ProductionConfig = {
       'docker/**',
       'k8s/**',
       '**/*.spec.ts',
-      '**/*.test.ts'
-    ]
+      '**/*.test.ts',
+    ],
   },
   transformation: {
     maxFilesPerBatch: 5, // Small service, process carefully
@@ -144,13 +144,13 @@ export const microserviceConfig: ProductionConfig = {
     allowedFileExtensions: ['.ts', '.js'],
     riskLevelFilter: 'low',
     enableBackups: true,
-    dryRunFirst: true
+    dryRunFirst: true,
   },
   cicd: {
     platform: 'gitlab',
     triggerOnPush: true,
     triggerOnPR: true,
-    autoMerge: false
+    autoMerge: false,
   },
   qualityGates: {
     requireTypeCheck: true,
@@ -158,7 +158,7 @@ export const microserviceConfig: ProductionConfig = {
     requireTests: true,
     requireDafnyVerification: true, // Critical financial service
     maxComplexityIncrease: 3,
-    minTestCoverage: 95 // High coverage for financial code
+    minTestCoverage: 95, // High coverage for financial code
   },
   monitoring: {
     enableTelemetry: true,
@@ -168,16 +168,16 @@ export const microserviceConfig: ProductionConfig = {
     performanceThresholds: {
       maxTransformationTime: 180000, // 3 minutes
       maxMemoryUsage: 512,
-      maxCpuUsage: 60
-    }
+      maxCpuUsage: 60,
+    },
   },
   rollback: {
     enableAutoRollback: true,
     rollbackOnTestFailure: true,
     rollbackOnComplexityIncrease: true,
     maxRollbackAttempts: 1, // Be very conservative
-    rollbackTimeoutMs: 30000
-  }
+    rollbackTimeoutMs: 30000,
+  },
 };
 
 // Example: Legacy Codebase Migration
@@ -194,8 +194,8 @@ export const legacyMigrationConfig: ProductionConfig = {
       '**/*.min.js',
       '**/*.legacy.js',
       'old/**',
-      'deprecated/**'
-    ]
+      'deprecated/**',
+    ],
   },
   transformation: {
     maxFilesPerBatch: 3, // Very conservative for legacy code
@@ -203,13 +203,13 @@ export const legacyMigrationConfig: ProductionConfig = {
     allowedFileExtensions: ['.js', '.ts'],
     riskLevelFilter: 'low', // Only safe transformations
     enableBackups: true,
-    dryRunFirst: true
+    dryRunFirst: true,
   },
   cicd: {
     platform: 'jenkins',
     triggerOnPush: false,
     triggerOnPR: false, // Manual triggering only
-    autoMerge: false
+    autoMerge: false,
   },
   qualityGates: {
     requireTypeCheck: false, // Legacy code might not type-check
@@ -217,7 +217,7 @@ export const legacyMigrationConfig: ProductionConfig = {
     requireTests: false, // Legacy code might not have tests
     requireDafnyVerification: false,
     maxComplexityIncrease: 0, // Don't increase complexity
-    minTestCoverage: 0 // No coverage requirements
+    minTestCoverage: 0, // No coverage requirements
   },
   monitoring: {
     enableTelemetry: true,
@@ -225,16 +225,16 @@ export const legacyMigrationConfig: ProductionConfig = {
     performanceThresholds: {
       maxTransformationTime: 900000, // 15 minutes for large legacy files
       maxMemoryUsage: 4096, // 4GB for processing large files
-      maxCpuUsage: 90
-    }
+      maxCpuUsage: 90,
+    },
   },
   rollback: {
     enableAutoRollback: true,
     rollbackOnTestFailure: false, // Tests might not exist
     rollbackOnComplexityIncrease: true,
     maxRollbackAttempts: 3,
-    rollbackTimeoutMs: 180000
-  }
+    rollbackTimeoutMs: 180000,
+  },
 };
 
 // Default export - customize this for your primary use case
