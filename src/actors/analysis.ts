@@ -216,23 +216,105 @@ function analyzeFileComplexity(content: string): ComplexityMetrics {
 }
 
 async function determineTransformationMode(
-  _files: string[],
+  files: string[],
   patterns: AstPattern[],
   complexity: ComplexityMetrics,
   _request?: TransformationRequest
 ): Promise<TransformationMode> {
+  // Check if file content matches AST-specific patterns
+  const hasAstPatterns = await checkForAstPatterns(files, patterns);
+  
+  if (hasAstPatterns) {
+    console.log('🎯 AST patterns detected, recommending AST mode');
+    return 'ast';
+  }
+
   // Speed first: Try template approach for simple transformations
   if (complexity.cyclomaticComplexity <= 5 && patterns.length > 0) {
+    console.log('🚀 Low complexity detected, recommending template mode');
     return 'template';
   }
 
   // Use AST for medium complexity with known patterns
   if (complexity.cyclomaticComplexity <= 15 && patterns.length > 0) {
+    console.log('🧠 Medium complexity detected, recommending AST mode');
     return 'ast';
   }
 
   // Fall back to LLM for complex transformations
+  console.log('🤖 High complexity detected, recommending LLM mode');
   return 'llm';
+}
+
+async function checkForAstPatterns(files: string[], patterns: AstPattern[]): Promise<boolean> {
+  try {
+    const { readFile } = await import('fs/promises');
+    
+    // Get patterns that are explicitly marked as AST mode
+    const astPatterns = patterns.filter(p => p.mode === 'ast');
+    
+    for (const filePath of files) {
+      try {
+        const content = await readFile(filePath, 'utf-8');
+        
+        // Check if content matches any AST patterns
+        for (const pattern of astPatterns) {
+          if (matchesAstPattern(content, pattern)) {
+            console.log(`✅ Found AST pattern "${pattern.id}" in ${filePath}`);
+            return true;
+          }
+        }
+      } catch (error) {
+        console.warn(`Warning: Could not check AST patterns in ${filePath}:`, error);
+      }
+    }
+    
+    return false;
+  } catch (error) {
+    console.warn('Warning: Could not check for AST patterns:', error);
+    return false;
+  }
+}
+
+function matchesAstPattern(content: string, pattern: AstPattern): boolean {
+  try {
+    // Check for specific AST pattern indicators
+    switch (pattern.id) {
+      case 'strict-equality':
+        return /\w+\s*==\s*[^=]/.test(content);
+      case 'strict-inequality':
+        return /\w+\s*!=\s*[^=]/.test(content);
+      case 'array-includes-instead-of-indexof':
+        return /\.indexOf\([^)]+\)\s*!==\s*-1/.test(content);
+      case 'object-property-shorthand':
+        return /{\s*\w+:\s*\w+\s*}/.test(content) && /{\s*(\w+):\s*\1\s*}/.test(content);
+      case 'template-literal-conversion':
+        return /['"`][^'"`]*['"`]\s*\+\s*\w+\s*\+\s*['"`]/.test(content);
+      case 'remove-unnecessary-returns':
+        return /\([^)]*\)\s*=>\s*{\s*return\s+[^;]+;\s*}/.test(content);
+      case 'const-loop-variable-fix':
+        return /for\s*\(\s*const\s+\w+\s*=/.test(content);
+      case 'promise-to-async-await':
+        return /\w+\.then\s*\(/.test(content);
+      default:
+        // Try basic pattern matching for other AST patterns
+        if (pattern.pattern) {
+          // Convert AST-grep pattern to basic regex check
+          const basicPattern = pattern.pattern
+            .replace(/\$\w+/g, '\\w+')  // Replace $VAR with \w+
+            .replace(/\s+/g, '\\s*');   // Replace spaces with \s*
+          try {
+            return new RegExp(basicPattern).test(content);
+          } catch {
+            return false;
+          }
+        }
+        return false;
+    }
+  } catch (error) {
+    console.warn(`Warning: Could not match pattern ${pattern.id}:`, error);
+    return false;
+  }
 }
 
 async function handleLearning(_input: {
