@@ -159,7 +159,7 @@ async function applyTemplateTransformation(files: string[], patterns: AstPattern
             // Enhanced Promise.then() to async/await conversion
             modifiedContent = modifiedContent.replace(
               /([a-zA-Z_$][\w.]*|\))\.then\(\s*\(\s*([a-zA-Z_$]\w*)\s*\)\s*=>\s*{\s*([^}]+)\s*}\s*\)/g,
-              (match, promise, param, body) => {
+              (_match, promise, param, body) => {
                 return `const ${param} = await ${promise};\n${body.trim()}`;
               }
             );
@@ -204,9 +204,9 @@ async function applyTemplateTransformation(files: string[], patterns: AstPattern
 /**
  * Enhanced template transformation with smart heuristics
  */
-function enhancedTemplateTransformation(content: string): string {
+function enhancedTemplateTransformation(_content: string): string {
   // Apply multiple transformation passes
-  return content; // Placeholder implementation
+  return _content; // Placeholder implementation
 }
 
 /**
@@ -388,7 +388,7 @@ async function smartVarToConstLetAST(_root: any, content: string, _lang: any): P
     // Enhanced var to const/let conversion with better pattern matching
     const varRegex = /^(\s*)var\s+(\w+)\s*=\s*([^;]+);?\s*$/gm;
 
-    modifiedContent = modifiedContent.replace(varRegex, (match, indent, varName, value) => {
+    modifiedContent = modifiedContent.replace(varRegex, (_match, indent, varName, value) => {
       console.log(`🔄 Found var declaration: ${varName} = ${value.trim()}`);
 
       // Analyze the value to decide between const and let
@@ -442,7 +442,7 @@ async function promiseToAsyncAwaitAST(_root: any, content: string, _lang: any): 
     // Enhanced Promise to async/await transformation using regex
     const thenRegex = /(\w+)\.then\(\s*\((\w+)\)\s*=>\s*\{([^}]+)\}\s*\)/g;
 
-    modifiedContent = modifiedContent.replace(thenRegex, (match, promise, param, body) => {
+    modifiedContent = modifiedContent.replace(thenRegex, (_match, promise, param, body) => {
       console.log(`🔄 Found Promise chain: ${promise}.then((${param}) => ...)`);
       console.log(`✅ Converting to: const ${param} = await ${promise};`);
       return `const ${param} = await ${promise};\n${body.trim()}`;
@@ -481,7 +481,7 @@ async function enhanceObjectDestructuring(
 /**
  * Remove unnecessary return statements
  */
-async function removeUnnecessaryReturns(_root: any, content: string, _lang: any): Promise<string> {
+async function removeUnnecessaryReturnsAST(_root: any, content: string, _lang: any): Promise<string> {
   try {
     // Remove unnecessary return statements from arrow functions
     let modifiedContent = content;
@@ -763,8 +763,8 @@ function detectProjectFramework(files: string[]): string | undefined {
   return undefined;
 }
 
-function generateDefaultPrompt(files: string[]): string {
-  return `Transform the following ${files.length} TypeScript file(s) to use modern patterns:
+function generateDefaultPrompt(_files: string[]): string {
+  return `Transform the following ${_files.length} TypeScript file(s) to use modern patterns:
 - Convert var to const/let based on usage
 - Transform callbacks to async/await
 - Use modern class syntax
@@ -782,7 +782,7 @@ async function smartVarTransformation(content: string): Promise<string> {
   for (const declaration of varDeclarations) {
     const varMatch = declaration.match(/var\s+(\w+)\s*=\s*(.+);/);
     if (varMatch) {
-      const [fullDecl, varName, value] = varMatch;
+      const [fullDecl, varName] = varMatch;
 
       // Check if variable is reassigned
       const reassignPattern = new RegExp(`\\b${varName}\\s*=\\s*[^=]`, 'g');
@@ -830,7 +830,7 @@ async function modernizeClasses(content: string): Promise<string> {
   // Pattern: function Constructor() { this.prop = value; }
   const constructorPattern = /function\s+(\w+)\s*\([^)]*\)\s*\{([^}]*this\.[^}]+)\}/g;
 
-  transformed = transformed.replace(constructorPattern, (match, className, body) => {
+  transformed = transformed.replace(constructorPattern, (_match, className, body) => {
     const properties = body.match(/this\.(\w+)\s*=\s*([^;]+);/g) || [];
     const constructorBody: string = (properties as string[])
       .map((prop: string) => prop.replace('this.', '    this.'))
