@@ -398,13 +398,12 @@ function findAstGrepMatches(root: SgRoot, pattern: AstGrepPattern): AstMatch[] {
 function buildAstGrepQuery(pattern: AstGrepPattern): string {
   const rule = pattern.pattern.rule;
   
-  // For now, use the simple pattern string format that AST-grep expects
-  // The AST-grep NAPI expects a string pattern, not a complex object
+  // For simple pattern strings, return the string directly
   if (rule.pattern) {
     return rule.pattern;
   }
   
-  // If no pattern string, try to build one from other properties
+  // If we have a kind, use it as a pattern
   if (rule.kind) {
     return rule.kind;
   }
@@ -734,11 +733,11 @@ export const BUILTIN_AST_PATTERNS: AstGrepPattern[] = [
     language: 'typescript',
     pattern: {
       rule: {
-        pattern: 'function $NAME($PARAMS) { return $EXPR; }',
+        pattern: 'function $NAME($PARAMS) { $$$BODY }',
       },
     },
     replacement: {
-      template: 'const $NAME = ($PARAMS) => $EXPR;',
+      template: 'const $NAME = ($PARAMS) => { $$$BODY }',
     },
     description: 'Convert simple functions to arrow functions',
     complexity: 4,
@@ -779,11 +778,11 @@ export const BUILTIN_AST_PATTERNS: AstGrepPattern[] = [
     language: 'typescript',
     pattern: {
       rule: {
-        pattern: '{ $KEY: $KEY }',
+        pattern: '$KEY: $KEY',
       },
     },
     replacement: {
-      template: '{ $KEY }',
+      template: '$KEY',
     },
     description: 'Use object property shorthand syntax',
     complexity: 2,
