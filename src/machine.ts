@@ -10,7 +10,7 @@ import { templateEngineActor, type TemplatePattern } from './actors/template-eng
 import { validationActor } from './actors/validation.ts';
 import { patternLearningActor } from './actors/pattern-learning.ts';
 import type { MachineContext, MachineEvent, AstPattern } from './types.ts';
-import { MachineContextSchema, type TransformationMode } from './types.ts';
+import { MachineContextSchema } from './types.ts';
 
 /**
  * Convert AstPattern to TemplatePattern for template engine compatibility
