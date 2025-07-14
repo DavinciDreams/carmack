@@ -527,7 +527,7 @@ export class PatternLearner {
     if (transformation.filesModified.length > 0) {
       // Analyze the first modified file for patterns
       try {
-        const filePath = transformation.filesModified[0];
+        const _filePath = transformation.filesModified[0];
         // In a real implementation, we would:
         // 1. Read the file before/after transformation
         // 2. Use AST analysis to find transformation patterns
