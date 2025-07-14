@@ -533,3 +533,57 @@ export class SchemaTestUtils {
     }
   }
 }
+
+/**
+ * Telemetry testing utilities
+ */
+export class TelemetryTestUtils {
+  /**
+   * Create multiple test files for telemetry testing
+   */
+  static async createTestFiles(): Promise<string[]> {
+    const files: string[] = [];
+    
+    // Create TypeScript test file
+    const tsFile = await FileTestUtils.createTempFile(
+      CodeSampleGenerator.generateVarCode(),
+      '.ts'
+    );
+    files.push(tsFile);
+    
+    // Create JavaScript test file
+    const jsFile = await FileTestUtils.createTempFile(
+      CodeSampleGenerator.generateLooseEqualityCode(),
+      '.js'
+    );
+    files.push(jsFile);
+    
+    return files;
+  }
+
+  /**
+   * Clean up test files
+   */
+  static async cleanupTestFiles(files: string[]): Promise<void> {
+    for (const file of files) {
+      await FileTestUtils.cleanupTempFile(file);
+    }
+  }
+
+  /**
+   * Measure performance of an operation
+   */
+  static async measurePerformance<T>(
+    operation: () => Promise<T>
+  ): Promise<{ result: T; duration: number }> {
+    const startTime = performance.now();
+    const result = await operation();
+    const duration = performance.now() - startTime;
+    return { result, duration };
+  }
+}
+
+// Export convenience functions for backward compatibility
+export const createTestFiles = TelemetryTestUtils.createTestFiles;
+export const cleanupTestFiles = TelemetryTestUtils.cleanupTestFiles;
+export const measurePerformance = TelemetryTestUtils.measurePerformance;
