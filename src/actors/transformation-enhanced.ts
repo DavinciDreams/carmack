@@ -122,7 +122,7 @@ async function applyEnhancedTemplateTransformation(request: EnhancedTransformati
   for (const filePath of request.targetFiles) {
     try {
       let content = await readFile(filePath, 'utf-8');
-      const originalContent = content;
+      const _originalContent = content;
       let fileTransformed = false;
 
       for (const pattern of templatePatterns) {
