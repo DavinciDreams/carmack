@@ -43,8 +43,10 @@ Carmack Coder implements a sophisticated state machine-based approach to automat
 
 ### 📊 **Self-Improvement**
 - **Complexity Monitoring**: Automatic analysis and threshold management
-- **Pattern Learning**: Extract successful transformation patterns
+- **Pattern Learning**: Machine learning-based pattern discovery and optimization
 - **Adaptive Behavior**: Optimize mode selection based on historical data
+
+**[📚 Pattern Learning System Documentation →](./docs/PATTERN-LEARNING-SYSTEM.md)**
 
 ## Project Structure
 
@@ -55,12 +57,15 @@ src/
 ├── actors/
 │   ├── analysis.ts    # Code analysis and mode recommendation
 │   ├── transformation.ts # Template/AST/LLM transformation execution
+│   ├── llm-transformation.ts # Comprehensive LLM transformation system
+│   ├── pattern-learning.ts # Machine learning-based pattern discovery
 │   ├── validation.ts  # Format, type, and quality validation
 │   ├── git.ts         # Git operations for checkpoints and rollback
 │   ├── complexity.ts  # Code complexity measurement and analysis
 │   └── dafny.ts       # Formal verification with Dafny
 ├── utils/             # Helper utilities and shared functions
-└── verification/      # Dafny specification files
+├── verification/      # Dafny specification files
+└── data/              # Pattern learning data persistence
 ```
 
 ## Installation & Setup
