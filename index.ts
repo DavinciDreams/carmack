@@ -158,8 +158,8 @@ async function main() {
     console.log('🔧 CLI Options:', JSON.stringify(options, null, 2));
   }
 
-  // Use provided files or default to example
-  const targetFiles = options.files.length > 0 ? options.files : ['./src/example.ts'];
+  // Use provided files or default to our test file
+  const targetFiles = options.files.length > 0 ? options.files : ['./test-full-pipeline.ts'];
 
   if (options.verbose) {
     console.log(`📁 Target files: ${targetFiles.join(', ')}`);
