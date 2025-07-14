@@ -1,0 +1,816 @@
+import { fromPromise, createActor } from 'xstate';
+import { z } from 'zod';
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { join, dirname } from 'node:path';
+
+// Import all our transformation systems
+import { templateEngineActor } from '../actors/template-engine.js';
+import { astGrepTransformationActor } from '../actors/ast-grep-transformation.js';
+import { llmTransformationActor } from '../actors/llm-transformation.js';
+import { patternLearningActor } from '../actors/pattern-learning.js';
+import { patternDiscoveryActor } from '../actors/pattern-discovery.js';
+import { feedbackLoopActor } from '../actors/feedback-loop.js';
+import { validationActor } from '../actors/validation.js';
+import { complexityActor } from '../actors/complexity.js';
+import { llmTestingFrameworkActor } from '../actors/llm-testing-framework.js';
+
+// Helper function to invoke actors
+async function invokeActor<T>(actorLogic: any, input: any): Promise<T> {
+  const actor = createActor(actorLogic, { input });
+  actor.start();
+  const snapshot = actor.getSnapshot();
+  return snapshot.output as T;
+}
+
+/**
+ * Production-Ready LLM Transformation Pipeline
+ * 
+ * This pipeline orchestrates all transformation systems in a production environment:
+ * 1. Input validation and preprocessing
+ * 2. Pattern discovery and learning
+ * 3. Multi-stage transformations (Template → AST → LLM)
+ * 4. Quality validation and testing
+ * 5. Feedback collection and continuous improvement
+ * 6. Production deployment and monitoring
+ */
+
+// Production pipeline configuration schema
+const ProductionConfigSchema = z.object({
+  // LLM Provider Configuration
+  llm: z.object({
+    provider: z.enum(['openai', 'anthropic', 'local', 'mock']),
+    model: z.string(),
+    apiKey: z.string().optional(),
+    baseUrl: z.string().optional(),
+    temperature: z.number().min(0).max(2).default(0.1),
+    maxTokens: z.number().default(4000),
+    timeout: z.number().default(30000), // 30 seconds
+    retries: z.number().default(3),
+  }),
+  
+  // Transformation Strategy
+  strategy: z.object({
+    preferredOrder: z.array(z.enum(['template', 'ast-grep', 'llm'])).default(['template', 'ast-grep', 'llm']),
+    fallbackEnabled: z.boolean().default(true),
+    parallelProcessing: z.boolean().default(false),
+    maxConcurrency: z.number().default(3),
+  }),
+  
+  // Quality Assurance
+  quality: z.object({
+    enableValidation: z.boolean().default(true),
+    enableTesting: z.boolean().default(true),
+    enableComplexityCheck: z.boolean().default(true),
+    maxComplexityIncrease: z.number().default(0.2), // 20% max increase
+    requireTypeCheck: z.boolean().default(true),
+    enableFormatCheck: z.boolean().default(true),
+  }),
+  
+  // Pattern Learning & Discovery
+  patterns: z.object({
+    enableLearning: z.boolean().default(true),
+    enableDiscovery: z.boolean().default(true),
+    confidenceThreshold: z.number().default(0.7),
+    maxPatterns: z.number().default(100),
+    learningRate: z.number().default(0.1),
+  }),
+  
+  // Feedback & Monitoring
+  feedback: z.object({
+    enableCollection: z.boolean().default(true),
+    enableOptimization: z.boolean().default(true),
+    reportingInterval: z.number().default(3600000), // 1 hour
+    metricsRetention: z.number().default(2592000000), // 30 days
+  }),
+  
+  // Production Settings
+  production: z.object({
+    enableLogging: z.boolean().default(true),
+    logLevel: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
+    enableMetrics: z.boolean().default(true),
+    enableTracing: z.boolean().default(false),
+    backupEnabled: z.boolean().default(true),
+    rollbackEnabled: z.boolean().default(true),
+  }),
+});
+
+export type ProductionConfig = z.infer<typeof ProductionConfigSchema>;
+
+// Pipeline request schema
+const PipelineRequestSchema = z.object({
+  // Input files and transformation request
+  files: z.array(z.string()),
+  transformationRequest: z.object({
+    prompt: z.string(),
+    targetFiles: z.array(z.string()),
+    transformationType: z.enum(['template', 'ast-grep', 'llm', 'auto']).default('auto'),
+    maxComplexity: z.number().default(15),
+    dryRun: z.boolean().default(false),
+  }),
+  
+  // Pipeline configuration
+  config: ProductionConfigSchema,
+  
+  // Context and metadata
+  context: z.object({
+    projectType: z.string().default('typescript'),
+    framework: z.string().optional(),
+    userId: z.string().optional(),
+    sessionId: z.string().optional(),
+    priority: z.enum(['low', 'normal', 'high', 'critical']).default('normal'),
+  }),
+});
+
+export type PipelineRequest = z.infer<typeof PipelineRequestSchema>;
+
+// Pipeline result schema
+interface PipelineResult {
+  success: boolean;
+  transformationId: string;
+  filesModified: string[];
+  transformationsApplied: Array<{
+    type: 'template' | 'ast-grep' | 'llm';
+    patternsUsed: string[];
+    executionTime: number;
+    success: boolean;
+    confidence: number;
+  }>;
+  qualityMetrics: {
+    complexityBefore: number;
+    complexityAfter: number;
+    typeErrors: number;
+    formatIssues: number;
+    testResults: {
+      passed: number;
+      failed: number;
+      coverage: number;
+    };
+  };
+  performance: {
+    totalExecutionTime: number;
+    stageTimings: Record<string, number>;
+    resourceUsage: {
+      memory: number;
+      cpu: number;
+    };
+  };
+  feedback: {
+    userRating?: number;
+    automaticScore: number;
+    recommendations: string[];
+  };
+  errors?: Array<{
+    stage: string;
+    error: string;
+    message: string;
+    severity: 'warning' | 'error' | 'critical';
+    recoverable: boolean;
+  }>;
+  metadata: {
+    timestamp: string;
+    version: string;
+    environment: 'development' | 'staging' | 'production';
+  };
+}
+
+/**
+ * Production Pipeline Actor
+ */
+export const productionPipelineActor = fromPromise(
+  async ({ input }: { input: PipelineRequest }): Promise<PipelineResult> => {
+    const startTime = Date.now();
+    const transformationId = `transform_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    console.log(`🚀 Starting production pipeline: ${transformationId}`);
+    
+    try {
+      // Validate input
+      const validatedInput = PipelineRequestSchema.parse(input);
+      
+      // Initialize pipeline state
+      const pipelineState = {
+        transformationId,
+        startTime,
+        stageTimings: {} as Record<string, number>,
+        errors: [] as Array<{ stage: string; error: string; message: string; severity: 'warning' | 'error' | 'critical'; recoverable: boolean }>,
+        transformationsApplied: [] as Array<{ type: 'template' | 'ast-grep' | 'llm'; patternsUsed: string[]; executionTime: number; success: boolean; confidence: number }>,
+        filesModified: [] as string[],
+      };
+      
+      // Execute pipeline stages
+      const result = await executePipelineStages(validatedInput, pipelineState);
+      
+      console.log(`✅ Pipeline completed: ${transformationId} in ${Date.now() - startTime}ms`);
+      
+      return result;
+    } catch (error) {
+      console.error(`❌ Pipeline failed: ${transformationId}`, error);
+      
+      return {
+        success: false,
+        transformationId,
+        filesModified: [],
+        transformationsApplied: [],
+        qualityMetrics: {
+          complexityBefore: 0,
+          complexityAfter: 0,
+          typeErrors: 0,
+          formatIssues: 0,
+          testResults: { passed: 0, failed: 0, coverage: 0 },
+        },
+        performance: {
+          totalExecutionTime: Date.now() - startTime,
+          stageTimings: {},
+          resourceUsage: { memory: 0, cpu: 0 },
+        },
+        feedback: {
+          automaticScore: 0,
+          recommendations: ['Pipeline execution failed - check logs for details'],
+        },
+        errors: [{
+          stage: 'initialization',
+          error: error instanceof Error ? error.message : String(error),
+          message: error instanceof Error ? error.message : String(error),
+          severity: 'critical',
+          recoverable: false,
+        }],
+        metadata: {
+          timestamp: new Date().toISOString(),
+          version: '1.0.0',
+          environment: process.env.NODE_ENV === 'production' ? 'production' : 'development',
+        },
+      };
+    }
+  }
+);
+
+/**
+ * Execute all pipeline stages in sequence
+ */
+async function executePipelineStages(
+  input: PipelineRequest,
+  state: any
+): Promise<PipelineResult> {
+  const stages = [
+    { name: 'preprocessing', fn: preprocessingStage },
+    { name: 'pattern-discovery', fn: patternDiscoveryStage },
+    { name: 'transformation', fn: transformationStage },
+    { name: 'validation', fn: validationStage },
+    { name: 'testing', fn: testingStage },
+    { name: 'feedback', fn: feedbackStage },
+    { name: 'postprocessing', fn: postprocessingStage },
+  ];
+  
+  for (const stage of stages) {
+    const stageStart = Date.now();
+    
+    try {
+      console.log(`📋 Executing stage: ${stage.name}`);
+      await stage.fn(input, state);
+      
+      state.stageTimings[stage.name] = Date.now() - stageStart;
+      console.log(`✅ Stage completed: ${stage.name} (${state.stageTimings[stage.name]}ms)`);
+    } catch (error) {
+      const errorInfo = {
+        stage: stage.name,
+        error: error instanceof Error ? error.message : String(error),
+        message: error instanceof Error ? error.message : String(error),
+        severity: 'error' as const,
+        recoverable: stage.name !== 'transformation', // Only transformation failures are non-recoverable
+      };
+      
+      state.errors.push(errorInfo);
+      console.warn(`⚠️ Stage failed: ${stage.name}`, error);
+      
+      // Stop pipeline if critical error
+      if (!errorInfo.recoverable) {
+        break;
+      }
+    }
+  }
+  
+  // Build final result
+  return buildPipelineResult(input, state);
+}
+
+/**
+ * Stage 1: Preprocessing - Input validation and preparation
+ */
+async function preprocessingStage(input: PipelineRequest, state: any): Promise<void> {
+  // Validate file existence and readability
+  for (const filePath of input.files) {
+    try {
+      await readFile(filePath, 'utf-8');
+    } catch (error) {
+      throw new Error(`Cannot read file: ${filePath}`);
+    }
+  }
+  
+  // Create backup if enabled
+  if (input.config.production.backupEnabled && !input.transformationRequest.dryRun) {
+    await createBackup(input.files, state.transformationId);
+  }
+  
+  // Initialize metrics collection
+  if (input.config.production.enableMetrics) {
+    await initializeMetrics(state);
+  }
+}
+
+/**
+ * Stage 2: Pattern Discovery - Discover and learn patterns
+ */
+async function patternDiscoveryStage(input: PipelineRequest, state: any): Promise<void> {
+  if (!input.config.patterns.enableDiscovery) return;
+  
+  // Discover patterns from current files
+  try {
+    const discoveryResult = await invokeActor(patternDiscoveryActor, {
+      operation: 'discover',
+      sources: {
+        codeFiles: input.files,
+      },
+      config: {
+        minOccurrences: 2,
+        confidenceThreshold: input.config.patterns.confidenceThreshold,
+        maxPatterns: input.config.patterns.maxPatterns,
+      },
+    });
+    
+    state.discoveredPatterns = (discoveryResult as any)?.patterns || [];
+  } catch (error) {
+    console.warn('Pattern discovery failed:', error);
+    state.discoveredPatterns = [];
+  }
+  
+  // Update pattern learning if enabled
+  if (input.config.patterns.enableLearning) {
+    await invokeActor(patternLearningActor, {
+      operation: 'learn',
+      patterns: state.discoveredPatterns,
+      transformationHistory: [],
+      config: {
+        learningRate: input.config.patterns.learningRate,
+        confidenceThreshold: input.config.patterns.confidenceThreshold,
+      },
+    });
+  }
+}
+
+/**
+ * Stage 3: Transformation - Apply transformations using preferred strategy
+ */
+async function transformationStage(input: PipelineRequest, state: any): Promise<void> {
+  const { strategy } = input.config;
+  const { transformationRequest } = input;
+  
+  // Determine transformation order
+  const transformationOrder = transformationRequest.transformationType === 'auto' 
+    ? strategy.preferredOrder 
+    : [transformationRequest.transformationType as 'template' | 'ast-grep' | 'llm'];
+  
+  let transformationSuccessful = false;
+  
+  for (const transformationType of transformationOrder) {
+    if (transformationSuccessful && !strategy.fallbackEnabled) break;
+    
+    try {
+      const result = await executeTransformation(transformationType, input, state);
+      
+      if (result.success) {
+        state.transformationsApplied.push(result);
+        state.filesModified.push(...result.filesModified);
+        transformationSuccessful = true;
+        
+        if (!strategy.fallbackEnabled) break; // Stop after first success if fallback disabled
+      }
+    } catch (error) {
+      console.warn(`Transformation ${transformationType} failed:`, error);
+      
+      if (!strategy.fallbackEnabled) {
+        throw error; // Re-throw if fallback disabled
+      }
+    }
+  }
+  
+  if (!transformationSuccessful) {
+    throw new Error('All transformation methods failed');
+  }
+}
+
+/**
+ * Execute specific transformation type
+ */
+async function executeTransformation(
+  type: 'template' | 'ast-grep' | 'llm',
+  input: PipelineRequest,
+  state: any
+): Promise<any> {
+  const startTime = Date.now();
+  
+  switch (type) {
+    case 'template':
+      const templateResult = await invokeActor(templateEngineActor, {
+        operation: 'transform',
+        files: input.files,
+        patterns: state.discoveredPatterns || [],
+        config: {
+          enableSemanticAnalysis: true,
+          enableVariableCapture: true,
+          maxPatternComplexity: 10,
+        },
+      });
+      
+      return {
+        type: 'template',
+        success: (templateResult as any)?.transformationsApplied > 0 || false,
+        filesModified: (templateResult as any)?.filesModified || [],
+        patternsUsed: (templateResult as any)?.patternsApplied || [],
+        executionTime: Date.now() - startTime,
+        confidence: (templateResult as any)?.averageConfidence || 0.5,
+      };
+      
+    case 'ast-grep':
+      const astResult = await invokeActor(astGrepTransformationActor, {
+        operation: 'transform',
+        files: input.files,
+        patterns: state.discoveredPatterns || [],
+        config: {
+          language: 'typescript',
+          enableVariableExtraction: true,
+          maxMatches: 100,
+        },
+      });
+      
+      return {
+        type: 'ast-grep',
+        success: (astResult as any)?.transformationsApplied > 0 || false,
+        filesModified: (astResult as any)?.filesModified || [],
+        patternsUsed: (astResult as any)?.patternsApplied || [],
+        executionTime: Date.now() - startTime,
+        confidence: (astResult as any)?.averageConfidence || 0.5,
+      };
+      
+    case 'llm':
+      const llmResult = await invokeActor(llmTransformationActor, {
+        files: input.files,
+        request: input.transformationRequest,
+        context: {
+          complexity: { cyclomaticComplexity: 5, cognitiveComplexity: 3, linesOfCode: 100, nestingDepth: 2, functionCount: 5, classCount: 1 },
+          patterns: state.discoveredPatterns || [],
+          projectType: input.context.projectType,
+          framework: input.context.framework,
+        },
+        config: {
+          provider: input.config.llm.provider,
+          model: input.config.llm.model,
+          temperature: input.config.llm.temperature,
+          maxTokens: input.config.llm.maxTokens,
+          timeout: input.config.llm.timeout,
+          retries: input.config.llm.retries,
+        },
+      });
+      
+      return {
+        type: 'llm',
+        success: (llmResult as any)?.filesModified?.length > 0 || false,
+        filesModified: (llmResult as any)?.filesModified || [],
+        patternsUsed: (llmResult as any)?.patternsUsed || [],
+        executionTime: Date.now() - startTime,
+        confidence: (llmResult as any)?.confidence || 0.8,
+      };
+      
+    default:
+      throw new Error(`Unknown transformation type: ${type}`);
+  }
+}
+
+/**
+ * Stage 4: Validation - Validate transformed code
+ */
+async function validationStage(input: PipelineRequest, state: any): Promise<void> {
+  if (!input.config.quality.enableValidation) return;
+  
+  const validationTasks = [];
+  
+  // Type checking
+  if (input.config.quality.requireTypeCheck) {
+    validationTasks.push(
+      invokeActor(validationActor, {
+        type: 'types',
+        files: state.filesModified,
+      })
+    );
+  }
+  
+  // Format checking
+  if (input.config.quality.enableFormatCheck) {
+    validationTasks.push(
+      invokeActor(validationActor, {
+        type: 'format',
+        files: state.filesModified,
+      })
+    );
+  }
+  
+  // Quality checking
+  validationTasks.push(
+    invokeActor(validationActor, {
+      type: 'quality',
+      files: state.filesModified,
+    })
+  );
+  
+  const validationResults = await Promise.all(validationTasks);
+  
+  // Aggregate validation results
+  state.validationResults = {
+    typeErrors: validationResults.reduce((sum: number, r: any) => sum + (r.errors?.length || 0), 0),
+    formatIssues: validationResults.reduce((sum: number, r: any) => sum + (r.warnings?.length || 0), 0),
+    qualityIssues: validationResults.reduce((sum: number, r: any) => sum + (r.errors?.length || 0) + (r.warnings?.length || 0), 0),
+  };
+}
+
+/**
+ * Stage 5: Testing - Run comprehensive tests
+ */
+async function testingStage(input: PipelineRequest, state: any): Promise<void> {
+  if (!input.config.quality.enableTesting) return;
+  
+  const testResult = await invokeActor(llmTestingFrameworkActor, {
+    operation: 'execute',
+    files: state.filesModified,
+    tests: [
+      {
+        type: 'syntax',
+        description: 'Verify syntax correctness',
+        assertion: 'no_syntax_errors',
+        expectedValue: true,
+      },
+      {
+        type: 'functionality',
+        description: 'Verify functionality preservation',
+        assertion: 'functionality_preserved',
+        expectedValue: true,
+      },
+      {
+        type: 'performance',
+        description: 'Verify performance impact',
+        assertion: 'performance_acceptable',
+        expectedValue: true,
+      },
+    ],
+    config: {
+      timeout: 30000,
+      retries: 2,
+      parallel: false,
+    },
+  });
+  
+  state.testResults = {
+    passed: (testResult as any).suiteResults?.filter((r: any) => r.passed).length || 0,
+    failed: (testResult as any).suiteResults?.filter((r: any) => !r.passed).length || 0,
+    coverage: (testResult as any).summary?.coverage || 0,
+  };
+}
+
+/**
+ * Stage 6: Feedback - Collect feedback and update learning
+ */
+async function feedbackStage(input: PipelineRequest, state: any): Promise<void> {
+  if (!input.config.feedback.enableCollection) return;
+  
+  // Calculate automatic feedback score
+  const automaticScore = calculateAutomaticScore(state);
+  
+  // Collect feedback data
+  const feedbackData = {
+    patternId: state.transformationsApplied[0]?.patternsUsed[0] || 'unknown',
+    transformationId: state.transformationId,
+    success: state.transformationsApplied.some((t: any) => t.success),
+    executionTime: Date.now() - state.startTime,
+    codeQualityImprovement: calculateQualityImprovement(state),
+    context: {
+      fileType: input.context.projectType,
+      codeSize: state.filesModified.length,
+      complexity: 5, // Simplified
+      language: input.context.projectType as 'typescript' | 'javascript',
+    },
+    timestamp: new Date().toISOString(),
+  };
+  
+  // Submit feedback to feedback loop
+  await invokeActor(feedbackLoopActor, {
+    operation: 'collect',
+    feedbackData: [feedbackData],
+    analysisConfig: {
+      timeWindow: 7,
+      minSampleSize: 10,
+      confidenceThreshold: 0.7,
+      performanceThreshold: 0.8,
+    },
+    optimizationConfig: {
+      learningRate: input.config.patterns.learningRate,
+      decayFactor: 0.95,
+      adaptationSpeed: 'medium',
+      enableAutoRemoval: true,
+    },
+  });
+  
+  state.feedbackScore = automaticScore;
+}
+
+/**
+ * Stage 7: Postprocessing - Cleanup and finalization
+ */
+async function postprocessingStage(input: PipelineRequest, state: any): Promise<void> {
+  // Apply final formatting if needed
+  if (input.config.quality.enableFormatCheck && !input.transformationRequest.dryRun) {
+    await invokeActor(validationActor, {
+      type: 'formatFix',
+      files: state.filesModified,
+    });
+  }
+  
+  // Generate documentation if needed
+  if (input.config.production.enableLogging) {
+    await generateTransformationReport(input, state);
+  }
+  
+  // Cleanup temporary files
+  await cleanupTemporaryFiles(state);
+}
+
+/**
+ * Helper functions
+ */
+
+async function createBackup(files: string[], transformationId: string): Promise<void> {
+  const backupDir = join(process.cwd(), '.carmack-backups', transformationId);
+  await mkdir(backupDir, { recursive: true });
+  
+  for (const filePath of files) {
+    const content = await readFile(filePath, 'utf-8');
+    const backupPath = join(backupDir, filePath.replace(/[/\\]/g, '_'));
+    await writeFile(backupPath, content);
+  }
+}
+
+async function initializeMetrics(state: any): Promise<void> {
+  state.metrics = {
+    startTime: Date.now(),
+    memoryStart: process.memoryUsage(),
+  };
+}
+
+function calculateAutomaticScore(state: any): number {
+  let score = 0.5; // Base score
+  
+  // Success bonus
+  if (state.transformationsApplied.some((t: any) => t.success)) score += 0.3;
+  
+  // Quality bonus
+  if (state.validationResults?.typeErrors === 0) score += 0.1;
+  if (state.validationResults?.formatIssues === 0) score += 0.05;
+  
+  // Test bonus
+  if (state.testResults?.failed === 0) score += 0.05;
+  
+  return Math.min(1.0, score);
+}
+
+function calculateQualityImprovement(state: any): number {
+  // Simplified quality improvement calculation
+  const errorReduction = (state.validationResults?.typeErrors || 0) === 0 ? 0.2 : -0.1;
+  const testSuccess = (state.testResults?.passed || 0) > 0 ? 0.1 : -0.1;
+  
+  return Math.max(-1, Math.min(1, errorReduction + testSuccess));
+}
+
+async function generateTransformationReport(input: PipelineRequest, state: any): Promise<void> {
+  const report = {
+    transformationId: state.transformationId,
+    timestamp: new Date().toISOString(),
+    input: {
+      files: input.files,
+      transformationType: input.transformationRequest.transformationType,
+    },
+    results: {
+      success: state.transformationsApplied.some((t: any) => t.success),
+      filesModified: state.filesModified,
+      transformationsApplied: state.transformationsApplied,
+      executionTime: Date.now() - state.startTime,
+    },
+    quality: state.validationResults,
+    testing: state.testResults,
+    errors: state.errors,
+  };
+  
+  const reportPath = join(process.cwd(), '.carmack-reports', `${state.transformationId}.json`);
+  await mkdir(dirname(reportPath), { recursive: true });
+  await writeFile(reportPath, JSON.stringify(report, null, 2));
+}
+
+async function cleanupTemporaryFiles(state: any): Promise<void> {
+  // Cleanup any temporary files created during transformation
+  // Implementation depends on specific temporary file patterns
+}
+
+function buildPipelineResult(input: PipelineRequest, state: any): PipelineResult {
+  return {
+    success: state.transformationsApplied.some((t: any) => t.success) && state.errors.filter((e: any) => e.severity === 'critical').length === 0,
+    transformationId: state.transformationId,
+    filesModified: state.filesModified,
+    transformationsApplied: state.transformationsApplied,
+    qualityMetrics: {
+      complexityBefore: 5, // Simplified
+      complexityAfter: 5,
+      typeErrors: state.validationResults?.typeErrors || 0,
+      formatIssues: state.validationResults?.formatIssues || 0,
+      testResults: state.testResults || { passed: 0, failed: 0, coverage: 0 },
+    },
+    performance: {
+      totalExecutionTime: Date.now() - state.startTime,
+      stageTimings: state.stageTimings,
+      resourceUsage: {
+        memory: process.memoryUsage().heapUsed,
+        cpu: 0, // Would need process monitoring
+      },
+    },
+    feedback: {
+      automaticScore: state.feedbackScore || 0,
+      recommendations: generateRecommendations(state),
+    },
+    errors: state.errors,
+    metadata: {
+      timestamp: new Date().toISOString(),
+      version: '1.0.0',
+      environment: process.env.NODE_ENV === 'production' ? 'production' : 'development',
+    },
+  };
+}
+
+function generateRecommendations(state: any): string[] {
+  const recommendations: string[] = [];
+  
+  if (state.validationResults?.typeErrors > 0) {
+    recommendations.push('Consider fixing remaining type errors for better code quality');
+  }
+  
+  if (state.testResults?.failed > 0) {
+    recommendations.push('Some tests failed - review transformation results');
+  }
+  
+  if (state.transformationsApplied.length === 0) {
+    recommendations.push('No transformations were applied - consider adjusting patterns or prompts');
+  }
+  
+  return recommendations;
+}
+
+// Export default production configuration
+export const defaultProductionConfig: ProductionConfig = {
+  llm: {
+    provider: 'mock',
+    model: 'gpt-4',
+    temperature: 0.1,
+    maxTokens: 4000,
+    timeout: 30000,
+    retries: 3,
+  },
+  strategy: {
+    preferredOrder: ['template', 'ast-grep', 'llm'],
+    fallbackEnabled: true,
+    parallelProcessing: false,
+    maxConcurrency: 3,
+  },
+  quality: {
+    enableValidation: true,
+    enableTesting: true,
+    enableComplexityCheck: true,
+    maxComplexityIncrease: 0.2,
+    requireTypeCheck: true,
+    enableFormatCheck: true,
+  },
+  patterns: {
+    enableLearning: true,
+    enableDiscovery: true,
+    confidenceThreshold: 0.7,
+    maxPatterns: 100,
+    learningRate: 0.1,
+  },
+  feedback: {
+    enableCollection: true,
+    enableOptimization: true,
+    reportingInterval: 3600000,
+    metricsRetention: 2592000000,
+  },
+  production: {
+    enableLogging: true,
+    logLevel: 'info',
+    enableMetrics: true,
+    enableTracing: false,
+    backupEnabled: true,
+    rollbackEnabled: true,
+  },
+};
