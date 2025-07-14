@@ -436,7 +436,7 @@ export class RepositoryManager {
     // Apply low-risk transformations first
     for (const pattern of lowRiskPatterns) {
       try {
-        const result = await this.applyPattern(clonePath, pattern);
+        const result = await this.applyPattern(_clonePath, pattern);
         if (result) {
           transformations.push(result);
         }
@@ -448,11 +448,11 @@ export class RepositoryManager {
     // Apply medium-risk transformations with more caution
     for (const pattern of mediumRiskPatterns) {
       try {
-        const result = await this.applyPattern(clonePath, pattern, { dryRun: true });
+        const result = await this.applyPattern(_clonePath, pattern, { dryRun: true });
         if (result && result.filesModified.length > 0) {
           // Only apply if it affects a reasonable number of files
           if (result.filesModified.length <= analysis.analyzedFiles * 0.1) {
-            const actualResult = await this.applyPattern(clonePath, pattern);
+            const actualResult = await this.applyPattern(_clonePath, pattern);
             if (actualResult) {
               transformations.push(actualResult);
             }
@@ -479,7 +479,7 @@ export class RepositoryManager {
     return {
       id: `transform-${pattern.id}-${Date.now()}`,
       request: {
-        targetFiles: [`${clonePath}/**/*.ts`],
+        targetFiles: [`${_clonePath}/**/*.ts`],
         transformationType: pattern.mode || 'template',
         patterns: [pattern],
         maxComplexity: 10,
@@ -498,7 +498,7 @@ export class RepositoryManager {
    * Generate documentation for the repository
    */
   private async generateDocumentation(
-    clonePath: string,
+    _clonePath: string,
     analysis: RepositoryAnalysis
   ): Promise<{
     apiDocs?: string;
@@ -517,7 +517,7 @@ export class RepositoryManager {
    * Package results for output
    */
   private async packageResults(
-    clonePath: string,
+    _clonePath: string,
     analysis: RepositoryAnalysis,
     transformations: TransformationResult[],
     documentation: any

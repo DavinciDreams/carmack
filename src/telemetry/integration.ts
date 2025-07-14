@@ -10,7 +10,7 @@ import type {
   TransformationMode,
   PipelineStages,
   QualityMetrics,
-  CodeQualityDelta,
+  // CodeQualityDelta,
 } from './types.js';
 
 /**

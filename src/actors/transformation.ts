@@ -204,10 +204,10 @@ async function applyTemplateTransformation(files: string[], patterns: AstPattern
 /**
  * Enhanced template transformation with smart heuristics
  */
-function enhancedTemplateTransformation(_content: string): string {
-  // Apply multiple transformation passes
-  return _content; // Placeholder implementation
-}
+// function _enhancedTemplateTransformation(_content: string): string {
+//   // Apply multiple transformation passes
+//   return _content; // Placeholder implementation
+// }
 
 /**
  * Enhanced var transformation that properly handles async
@@ -763,14 +763,14 @@ function detectProjectFramework(files: string[]): string | undefined {
   return undefined;
 }
 
-function generateDefaultPrompt(_files: string[]): string {
-  return `Transform the following ${_files.length} TypeScript file(s) to use modern patterns:
-- Convert var to const/let based on usage
-- Transform callbacks to async/await
-- Use modern class syntax
-- Apply destructuring where appropriate
-- Use template literals for string concatenation`;
-}
+// function _generateDefaultPrompt(_files: string[]): string {
+//   return `Transform the following ${_files.length} TypeScript file(s) to use modern patterns:
+// - Convert var to const/let based on usage
+// - Transform callbacks to async/await
+// - Use modern class syntax
+// - Apply destructuring where appropriate
+// - Use template literals for string concatenation`;
+// }
 
 async function smartVarTransformation(content: string): Promise<string> {
   // Advanced var analysis with scope tracking
@@ -921,34 +921,6 @@ async function arrayIncludesAST(_root: any, content: string, _lang: any): Promis
   }
 }
 
-/**
- * AST-based removal of unnecessary return statements
- */
-async function removeUnnecessaryReturnsAST(
-  _root: any,
-  content: string,
-  _lang: any
-): Promise<string> {
-  try {
-    console.log('🔄 Processing unnecessary return removal...');
-    let modifiedContent = content;
-
-    // Convert (params) => { return expr; } to (params) => expr
-    modifiedContent = modifiedContent.replace(
-      /\(([^)]*)\)\s*=>\s*\{\s*return\s+([^;]+);\s*\}/g,
-      '($1) => $2'
-    );
-
-    if (modifiedContent !== content) {
-      console.log('✅ Unnecessary return transformations applied');
-    }
-
-    return modifiedContent;
-  } catch (error) {
-    console.error('Error in removeUnnecessaryReturnsAST:', error);
-    return content;
-  }
-}
 
 /**
  * AST-based object property shorthand conversion

@@ -251,7 +251,7 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
 
   private async extractFunctionsWithRegex(content: string, filePath: string): Promise<FunctionDoc[]> {
     const functions: FunctionDoc[] = [];
-    const _lines = content.split('\n');
+    // const _lines = content.split('\n');
 
     // Function patterns
     const patterns = [
