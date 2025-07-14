@@ -395,53 +395,26 @@ function findAstGrepMatches(root: SgRoot, pattern: AstGrepPattern): AstMatch[] {
 /**
  * Build AST-grep query from pattern configuration
  */
-function buildAstGrepQuery(pattern: AstGrepPattern): any {
+function buildAstGrepQuery(pattern: AstGrepPattern): string {
   const rule = pattern.pattern.rule;
   
-  // Convert our pattern format to AST-grep query format
-  const query: any = {};
-  
+  // For now, use the simple pattern string format that AST-grep expects
+  // The AST-grep NAPI expects a string pattern, not a complex object
   if (rule.pattern) {
-    query.pattern = rule.pattern;
+    return rule.pattern;
   }
   
+  // If no pattern string, try to build one from other properties
   if (rule.kind) {
-    query.kind = rule.kind;
+    return rule.kind;
   }
   
   if (rule.regex) {
-    query.regex = rule.regex;
+    return rule.regex;
   }
   
-  if (rule.inside) {
-    query.inside = rule.inside;
-  }
-  
-  if (rule.has) {
-    query.has = rule.has;
-  }
-  
-  if (rule.follows) {
-    query.follows = rule.follows;
-  }
-  
-  if (rule.precedes) {
-    query.precedes = rule.precedes;
-  }
-  
-  if (rule.all) {
-    query.all = rule.all;
-  }
-  
-  if (rule.any) {
-    query.any = rule.any;
-  }
-  
-  if (rule.not) {
-    query.not = rule.not;
-  }
-  
-  return query;
+  // Fallback to a generic pattern
+  return '$_';
 }
 
 /**
@@ -451,41 +424,40 @@ function extractVariables(node: SgNode, pattern: AstGrepPattern): Record<string,
   const variables: Record<string, string> = {};
   
   try {
-    // Try to get named captures using the AST-grep API
-    // The exact API may vary, so we'll use a more defensive approach
-    
-    // Method 1: Try getMultipleMatches with variable name
+    // Get the pattern text and node text for manual extraction
     const patternText = pattern.pattern.rule.pattern || '';
+    const nodeText = node.text();
+    
+    // Try AST-grep's built-in variable extraction first
     const variableNames = extractVariableNames(patternText);
     
     for (const varName of variableNames) {
       try {
-        const matchNodes = node.getMultipleMatches(varName);
-        if (matchNodes && Array.isArray(matchNodes) && matchNodes.length > 0) {
-          variables[varName] = matchNodes[0].text();
-        } else if (matchNodes && !Array.isArray(matchNodes)) {
-          // Handle case where it returns a single node
-          variables[varName] = (matchNodes as any).text();
+        // Try the getMultipleMatches API
+        const matchResult = node.getMultipleMatches(varName);
+        if (matchResult) {
+          if (Array.isArray(matchResult) && matchResult.length > 0 && matchResult[0]) {
+            variables[varName] = matchResult[0].text();
+          } else if (typeof (matchResult as any).text === 'function') {
+            variables[varName] = (matchResult as any).text();
+          }
         }
       } catch {
-        // If getMultipleMatches doesn't work, try alternative extraction
-        const nodeText = node.text();
+        // Fallback to manual extraction
         const extractedValue = extractVariableFromText(nodeText, patternText, varName);
         if (extractedValue) {
           variables[varName] = extractedValue;
         }
       }
     }
+    
+    // If no variables were extracted, try pattern-based extraction
+    if (Object.keys(variables).length === 0) {
+      const variableMatches = extractVariablesFromPattern(nodeText, patternText);
+      Object.assign(variables, variableMatches);
+    }
   } catch (error) {
     console.warn(`Error extracting variables from node:`, error);
-    
-    // Fallback: manual pattern matching
-    const patternText = pattern.pattern.rule.pattern || '';
-    const nodeText = node.text();
-    
-    // Extract common variable patterns
-    const variableMatches = extractVariablesFromPattern(nodeText, patternText);
-    Object.assign(variables, variableMatches);
   }
   
   return variables;
@@ -513,8 +485,9 @@ function extractVariableFromText(nodeText: string, patternText: string, varName:
     if (match) {
       const variableNames = extractVariableNames(patternText);
       const varIndex = variableNames.indexOf(varName);
-      if (varIndex >= 0 && varIndex + 1 < match.length && match[varIndex + 1] !== undefined) {
-        return match[varIndex + 1].trim();
+      const matchValue = match[varIndex + 1];
+      if (varIndex >= 0 && varIndex + 1 < match.length && matchValue !== undefined) {
+        return matchValue.trim();
       }
     }
   } catch {
