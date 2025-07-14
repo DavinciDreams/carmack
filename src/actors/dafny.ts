@@ -160,7 +160,7 @@ async function checkDafnyAvailable(): Promise<boolean> {
   }
 }
 
-async function createDafnyVerificationFile(conditions: string[]): Promise<string> {
+async function createDafnyVerificationFile(_conditions: string[]): Promise<string> {
   const { writeFile, mkdtemp } = await import('node:fs/promises');
   const { join } = await import('node:path');
   const { tmpdir } = await import('node:os');
