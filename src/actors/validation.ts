@@ -311,7 +311,9 @@ async function fixTypes(files: string[], errors: ErrorInfo[]): Promise<Validatio
     }
 
     // Process each file with type errors
-    for (const [filePath, fileErrors] of errorsByFile) {
+    const filePathsArray = Array.from(errorsByFile.keys());
+    for (const filePath of filePathsArray) {
+      const fileErrors = errorsByFile.get(filePath)!;
       try {
         const { readFile } = await import('node:fs/promises');
         const originalContent = await readFile(filePath, 'utf-8');
@@ -525,18 +527,12 @@ async function validateQuality(files: string[]): Promise<ValidationResult> {
         languageOptions: {
           ecmaVersion: 'latest',
           sourceType: 'module',
-          parser: '@typescript-eslint/parser',
-        },
-        plugins: {
-          '@typescript-eslint': await import('@typescript-eslint/eslint-plugin'),
         },
         rules: {
           // Code quality rules
           'prefer-const': 'warn',
           'no-var': 'error',
-          'no-unused-vars': 'off', // Use TypeScript version
-          '@typescript-eslint/no-unused-vars': 'warn',
-          '@typescript-eslint/no-explicit-any': 'warn',
+          'no-unused-vars': 'warn',
           'eqeqeq': 'error',
           'no-console': 'warn',
           'complexity': ['warn', { max: 15 }],
@@ -659,7 +655,6 @@ async function fallbackQualityAnalysis(files: string[]): Promise<ValidationResul
     try {
       const { readFile } = await import('node:fs/promises');
       const content = await readFile(filePath, 'utf-8');
-      const _lines = content.split('\n');
 
       for (const rule of qualityRules) {
         let match;
@@ -722,7 +717,6 @@ async function fallbackQualityAnalysis(files: string[]): Promise<ValidationResul
  */
 function analyzeCodeComplexity(content: string, filePath: string): ErrorInfo[] {
   const warnings: ErrorInfo[] = [];
-  const _lines = content.split('\n');
 
   // Check for overly complex functions
   const functionRegex = /function\s+(\w+)|const\s+(\w+)\s*=\s*\([^)]*\)\s*=>/g;
