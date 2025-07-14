@@ -558,8 +558,18 @@ const _carmackCoderMachine = setup({
         id: 'pattern-learning',
         src: 'patternLearningActor',
         input: ({ context }: { context: MachineContext }) => ({
-          operation: 'learn',
-          transformation: context.currentTransformation,
+          operation: 'learn' as const,
+          transformation: context.currentTransformation ? {
+            id: context.currentTransformation.id,
+            mode: context.currentTransformation.mode,
+            filesModified: context.currentTransformation.filesModified,
+            startTime: context.currentTransformation.startTime,
+            endTime: context.currentTransformation.endTime,
+            errors: context.currentTransformation.errors.map(e => e.message),
+            summary: context.currentTransformation.summary,
+            complexity: context.currentTransformation.complexity,
+            validation: context.currentTransformation.validation,
+          } : undefined,
           patterns: context.patterns,
           context: {
             codebase: {
