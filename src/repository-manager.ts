@@ -470,7 +470,7 @@ export class RepositoryManager {
    * Apply a single pattern transformation
    */
   private async applyPattern(
-    clonePath: string,
+    _clonePath: string,
     pattern: AstPattern,
     options: { dryRun?: boolean } = {}
   ): Promise<TransformationResult | null> {
