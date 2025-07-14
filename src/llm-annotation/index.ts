@@ -1,7 +1,7 @@
 import { fromPromise } from 'xstate';
 import { LLMAnnotationAnalyzer, llmAnnotationActor, generateLLMAnnotations, validateAnnotationRequest } from './analyzer.js';
 import type { AnnotationRequest, AnnotationResult, LLMAnnotation } from './types.js';
-import { AnnotationRequestSchema } from './types.js';
+// import { AnnotationRequestSchema } from './types.js';
 
 /**
  * LLM Annotation System
