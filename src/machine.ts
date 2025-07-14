@@ -103,14 +103,21 @@ const _carmackCoderMachine = setup({
         // newPatterns, insights, and summary are not present on event
       };
 
+      console.log(`🔄 Analysis recommended mode: ${analysisResult.recommendedMode}`);
+      console.log(`🔄 Current mode: ${context.currentTransformation.mode}`);
+
+      const updatedTransformation = {
+        ...context.currentTransformation,
+        mode: analysisResult.recommendedMode || context.currentTransformation.mode,
+        complexity: analysisResult.complexity || context.currentTransformation.complexity,
+        status: 'analyzing' as const,
+      };
+
+      console.log(`✅ Updated mode to: ${updatedTransformation.mode}`);
+
       return {
         ...context,
-        currentTransformation: {
-          ...context.currentTransformation,
-          mode: analysisResult.recommendedMode || context.currentTransformation.mode,
-          complexity: analysisResult.complexity || context.currentTransformation.complexity,
-          status: 'analyzing' as const,
-        },
+        currentTransformation: updatedTransformation,
       };
     }),
 
