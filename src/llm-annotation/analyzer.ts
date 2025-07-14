@@ -317,7 +317,7 @@ export class LLMAnnotationAnalyzer {
    * Identify transformation opportunities
    */
   private async identifyOpportunities(
-    request: AnnotationRequest,
+    _request: AnnotationRequest,
     patterns: PatternAnnotation[],
     architecture: ArchitecturalAnnotation[]
   ): Promise<TransformationOpportunity[]> {
