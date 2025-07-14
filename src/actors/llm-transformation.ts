@@ -1,7 +1,7 @@
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
 import { readFile, writeFile } from 'node:fs/promises';
-import type { TransformationRequest, ComplexityMetrics, ErrorInfo } from '../types.js';
+import type { TransformationRequest } from '../types.js';
 
 /**
  * Comprehensive LLM Transformation System

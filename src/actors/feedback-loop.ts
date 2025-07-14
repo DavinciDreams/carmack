@@ -413,7 +413,7 @@ function calculateConfidenceScore(successRate: number, qualityImprovement: numbe
   );
 }
 
-function generateRecommendations(metrics: PatternMetrics[], config: any): ImprovementRecommendation[] {
+function generateRecommendations(metrics: PatternMetrics[], _config: any): ImprovementRecommendation[] {
   const recommendations: ImprovementRecommendation[] = [];
   
   for (const metric of metrics) {
@@ -485,7 +485,7 @@ async function updatePatternMetrics(feedback: FeedbackData[]): Promise<PatternMe
   return updatedMetrics;
 }
 
-async function applyOptimization(recommendation: ImprovementRecommendation, config: any): Promise<any> {
+async function applyOptimization(recommendation: ImprovementRecommendation, _config: any): Promise<any> {
   // Simulate applying optimization (in production, this would update pattern storage)
   const { action, parameters } = recommendation.implementation;
   

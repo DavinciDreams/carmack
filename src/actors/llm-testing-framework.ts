@@ -1,6 +1,6 @@
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
 /**
@@ -468,7 +468,7 @@ async function validateSyntax(code: string, language: string): Promise<boolean> 
 /**
  * Check if complexity was reduced
  */
-async function checkComplexityReduction(originalCode: string, transformedCode: string): Promise<boolean> {
+async function checkComplexityReduction(_originalCode: string, _transformedCode: string): Promise<boolean> {
   try {
     const { complexityActor } = await import('./complexity');
     const { createActor } = await import('xstate');
@@ -503,7 +503,7 @@ async function checkComplexityReduction(originalCode: string, transformedCode: s
 /**
  * Check type safety
  */
-async function checkTypesSafety(code: string, language: string): Promise<boolean> {
+async function checkTypesSafety(_code: string, language: string): Promise<boolean> {
   if (language !== 'typescript') return true; // Skip for JavaScript
   
   try {

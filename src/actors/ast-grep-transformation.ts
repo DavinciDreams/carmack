@@ -303,7 +303,7 @@ async function applyAstGrepPattern(
   root: SgRoot,
   content: string,
   pattern: AstGrepPattern,
-  lang: typeof ts | typeof js,
+  _lang: typeof ts | typeof js,
   options: AstGrepTransformationRequest['options']
 ): Promise<{ content: string; modified: boolean; matchCount: number }> {
   try {
@@ -500,7 +500,7 @@ function extractVariableFromText(nodeText: string, patternText: string, varName:
 /**
  * Extract variables using pattern matching fallback
  */
-function extractVariablesFromPattern(nodeText: string, patternText: string): Record<string, string> {
+function extractVariablesFromPattern(nodeText: string, _patternText: string): Record<string, string> {
   const variables: Record<string, string> = {};
   
   // Common patterns for variable extraction

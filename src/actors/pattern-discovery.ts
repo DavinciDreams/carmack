@@ -156,7 +156,7 @@ async function generatePatternsFromHistory(request: PatternDiscoveryRequest) {
 /**
  * Validate existing patterns
  */
-async function validatePatterns(request: PatternDiscoveryRequest) {
+async function validatePatterns(_request: PatternDiscoveryRequest) {
   return {
     operation: 'validate' as const,
     patterns: [],
@@ -184,7 +184,14 @@ async function discoverPatterns(request: PatternDiscoveryRequest) {
   
   // Analyze repositories
   if (request.sources.repositories) {
-    const repoPatterns = await analyzeRepositories(request.sources.repositories, request.config);
+    const repoPatterns = await analyzeRepositories(
+      request.sources.repositories.map(repo => ({
+        path: repo.path,
+        language: repo.language,
+        ...(repo.patterns && { patterns: repo.patterns })
+      })),
+      request.config
+    );
     discoveredPatterns.push(...repoPatterns);
   }
   
@@ -292,7 +299,7 @@ async function extractPatternsFromCode(
  * Detect variable declaration patterns (var → const/let)
  */
 function detectVarDeclarationPatterns(
-  sourceFile: any,
+  _sourceFile: any,
   content: string,
   source: string,
   config: PatternDiscoveryRequest['config']
@@ -371,7 +378,7 @@ function convertFunctionToArrow(functionStr: string): string {
  * Detect function patterns (function → arrow function)
  */
 function detectFunctionPatterns(
-  sourceFile: any,
+  _sourceFile: any,
   content: string,
   source: string,
   config: PatternDiscoveryRequest['config']
@@ -439,7 +446,7 @@ function detectFunctionPatterns(
  * Detect object patterns (property shorthand, destructuring)
  */
 function detectObjectPatterns(
-  sourceFile: any,
+  _sourceFile: any,
   content: string,
   source: string,
   config: PatternDiscoveryRequest['config']
@@ -501,7 +508,7 @@ function detectObjectPatterns(
  * Detect array patterns (indexOf → includes)
  */
 function detectArrayPatterns(
-  sourceFile: any,
+  _sourceFile: any,
   content: string,
   source: string,
   config: PatternDiscoveryRequest['config']
@@ -563,7 +570,7 @@ function detectArrayPatterns(
  * Detect Promise patterns (then/catch → async/await)
  */
 function detectPromisePatterns(
-  sourceFile: any,
+  _sourceFile: any,
   content: string,
   source: string,
   config: PatternDiscoveryRequest['config']
@@ -625,7 +632,7 @@ function detectPromisePatterns(
  * Detect import patterns
  */
 function detectImportPatterns(
-  sourceFile: any,
+  _sourceFile: any,
   content: string,
   source: string,
   config: PatternDiscoveryRequest['config']
@@ -687,7 +694,7 @@ function detectImportPatterns(
  * Detect class patterns
  */
 function detectClassPatterns(
-  sourceFile: any,
+  _sourceFile: any,
   content: string,
   source: string,
   config: PatternDiscoveryRequest['config']
@@ -775,8 +782,8 @@ async function analyzeRepositories(
  * Simulate repository analysis (placeholder for real implementation)
  */
 async function simulateRepositoryAnalysis(
-  repo: { path: string; language: string; patterns?: string[] },
-  config: PatternDiscoveryRequest['config']
+  _repo: { path: string; language: string; patterns?: string[] },
+  _config: PatternDiscoveryRequest['config']
 ): Promise<DiscoveredPattern[]> {
   // This would perform actual repository analysis
   // For now, return empty array
@@ -904,7 +911,7 @@ function levenshteinDistance(a: string, b: string): number {
  */
 function generatePatternFromGroup(
   group: Array<{ before: string; after: string; success: boolean; feedback?: string | undefined }>,
-  config: PatternDiscoveryRequest['config']
+  _config: PatternDiscoveryRequest['config']
 ): DiscoveredPattern | null {
   if (group.length === 0) return null;
   
