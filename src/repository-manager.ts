@@ -424,7 +424,7 @@ export class RepositoryManager {
    * Apply transformations to repository
    */
   private async applyTransformations(
-    clonePath: string,
+    _clonePath: string,
     analysis: RepositoryAnalysis
   ): Promise<TransformationResult[]> {
     const transformations: TransformationResult[] = [];
