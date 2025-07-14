@@ -428,30 +428,32 @@ function extractVariables(node: SgNode, pattern: AstGrepPattern): Record<string,
     const patternText = pattern.pattern.rule.pattern || '';
     const nodeText = node.text();
     
-    // Try AST-grep's built-in variable extraction first
+    // Extract variable names from the pattern
     const variableNames = extractVariableNames(patternText);
     
     for (const varName of variableNames) {
       try {
-        // Try the getMultipleMatches API
-        const matchResult = node.getMultipleMatches(varName);
-        if (matchResult) {
-          if (Array.isArray(matchResult) && matchResult.length > 0 && matchResult[0]) {
-            variables[varName] = matchResult[0].text();
-          } else if (typeof (matchResult as any).text === 'function') {
-            variables[varName] = (matchResult as any).text();
+        // Use the correct AST-grep NAPI method: getMatch()
+        const matchResult = (node as any).getMatch?.(varName);
+        if (matchResult && typeof matchResult.text === 'function') {
+          variables[varName] = matchResult.text();
+        } else {
+          // Fallback to manual extraction if getMatch fails
+          const manualValue = extractVariableFromText(nodeText, patternText, varName);
+          if (manualValue) {
+            variables[varName] = manualValue;
           }
         }
-      } catch {
-        // Fallback to manual extraction
-        const extractedValue = extractVariableFromText(nodeText, patternText, varName);
-        if (extractedValue) {
-          variables[varName] = extractedValue;
+      } catch (error) {
+        // Fallback to manual extraction on any error
+        const manualValue = extractVariableFromText(nodeText, patternText, varName);
+        if (manualValue) {
+          variables[varName] = manualValue;
         }
       }
     }
     
-    // If no variables were extracted, try pattern-based extraction
+    // If no variables were extracted, try pattern-based extraction as final fallback
     if (Object.keys(variables).length === 0) {
       const variableMatches = extractVariablesFromPattern(nodeText, patternText);
       Object.assign(variables, variableMatches);
