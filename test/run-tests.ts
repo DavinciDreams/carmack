@@ -88,18 +88,18 @@ const TEST_SUITES: TestSuite[] = [
     priority: 'medium',
   },
   
-  // Integration Tests - Medium Priority
+  // Integration Tests - High Priority
   {
-    name: 'State Machine',
-    path: 'test/integration/machine.test.ts',
-    description: 'XState machine orchestration and flow testing',
+    name: 'Actor Integration',
+    path: 'test/integration/actor-integration.test.ts',
+    description: 'Multi-actor pipeline and communication testing',
     category: 'integration',
     priority: 'high',
   },
   {
-    name: 'Pipeline Integration',
-    path: 'test/integration/pipeline.test.ts',
-    description: 'End-to-end transformation pipeline testing',
+    name: 'State Machine Integration',
+    path: 'test/integration/state-machine-integration.test.ts',
+    description: 'XState machine orchestration and flow testing',
     category: 'integration',
     priority: 'high',
   },
@@ -125,6 +125,22 @@ const TEST_SUITES: TestSuite[] = [
     description: 'Large file and concurrent processing tests',
     category: 'performance',
     priority: 'low',
+  },
+  
+  // E2E Tests - High Priority
+  {
+    name: 'End-to-End Pipeline Validation (Simplified)',
+    path: 'test/e2e/pipeline-validation-simplified.test.ts',
+    description: 'Simplified pipeline validation focusing on component integration',
+    category: 'e2e',
+    priority: 'high',
+  },
+  {
+    name: 'End-to-End Pipeline Validation',
+    path: 'test/e2e/pipeline-validation.test.ts',
+    description: 'Complete pipeline validation from analysis to commit (full)',
+    category: 'e2e',
+    priority: 'medium',
   },
   
   // E2E Tests - Low Priority
@@ -380,17 +396,20 @@ class TestRunner {
 
   // Simplified parsing methods (would need actual Bun test output parsing)
   private extractPassedCount(output: string): number {
-    const match = output.match(/(\d+) passed/);
+    if (!output) return 0;
+    const match = output.match(/(\d+) pass/);
     return match ? parseInt(match[1], 10) : 0;
   }
 
   private extractFailedCount(output: string): number {
-    const match = output.match(/(\d+) failed/);
+    if (!output) return 0;
+    const match = output.match(/(\d+) fail/);
     return match ? parseInt(match[1], 10) : 0;
   }
 
   private extractSkippedCount(output: string): number {
-    const match = output.match(/(\d+) skipped/);
+    if (!output) return 0;
+    const match = output.match(/(\d+) skip/);
     return match ? parseInt(match[1], 10) : 0;
   }
 

@@ -1,21 +1,17 @@
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { createActor, waitFor } from 'xstate';
 import { gitActor } from '../../src/actors/git.js';
-import { writeFile, readFile, mkdir, rm } from 'fs/promises';
+import { writeFile, mkdir, rm } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { execSync } from 'child_process';
+import type { GitCheckpoint } from '../../src/types.js';
 
-// Git operation input types
-interface GitInput {
-  operation: 'init' | 'add' | 'commit' | 'status' | 'diff' | 'log' | 'branch' | 'checkout' | 'merge' | 'push' | 'pull' | 'clone';
-  repository?: string;
-  files?: string[];
-  message?: string;
-  branch?: string;
-  remote?: string;
-  options?: Record<string, any>;
-}
+// Git operation input types matching the actual implementation
+type GitInput = 
+  | { operation: 'createCheckpoint'; description: string }
+  | { operation: 'commit'; message: string; files: string[] }
+  | { operation: 'rollback'; checkpoint: GitCheckpoint };
 
 describe('Git Actor', () => {
   let testDir: string;
@@ -52,61 +48,86 @@ describe('Git Actor', () => {
     }
   }
 
-  describe('Repository Initialization', () => {
-    test('should initialize a new git repository', async () => {
-      const input: GitInput = {
-        operation: 'init',
-        repository: testDir,
-      };
+  function assertCheckpoint(checkpoint: GitCheckpoint | undefined, expectedDescription: string): asserts checkpoint is GitCheckpoint {
+    expect(checkpoint).toBeDefined();
+    expect(checkpoint!.description).toBe(expectedDescription);
+    expect(checkpoint!.hash).toBeDefined();
+    expect(checkpoint!.branch).toBeDefined();
+    expect(checkpoint!.timestamp).toBeGreaterThan(0);
+  }
 
-      const actor = createActor(gitActor, { input });
-      actor.start();
-
-      const result = await waitFor(actor, (state) => state.status === 'done', { timeout: 5000 });
-      const gitResult = result.output;
-
-      expect(gitResult).toBeDefined();
-      expect(gitResult?.success).toBe(true);
-      expect(gitResult?.operation).toBe('init');
-
-      // Verify .git directory exists
-      try {
-        const gitDir = join(testDir, '.git');
-        await readFile(join(gitDir, 'HEAD'), 'utf-8');
-        // If we can read HEAD, git init was successful
-      } catch (error) {
-        // In some test environments, git might not be available
-        console.warn('Git not available in test environment');
-      }
-    });
-
-    test('should handle git init in existing repository', async () => {
-      // First initialize
+  describe('Create Checkpoint Operation', () => {
+    test('should create checkpoint in git repository', async () => {
       setupGitConfig();
       try {
         execSync('git init', { cwd: testDir, stdio: 'pipe' });
+        await createTestFile('test.txt', 'Hello, World!');
       } catch (error) {
         // Skip test if git is not available
         return;
       }
 
       const input: GitInput = {
-        operation: 'init',
-        repository: testDir,
+        operation: 'createCheckpoint',
+        description: 'Test checkpoint before transformation',
       };
 
       const actor = createActor(gitActor, { input });
       actor.start();
 
       const result = await waitFor(actor, (state) => state.status === 'done', { timeout: 5000 });
-      const gitResult = result.output;
+      const checkpoint = result.output;
 
-      // Should handle reinitializing gracefully
-      expect(gitResult).toBeDefined();
+      assertCheckpoint(checkpoint, 'Test checkpoint before transformation');
+      expect(typeof checkpoint.hash).toBe('string');
+      expect(checkpoint.hash.length).toBe(40); // Git hash length
+    });
+
+    test('should create checkpoint with fallback when not in git repo', async () => {
+      // Don't initialize git repository
+      const input: GitInput = {
+        operation: 'createCheckpoint',
+        description: 'Fallback checkpoint test',
+      };
+
+      const actor = createActor(gitActor, { input });
+      actor.start();
+
+      const result = await waitFor(actor, (state) => state.status === 'done', { timeout: 5000 });
+      const checkpoint = result.output;
+
+      assertCheckpoint(checkpoint, 'Fallback checkpoint test');
+      expect(checkpoint.hash).toBe('a'.repeat(40)); // Mock hash
+      expect(checkpoint.branch).toBe('main');
+    });
+
+    test('should handle checkpoint with existing changes', async () => {
+      setupGitConfig();
+      try {
+        execSync('git init', { cwd: testDir, stdio: 'pipe' });
+        await createTestFile('existing.txt', 'Existing content');
+        await createTestFile('new.txt', 'New content');
+      } catch (error) {
+        // Skip test if git is not available
+        return;
+      }
+
+      const input: GitInput = {
+        operation: 'createCheckpoint',
+        description: 'Checkpoint with changes',
+      };
+
+      const actor = createActor(gitActor, { input });
+      actor.start();
+
+      const result = await waitFor(actor, (state) => state.status === 'done', { timeout: 5000 });
+      const checkpoint = result.output;
+
+      assertCheckpoint(checkpoint, 'Checkpoint with changes');
     });
   });
 
-  describe('File Operations', () => {
+  describe('Commit Operation', () => {
     beforeEach(async () => {
       setupGitConfig();
       try {
@@ -116,448 +137,183 @@ describe('Git Actor', () => {
       }
     });
 
-    test('should add files to staging area', async () => {
-      await createTestFile('test.txt', 'Hello, World!');
-      await createTestFile('another.txt', 'Another file');
-
-      const input: GitInput = {
-        operation: 'add',
-        files: ['test.txt', 'another.txt'],
-      };
-
-      const actor = createActor(gitActor, { input });
-      actor.start();
-
-      const result = await waitFor(actor, (state) => state.status === 'done', { timeout: 5000 });
-      const gitResult = result.output;
-
-      expect(gitResult).toBeDefined();
-      expect(gitResult?.operation).toBe('add');
-      
-      if (gitResult?.success) {
-        expect(gitResult.files).toEqual(['test.txt', 'another.txt']);
-      }
-    });
-
-    test('should add all files with wildcard', async () => {
+    test('should commit specific files', async () => {
       await createTestFile('file1.txt', 'Content 1');
       await createTestFile('file2.txt', 'Content 2');
-      await createTestFile('file3.js', 'console.log("test");');
-
-      const input: GitInput = {
-        operation: 'add',
-        files: ['.'],
-      };
-
-      const actor = createActor(gitActor, { input });
-      actor.start();
-
-      const result = await waitFor(actor, (state) => state.status === 'done', { timeout: 5000 });
-      const gitResult = result.output;
-
-      expect(gitResult).toBeDefined();
-      expect(gitResult?.operation).toBe('add');
-    });
-
-    test('should commit staged files', async () => {
-      await createTestFile('commit-test.txt', 'Test commit content');
-      
-      try {
-        execSync('git add commit-test.txt', { cwd: testDir, stdio: 'pipe' });
-      } catch (error) {
-        // Skip if git is not available
-        return;
-      }
 
       const input: GitInput = {
         operation: 'commit',
-        message: 'Test commit message',
+        message: 'Add specific files',
+        files: ['file1.txt', 'file2.txt'],
       };
 
       const actor = createActor(gitActor, { input });
       actor.start();
 
       const result = await waitFor(actor, (state) => state.status === 'done', { timeout: 5000 });
-      const gitResult = result.output;
+      const checkpoint = result.output;
 
-      expect(gitResult).toBeDefined();
-      expect(gitResult?.operation).toBe('commit');
-      
-      if (gitResult?.success) {
-        expect(gitResult.message).toBe('Test commit message');
-      }
+      assertCheckpoint(checkpoint, 'Add specific files');
     });
 
-    test('should handle commit with no staged files', async () => {
-      const input: GitInput = {
-        operation: 'commit',
-        message: 'Empty commit',
-      };
-
-      const actor = createActor(gitActor, { input });
-      actor.start();
-
-      const result = await waitFor(actor, (state) => state.status === 'done', { timeout: 5000 });
-      const gitResult = result.output;
-
-      expect(gitResult).toBeDefined();
-      expect(gitResult?.operation).toBe('commit');
-      // Should handle gracefully even if no files to commit
-    });
-  });
-
-  describe('Repository Status', () => {
-    beforeEach(async () => {
-      setupGitConfig();
-      try {
-        execSync('git init', { cwd: testDir, stdio: 'pipe' });
-      } catch (error) {
-        // Skip tests if git is not available
-      }
-    });
-
-    test('should get repository status', async () => {
-      await createTestFile('status-test.txt', 'Status test content');
-
-      const input: GitInput = {
-        operation: 'status',
-      };
-
-      const actor = createActor(gitActor, { input });
-      actor.start();
-
-      const result = await waitFor(actor, (state) => state.status === 'done', { timeout: 5000 });
-      const gitResult = result.output;
-
-      expect(gitResult).toBeDefined();
-      expect(gitResult?.operation).toBe('status');
-      
-      if (gitResult?.success) {
-        expect(gitResult.status).toBeDefined();
-      }
-    });
-
-    test('should get diff information', async () => {
-      await createTestFile('diff-test.txt', 'Original content');
-      
-      try {
-        execSync('git add diff-test.txt', { cwd: testDir, stdio: 'pipe' });
-        execSync('git commit -m "Initial commit"', { cwd: testDir, stdio: 'pipe' });
-        
-        // Modify the file
-        await writeFile(join(testDir, 'diff-test.txt'), 'Modified content', 'utf-8');
-      } catch (error) {
-        // Skip if git is not available
-        return;
-      }
-
-      const input: GitInput = {
-        operation: 'diff',
-        files: ['diff-test.txt'],
-      };
-
-      const actor = createActor(gitActor, { input });
-      actor.start();
-
-      const result = await waitFor(actor, (state) => state.status === 'done', { timeout: 5000 });
-      const gitResult = result.output;
-
-      expect(gitResult).toBeDefined();
-      expect(gitResult?.operation).toBe('diff');
-      
-      if (gitResult?.success) {
-        expect(gitResult.diff).toBeDefined();
-      }
-    });
-  });
-
-  describe('Branch Operations', () => {
-    beforeEach(async () => {
-      setupGitConfig();
-      try {
-        execSync('git init', { cwd: testDir, stdio: 'pipe' });
-        // Create an initial commit so we can create branches
-        await createTestFile('initial.txt', 'Initial content');
-        execSync('git add initial.txt', { cwd: testDir, stdio: 'pipe' });
-        execSync('git commit -m "Initial commit"', { cwd: testDir, stdio: 'pipe' });
-      } catch (error) {
-        // Skip tests if git is not available
-      }
-    });
-
-    test('should create a new branch', async () => {
-      const input: GitInput = {
-        operation: 'branch',
-        branch: 'feature-branch',
-      };
-
-      const actor = createActor(gitActor, { input });
-      actor.start();
-
-      const result = await waitFor(actor, (state) => state.status === 'done', { timeout: 5000 });
-      const gitResult = result.output;
-
-      expect(gitResult).toBeDefined();
-      expect(gitResult?.operation).toBe('branch');
-      
-      if (gitResult?.success) {
-        expect(gitResult.branch).toBe('feature-branch');
-      }
-    });
-
-    test('should checkout existing branch', async () => {
-      try {
-        execSync('git branch feature-checkout', { cwd: testDir, stdio: 'pipe' });
-      } catch (error) {
-        // Skip if git is not available
-        return;
-      }
-
-      const input: GitInput = {
-        operation: 'checkout',
-        branch: 'feature-checkout',
-      };
-
-      const actor = createActor(gitActor, { input });
-      actor.start();
-
-      const result = await waitFor(actor, (state) => state.status === 'done', { timeout: 5000 });
-      const gitResult = result.output;
-
-      expect(gitResult).toBeDefined();
-      expect(gitResult?.operation).toBe('checkout');
-      
-      if (gitResult?.success) {
-        expect(gitResult.branch).toBe('feature-checkout');
-      }
-    });
-
-    test('should checkout and create new branch', async () => {
-      const input: GitInput = {
-        operation: 'checkout',
-        branch: 'new-feature',
-        options: { create: true },
-      };
-
-      const actor = createActor(gitActor, { input });
-      actor.start();
-
-      const result = await waitFor(actor, (state) => state.status === 'done', { timeout: 5000 });
-      const gitResult = result.output;
-
-      expect(gitResult).toBeDefined();
-      expect(gitResult?.operation).toBe('checkout');
-      
-      if (gitResult?.success) {
-        expect(gitResult.branch).toBe('new-feature');
-      }
-    });
-  });
-
-  describe('History Operations', () => {
-    beforeEach(async () => {
-      setupGitConfig();
-      try {
-        execSync('git init', { cwd: testDir, stdio: 'pipe' });
-        
-        // Create multiple commits for history
-        await createTestFile('file1.txt', 'First commit');
-        execSync('git add file1.txt', { cwd: testDir, stdio: 'pipe' });
-        execSync('git commit -m "First commit"', { cwd: testDir, stdio: 'pipe' });
-        
-        await createTestFile('file2.txt', 'Second commit');
-        execSync('git add file2.txt', { cwd: testDir, stdio: 'pipe' });
-        execSync('git commit -m "Second commit"', { cwd: testDir, stdio: 'pipe' });
-      } catch (error) {
-        // Skip tests if git is not available
-      }
-    });
-
-    test('should get commit log', async () => {
-      const input: GitInput = {
-        operation: 'log',
-        options: { limit: 5 },
-      };
-
-      const actor = createActor(gitActor, { input });
-      actor.start();
-
-      const result = await waitFor(actor, (state) => state.status === 'done', { timeout: 5000 });
-      const gitResult = result.output;
-
-      expect(gitResult).toBeDefined();
-      expect(gitResult?.operation).toBe('log');
-      
-      if (gitResult?.success) {
-        expect(gitResult.log).toBeDefined();
-        expect(Array.isArray(gitResult.commits)).toBe(true);
-      }
-    });
-
-    test('should get log for specific file', async () => {
-      const input: GitInput = {
-        operation: 'log',
-        files: ['file1.txt'],
-        options: { limit: 3 },
-      };
-
-      const actor = createActor(gitActor, { input });
-      actor.start();
-
-      const result = await waitFor(actor, (state) => state.status === 'done', { timeout: 5000 });
-      const gitResult = result.output;
-
-      expect(gitResult).toBeDefined();
-      expect(gitResult?.operation).toBe('log');
-      
-      if (gitResult?.success) {
-        expect(gitResult.log).toBeDefined();
-      }
-    });
-  });
-
-  describe('Error Handling', () => {
-    test('should handle invalid git operations', async () => {
-      const input: GitInput = {
-        operation: 'status',
-        repository: '/nonexistent/directory',
-      };
-
-      const actor = createActor(gitActor, { input });
-      actor.start();
-
-      const result = await waitFor(actor, (state) => state.status === 'done', { timeout: 5000 });
-      const gitResult = result.output;
-
-      expect(gitResult).toBeDefined();
-      expect(gitResult?.operation).toBe('status');
-      // Should handle gracefully even if operation fails
-    });
-
-    test('should handle missing commit message', async () => {
-      setupGitConfig();
-      try {
-        execSync('git init', { cwd: testDir, stdio: 'pipe' });
-        await createTestFile('test.txt', 'Test content');
-        execSync('git add test.txt', { cwd: testDir, stdio: 'pipe' });
-      } catch (error) {
-        // Skip if git is not available
-        return;
-      }
+    test('should commit all files when files array is empty', async () => {
+      await createTestFile('auto1.txt', 'Auto content 1');
+      await createTestFile('auto2.txt', 'Auto content 2');
 
       const input: GitInput = {
         operation: 'commit',
-        // Missing message
+        message: 'Auto-commit all changes',
+        files: [],
       };
 
       const actor = createActor(gitActor, { input });
       actor.start();
 
       const result = await waitFor(actor, (state) => state.status === 'done', { timeout: 5000 });
-      const gitResult = result.output;
+      const checkpoint = result.output;
 
-      expect(gitResult).toBeDefined();
-      expect(gitResult?.operation).toBe('commit');
-      // Should handle missing message gracefully
+      assertCheckpoint(checkpoint, 'Auto-commit all changes');
     });
 
-    test('should handle adding non-existent files', async () => {
-      setupGitConfig();
-      try {
-        execSync('git init', { cwd: testDir, stdio: 'pipe' });
-      } catch (error) {
-        // Skip if git is not available
-        return;
-      }
+    test('should handle commit with fallback when not in git repo', async () => {
+      // Change to a non-git directory
+      const nonGitDir = join(tmpdir(), `non-git-${Date.now()}`);
+      await mkdir(nonGitDir, { recursive: true });
+      process.chdir(nonGitDir);
 
       const input: GitInput = {
-        operation: 'add',
-        files: ['nonexistent.txt'],
+        operation: 'commit',
+        message: 'Fallback commit test',
+        files: ['test.txt'],
       };
 
       const actor = createActor(gitActor, { input });
       actor.start();
 
       const result = await waitFor(actor, (state) => state.status === 'done', { timeout: 5000 });
-      const gitResult = result.output;
+      const checkpoint = result.output;
 
-      expect(gitResult).toBeDefined();
-      expect(gitResult?.operation).toBe('add');
-      // Should handle gracefully even if files don't exist
+      assertCheckpoint(checkpoint, 'Fallback commit test');
+      expect(checkpoint.hash).toBe('b'.repeat(40)); // Mock hash
+      expect(checkpoint.branch).toBe('main');
+
+      // Cleanup
+      process.chdir(testDir);
+      await rm(nonGitDir, { recursive: true, force: true });
     });
   });
 
-  describe('Remote Operations', () => {
+  describe('Rollback Operation', () => {
+    let testCheckpoint: GitCheckpoint;
+
     beforeEach(async () => {
       setupGitConfig();
       try {
         execSync('git init', { cwd: testDir, stdio: 'pipe' });
-        await createTestFile('remote-test.txt', 'Remote test content');
-        execSync('git add remote-test.txt', { cwd: testDir, stdio: 'pipe' });
-        execSync('git commit -m "Initial commit for remote test"', { cwd: testDir, stdio: 'pipe' });
+        await createTestFile('rollback-test.txt', 'Original content');
+        execSync('git add rollback-test.txt', { cwd: testDir, stdio: 'pipe' });
+        execSync('git commit -m "Initial commit"', { 
+          cwd: testDir, 
+          stdio: 'pipe',
+        });
+        
+        // Get the commit hash
+        const logResult = execSync('git log -1 --format="%H"', { 
+          cwd: testDir, 
+          stdio: 'pipe',
+          encoding: 'utf-8'
+        });
+        const hash = logResult.trim().replace(/"/g, '');
+        
+        testCheckpoint = {
+          hash,
+          branch: 'main',
+          timestamp: Date.now(),
+          description: 'Initial commit',
+        };
       } catch (error) {
-        // Skip tests if git is not available
+        // Create a mock checkpoint if git is not available
+        testCheckpoint = {
+          hash: 'a'.repeat(40),
+          branch: 'main',
+          timestamp: Date.now(),
+          description: 'Mock checkpoint',
+        };
       }
     });
 
-    test('should handle push operation', async () => {
+    test('should rollback to checkpoint', async () => {
       const input: GitInput = {
-        operation: 'push',
-        remote: 'origin',
+        operation: 'rollback',
+        checkpoint: testCheckpoint,
+      };
+
+      const actor = createActor(gitActor, { input });
+      actor.start();
+
+      const result = await waitFor(actor, (state) => state.status === 'done', { timeout: 5000 });
+      const rollbackResult = result.output;
+
+      expect(rollbackResult).toBeDefined();
+      expect(rollbackResult!.description).toContain('Rolled back to:');
+      expect(rollbackResult!.hash).toBeDefined();
+      expect(rollbackResult!.branch).toBe(testCheckpoint.branch);
+      expect(rollbackResult!.timestamp).toBeGreaterThan(testCheckpoint.timestamp);
+    });
+
+    test('should handle rollback with fallback when not in git repo', async () => {
+      // Change to a non-git directory
+      const nonGitDir = join(tmpdir(), `non-git-rollback-${Date.now()}`);
+      await mkdir(nonGitDir, { recursive: true });
+      process.chdir(nonGitDir);
+
+      const input: GitInput = {
+        operation: 'rollback',
+        checkpoint: testCheckpoint,
+      };
+
+      const actor = createActor(gitActor, { input });
+      actor.start();
+
+      const result = await waitFor(actor, (state) => state.status === 'done', { timeout: 5000 });
+      const rollbackResult = result.output;
+
+      expect(rollbackResult).toBeDefined();
+      expect(rollbackResult!.description).toContain('Rollback to:');
+      expect(rollbackResult!.hash).toBe(testCheckpoint.hash);
+      expect(rollbackResult!.branch).toBe(testCheckpoint.branch);
+
+      // Cleanup
+      process.chdir(testDir);
+      await rm(nonGitDir, { recursive: true, force: true });
+    });
+
+    test('should handle rollback with invalid checkpoint hash', async () => {
+      const invalidCheckpoint: GitCheckpoint = {
+        hash: 'invalid'.repeat(8), // Invalid hash
         branch: 'main',
+        timestamp: Date.now(),
+        description: 'Invalid checkpoint',
+      };
+
+      const input: GitInput = {
+        operation: 'rollback',
+        checkpoint: invalidCheckpoint,
       };
 
       const actor = createActor(gitActor, { input });
       actor.start();
 
       const result = await waitFor(actor, (state) => state.status === 'done', { timeout: 5000 });
-      const gitResult = result.output;
+      const rollbackResult = result.output;
 
-      expect(gitResult).toBeDefined();
-      expect(gitResult?.operation).toBe('push');
-      // Push will likely fail without a remote, but should handle gracefully
-    });
-
-    test('should handle pull operation', async () => {
-      const input: GitInput = {
-        operation: 'pull',
-        remote: 'origin',
-        branch: 'main',
-      };
-
-      const actor = createActor(gitActor, { input });
-      actor.start();
-
-      const result = await waitFor(actor, (state) => state.status === 'done', { timeout: 5000 });
-      const gitResult = result.output;
-
-      expect(gitResult).toBeDefined();
-      expect(gitResult?.operation).toBe('pull');
-      // Pull will likely fail without a remote, but should handle gracefully
-    });
-
-    test('should handle clone operation', async () => {
-      const cloneDir = join(tmpdir(), `clone-test-${Date.now()}`);
-      
-      const input: GitInput = {
-        operation: 'clone',
-        repository: 'https://github.com/nonexistent/repo.git',
-        options: { destination: cloneDir },
-      };
-
-      const actor = createActor(gitActor, { input });
-      actor.start();
-
-      const result = await waitFor(actor, (state) => state.status === 'done', { timeout: 10000 });
-      const gitResult = result.output;
-
-      expect(gitResult).toBeDefined();
-      expect(gitResult?.operation).toBe('clone');
-      // Clone will likely fail for nonexistent repo, but should handle gracefully
+      expect(rollbackResult).toBeDefined();
+      // Should fallback gracefully
+      expect(rollbackResult!.description).toContain('Rollback to:');
     });
   });
 
-  describe('Integration with Transformation System', () => {
+  describe('Integration with Transformation Workflow', () => {
     beforeEach(async () => {
       setupGitConfig();
       try {
@@ -567,73 +323,284 @@ describe('Git Actor', () => {
       }
     });
 
-    test('should track transformation changes', async () => {
-      // Simulate a transformation workflow
+    test('should support transformation checkpoint workflow', async () => {
+      // Step 1: Create initial files
       await createTestFile('transform.ts', 'var x = 1; // Original code');
       
-      try {
-        execSync('git add transform.ts', { cwd: testDir, stdio: 'pipe' });
-        execSync('git commit -m "Before transformation"', { cwd: testDir, stdio: 'pipe' });
-        
-        // Simulate transformation
-        await writeFile(join(testDir, 'transform.ts'), 'const x = 1; // Transformed code', 'utf-8');
-      } catch (error) {
-        // Skip if git is not available
-        return;
-      }
+      // Step 2: Create checkpoint before transformation
+      const checkpointInput: GitInput = {
+        operation: 'createCheckpoint',
+        description: 'Before var-to-const transformation',
+      };
 
-      const input: GitInput = {
-        operation: 'diff',
+      const checkpointActor = createActor(gitActor, { input: checkpointInput });
+      checkpointActor.start();
+
+      const checkpointResult = await waitFor(
+        checkpointActor, 
+        (state) => state.status === 'done', 
+        { timeout: 5000 }
+      );
+      const checkpoint = checkpointResult.output;
+
+      assertCheckpoint(checkpoint, 'Before var-to-const transformation');
+
+      // Step 3: Simulate transformation
+      await writeFile(join(testDir, 'transform.ts'), 'const x = 1; // Transformed code', 'utf-8');
+
+      // Step 4: Commit transformation results
+      const commitInput: GitInput = {
+        operation: 'commit',
+        message: 'Apply var-to-const transformation',
         files: ['transform.ts'],
       };
 
-      const actor = createActor(gitActor, { input });
-      actor.start();
+      const commitActor = createActor(gitActor, { input: commitInput });
+      commitActor.start();
 
-      const result = await waitFor(actor, (state) => state.status === 'done', { timeout: 5000 });
-      const gitResult = result.output;
+      const commitResult = await waitFor(
+        commitActor, 
+        (state) => state.status === 'done', 
+        { timeout: 5000 }
+      );
+      const commitCheckpoint = commitResult.output;
 
-      expect(gitResult).toBeDefined();
-      expect(gitResult?.operation).toBe('diff');
+      assertCheckpoint(commitCheckpoint, 'Apply var-to-const transformation');
+      expect(commitCheckpoint.hash).not.toBe(checkpoint.hash);
+    });
+
+    test('should support rollback on transformation failure', async () => {
+      // Step 1: Create initial state and checkpoint
+      await createTestFile('rollback-test.ts', 'var a = 1;\nvar b = 2;');
       
-      if (gitResult?.success && gitResult.diff) {
-        expect(gitResult.diff).toContain('var x = 1');
-        expect(gitResult.diff).toContain('const x = 1');
+      const checkpointInput: GitInput = {
+        operation: 'createCheckpoint',
+        description: 'Before risky transformation',
+      };
+
+      const checkpointActor = createActor(gitActor, { input: checkpointInput });
+      checkpointActor.start();
+
+      const checkpointResult = await waitFor(
+        checkpointActor, 
+        (state) => state.status === 'done', 
+        { timeout: 5000 }
+      );
+      const checkpoint = checkpointResult.output;
+      
+      expect(checkpoint).toBeDefined();
+      if (!checkpoint) return;
+
+      // Step 2: Simulate failed transformation (corrupted code)
+      await writeFile(join(testDir, 'rollback-test.ts'), 'const a = ; // Broken syntax', 'utf-8');
+
+      // Step 3: Rollback due to failure
+      const rollbackInput: GitInput = {
+        operation: 'rollback',
+        checkpoint,
+      };
+
+      const rollbackActor = createActor(gitActor, { input: rollbackInput });
+      rollbackActor.start();
+
+      const rollbackResult = await waitFor(
+        rollbackActor, 
+        (state) => state.status === 'done', 
+        { timeout: 5000 }
+      );
+      const rollbackCheckpoint = rollbackResult.output;
+
+      expect(rollbackCheckpoint).toBeDefined();
+      expect(rollbackCheckpoint!.description).toContain('Rolled back to:');
+      expect(rollbackCheckpoint!.description).toContain('Before risky transformation');
+    });
+
+    test('should handle multiple checkpoints in sequence', async () => {
+      const checkpoints: GitCheckpoint[] = [];
+
+      // Create multiple checkpoints
+      for (let i = 1; i <= 3; i++) {
+        await createTestFile(`file${i}.txt`, `Content ${i}`);
+        
+        const input: GitInput = {
+          operation: 'createCheckpoint',
+          description: `Checkpoint ${i}`,
+        };
+
+        const actor = createActor(gitActor, { input });
+        actor.start();
+
+        const result = await waitFor(actor, (state) => state.status === 'done', { timeout: 5000 });
+        const checkpoint = result.output;
+        
+        expect(checkpoint).toBeDefined();
+        if (checkpoint) {
+          checkpoints.push(checkpoint);
+        }
+      }
+
+      expect(checkpoints).toHaveLength(3);
+      
+      // Verify each checkpoint is unique
+      const hashes = checkpoints.map(cp => cp.hash);
+      const uniqueHashes = new Set(hashes);
+      expect(uniqueHashes.size).toBe(hashes.length);
+
+      // Verify descriptions
+      expect(checkpoints[0].description).toBe('Checkpoint 1');
+      expect(checkpoints[1].description).toBe('Checkpoint 2');
+      expect(checkpoints[2].description).toBe('Checkpoint 3');
+    });
+  });
+
+  describe('Error Handling and Edge Cases', () => {
+    test('should handle invalid operation gracefully', async () => {
+      // This test verifies the actor handles schema validation
+      const invalidInput = {
+        operation: 'invalid-operation',
+        description: 'This should fail validation',
+      };
+
+      try {
+        const actor = createActor(gitActor, { input: invalidInput as any });
+        actor.start();
+        
+        // Should throw during validation
+        await waitFor(actor, (state) => state.status === 'done', { timeout: 1000 });
+        expect(false).toBe(true); // Should not reach here
+      } catch (error) {
+        expect(error).toBeDefined();
+        // Zod validation error expected
       }
     });
 
-    test('should commit transformation results', async () => {
-      await createTestFile('batch-transform.ts', 'var a = 1;\nvar b = 2;');
-      
-      try {
-        execSync('git add batch-transform.ts', { cwd: testDir, stdio: 'pipe' });
-        execSync('git commit -m "Before batch transformation"', { cwd: testDir, stdio: 'pipe' });
-        
-        // Simulate batch transformation
-        await writeFile(join(testDir, 'batch-transform.ts'), 'const a = 1;\nconst b = 2;', 'utf-8');
-        execSync('git add batch-transform.ts', { cwd: testDir, stdio: 'pipe' });
-      } catch (error) {
-        // Skip if git is not available
-        return;
-      }
+    test('should handle missing required fields', async () => {
+      const incompleteInput = {
+        operation: 'createCheckpoint',
+        // Missing description
+      };
 
+      try {
+        const actor = createActor(gitActor, { input: incompleteInput as any });
+        actor.start();
+        
+        await waitFor(actor, (state) => state.status === 'done', { timeout: 1000 });
+        expect(false).toBe(true); // Should not reach here
+      } catch (error) {
+        expect(error).toBeDefined();
+        // Zod validation error expected
+      }
+    });
+
+    test('should handle commit with empty message', async () => {
       const input: GitInput = {
         operation: 'commit',
-        message: 'Apply var-to-const transformation',
+        message: '', // Empty message
+        files: ['test.txt'],
+      };
+
+      try {
+        const actor = createActor(gitActor, { input });
+        actor.start();
+        
+        await waitFor(actor, (state) => state.status === 'done', { timeout: 1000 });
+        expect(false).toBe(true); // Should not reach here
+      } catch (error) {
+        expect(error).toBeDefined();
+        // Should fail validation for empty message
+      }
+    });
+  });
+
+  describe('Performance and Reliability', () => {
+    test('should complete operations within reasonable time', async () => {
+      const startTime = Date.now();
+      
+      const input: GitInput = {
+        operation: 'createCheckpoint',
+        description: 'Performance test checkpoint',
       };
 
       const actor = createActor(gitActor, { input });
       actor.start();
 
       const result = await waitFor(actor, (state) => state.status === 'done', { timeout: 5000 });
-      const gitResult = result.output;
-
-      expect(gitResult).toBeDefined();
-      expect(gitResult?.operation).toBe('commit');
+      const endTime = Date.now();
       
-      if (gitResult?.success) {
-        expect(gitResult.message).toBe('Apply var-to-const transformation');
-      }
+      expect(result.output).toBeDefined();
+      expect(endTime - startTime).toBeLessThan(5000); // Should complete within 5 seconds
+    });
+
+    test('should handle concurrent operations safely', async () => {
+      const operations = Array.from({ length: 3 }, (_, i) => ({
+        operation: 'createCheckpoint' as const,
+        description: `Concurrent checkpoint ${i + 1}`,
+      }));
+
+      const promises = operations.map(async (input) => {
+        const actor = createActor(gitActor, { input });
+        actor.start();
+        const result = await waitFor(actor, (state) => state.status === 'done', { timeout: 5000 });
+        return result.output;
+      });
+
+      const results = await Promise.all(promises);
+      
+      expect(results).toHaveLength(3);
+      results.forEach((checkpoint, index) => {
+        expect(checkpoint).toBeDefined();
+        if (checkpoint) {
+          expect(checkpoint.description).toBe(`Concurrent checkpoint ${index + 1}`);
+        }
+      });
+    });
+
+    test('should maintain data consistency across operations', async () => {
+      await createTestFile('consistency-test.txt', 'Initial content');
+      
+      // Create checkpoint
+      const checkpointInput: GitInput = {
+        operation: 'createCheckpoint',
+        description: 'Consistency test checkpoint',
+      };
+
+      const checkpointActor = createActor(gitActor, { input: checkpointInput });
+      checkpointActor.start();
+      const checkpointResult = await waitFor(
+        checkpointActor, 
+        (state) => state.status === 'done', 
+        { timeout: 5000 }
+      );
+      const checkpoint = checkpointResult.output;
+
+      expect(checkpoint).toBeDefined();
+      if (!checkpoint) return;
+
+      // Modify file and commit
+      await writeFile(join(testDir, 'consistency-test.txt'), 'Modified content', 'utf-8');
+      
+      const commitInput: GitInput = {
+        operation: 'commit',
+        message: 'Modify content',
+        files: ['consistency-test.txt'],
+      };
+
+      const commitActor = createActor(gitActor, { input: commitInput });
+      commitActor.start();
+      const commitResult = await waitFor(
+        commitActor, 
+        (state) => state.status === 'done', 
+        { timeout: 5000 }
+      );
+      const commitCheckpoint = commitResult.output;
+
+      expect(commitCheckpoint).toBeDefined();
+      if (!commitCheckpoint) return;
+
+      // Verify consistency
+      expect(checkpoint.hash).not.toBe(commitCheckpoint.hash);
+      expect(checkpoint.branch).toBe(commitCheckpoint.branch);
+      expect(commitCheckpoint.timestamp).toBeGreaterThan(checkpoint.timestamp);
     });
   });
 });
