@@ -122,7 +122,7 @@ async function applyEnhancedTemplateTransformation(request: EnhancedTransformati
   for (const filePath of request.targetFiles) {
     try {
       let content = await readFile(filePath, 'utf-8');
-      let originalContent = content;
+      const originalContent = content;
       let fileTransformed = false;
 
       for (const pattern of templatePatterns) {
@@ -286,7 +286,7 @@ async function applyRealASTPattern(
   root: any,
   content: string,
   pattern: EnhancedPattern,
-  lang: any
+  _lang: any
 ): Promise<{ content: string; modified: boolean; transformCount: number }> {
   if (!pattern.astGrep) {
     return { content, modified: false, transformCount: 0 };
@@ -360,7 +360,7 @@ function applySmartVarTransformation(content: string): { content: string; count:
   // Enhanced regex that better handles var declarations
   const varRegex = /\bvar\s+(\w+)\s*=\s*([^;]+);/g;
 
-  modifiedContent = modifiedContent.replace(varRegex, (match, varName, value) => {
+  modifiedContent = modifiedContent.replace(varRegex, (_match, varName, value) => {
     count++;
 
     // Analyze the value to determine if it should be const or let
@@ -409,7 +409,7 @@ function applyStrictInequalityTransformation(content: string): { content: string
  */
 function applyConsoleErrorTransformation(content: string): { content: string; count: number } {
   let count = 0;
-  const modifiedContent = content.replace(/console\.log\((['"])Error:/g, (match, quote) => {
+  const modifiedContent = content.replace(/console\.log\((['"])Error:/g, (_match, quote) => {
     count++;
     return `console.error(${quote}Error:`;
   });
@@ -420,7 +420,7 @@ function applyConsoleErrorTransformation(content: string): { content: string; co
 /**
  * Enhanced LLM transformation (placeholder for future implementation)
  */
-async function applyEnhancedLLMTransformation(request: EnhancedTransformationRequest) {
+async function applyEnhancedLLMTransformation(_request: EnhancedTransformationRequest) {
   console.log('🤖 Enhanced LLM transformations not yet implemented');
 
   return {
