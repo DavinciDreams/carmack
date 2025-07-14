@@ -12,8 +12,13 @@ coverage
 
 # logs
 logs
-_.log
-report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
+*.log
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+bun-debug.log*
+bun-error.log*
 
 # dotenv environment variable files
 .env
@@ -26,9 +31,53 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .eslintcache
 .cache
 *.tsbuildinfo
+.biome-cache
+
+# Runtime and telemetry data
+telemetry-data/
+metrics/
+*.trace
+*.prof
 
 # IntelliJ based IDEs
 .idea
 
-# Finder (MacOS) folder config
+# OS-specific files
 .DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE and editor files
+.vscode/settings.json
+.vscode/launch.json
+*.swp
+*.swo
+*~
+
+# Bun specific
+.bun
+
+# Test artifacts
+*.test.js.map
+test-results/
+coverage/
+.nyc_output
+
+# Dafny verification outputs
+*.dfy.bpl
+*.dfy.bpl.bak
+
+# Docker artifacts
+.dockerignore
+
+# Temporary files
+*.tmp
+*.temp
+.temp/
+
+# Build artifacts
+*.js.map
+*.d.ts.map
+
+# Recursive ignore for production builds
+repository
