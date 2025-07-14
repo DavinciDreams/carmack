@@ -4,6 +4,7 @@ import { js, ts } from '@ast-grep/napi';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
 import type { AstPattern, TransformationRequest } from '../types.js';
+import { LLMTransformer, type LLMTransformationInput } from './llm-transformation.js';
 
 // Transformation input schema
 const TransformationInputSchema = z.object({
@@ -657,52 +658,109 @@ async function applyLlmTransformation(files: string[], request?: TransformationR
   console.log('Applying LLM transformations...');
 
   try {
-    // Check if we have a specific LLM transformation pattern
-    const prompt = request?.prompt || generateDefaultPrompt(files);
+    // Use the new comprehensive LLM transformation system
+    const llmInput: LLMTransformationInput = {
+      files,
+      request,
+      config: {
+        provider: (process.env.LLM_PROVIDER as any) || 'mock',
+        apiKey: process.env.LLM_API_KEY,
+        model: process.env.LLM_MODEL || 'gpt-4',
+        baseURL: process.env.LLM_BASE_URL,
+        maxTokens: 4000,
+        temperature: 0.1, // Low temperature for deterministic code transformations
+        timeout: 30000,
+        retries: 3,
+      },
+      context: {
+        projectType: 'typescript',
+        framework: detectProjectFramework(files),
+      },
+    };
 
-    // For now, implement a basic rule-based transformation that mimics LLM behavior
-    // This can be replaced with actual LLM API calls (OpenAI, Anthropic, etc.)
-
-    const transformedFiles: string[] = [];
-
-    for (const filePath of files) {
-      const content = await readFile(filePath, 'utf-8');
-
-      // Apply intelligent transformations based on content analysis
-      let transformedContent = content;
-
-      // Advanced var-to-const/let with usage analysis
-      transformedContent = await smartVarTransformation(transformedContent);
-
-      // Complex callback-to-promise-to-async transformations
-      transformedContent = await advancedCallbackToAsync(transformedContent);
-
-      // Smart class modernization
-      transformedContent = await modernizeClasses(transformedContent);
-
-      // Only write if content changed
-      if (transformedContent !== content) {
-        await writeFile(filePath, transformedContent, 'utf-8');
-        transformedFiles.push(filePath);
-      }
-    }
+    // Call the new LLM transformation system
+    const transformer = new LLMTransformer(llmInput.config);
+    const result = await transformer.transformFiles(llmInput);
 
     return {
-      filesModified: transformedFiles,
-      transformationsApplied: transformedFiles.length,
+      filesModified: result.filesModified,
+      transformationsApplied: result.transformationsApplied,
       mode: 'llm' as const,
-      prompt,
+      prompt: request?.prompt || 'LLM-based code transformation',
+      totalTokensUsed: result.totalTokensUsed,
+      averageConfidence: result.averageConfidence,
+      errors: result.errors,
+      warnings: result.warnings,
     };
   } catch (error) {
     console.error('LLM transformation failed:', error);
-    // Graceful fallback
-    return {
-      filesModified: [],
-      transformationsApplied: 0,
-      mode: 'llm' as const,
-      prompt: request?.prompt || 'Default transformation prompt',
-    };
+    // Graceful fallback to the old rule-based system
+    return await applyFallbackLlmTransformation(files, request);
   }
+}
+
+/**
+ * Fallback LLM transformation using rule-based approach
+ */
+async function applyFallbackLlmTransformation(files: string[], request?: TransformationRequest) {
+  console.log('Using fallback rule-based LLM transformation...');
+  
+  const transformedFiles: string[] = [];
+
+  for (const filePath of files) {
+    const content = await readFile(filePath, 'utf-8');
+
+    // Apply intelligent transformations based on content analysis
+    let transformedContent = content;
+
+    // Advanced var-to-const/let with usage analysis
+    transformedContent = await smartVarTransformation(transformedContent);
+
+    // Complex callback-to-promise-to-async transformations
+    transformedContent = await advancedCallbackToAsync(transformedContent);
+
+    // Smart class modernization
+    transformedContent = await modernizeClasses(transformedContent);
+
+    // Only write if content changed
+    if (transformedContent !== content) {
+      await writeFile(filePath, transformedContent, 'utf-8');
+      transformedFiles.push(filePath);
+    }
+  }
+
+  return {
+    filesModified: transformedFiles,
+    transformationsApplied: transformedFiles.length,
+    mode: 'llm' as const,
+    prompt: request?.prompt || 'Fallback rule-based transformation',
+  };
+}
+
+/**
+ * Detect project framework from file analysis
+ */
+function detectProjectFramework(files: string[]): string | undefined {
+  // Simple framework detection based on file names and common patterns
+  const fileNames = files.join(' ').toLowerCase();
+  
+  if (fileNames.includes('react') || fileNames.includes('.jsx') || fileNames.includes('.tsx')) {
+    return 'React';
+  }
+  if (fileNames.includes('vue')) {
+    return 'Vue';
+  }
+  if (fileNames.includes('angular')) {
+    return 'Angular';
+  }
+  if (fileNames.includes('express') || fileNames.includes('server')) {
+    return 'Express';
+  }
+  if (fileNames.includes('xstate') || fileNames.includes('machine')) {
+    return 'XState';
+  }
+  
+  return undefined;
 }
 
 function generateDefaultPrompt(files: string[]): string {
