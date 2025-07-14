@@ -117,8 +117,8 @@ export class DocumentationSystem {
       this.generateAPIDocumentation({
         outputPath: `${outputDir}/api.${ext}`,
         format,
-        includePrivate: options.includePrivate,
-        includeTests: options.includeTests,
+        includePrivate: options.includePrivate ?? false,
+        includeTests: options.includeTests ?? false,
       }),
       this.generateArchitectureDocumentation({
         outputPath: `${outputDir}/architecture.${ext}`,
