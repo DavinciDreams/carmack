@@ -1,10 +1,10 @@
 import { fromPromise } from 'xstate';
-import { z } from 'zod';
+// import { z } from 'zod';
 import type {
   DocumentationRequest,
   DocumentationResult,
-  DocumentationType,
-  DocumentationFormat,
+  // DocumentationType,
+  // DocumentationFormat,
   ModuleDoc,
   FunctionDoc,
   ClassDoc,
@@ -635,39 +635,39 @@ export class DocumentationGenerator {
   }
 
   // Placeholder methods for other documentation types
-  private async generateAPIHTML(modules: ModuleDoc[], request: DocumentationRequest): Promise<string> {
+  private async generateAPIHTML(_modules: ModuleDoc[], _request: DocumentationRequest): Promise<string> {
     return '<html><body><h1>API Documentation</h1><p>HTML format not yet implemented</p></body></html>';
   }
 
-  private async generateArchitectureHTML(architecture: ArchitectureDoc): Promise<string> {
+  private async generateArchitectureHTML(_architecture: ArchitectureDoc): Promise<string> {
     return '<html><body><h1>Architecture Documentation</h1><p>HTML format not yet implemented</p></body></html>';
   }
 
-  private async generatePatternHTML(patterns: PatternDoc[]): Promise<string> {
+  private async generatePatternHTML(_patterns: PatternDoc[]): Promise<string> {
     return '<html><body><h1>Pattern Documentation</h1><p>HTML format not yet implemented</p></body></html>';
   }
 
-  private async extractUsageExamples(sourceFiles: string[]): Promise<any[]> {
+  private async extractUsageExamples(_sourceFiles: string[]): Promise<any[]> {
     return []; // Placeholder
   }
 
-  private async generateUsageMarkdown(examples: any[]): Promise<string> {
+  private async generateUsageMarkdown(_examples: any[]): Promise<string> {
     return '# Usage Documentation\n\nUsage documentation not yet implemented.';
   }
 
-  private async generateUsageHTML(examples: any[]): Promise<string> {
+  private async generateUsageHTML(_examples: any[]): Promise<string> {
     return '<html><body><h1>Usage Documentation</h1><p>HTML format not yet implemented</p></body></html>';
   }
 
-  private async analyzeChanges(sourceFiles: string[]): Promise<any[]> {
+  private async analyzeChanges(_sourceFiles: string[]): Promise<any[]> {
     return []; // Placeholder
   }
 
-  private async generateChangelogMarkdown(changes: any[]): Promise<string> {
+  private async generateChangelogMarkdown(_changes: any[]): Promise<string> {
     return '# Changelog\n\nChangelog generation not yet implemented.';
   }
 
-  private async generateChangelogHTML(changes: any[]): Promise<string> {
+  private async generateChangelogHTML(_changes: any[]): Promise<string> {
     return '<html><body><h1>Changelog</h1><p>HTML format not yet implemented</p></body></html>';
   }
 }
