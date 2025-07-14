@@ -23,6 +23,7 @@
     "test:performance-scalability": "bun test test/performance/scalability.test.ts",
     "test:performance-all": "bun test test/performance/",
     "test:verification": "bun test test/verification/formal-verification.test.ts",
+    "test:telemetry": "bun test test/telemetry/telemetry-validation.test.ts",
     "test:high": "bun run test/run-tests.ts --priority=high",
     "test:coverage": "bun run test/run-tests.ts --coverage",
     "test:verbose": "bun run test/run-tests.ts --verbose",
