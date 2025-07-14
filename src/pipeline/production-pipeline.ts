@@ -11,7 +11,7 @@ import { patternLearningActor } from '../actors/pattern-learning.js';
 import { patternDiscoveryActor } from '../actors/pattern-discovery.js';
 import { feedbackLoopActor } from '../actors/feedback-loop.js';
 import { validationActor } from '../actors/validation.js';
-import { complexityActor } from '../actors/complexity.js';
+// import { complexityActor } from '../actors/complexity.js';
 import { llmTestingFrameworkActor } from '../actors/llm-testing-framework.js';
 
 // Helper function to invoke actors
@@ -711,12 +711,12 @@ async function generateTransformationReport(input: PipelineRequest, state: any):
   await writeFile(reportPath, JSON.stringify(report, null, 2));
 }
 
-async function cleanupTemporaryFiles(state: any): Promise<void> {
+async function cleanupTemporaryFiles(_state: any): Promise<void> {
   // Cleanup any temporary files created during transformation
   // Implementation depends on specific temporary file patterns
 }
 
-function buildPipelineResult(input: PipelineRequest, state: any): PipelineResult {
+function buildPipelineResult(_input: PipelineRequest, state: any): PipelineResult {
   return {
     success: state.transformationsApplied.some((t: any) => t.success) && state.errors.filter((e: any) => e.severity === 'critical').length === 0,
     transformationId: state.transformationId,
