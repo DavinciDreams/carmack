@@ -7,6 +7,7 @@ import { dafnyActor } from './actors/dafny.ts';
 import { gitActor } from './actors/git.ts';
 import { transformationActor } from './actors/transformation.ts';
 import { validationActor } from './actors/validation.ts';
+import { patternLearningActor } from './actors/pattern-learning.ts';
 import type { MachineContext, MachineEvent } from './types.ts';
 import { MachineContextSchema, type TransformationMode } from './types.ts';
 
@@ -36,6 +37,7 @@ const _carmackCoderMachine = setup({
     gitActor,
     complexityActor,
     dafnyActor,
+    patternLearningActor,
   },
   guards: {
     hasMaxRetriesExceeded: ({ context }) => {
@@ -553,12 +555,26 @@ const _carmackCoderMachine = setup({
 
     learningFromFeedback: {
       invoke: {
-        id: 'learning',
-        src: 'analysisActor',
+        id: 'pattern-learning',
+        src: 'patternLearningActor',
         input: ({ context }: { context: MachineContext }) => ({
           operation: 'learn',
           transformation: context.currentTransformation,
           patterns: context.patterns,
+          context: {
+            codebase: {
+              language: 'typescript',
+              complexity: context.currentTransformation?.complexity?.cyclomaticComplexity || 5,
+              size: context.activeFiles.length * 100, // Rough estimate
+            },
+            environment: {
+              success: context.currentTransformation?.errors.length === 0,
+              performance: {
+                transformationTime: context.currentTransformation?.endTime && context.currentTransformation?.startTime ?
+                  context.currentTransformation.endTime - context.currentTransformation.startTime : 0,
+              },
+            },
+          },
         }),
         onDone: {
           target: 'generatingSummary',
