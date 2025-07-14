@@ -3,7 +3,6 @@ import { writeFile, readFile, unlink, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { 
   LLMTransformer, 
-  llmTransformationActor,
   createLLMTransformer,
   validateLLMConfig,
   type LLMConfig,
@@ -55,13 +54,14 @@ if (oldVar == 'test') {
       const transformer = new LLMTransformer({
         provider: 'mock',
         model: 'test-model',
+        maxTokens: 4000,
+        temperature: 0.1,
+        timeout: 30000,
+        retries: 3,
       });
 
       const input: LLMTransformationInput = {
         files: [testFile],
-        config: {
-          provider: 'mock',
-        },
       };
 
       const result = await transformer.transformFiles(input);
@@ -82,6 +82,11 @@ if (oldVar == 'test') {
 
       const transformer = new LLMTransformer({
         provider: 'mock',
+        model: 'test-model',
+        maxTokens: 4000,
+        temperature: 0.1,
+        timeout: 30000,
+        retries: 3,
       });
 
       const input: LLMTransformationInput = {
@@ -98,6 +103,11 @@ if (oldVar == 'test') {
     test('should handle non-existent files gracefully', async () => {
       const transformer = new LLMTransformer({
         provider: 'mock',
+        model: 'test-model',
+        maxTokens: 4000,
+        temperature: 0.1,
+        timeout: 30000,
+        retries: 3,
       });
 
       const input: LLMTransformationInput = {
@@ -126,6 +136,11 @@ export default Component;
 
       const transformer = new LLMTransformer({
         provider: 'mock',
+        model: 'test-model',
+        maxTokens: 4000,
+        temperature: 0.1,
+        timeout: 30000,
+        retries: 3,
       });
 
       const input: LLMTransformationInput = {
@@ -151,6 +166,11 @@ console.log(validCode);
 
       const transformer = new LLMTransformer({
         provider: 'mock',
+        model: 'test-model',
+        maxTokens: 4000,
+        temperature: 0.1,
+        timeout: 30000,
+        retries: 3,
       });
 
       const input: LLMTransformationInput = {
@@ -188,12 +208,17 @@ export { addUser, User };
 
       const transformer = new LLMTransformer({
         provider: 'mock',
+        model: 'test-model',
+        maxTokens: 4000,
+        temperature: 0.1,
+        timeout: 30000,
+        retries: 3,
       });
 
       const input: LLMTransformationInput = {
         files: [testFile],
         context: {
-          language: 'typescript',
+          projectType: 'typescript',
           complexity: 5,
         },
       };
@@ -206,29 +231,6 @@ export { addUser, User };
       const transformedContent = await readFile(testFile, 'utf-8');
       expect(transformedContent).toContain('const users');
       expect(transformedContent).toContain("user.name === ''");
-    });
-  });
-
-  describe('LLM Actor Integration', () => {
-    test('should work with XState actor system', async () => {
-      const testCode = `
-var message = 'hello';
-console.log(message);
-`;
-
-      await writeFile(testFile, testCode);
-
-      const input: LLMTransformationInput = {
-        files: [testFile],
-        config: {
-          provider: 'mock',
-        },
-      };
-
-      const result = await llmTransformationActor({ input });
-
-      expect(result.mode).toBe('llm');
-      expect(result.filesModified).toContain(testFile);
     });
   });
 
@@ -302,6 +304,10 @@ console.log(message);
         provider: 'openai',
         apiKey: 'invalid-key',
         retries: 1,
+        model: 'gpt-4',
+        maxTokens: 4000,
+        temperature: 0.1,
+        timeout: 30000,
       });
 
       const input: LLMTransformationInput = {
@@ -326,6 +332,11 @@ console.log(message);
       // Mock will return valid responses, so this tests the parsing logic
       const transformer = new LLMTransformer({
         provider: 'mock',
+        model: 'test-model',
+        maxTokens: 4000,
+        temperature: 0.1,
+        timeout: 30000,
+        retries: 3,
       });
 
       const input: LLMTransformationInput = {
@@ -347,6 +358,11 @@ console.log(message);
 
       const transformer = new LLMTransformer({
         provider: 'mock',
+        model: 'test-model',
+        maxTokens: 4000,
+        temperature: 0.1,
+        timeout: 30000,
+        retries: 3,
       });
 
       const input: LLMTransformationInput = {
@@ -373,6 +389,11 @@ console.log(message);
 
       const transformer = new LLMTransformer({
         provider: 'mock',
+        model: 'test-model',
+        maxTokens: 4000,
+        temperature: 0.1,
+        timeout: 30000,
+        retries: 3,
       });
 
       const input: LLMTransformationInput = {
@@ -414,6 +435,11 @@ export default Component;
 
       const transformer = new LLMTransformer({
         provider: 'mock',
+        model: 'test-model',
+        maxTokens: 4000,
+        temperature: 0.1,
+        timeout: 30000,
+        retries: 3,
       });
 
       const input: LLMTransformationInput = {

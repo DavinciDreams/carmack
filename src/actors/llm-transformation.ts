@@ -33,7 +33,7 @@ const LLMConfigSchema = z.object({
 const LLMTransformationInputSchema = z.object({
   files: z.array(z.string()),
   request: z.any().optional(), // TransformationRequest
-  config: LLMConfigSchema.optional().default({}),
+  config: LLMConfigSchema.optional(),
   context: z.object({
     complexity: z.any().optional(), // ComplexityMetrics
     patterns: z.array(z.any()).optional(),
@@ -119,10 +119,16 @@ export class LLMTransformer {
             warnings.push(...result.warnings);
           }
           
+          // Check if this was a fallback response (confidence 0 indicates fallback)
+          if (result.confidence === 0 && result.warnings?.some(w => w.includes('LLM transformation failed'))) {
+            errors.push(`LLM API failed for ${filePath}, used fallback`);
+          }
+          
           console.log(`✅ LLM transformed ${filePath} (confidence: ${result.confidence.toFixed(2)})`);
         } else {
-          errors.push(`Failed to transform ${filePath}: ${result.error}`);
-          console.error(`❌ Failed to transform ${filePath}: ${result.error}`);
+          const errorMsg = `Failed to transform ${filePath}: ${result.error}`;
+          errors.push(errorMsg);
+          console.error(`❌ ${errorMsg}`);
         }
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error);
@@ -206,11 +212,16 @@ export class LLMTransformer {
           ...(llmResponse.warnings && { warnings: llmResponse.warnings }),
         };
       } else {
+        // Check if this was a fallback response (no changes but confidence 0)
+        const warnings = llmResponse.confidence === 0 && llmResponse.warnings?.some(w => w.includes('LLM transformation failed'))
+          ? llmResponse.warnings
+          : ['No changes needed'];
+          
         return {
           success: true,
           transformationCount: 0,
           confidence: llmResponse.confidence,
-          warnings: ['No changes needed'],
+          warnings,
         };
       }
     } catch (error) {
@@ -538,13 +549,13 @@ Respond in this JSON format:
     
     // Mock transformation: var to const/let
     if (transformedCode && transformedCode.includes('var ')) {
-      transformedCode = transformedCode.replace(/\bvar\s+(\w+)\s*=/g, 'const $1 =');
+      transformedCode = transformedCode.replace(/\bvar\s+(\w+)/g, 'const $1');
       appliedTransformations.push('var-to-const');
     }
     
     // Mock transformation: == to ===
     if (transformedCode && transformedCode.includes('==') && !transformedCode.includes('===')) {
-      transformedCode = transformedCode.replace(/([^=!])=([^=])/g, '$1===$2');
+      transformedCode = transformedCode.replace(/([^=!])==([^=])/g, '$1===$2');
       appliedTransformations.push('strict-equality');
     }
     
