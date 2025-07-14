@@ -313,7 +313,7 @@ async function fixTypes(files: string[], errors: ErrorInfo[]): Promise<Validatio
     // Process each file with type errors
     for (const [filePath, fileErrors] of errorsByFile) {
       try {
-        const { readFile, writeFile } = await import('node:fs/promises');
+        const { readFile } = await import('node:fs/promises');
         const originalContent = await readFile(filePath, 'utf-8');
         
         // Create context-aware prompt for type fixing
@@ -520,22 +520,16 @@ async function validateQuality(files: string[]): Promise<ValidationResult> {
     const { ESLint } = await import('eslint');
     
     const eslint = new ESLint({
+      overrideConfigFile: true,
       overrideConfig: {
-        env: {
-          browser: true,
-          es2021: true,
-          node: true,
-        },
-        extends: [
-          'eslint:recommended',
-          '@typescript-eslint/recommended',
-        ],
-        parser: '@typescript-eslint/parser',
-        parserOptions: {
+        languageOptions: {
           ecmaVersion: 'latest',
           sourceType: 'module',
+          parser: '@typescript-eslint/parser',
         },
-        plugins: ['@typescript-eslint'],
+        plugins: {
+          '@typescript-eslint': await import('@typescript-eslint/eslint-plugin'),
+        },
         rules: {
           // Code quality rules
           'prefer-const': 'warn',
@@ -555,7 +549,6 @@ async function validateQuality(files: string[]): Promise<ValidationResult> {
           'prefer-template': 'warn',
         },
       },
-      useEslintrc: false, // Don't use project's ESLint config
     });
 
     for (const filePath of files) {
@@ -666,7 +659,7 @@ async function fallbackQualityAnalysis(files: string[]): Promise<ValidationResul
     try {
       const { readFile } = await import('node:fs/promises');
       const content = await readFile(filePath, 'utf-8');
-      const lines = content.split('\n');
+      const _lines = content.split('\n');
 
       for (const rule of qualityRules) {
         let match;
@@ -729,7 +722,7 @@ async function fallbackQualityAnalysis(files: string[]): Promise<ValidationResul
  */
 function analyzeCodeComplexity(content: string, filePath: string): ErrorInfo[] {
   const warnings: ErrorInfo[] = [];
-  const lines = content.split('\n');
+  const _lines = content.split('\n');
 
   // Check for overly complex functions
   const functionRegex = /function\s+(\w+)|const\s+(\w+)\s*=\s*\([^)]*\)\s*=>/g;

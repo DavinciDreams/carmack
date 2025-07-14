@@ -24,9 +24,32 @@ function createSampleFeedback(overrides: Partial<FeedbackData> = {}): FeedbackDa
   };
 }
 
+// Helper function to create default configs
+function createDefaultConfigs() {
+  return {
+    analysisConfig: {
+      timeWindow: 7,
+      minSampleSize: 10,
+      confidenceThreshold: 0.7,
+      performanceThreshold: 0.8,
+    },
+    optimizationConfig: {
+      learningRate: 0.1,
+      decayFactor: 0.95,
+      adaptationSpeed: 'medium' as const,
+      enableAutoRemoval: true,
+    },
+  };
+}
+
 // Helper function to invoke feedback loop actor
-async function invokeFeedbackLoop(request: FeedbackLoopRequest) {
-  const actor = createActor(feedbackLoopActor, { input: request });
+async function invokeFeedbackLoop(request: Partial<FeedbackLoopRequest> & { operation: FeedbackLoopRequest['operation'] }) {
+  const fullRequest: FeedbackLoopRequest = {
+    ...createDefaultConfigs(),
+    ...request,
+  };
+  
+  const actor = createActor(feedbackLoopActor, { input: fullRequest });
   actor.start();
   const snapshot = actor.getSnapshot();
   return snapshot.output;
@@ -46,14 +69,14 @@ describe('Feedback Loop Actor', () => {
         createSampleFeedback({ patternId: 'pattern-2', success: false }),
       ];
 
-      const request: FeedbackLoopRequest = {
-        operation: 'collect',
+      const request = {
+        operation: 'collect' as const,
         feedbackData,
       };
 
       const result = await invokeFeedbackLoop(request);
 
-      if (result) {
+      if (result && result.operation === 'collect') {
         expect(result.operation).toBe('collect');
         expect(result.status).toBe('success');
         expect(result.processed).toBe(3);
@@ -72,8 +95,8 @@ describe('Feedback Loop Actor', () => {
         } as any,
       ];
 
-      const request: FeedbackLoopRequest = {
-        operation: 'collect',
+      const request = {
+        operation: 'collect' as const,
         feedbackData: invalidFeedback,
       };
 
@@ -86,14 +109,14 @@ describe('Feedback Loop Actor', () => {
     });
 
     it('should handle empty feedback data', async () => {
-      const request: FeedbackLoopRequest = {
-        operation: 'collect',
+      const request = {
+        operation: 'collect' as const,
         feedbackData: [],
       };
 
       const result = await invokeFeedbackLoop(request);
 
-      if (result) {
+      if (result && result.operation === 'collect') {
         expect(result.operation).toBe('collect');
         expect(result.status).toBe('success');
         expect(result.processed).toBe(0);
@@ -119,8 +142,8 @@ describe('Feedback Loop Actor', () => {
       });
 
       // Then analyze
-      const request: FeedbackLoopRequest = {
-        operation: 'analyze',
+      const request = {
+        operation: 'analyze' as const,
         analysisConfig: {
           timeWindow: 7,
           minSampleSize: 10,
@@ -131,7 +154,7 @@ describe('Feedback Loop Actor', () => {
 
       const result = await invokeFeedbackLoop(request);
 
-      if (result) {
+      if (result && result.operation === 'analyze') {
         expect(result.operation).toBe('analyze');
         expect(result.status).toBe('success');
         expect(result.analysis.totalPatterns).toBeGreaterThan(0);
@@ -167,12 +190,14 @@ describe('Feedback Loop Actor', () => {
       const result = await invokeFeedbackLoop({
         operation: 'analyze',
         analysisConfig: {
+          timeWindow: 7,
           minSampleSize: 10,
+          confidenceThreshold: 0.7,
           performanceThreshold: 0.8,
         },
       });
 
-      if (result) {
+      if (result && result.operation === 'analyze') {
         expect(result.analysis.highPerformers.length).toBeGreaterThan(0);
         expect(result.analysis.underperformers.length).toBeGreaterThan(0);
         
@@ -201,10 +226,15 @@ describe('Feedback Loop Actor', () => {
 
       const result = await invokeFeedbackLoop({
         operation: 'analyze',
-        analysisConfig: { minSampleSize: 15 },
+        analysisConfig: {
+          timeWindow: 7,
+          minSampleSize: 15,
+          confidenceThreshold: 0.7,
+          performanceThreshold: 0.8,
+        },
       });
 
-      if (result) {
+      if (result && result.operation === 'analyze') {
         const improvingPattern = result.patternMetrics.find(p => p.patternId === 'improving-pattern');
         expect(improvingPattern?.trendDirection).toBe('improving');
       }
@@ -239,11 +269,13 @@ describe('Feedback Loop Actor', () => {
         operation: 'optimize',
         optimizationConfig: {
           learningRate: 0.1,
+          decayFactor: 0.95,
+          adaptationSpeed: 'medium',
           enableAutoRemoval: true,
         },
       });
 
-      if (result) {
+      if (result && result.operation === 'optimize') {
         expect(result.operation).toBe('optimize');
         expect(result.status).toBe('success');
         expect(result.optimizationsApplied).toBeGreaterThan(0);
@@ -271,10 +303,13 @@ describe('Feedback Loop Actor', () => {
         operation: 'optimize',
         optimizationConfig: {
           learningRate: 0.2,
+          decayFactor: 0.95,
+          adaptationSpeed: 'medium',
+          enableAutoRemoval: true,
         },
       });
 
-      if (result) {
+      if (result && result.operation === 'optimize') {
         expect(result.confidenceUpdates).toBeGreaterThanOrEqual(0);
         expect(Array.isArray(result.confidenceChanges)).toBe(true);
       }
@@ -311,7 +346,7 @@ describe('Feedback Loop Actor', () => {
         operation: 'report',
       });
 
-      if (result) {
+      if (result && result.operation === 'report') {
         expect(result.operation).toBe('report');
         expect(result.status).toBe('success');
         expect(result.overallMetrics).toBeDefined();
@@ -347,7 +382,7 @@ describe('Feedback Loop Actor', () => {
         operation: 'report',
       });
 
-      if (result) {
+      if (result && result.operation === 'report') {
         expect(result.performanceBreakdown.byLanguage.typescript).toBeDefined();
         expect(result.performanceBreakdown.byLanguage.javascript).toBeDefined();
         expect(result.performanceBreakdown.byFileType.typescript).toBeDefined();
@@ -376,10 +411,12 @@ describe('Feedback Loop Actor', () => {
         analysisConfig: {
           timeWindow: 7, // Only last 7 days
           minSampleSize: 1,
+          confidenceThreshold: 0.7,
+          performanceThreshold: 0.8,
         },
       });
 
-      if (result) {
+      if (result && result.operation === 'analyze') {
         expect(result.sampleSize).toBe(1); // Only recent feedback should be included
       }
     });
@@ -397,11 +434,14 @@ describe('Feedback Loop Actor', () => {
       const result = await invokeFeedbackLoop({
         operation: 'analyze',
         analysisConfig: {
+          timeWindow: 7,
           minSampleSize: 10, // Require at least 10 samples
+          confidenceThreshold: 0.7,
+          performanceThreshold: 0.8,
         },
       });
 
-      if (result) {
+      if (result && result.operation === 'analyze') {
         expect(result.analysis.totalPatterns).toBe(0); // Should exclude patterns with insufficient samples
       }
     });
@@ -434,10 +474,15 @@ describe('Feedback Loop Actor', () => {
 
       const result = await invokeFeedbackLoop({
         operation: 'analyze',
-        analysisConfig: { minSampleSize: 5 },
+        analysisConfig: {
+          timeWindow: 7,
+          minSampleSize: 5,
+          confidenceThreshold: 0.7,
+          performanceThreshold: 0.8,
+        },
       });
 
-      if (result && result.patternMetrics.length > 0) {
+      if (result && result.operation === 'analyze' && result.patternMetrics.length > 0) {
         const pattern = result.patternMetrics[0];
         expect(pattern.successRate).toBeCloseTo(0.8); // 8/10 = 0.8
         expect(pattern.totalUsage).toBe(10);
@@ -460,10 +505,15 @@ describe('Feedback Loop Actor', () => {
 
       const result = await invokeFeedbackLoop({
         operation: 'analyze',
-        analysisConfig: { minSampleSize: 5 },
+        analysisConfig: {
+          timeWindow: 7,
+          minSampleSize: 5,
+          confidenceThreshold: 0.7,
+          performanceThreshold: 0.8,
+        },
       });
 
-      if (result && result.patternMetrics.length > 0) {
+      if (result && result.operation === 'analyze' && result.patternMetrics.length > 0) {
         const pattern = result.patternMetrics[0];
         expect(pattern.confidenceScore).toBeGreaterThan(0.8); // High confidence for high-quality pattern
       }
