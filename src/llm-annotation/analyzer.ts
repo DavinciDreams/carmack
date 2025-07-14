@@ -132,7 +132,7 @@ export class LLMAnnotationAnalyzer {
     for (const filePath of request.sourceFiles.slice(0, 10)) { // Sample first 10 files
       try {
         const content = await readFile(filePath, 'utf-8');
-        const ext = extname(filePath);
+        const _ext = extname(filePath);
         
         // Extract imports/dependencies
         const importMatches = content.match(/import\s+.*?from\s+['"]([^'"]+)['"]/g);
