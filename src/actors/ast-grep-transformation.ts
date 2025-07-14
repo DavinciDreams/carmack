@@ -728,16 +728,20 @@ export const BUILTIN_AST_PATTERNS: AstGrepPattern[] = [
     },
   },
   
+  // NOTE: Temporarily disabled due to AST-grep NAPI pattern matching issues
+  // These patterns need research into correct AST-grep syntax for complex patterns
+  // See: docs/REMAINING-ISSUES-TODO.md - AST-grep Pattern Matching Refinement
+  /*
   {
     id: 'function-to-arrow-ast',
     language: 'typescript',
     pattern: {
       rule: {
-        pattern: 'function $NAME($PARAMS) { $$$BODY }',
+        pattern: 'function $NAME($PARAMS) { return $EXPR }',
       },
     },
     replacement: {
-      template: 'const $NAME = ($PARAMS) => { $$$BODY }',
+      template: 'const $NAME = ($PARAMS) => $EXPR',
     },
     description: 'Convert simple functions to arrow functions',
     complexity: 4,
@@ -748,6 +752,7 @@ export const BUILTIN_AST_PATTERNS: AstGrepPattern[] = [
       batchable: true,
     },
   },
+  */
   
   {
     id: 'promise-then-to-await-ast',
@@ -773,16 +778,24 @@ export const BUILTIN_AST_PATTERNS: AstGrepPattern[] = [
     },
   },
   
+  // NOTE: Temporarily disabled due to AST-grep NAPI pattern matching issues
+  /*
   {
     id: 'object-property-shorthand-ast',
     language: 'typescript',
     pattern: {
       rule: {
-        pattern: '$KEY: $KEY',
+        pattern: '$KEY: $VALUE',
       },
     },
     replacement: {
       template: '$KEY',
+      conditions: [
+        {
+          when: '$KEY == $VALUE',
+          then: '$KEY'
+        }
+      ]
     },
     description: 'Use object property shorthand syntax',
     complexity: 2,
@@ -793,6 +806,7 @@ export const BUILTIN_AST_PATTERNS: AstGrepPattern[] = [
       batchable: true,
     },
   },
+  */
   
   {
     id: 'array-includes-ast',
