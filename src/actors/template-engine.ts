@@ -501,7 +501,7 @@ function templateToRegex(template: string): { regex: RegExp; variableNames: stri
 
       default:
         // Enhanced generic capture with better boundary detection
-        return '([\\w\\s\\.\\[\\]\\(\\)\\-\\+\\*/=<>!&|:;,{}]+?)';
+        return '([\\w\\s.\\[\\]()\\+\\*/-=<>!&|:;,{}]+?)';
     }
   });
 
