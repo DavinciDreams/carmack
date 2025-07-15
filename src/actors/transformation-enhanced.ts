@@ -78,7 +78,7 @@ export const enhancedTransformationActor = fromPromise(
     const validated = EnhancedTransformationRequestSchema.parse(input);
 
     try {
-      let result;
+      let result: any;
 
       switch (validated.transformationType) {
         case 'template':
