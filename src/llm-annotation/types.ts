@@ -146,3 +146,12 @@ export const AnnotationResultSchema = z.object({
 
 export type AnnotationRequest = z.infer<typeof AnnotationRequestSchema>;
 export type AnnotationResult = z.infer<typeof AnnotationResultSchema>;
+
+// Validation helpers
+export const validateAnnotationRequest = (data: unknown): AnnotationRequest => {
+  return AnnotationRequestSchema.parse(data);
+};
+
+export const validateAnnotationResult = (data: unknown): AnnotationResult => {
+  return AnnotationResultSchema.parse(data);
+};

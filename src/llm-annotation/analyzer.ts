@@ -1,5 +1,6 @@
 import { fromPromise } from 'xstate';
 import type { ASTGrepAnalyzer } from '../docs/ast-analyzer.js';
+import type { ModuleDoc } from '../docs/types.js';
 import type {
   AnnotationRequest,
   AnnotationResult,
@@ -456,7 +457,7 @@ export class LLMAnnotationAnalyzer {
     return 'General application logic and business rules';
   }
 
-  private inferComponentRole(moduleDoc: any): string {
+  private inferComponentRole(moduleDoc: ModuleDoc): string {
     if (moduleDoc.exports.classes.length > 0) {
       return 'Data model and business logic container';
     }
@@ -469,7 +470,7 @@ export class LLMAnnotationAnalyzer {
     return 'Application component with specific functionality';
   }
 
-  private extractResponsibilities(moduleDoc: any): string[] {
+  private extractResponsibilities(moduleDoc: ModuleDoc): string[] {
     const responsibilities: string[] = [];
 
     if (moduleDoc.exports.functions.length > 0) {
@@ -485,7 +486,7 @@ export class LLMAnnotationAnalyzer {
     return responsibilities.length > 0 ? responsibilities : ['Core application functionality'];
   }
 
-  private analyzeRelationships(moduleDoc: any): any[] {
+  private analyzeRelationships(moduleDoc: ModuleDoc): ArchitecturalAnnotation['relationships'] {
     return moduleDoc.dependencies.slice(0, 5).map((dep: string) => ({
       target: dep,
       type: 'depends-on' as const,
@@ -493,27 +494,27 @@ export class LLMAnnotationAnalyzer {
     }));
   }
 
-  private calculateCohesion(moduleDoc: any): number {
+  private calculateCohesion(moduleDoc: ModuleDoc): number {
     // Simple heuristic: fewer responsibilities = higher cohesion
     const totalExports = moduleDoc.exports.functions.length + moduleDoc.exports.classes.length;
     return Math.max(0, Math.min(1, 1 - totalExports / 10));
   }
 
-  private calculateCoupling(moduleDoc: any): number {
+  private calculateCoupling(moduleDoc: ModuleDoc): number {
     // Simple heuristic: more dependencies = higher coupling
     return Math.min(1, moduleDoc.dependencies.length / 20);
   }
 
-  private assessTestability(moduleDoc: any): number {
+  private assessTestability(moduleDoc: ModuleDoc): number {
     // Simple heuristic: pure functions are more testable
     const pureFunctionCount = moduleDoc.exports.functions.filter(
-      (fn: any) => !fn.isAsync && fn.parameters.length <= 3
+      (fn) => !fn.isAsync && (fn.parameters?.length || 0) <= 3
     ).length;
     const totalFunctions = moduleDoc.exports.functions.length;
     return totalFunctions > 0 ? pureFunctionCount / totalFunctions : 0.5;
   }
 
-  private identifyDesignPrinciples(moduleDoc: any): string[] {
+  private identifyDesignPrinciples(moduleDoc: ModuleDoc): string[] {
     const principles: string[] = [];
 
     if (moduleDoc.exports.functions.length > 0 && moduleDoc.exports.classes.length === 0) {
@@ -529,7 +530,7 @@ export class LLMAnnotationAnalyzer {
     return principles;
   }
 
-  private detectViolations(moduleDoc: any): string[] {
+  private detectViolations(moduleDoc: ModuleDoc): string[] {
     const violations: string[] = [];
 
     if (moduleDoc.exports.functions.length > 10) {
