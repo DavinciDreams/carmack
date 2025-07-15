@@ -270,7 +270,7 @@ function validateMemoryUsage(timeline: MemoryTimelineEntry[]): {
 
 describe('Telemetry System', () => {
   let collector: TelemetryCollector;
-  let capturedEvents: any[] = [];
+  let capturedEvents: unknown[] = [];
 
   beforeEach(() => {
     capturedEvents = [];
@@ -342,9 +342,7 @@ describe('Telemetry System', () => {
 
       // Validate telemetry overhead
       const healthMetrics = collector.getHealthMetrics();
-      const performanceValidation = validatePerformanceMetrics(
-        healthMetrics.performanceStats
-      );
+      const performanceValidation = validatePerformanceMetrics(healthMetrics.performanceStats);
 
       expect(performanceValidation.valid).toBe(true);
       if (!performanceValidation.valid) {
@@ -353,8 +351,8 @@ describe('Telemetry System', () => {
 
       // Validate event collection
       expect(capturedEvents.length).toBeGreaterThan(0);
-      expect(capturedEvents.filter((e) => e.id === 'TEL-001')).toHaveLength(1000); // Pattern success events
-      expect(capturedEvents.filter((e) => e.id === 'TEL-004').length).toBeGreaterThanOrEqual(100); // Latency events (sampled)
+      expect(capturedEvents.filter((e) => (e as { id?: string }).id === 'TEL-001')).toHaveLength(1000); // Pattern success events
+      expect(capturedEvents.filter((e) => (e as { id?: string }).id === 'TEL-004').length).toBeGreaterThanOrEqual(100); // Latency events (sampled)
     });
   });
 
@@ -383,11 +381,12 @@ describe('Telemetry System', () => {
       await collector.shutdown();
 
       // Validate memory usage
-      const memoryEvents = capturedEvents.filter((e) => e.id === 'TEL-005');
+      const memoryEvents = capturedEvents.filter((e) => (e as { id?: string }).id === 'TEL-005');
       expect(memoryEvents.length).toBeGreaterThan(0);
 
       for (const memEvent of memoryEvents) {
-        const memoryValidation = validateMemoryUsage(memEvent.timeline);
+        const timeline = (memEvent as { timeline: MemoryTimelineEntry[] }).timeline;
+        const memoryValidation = validateMemoryUsage(timeline);
         expect(memoryValidation.valid).toBe(true);
         if (!memoryValidation.valid) {
           console.warn('Memory issues:', memoryValidation.issues);
@@ -395,12 +394,13 @@ describe('Telemetry System', () => {
       }
 
       // Validate latency distribution
-      const latencyEvents = capturedEvents.filter((e) => e.id === 'TEL-004');
+      const latencyEvents = capturedEvents.filter((e) => (e as { id?: string }).id === 'TEL-004');
       expect(latencyEvents.length).toBeGreaterThan(0);
 
-      const astLatencyEvent = latencyEvents.find((e) => e.mode === 'ast');
+      const astLatencyEvent = latencyEvents.find((e) => (e as { mode?: string }).mode === 'ast');
       expect(astLatencyEvent).toBeDefined();
-      expect(astLatencyEvent.fileSizeBytes).toBeGreaterThan(10000); // Large file
+      const typedAstLatencyEvent = astLatencyEvent as { fileSizeBytes: number };
+      expect(typedAstLatencyEvent.fileSizeBytes).toBeGreaterThan(10000); // Large file
     });
   });
 
@@ -434,14 +434,19 @@ describe('Telemetry System', () => {
       await collector.shutdown();
 
       // Validate error tracking
-      const errorEvents = capturedEvents.filter((e) => e.id === 'TEL-008');
+      const errorEvents = capturedEvents.filter((e) => (e as { id?: string }).id === 'TEL-008');
       expect(errorEvents).toHaveLength(3);
 
       for (const errorEvent of errorEvents) {
         expect(validateEventStructure(errorEvent, 'TEL-008')).toBe(true);
-        expect(errorEvent.userActions).toHaveLength(3);
-        expect(errorEvent.finalOutcome).toBe('resolved');
-        expect(errorEvent.resolutionTime).toBe(2500);
+        const typedErrorEvent = errorEvent as {
+          userActions: unknown[];
+          finalOutcome: string;
+          resolutionTime: number;
+        };
+        expect(typedErrorEvent.userActions).toHaveLength(3);
+        expect(typedErrorEvent.finalOutcome).toBe('resolved');
+        expect(typedErrorEvent.resolutionTime).toBe(2500);
       }
     });
   });
@@ -498,10 +503,16 @@ describe('Telemetry System', () => {
       await collector.shutdown();
 
       // Validate behavior tracking
-      const behaviorEvents = capturedEvents.filter((e) => e.id === 'TEL-007');
+      const behaviorEvents = capturedEvents.filter((e) => (e as { id?: string }).id === 'TEL-007');
       expect(behaviorEvents).toHaveLength(1);
 
-      const behaviorEvent = behaviorEvents[0];
+      const behaviorEvent = behaviorEvents[0] as {
+        sequence: unknown[];
+        modeSwitches: number;
+        dominantMode: string;
+        sessionDuration: number;
+        patterns: string[];
+      };
       expect(behaviorEvent.sequence).toHaveLength(5);
       expect(behaviorEvent.modeSwitches).toBe(2); // template -> ast -> llm
       expect(behaviorEvent.dominantMode).toBe('ast'); // Most frequent
@@ -609,14 +620,15 @@ describe('Telemetry System', () => {
       await collector.shutdown();
 
       // Analyze collected metrics for signal quality
-      const patternEvents = capturedEvents.filter((e) => e.id === 'TEL-001');
+      const patternEvents = capturedEvents.filter((e) => (e as { id?: string }).id === 'TEL-001');
       const patternStats = new Map<string, { success: number; total: number }>();
 
       for (const event of patternEvents) {
-        const stats = patternStats.get(event.patternId) || { success: 0, total: 0 };
+        const typedEvent = event as { patternId: string; successRate: number };
+        const stats = patternStats.get(typedEvent.patternId) || { success: 0, total: 0 };
         stats.total++;
-        if (event.successRate > 0) stats.success++;
-        patternStats.set(event.patternId, stats);
+        if (typedEvent.successRate > 0) stats.success++;
+        patternStats.set(typedEvent.patternId, stats);
       }
 
       // Validate signal-to-noise ratio
@@ -631,7 +643,7 @@ describe('Telemetry System', () => {
 
       // Overall signal quality should be high
       const totalEvents = patternEvents.length;
-      const meaningfulEvents = patternEvents.filter((e) => e.successRate !== 0.5).length; // Not random
+      const meaningfulEvents = patternEvents.filter((e) => (e as { successRate: number }).successRate !== 0.5).length; // Not random
       const signalRatio = meaningfulEvents / totalEvents;
 
       expect(signalRatio).toBeGreaterThan(0.8); // >80% signal-to-noise ratio
@@ -656,10 +668,7 @@ describe('Telemetry Integration', () => {
     });
 
     const transformationId = randomUUID();
-    const originalCode = generatePatternTargetCode([
-      'var-to-const',
-      'strict-equality',
-    ]);
+    const originalCode = generatePatternTargetCode(['var-to-const', 'strict-equality']);
 
     const telemetry = createTransformationTelemetry(
       transformationId,

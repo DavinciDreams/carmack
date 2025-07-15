@@ -14,6 +14,7 @@ import { CARMACK_REPOSITORY_URL, carmackConfig } from './carmack.config.ts';
 import { DocumentationGenerator } from './src/docs/generator.ts';
 import { carmackCoderMachine } from './src/machine.ts';
 import { RepositoryManager } from './src/repository-manager.ts';
+import type { MachineEvent } from './src/types.ts';
 
 // ===== REPOSITORY STATE SCHEMA =====
 
@@ -366,7 +367,7 @@ export class CarmackPipelineOrchestrator {
       actor.send({
         type: 'START_TRANSFORMATION',
         request: transformationRequest,
-      } as any); // XState event type mismatch - this is a known limitation
+      } as MachineEvent);
     });
   }
 
