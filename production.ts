@@ -18,6 +18,12 @@ import {
   ProductionConfigSchema,
 } from './production.config.ts';
 import { carmackCoderMachine } from './src/machine.ts';
+import {
+  type MachineEvent,
+  type TransformationRequest,
+  validateMachineEvent,
+  validateTransformationRequest,
+} from './src/types.ts';
 
 //import { ProductionConfigSchema } from './production.config.ts';
 
@@ -344,29 +350,38 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
         });
 
         // Send start event with discovered files
-        transformationActor.send({
-          type: 'START_TRANSFORMATION',
-          request: {
-            targetFiles: eligibleFiles, // Use discovered files
-            transformationType: 'ast' as const,
-            patterns: patterns, // Use loaded patterns
-            maxComplexity: config.transformation.maxComplexityThreshold,
-            dryRun: args['dry-run'] || config.transformation.dryRunFirst,
-          },
+        const transformationRequest: TransformationRequest = validateTransformationRequest({
+          targetFiles: eligibleFiles,
+          transformationType: 'ast' as const,
+          patterns: patterns,
+          maxComplexity: config.transformation.maxComplexityThreshold,
+          dryRun: args['dry-run'] || config.transformation.dryRunFirst,
         });
+
+        const startEvent: MachineEvent = validateMachineEvent({
+          type: 'START_TRANSFORMATION',
+          request: transformationRequest,
+        });
+
+        transformationActor.send(startEvent);
       })
       .catch((error) => {
         console.warn('Failed to load patterns, using empty array:', error);
-        transformationActor.send({
-          type: 'START_TRANSFORMATION',
-          request: {
-            targetFiles: eligibleFiles,
-            transformationType: 'ast' as const,
-            patterns: [],
-            maxComplexity: config.transformation.maxComplexityThreshold,
-            dryRun: args['dry-run'] || config.transformation.dryRunFirst,
-          },
+
+        const fallbackRequest: TransformationRequest = validateTransformationRequest({
+          targetFiles: eligibleFiles,
+          transformationType: 'ast' as const,
+          patterns: [],
+          maxComplexity: config.transformation.maxComplexityThreshold,
+          dryRun: args['dry-run'] || config.transformation.dryRunFirst,
         });
+
+        const fallbackEvent: MachineEvent = validateMachineEvent({
+          type: 'START_TRANSFORMATION',
+          request: fallbackRequest,
+        });
+
+        transformationActor.send(fallbackEvent);
       });
   });
 }
