@@ -5,38 +5,22 @@
  * comprehensive testing of the entire system pipeline.
  */
 
-import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
-import { execSync } from 'child_process';
-import { mkdir, rm, writeFile } from 'fs/promises';
-import { tmpdir } from 'os';
-import { join } from 'path';
+import { expect } from 'bun:test';
+import { execSync } from 'node:child_process';
 import { createActor, waitFor } from 'xstate';
 
 // Import actors
 import { analysisActor } from '../../src/actors/analysis.js';
-import { dafnyActor } from '../../src/actors/dafny.js';
 import { gitActor } from '../../src/actors/git.js';
 import { patternDiscoveryActor } from '../../src/actors/pattern-discovery.js';
 import { patternLearningActor } from '../../src/actors/pattern-learning.js';
 import { transformationActor } from '../../src/actors/transformation.js';
 import { validationActor } from '../../src/actors/validation.js';
 // Import types
-import type {
-  AstPattern,
-  ComplexityMetrics,
-  GitCheckpoint,
-  TransformationRequest,
-  ValidationResult,
-} from '../../src/types.js';
-import {
-  ActorMockFactory,
-  ExternalToolMockFactory,
-  MockSetupUtility,
-  TransformationActorMockFactory,
-} from './mock-factories.js';
+import type { AstPattern } from '../../src/types.js';
+import { MockSetupUtility } from './mock-factories.js';
 // Import test infrastructure
 import { TestEnvironmentManager, TestFixtures } from './test-fixtures.js';
-import { UnifiedTestRunner } from './test-runner.js';
 
 /**
  * Integration test suite for validating all major fixes
@@ -110,7 +94,7 @@ export class IntegrationTestSuite {
     );
 
     expect(analysisResult.output).toBeDefined();
-    expect(analysisResult.output!.complexity).toBeDefined();
+    expect(analysisResult.output?.complexity).toBeDefined();
 
     // 2. Transformation
     const transformationInput = {
@@ -131,7 +115,7 @@ export class IntegrationTestSuite {
     );
 
     expect(transformationResult.output).toBeDefined();
-    expect(transformationResult.output!.filesModified).toContain(testFile);
+    expect(transformationResult.output?.filesModified).toContain(testFile);
 
     // 3. Validation
     const validationInput = {
@@ -149,7 +133,7 @@ export class IntegrationTestSuite {
     );
 
     expect(validationResult.output).toBeDefined();
-    expect(validationResult.output!.isValid).toBeDefined();
+    expect(validationResult.output?.isValid).toBeDefined();
 
     console.log('✅ Production Pipeline Integration: PASSED');
   }
@@ -189,7 +173,7 @@ export class IntegrationTestSuite {
     );
 
     expect(analysisResult.output).toBeDefined();
-    expect(analysisResult.output!.complexity).toBeDefined();
+    expect(analysisResult.output?.complexity).toBeDefined();
 
     // Transformation with multiple files
     const transformationInput = {
@@ -210,7 +194,7 @@ export class IntegrationTestSuite {
     );
 
     expect(transformationResult.output).toBeDefined();
-    expect(transformationResult.output!.filesModified.length).toBeGreaterThan(0);
+    expect(transformationResult.output?.filesModified.length).toBeGreaterThan(0);
 
     // Validation with multiple files
     const validationInput = {
@@ -278,7 +262,7 @@ export class IntegrationTestSuite {
     );
 
     expect(transformationResult.output).toBeDefined();
-    expect(transformationResult.output!.filesModified).toContain(testFile);
+    expect(transformationResult.output?.filesModified).toContain(testFile);
 
     console.log('✅ AST-grep Pattern Syntax: PASSED');
   }
@@ -333,7 +317,7 @@ export class IntegrationTestSuite {
     );
 
     expect(validationResult.output).toBeDefined();
-    expect(validationResult.output!.isValid).toBeDefined();
+    expect(validationResult.output?.isValid).toBeDefined();
 
     console.log('✅ TypeScript Compilation: PASSED');
   }
@@ -353,7 +337,7 @@ export class IntegrationTestSuite {
     );
 
     // Test concurrent actor operations
-    const patterns = TestFixtures.createTestPatterns().safe;
+    const _patterns = TestFixtures.createTestPatterns().safe;
 
     const promises = [
       // Analysis actor
@@ -376,7 +360,7 @@ export class IntegrationTestSuite {
     const results = await Promise.all(promises);
 
     // Verify all actors completed successfully
-    results.forEach((result, index) => {
+    results.forEach((result, _index) => {
       expect(result.output).toBeDefined();
     });
 
@@ -472,7 +456,7 @@ export class IntegrationTestSuite {
     );
 
     expect(discoveryResult.output).toBeDefined();
-    expect(discoveryResult.output!.patterns).toBeDefined();
+    expect(discoveryResult.output?.patterns).toBeDefined();
 
     // Test pattern learning
     const learningInput = {
@@ -511,7 +495,7 @@ export class IntegrationTestSuite {
     );
 
     expect(learningResult.output).toBeDefined();
-    expect(learningResult.output!.metrics).toBeDefined();
+    expect(learningResult.output?.metrics).toBeDefined();
 
     console.log('✅ Pattern Discovery and Learning: PASSED');
   }

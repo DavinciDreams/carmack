@@ -65,7 +65,9 @@
     "k8s:deploy": "kubectl apply -f k8s/",
     "k8s:delete": "kubectl delete -f k8s/",
     "monitor": "open http://localhost:3000",
-    "status": "echo '🚀 Carmack Coder Status Check' && bun run format && bun run lint && echo '✅ Linting: Clean' && bun run test:high && echo '✅ High Priority Tests: Passed' && echo '🎯 Overall: Production Ready!'"
+    "status": "echo '🚀 Carmack Coder Status Check' && bun run format && bun run lint && echo '✅ Linting: Clean' && bun run test:high && echo '✅ High Priority Tests: Passed' && echo '🎯 Overall: Production Ready!'",
+    "env:validate": "bun run scripts/validate-env.ts",
+    "env:check": "bun run scripts/validate-env.ts"
   },
   "engines": {
     "bun": ">=1.0.0"

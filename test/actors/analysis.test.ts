@@ -5,7 +5,7 @@
  * and summarization functionality of the analysis actor.
  */
 
-import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
+import { afterEach, describe, expect, test } from 'bun:test';
 import type { AnalysisResult } from '../../src/actors/analysis.js';
 import { analysisActor } from '../../src/actors/analysis.js';
 import {

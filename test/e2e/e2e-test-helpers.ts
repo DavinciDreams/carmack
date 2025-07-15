@@ -8,11 +8,11 @@
  * - Pattern discovery and learning integration testing
  */
 
-import { execSync } from 'child_process';
-import { mkdir, readFile, rm, writeFile } from 'fs/promises';
-import { tmpdir } from 'os';
-import { join } from 'path';
-import { type ActorRef, createActor, waitFor } from 'xstate';
+import { execSync } from 'node:child_process';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { type ActorRef, createActor } from 'xstate';
 import type { AstPattern, ErrorInfo, GitCheckpoint, ValidationResult } from '../../src/types.js';
 
 /**
@@ -244,7 +244,7 @@ export class ExternalToolMocker {
       // For other commands, try to use original or return mock
       try {
         return ExternalToolMocker.originalExecSync(command, options);
-      } catch (error) {
+      } catch (_error) {
         console.warn(`⚠️ External command failed, using mock: ${command}`);
         return 'Mock command output';
       }

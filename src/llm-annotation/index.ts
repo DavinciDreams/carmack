@@ -36,8 +36,8 @@ export class LLMAnnotationSystem {
     directoryPath: string,
     options: Partial<AnnotationRequest> = {}
   ): Promise<AnnotationResult> {
-    const { readdir, stat } = await import('fs/promises');
-    const { join, extname } = await import('path');
+    const { readdir, stat } = await import('node:fs/promises');
+    const { join, extname } = await import('node:path');
 
     // Recursively find source files
     const sourceFiles: string[] = [];

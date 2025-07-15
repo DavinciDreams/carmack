@@ -163,7 +163,7 @@ describe('Telemetry Validation Framework', () => {
     test('should collect performance events correctly', async () => {
       console.log('🔬 Testing performance event collection');
 
-      const startTime = Date.now();
+      const _startTime = Date.now();
 
       // Simulate various performance scenarios
       telemetry.recordPerformance('analysis-actor', 150, 'file-analysis');
@@ -437,15 +437,13 @@ describe('Telemetry Validation Framework', () => {
         {} as Record<string, number>
       );
 
-      expect(errorsByComponent['parser']).toBe(3);
-      expect(errorsByComponent['validator']).toBe(1);
-      expect(errorsByComponent['transformer']).toBe(1);
+      expect(errorsByComponent.parser).toBe(3);
+      expect(errorsByComponent.validator).toBe(1);
+      expect(errorsByComponent.transformer).toBe(1);
 
       console.log('   ✅ Tracked error patterns');
       console.log('   📊 Errors by component:', errorsByComponent);
-      console.log(
-        `   🚨 Most error-prone component: parser (${errorsByComponent['parser']} errors)`
-      );
+      console.log(`   🚨 Most error-prone component: parser (${errorsByComponent.parser} errors)`);
     });
 
     test('should correlate errors with performance degradation', async () => {

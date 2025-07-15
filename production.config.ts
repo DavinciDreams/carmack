@@ -9,7 +9,6 @@ export const defaultProductionConfig: ProductionConfig = {
  */
 // Imports must come first
 import { z } from 'zod';
-import { CARMACK_REPOSITORY_URL } from './carmack.config.ts';
 
 export const ProductionConfigSchema = z
   .object({
@@ -43,7 +42,6 @@ export const ProductionConfigSchema = z
       riskLevelFilter: z.enum(['low', 'medium', 'high']).default('medium'),
       enableBackups: z.boolean().default(true),
       dryRunFirst: z.boolean().default(true),
-
     }),
 
     // CI/CD Integration

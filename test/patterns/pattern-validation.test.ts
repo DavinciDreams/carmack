@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import type { AstPattern } from '../../src/types.js';
-import { CodeSampleGenerator, FileTestUtils, MockDataGenerator } from '../test-helpers.js';
+import { FileTestUtils, MockDataGenerator } from '../test-helpers.js';
 
 /**
  * Pattern Validation System

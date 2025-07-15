@@ -5,16 +5,13 @@
  * and system components to ensure consistent and reliable testing.
  */
 
-import { randomUUID } from 'crypto';
-import type { ActorRef } from 'xstate';
+import { randomUUID } from 'node:crypto';
 import type {
   AstPattern,
   ComplexityMetrics,
   ErrorInfo,
   GitCheckpoint,
-  MachineContext,
   TransformationRequest,
-  TransformationResult,
   ValidationResult,
 } from '../../src/types.js';
 
@@ -75,7 +72,7 @@ export class ActorMockFactory {
   /**
    * Create a mock actor that times out
    */
-  static createTimeoutActor(timeout = 5000): any {
+  static createTimeoutActor(_timeout = 5000): any {
     return {
       start: () => {},
       stop: () => {},
@@ -84,7 +81,7 @@ export class ActorMockFactory {
         value: 'running',
         context: {},
       }),
-      subscribe: (observer: any) => {
+      subscribe: (_observer: any) => {
         // Never complete - will timeout
         return { unsubscribe: () => {} };
       },
@@ -139,9 +136,9 @@ export class ExternalToolMockFactory {
    * Mock the execSync function for external tool calls
    */
   static mockExecSync(): void {
-    const originalExecSync = require('child_process').execSync;
+    const originalExecSync = require('node:child_process').execSync;
 
-    require('child_process').execSync = (command: string, options?: any) => {
+    require('node:child_process').execSync = (command: string, options?: any) => {
       console.log(`🔧 Mocked execSync: ${command}`);
 
       // Check for specific tool mocks
@@ -273,8 +270,8 @@ export class FileSystemMockFactory {
    * Mock file system operations
    */
   static mockFileSystem(): void {
-    const fs = require('fs');
-    const fsPromises = require('fs/promises');
+    const fs = require('node:fs');
+    const fsPromises = require('node:fs/promises');
 
     // Mock existsSync
     const originalExistsSync = fs.existsSync;
@@ -298,7 +295,7 @@ export class FileSystemMockFactory {
     };
 
     // Mock writeFile
-    const originalWriteFile = fsPromises.writeFile;
+    const _originalWriteFile = fsPromises.writeFile;
     fsPromises.writeFile = async (path: string, content: string) => {
       FileSystemMockFactory.mockFiles.set(path, content);
       return Promise.resolve();

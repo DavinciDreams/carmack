@@ -156,9 +156,9 @@ export class RepositoryManager {
    * Clone repository to temporary directory
    */
   private async cloneRepository(config: RepositoryConfig): Promise<string> {
-    const { execSync } = await import('child_process');
-    const { mkdtemp, mkdir } = await import('fs/promises');
-    const { join } = await import('path');
+    const { execSync } = await import('node:child_process');
+    const { mkdtemp, mkdir } = await import('node:fs/promises');
+    const { join } = await import('node:path');
     // const { tmpdir } = await import('os');
 
     // Create temporary directory
@@ -201,8 +201,8 @@ export class RepositoryManager {
     clonePath: string,
     config: RepositoryConfig
   ): Promise<RepositoryAnalysis> {
-    const { readdir, stat, readFile } = await import('fs/promises');
-    const { join, extname, relative } = await import('path');
+    const { readdir, stat, readFile } = await import('node:fs/promises');
+    const { join, extname, relative } = await import('node:path');
 
     const analysis: RepositoryAnalysis = {
       repositoryUrl: config.url,
@@ -547,8 +547,8 @@ export class RepositoryManager {
     transformations: TransformationResult[],
     documentation: any
   ): Promise<string> {
-    const { writeFile, mkdir } = await import('fs/promises');
-    const { join } = await import('path');
+    const { writeFile, mkdir } = await import('node:fs/promises');
+    const { join } = await import('node:path');
 
     const outputDir = './output/repositories';
     const repoName = analysis.repositoryUrl.split('/').pop()?.replace('.git', '') || 'repository';
@@ -655,7 +655,7 @@ export class RepositoryManager {
    */
   private async cleanup(clonePath: string): Promise<void> {
     try {
-      const { rm } = await import('fs/promises');
+      const { rm } = await import('node:fs/promises');
       await rm(clonePath, { recursive: true, force: true });
     } catch (error) {
       console.warn('Failed to cleanup temporary files:', error);

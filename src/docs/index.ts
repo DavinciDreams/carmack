@@ -146,8 +146,8 @@ export class DocumentationSystem {
       throw new Error('No output path specified');
     }
 
-    const { writeFile, mkdir } = await import('fs/promises');
-    const { dirname } = await import('path');
+    const { writeFile, mkdir } = await import('node:fs/promises');
+    const { dirname } = await import('node:path');
 
     // Ensure directory exists
     await mkdir(dirname(result.outputPath), { recursive: true });

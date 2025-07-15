@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
-import { existsSync, unlinkSync, writeFileSync } from 'fs';
-import { join } from 'path';
+import { existsSync, unlinkSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { createActor } from 'xstate';
-import type { PipelineRequest, ProductionConfig } from '../../src/pipeline/production-pipeline';
+import type { PipelineRequest } from '../../src/pipeline/production-pipeline';
 import {
   defaultProductionConfig,
   productionPipelineActor,
@@ -103,9 +103,9 @@ export { add };
       if (result) {
         expect(result.success).toBe(false);
         expect(result.errors).toBeDefined();
-        expect(result.errors!.length).toBeGreaterThan(0);
-        expect(result.errors![0].stage).toBe('initialization');
-        expect(result.errors![0].severity).toBe('critical');
+        expect(result.errors?.length).toBeGreaterThan(0);
+        expect(result.errors?.[0].stage).toBe('initialization');
+        expect(result.errors?.[0].severity).toBe('critical');
       }
     });
 
@@ -602,9 +602,9 @@ export { add };
       if (result) {
         expect(result.success).toBe(false);
         expect(result.errors).toBeDefined();
-        expect(result.errors!.length).toBeGreaterThan(0);
+        expect(result.errors?.length).toBeGreaterThan(0);
 
-        const error = result.errors![0];
+        const error = result.errors?.[0];
         expect(error.message).toBeDefined();
         expect(error.stage).toBeDefined();
         expect(['critical', 'warning', 'info', 'error']).toContain(error.severity);

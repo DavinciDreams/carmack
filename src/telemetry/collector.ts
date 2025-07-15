@@ -3,9 +3,9 @@
  * Provides high-performance, low-overhead metrics collection with privacy compliance
  */
 
-import { createHash, randomUUID } from 'crypto';
-import { EventEmitter } from 'events';
-import { performance } from 'perf_hooks';
+import { createHash, randomUUID } from 'node:crypto';
+import { EventEmitter } from 'node:events';
+import { performance } from 'node:perf_hooks';
 import type {
   CacheEfficiencyMetric,
   ErrorRecoveryMetric,
@@ -336,14 +336,21 @@ export class TelemetryCollector extends EventEmitter {
       const memoryGrowthRate =
         memoryTimeline.length > 1
           ? (() => {
-              const timeDiff = memoryTimeline[memoryTimeline.length - 1]!.timestamp - memoryTimeline[0]!.timestamp;
-              const memoryDiff = memoryTimeline[memoryTimeline.length - 1]!.rss - memoryTimeline[0]!.rss;
-              
+              const lastEntry = memoryTimeline[memoryTimeline.length - 1];
+              const firstEntry = memoryTimeline[0];
+
+              if (!lastEntry || !firstEntry) {
+                return 0;
+              }
+
+              const timeDiff = lastEntry.timestamp - firstEntry.timestamp;
+              const memoryDiff = lastEntry.rss - firstEntry.rss;
+
               // Prevent division by zero and ensure valid number
               if (timeDiff <= 0 || !Number.isFinite(timeDiff) || !Number.isFinite(memoryDiff)) {
                 return 0;
               }
-              
+
               const rate = (memoryDiff / timeDiff) * 1000;
               return Number.isFinite(rate) ? rate : 0;
             })()
@@ -477,7 +484,7 @@ export class TelemetryCollector extends EventEmitter {
         'template';
 
       const modeSwitches = actions.reduce((count, action, i) => {
-        if (i > 0 && actions[i - 1] && action.mode !== actions[i - 1]!.mode) {
+        if (i > 0 && actions[i - 1] && action.mode !== actions[i - 1]?.mode) {
           return count + 1;
         }
         return count;

@@ -139,10 +139,12 @@ const TransformationOutputSchema = z.object({
   filesModified: z.array(z.string()),
   transformationsApplied: z.number(),
   mode: z.enum(['template', 'ast', 'llm']),
-  performance: z.object({
-    duration: z.number(),
-    transformationTime: z.number(),
-  }).optional(),
+  performance: z
+    .object({
+      duration: z.number(),
+      transformationTime: z.number(),
+    })
+    .optional(),
   errors: z.array(z.any()),
   success: z.boolean(),
   complexity: z.number().optional(), // Add complexity property for assertions
@@ -369,7 +371,7 @@ async function executeTransformation(input: TestCase['input']): Promise<Transfor
 
     // Simulate realistic transformation based on patterns
     let transformedCode = input.code;
-    
+
     // Apply mock transformations based on patterns
     if (input.patterns && input.patterns.length > 0) {
       for (const pattern of input.patterns) {
@@ -385,7 +387,7 @@ async function executeTransformation(input: TestCase['input']): Promise<Transfor
             break;
           default:
             // For unknown patterns, make a small change to show transformation occurred
-            transformedCode = transformedCode + ' // transformed';
+            transformedCode = `${transformedCode} // transformed`;
             break;
         }
       }
@@ -415,7 +417,10 @@ async function executeTransformation(input: TestCase['input']): Promise<Transfor
 /**
  * Run assertions against test results
  */
-async function runAssertions(testCase: TestCase, actualOutput: TransformationOutput): Promise<AssertionResult[]> {
+async function runAssertions(
+  testCase: TestCase,
+  actualOutput: TransformationOutput
+): Promise<AssertionResult[]> {
   const assertions = testCase.expected.assertions || [];
   const results: AssertionResult[] = [];
 
@@ -548,12 +553,14 @@ async function validateSyntax(code: string, language: string): Promise<boolean> 
       try {
         const ts = await import('typescript');
         const sourceFile = ts.createSourceFile('test.ts', code, ts.ScriptTarget.Latest, true);
-        
+
         // Check if the source file was created successfully
         return sourceFile !== undefined;
       } catch (_error) {
         // Fallback to basic validation - check for obvious syntax errors
-        return !code.includes('{{{') && !code.includes('invalid syntax') && !code.trim().endsWith('{');
+        return (
+          !code.includes('{{{') && !code.includes('invalid syntax') && !code.trim().endsWith('{')
+        );
       }
     }
     // For JavaScript, use a simple parse check

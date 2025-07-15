@@ -743,7 +743,7 @@ function findDestructuringOpportunities(
   const groupedByObject = propertyAccesses.reduce(
     (acc, access) => {
       if (!acc[access.objName]) acc[access.objName] = [];
-      acc[access.objName]!.push(access);
+      acc[access.objName]?.push(access);
       return acc;
     },
     {} as Record<string, typeof propertyAccesses>

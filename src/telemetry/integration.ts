@@ -3,15 +3,14 @@
  * Provides comprehensive observability without impacting transformation performance
  */
 
-import { createHash } from 'crypto';
-import { performance } from 'perf_hooks';
+import { createHash } from 'node:crypto';
+import { performance } from 'node:perf_hooks';
 import { getTelemetryCollector } from './collector.js';
 import type {
   PipelineStages,
   QualityMetrics,
   TransformationMode,
   // CodeQualityDelta,
-
 } from './types.js';
 
 /**

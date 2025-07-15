@@ -1,12 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createActor } from 'xstate';
 import {
   BUILTIN_TEST_SUITES,
   generateTestCasesFromPatterns,
   llmTestingFrameworkActor,
-  type TestCase,
   type TestSuite,
 } from '../../src/actors/llm-testing-framework';
 
@@ -633,7 +632,7 @@ describe('LLM Testing Framework', () => {
       });
 
       // Check if report files were created
-      const files = await readFile(testDir).catch(() => null);
+      const _files = await readFile(testDir).catch(() => null);
       // Note: We can't easily test file creation in this context,
       // but the framework should generate reports in the specified directory
     });

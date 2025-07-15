@@ -118,7 +118,7 @@ if (oldVar == 'test') {
 
       expect(result.mode).toBe('llm');
       expect(result.errors).toBeDefined();
-      expect(result.errors!.length).toBeGreaterThan(0);
+      expect(result.errors?.length).toBeGreaterThan(0);
       expect(result.filesModified).toHaveLength(0);
     });
 
@@ -318,7 +318,7 @@ export { addUser, User };
 
       expect(result.mode).toBe('llm');
       expect(result.errors).toBeDefined();
-      expect(result.errors!.length).toBeGreaterThan(0);
+      expect(result.errors?.length).toBeGreaterThan(0);
 
       // Should still return original code
       const content = await readFile(testFile, 'utf-8');

@@ -141,7 +141,7 @@ class DeploymentValidator {
    * Perform comprehensive health checks
    */
   async performHealthChecks(): Promise<HealthCheckResult> {
-    const startTime = Date.now();
+    const _startTime = Date.now();
     const checks: HealthCheckResult['checks'] = [];
 
     // System health checks
@@ -250,7 +250,7 @@ class DeploymentValidator {
 
     try {
       // Check if git is available
-      const { execSync } = await import('child_process');
+      const { execSync } = await import('node:child_process');
       execSync('git --version', { stdio: 'pipe' });
 
       return {
@@ -259,7 +259,7 @@ class DeploymentValidator {
         message: 'External dependencies available',
         duration: Math.max(1, Date.now() - start),
       };
-    } catch (error) {
+    } catch (_error) {
       return {
         name: 'external-dependencies',
         status: 'warn',
@@ -276,7 +276,7 @@ class DeploymentValidator {
     const start = Date.now();
 
     try {
-      const { access, constants } = await import('fs/promises');
+      const { access, constants } = await import('node:fs/promises');
       await access('./temp', constants.F_OK);
 
       return {
@@ -285,7 +285,7 @@ class DeploymentValidator {
         message: 'File system access healthy',
         duration: Math.max(1, Date.now() - start),
       };
-    } catch (error) {
+    } catch (_error) {
       return {
         name: 'filesystem-access',
         status: 'warn',
@@ -619,10 +619,10 @@ describe('Deployment and Monitoring Validation System', () => {
       for (const expectedCheck of expectedChecks) {
         const check = healthResult.checks.find((c) => c.name === expectedCheck);
         expect(check).toBeDefined();
-        expect(['pass', 'warn', 'fail'].includes(check!.status)).toBe(true);
-        expect(check!.duration).toBeGreaterThan(0);
+        expect(['pass', 'warn', 'fail'].includes(check?.status)).toBe(true);
+        expect(check?.duration).toBeGreaterThan(0);
 
-        console.log(`   🔍 ${expectedCheck}: ${check!.status} (${check!.duration}ms)`);
+        console.log(`   🔍 ${expectedCheck}: ${check?.status} (${check?.duration}ms)`);
       }
 
       console.log('   ✅ Individual component checks validated');

@@ -81,6 +81,13 @@ src/
 # Install dependencies
 bun install
 
+# Set up environment configuration
+cp .env.example .env
+# Edit .env with your configuration
+
+# Validate environment setup
+bun run env:validate
+
 # Run type checking
 bun run type-check
 
@@ -93,6 +100,31 @@ bun run dev
 
 # Run all checks
 bun run all-checks
+```
+
+### Environment Configuration
+
+Carmack Coder uses a comprehensive environment configuration system with type-safe validation:
+
+```bash
+# Copy and configure environment
+cp .env.example .env
+
+# Validate your configuration
+bun run env:validate
+
+# Check specific settings
+bun run env:check
+```
+
+**Key Configuration Areas:**
+- **LLM Providers**: OpenAI, Anthropic, Local (Ollama), or Mock
+- **Repository Settings**: Git integration and workspace configuration
+- **Quality Gates**: TypeScript, Dafny verification, testing requirements
+- **Performance Limits**: Memory, CPU, and timeout thresholds
+- **Telemetry**: Monitoring, metrics, and observability settings
+
+**[📖 Complete Environment Setup Guide →](./docs/ENVIRONMENT-SETUP.md)**
 ```
 
 ## 🧪 Testing Infrastructure

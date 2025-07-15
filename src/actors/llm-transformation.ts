@@ -431,7 +431,6 @@ Respond in this JSON format:
         return await this.callAnthropic(prompt);
       case 'local':
         return await this.callLocalModel(prompt);
-      case 'mock':
       default:
         return await this.callMockAPI(prompt);
     }
@@ -559,13 +558,13 @@ Respond in this JSON format:
     const appliedTransformations: string[] = [];
 
     // Mock transformation: var to const/let
-    if (transformedCode && transformedCode.includes('var ')) {
+    if (transformedCode?.includes('var ')) {
       transformedCode = transformedCode.replace(/\bvar\s+(\w+)/g, 'const $1');
       appliedTransformations.push('var-to-const');
     }
 
     // Mock transformation: == to ===
-    if (transformedCode && transformedCode.includes('==') && !transformedCode.includes('===')) {
+    if (transformedCode?.includes('==') && !transformedCode.includes('===')) {
       transformedCode = transformedCode.replace(/([^=!])==([^=])/g, '$1===$2');
       appliedTransformations.push('strict-equality');
     }
@@ -589,13 +588,13 @@ Respond in this JSON format:
     } catch {
       // If not JSON, try to extract JSON from markdown code blocks
       const jsonMatch = response.match(/```json\n([\s\S]*?)\n```/);
-      if (jsonMatch && jsonMatch[1]) {
+      if (jsonMatch?.[1]) {
         return JSON.parse(jsonMatch[1]);
       }
 
       // If still no JSON, try to extract from any code block
       const codeMatch = response.match(/```[\w]*\n([\s\S]*?)\n```/);
-      if (codeMatch && codeMatch[1]) {
+      if (codeMatch?.[1]) {
         return JSON.parse(codeMatch[1]);
       }
 
@@ -774,7 +773,7 @@ Respond in this JSON format:
 
   private generateCacheKey(content: string, prompt: string): string {
     // Simple hash function for caching
-    const combined = content + '|' + prompt;
+    const combined = `${content}|${prompt}`;
     let hash = 0;
     for (let i = 0; i < combined.length; i++) {
       const char = combined.charCodeAt(i);

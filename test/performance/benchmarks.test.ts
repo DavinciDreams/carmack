@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
-import { mkdir, readFile, rm, writeFile } from 'fs/promises';
-import { tmpdir } from 'os';
-import { join } from 'path';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { createActor, waitFor } from 'xstate';
 import { analysisActor } from '../../src/actors/analysis.js';
 import { transformationActor } from '../../src/actors/transformation.js';
@@ -23,7 +23,7 @@ describe('Performance Benchmarks', () => {
     process.chdir(originalCwd);
     try {
       await rm(testDir, { recursive: true, force: true });
-    } catch (error) {
+    } catch (_error) {
       // Ignore cleanup errors
     }
   });
@@ -435,7 +435,7 @@ describe('Performance Benchmarks', () => {
 
         console.log(`   Small file validation: ${duration}ms`);
         console.log(`   Valid: ${validation.isValid}`);
-      } catch (error) {
+      } catch (_error) {
         const duration = Date.now() - startTime;
         console.log(`   Small file validation (timeout/error): ${duration}ms`);
         // Validation might timeout due to external tool dependencies
@@ -469,7 +469,7 @@ describe('Performance Benchmarks', () => {
 
         console.log(`   Medium file validation: ${duration}ms`);
         console.log(`   Valid: ${validation.isValid}`);
-      } catch (error) {
+      } catch (_error) {
         const duration = Date.now() - startTime;
         console.log(`   Medium file validation (timeout/error): ${duration}ms`);
         // Validation might timeout due to external tool dependencies

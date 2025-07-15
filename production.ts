@@ -21,7 +21,6 @@ import { carmackCoderMachine } from './src/machine.ts';
 
 //import { ProductionConfigSchema } from './production.config.ts';
 
-
 // CLI Schema
 const CLIArgsSchema = z
   .object({
@@ -83,7 +82,6 @@ SAFETY FEATURES:
   - Telemetry and performance monitoring
   - Customizable workspace directory
   - Supports multiple repository types (GitHub, GitLab, etc.)`;
-
 
 class ProductionError extends Error {
   constructor(
@@ -310,7 +308,7 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
       const transformation = state.context.currentTransformation;
       if (transformation) {
         console.log(`📊 Files modified: ${transformation.filesModified.length}`);
-        console.log(`⏱️  Duration: ${transformation.endTime! - transformation.startTime}ms`);
+        console.log(`⏱️  Duration: ${(transformation.endTime ?? Date.now()) - transformation.startTime}ms`);
         console.log(`🧮 Complexity: ${JSON.stringify(transformation.complexity, null, 2)}`);
       }
     } else if (state.matches('failed')) {
@@ -323,36 +321,51 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
   transformationActor.start();
 
   // Wait for completion
-  return new Promise(async (resolve, reject) => {
-  // Load transformation patterns
-  const patterns = await loadPatterns('./patterns-consolidated.json');
-    console.log(`📋 Loaded ${patterns.length} transformation patterns for production`);
+  return new Promise<void>((resolve, reject) => {
+    // Load transformation patterns from patterns.json
+    import('./patterns.json')
+      .then((patternsModule) => {
+        const patterns = patternsModule.default?.patterns || [];
+        console.log(`📋 Loaded ${patterns.length} transformation patterns for production`);
 
-    transformationActor.subscribe((state) => {
-      if (state.matches('succeeded')) {
-        resolve();
-      } else if (state.matches('failed')) {
-        reject(
-          new ProductionError('Transformation failed', 'TRANSFORMATION_FAILED', {
-            state: state.value,
-            errors: state.context.currentTransformation?.errors,
-          })
-        );
-      }
-    });
+        transformationActor.subscribe((state) => {
+          if (state.matches('succeeded')) {
+            resolve();
+          } else if (state.matches('failed')) {
+            reject(
+              new ProductionError('Transformation failed', 'TRANSFORMATION_FAILED', {
+                state: state.value,
+                errors: state.context.currentTransformation?.errors,
+              })
+            );
+          }
+        });
 
-    // Send start event with discovered files
-    // biome-ignore lint/suspicious/noExplicitAny: Required for XState event type compatibility
-    transformationActor.send({
-      type: 'START_TRANSFORMATION',
-      request: {
-        targetFiles: eligibleFiles, // Use discovered files
-        transformationType: 'ast' as const,
-        patterns: patterns, // Use loaded patterns
-        maxComplexity: config.transformation.maxComplexityThreshold,
-        dryRun: args['dry-run'] || config.transformation.dryRunFirst,
-      },
-    } as any);
+        // Send start event with discovered files
+        transformationActor.send({
+          type: 'START_TRANSFORMATION',
+          request: {
+            targetFiles: eligibleFiles, // Use discovered files
+            transformationType: 'ast' as const,
+            patterns: patterns, // Use loaded patterns
+            maxComplexity: config.transformation.maxComplexityThreshold,
+            dryRun: args['dry-run'] || config.transformation.dryRunFirst,
+          },
+        });
+      })
+      .catch((error) => {
+        console.warn('Failed to load patterns, using empty array:', error);
+        transformationActor.send({
+          type: 'START_TRANSFORMATION',
+          request: {
+            targetFiles: eligibleFiles,
+            transformationType: 'ast' as const,
+            patterns: [],
+            maxComplexity: config.transformation.maxComplexityThreshold,
+            dryRun: args['dry-run'] || config.transformation.dryRunFirst,
+          },
+        });
+      });
   });
 }
 
@@ -398,7 +411,6 @@ async function main(): Promise<void> {
     if (process.env.CARMACK_REPOSITORY_URL || process.env.REPOSITORY_URL) {
       config.repository.url =
         process.env.CARMACK_REPOSITORY_URL || process.env.REPOSITORY_URL || config.repository.url;
-
     }
     if (args.repository) {
       config.repository.url = args.repository;

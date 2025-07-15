@@ -120,7 +120,7 @@ export class LLMAnnotationAnalyzer {
    * Analyze code context and dependencies
    */
   private async analyzeCodeContext(request: AnnotationRequest): Promise<CodeContext> {
-    const { readFile } = await import('fs/promises');
+    const { readFile } = await import('node:fs/promises');
     // const { extname } = await import('path');
 
     // Analyze primary files to understand context
@@ -252,25 +252,27 @@ export class LLMAnnotationAnalyzer {
           if (!this.astAnalyzer) {
             await this.initializeAnalyzer();
           }
-          const matches = await this.astAnalyzer!.findPatternUsage(patternDef.astPattern, filePath);
+          const matches = await this.astAnalyzer?.findPatternUsage(patternDef.astPattern, filePath);
 
-          for (const match of matches) {
-            patterns.push({
-              id: `${patternDef.id}-${patterns.length}`,
-              type: patternDef.type,
-              name: patternDef.name,
-              description: `${patternDef.name} detected in ${filePath}`,
-              location: {
-                file: filePath,
-                startLine: match.startLine,
-                endLine: match.endLine,
-                context: match.content || '',
-              },
-              confidence: 0.8, // Base confidence
-              impact: 'medium',
-              category: patternDef.category,
-              tags: [patternDef.category, patternDef.type],
-            });
+          if (matches) {
+            for (const match of matches) {
+              patterns.push({
+                id: `${patternDef.id}-${patterns.length}`,
+                type: patternDef.type,
+                name: patternDef.name,
+                description: `${patternDef.name} detected in ${filePath}`,
+                location: {
+                  file: filePath,
+                  startLine: match.startLine,
+                  endLine: match.endLine,
+                  context: match.content || '',
+                },
+                confidence: 0.8, // Base confidence
+                impact: 'medium',
+                category: patternDef.category,
+                tags: [patternDef.category, patternDef.type],
+              });
+            }
           }
         } catch (error) {
           console.warn(`Failed to detect pattern ${patternDef.id} in ${filePath}:`, error);
@@ -295,10 +297,13 @@ export class LLMAnnotationAnalyzer {
         if (!this.astAnalyzer) {
           await this.initializeAnalyzer();
         }
-        const moduleDoc = await this.astAnalyzer!.analyzeFile(filePath);
+        const moduleDoc = await this.astAnalyzer?.analyzeFile(filePath);
 
         // Create architectural annotation for each significant component
-        if (moduleDoc.exports.functions.length > 0 || moduleDoc.exports.classes.length > 0) {
+        if (
+          moduleDoc &&
+          (moduleDoc.exports.functions.length > 0 || moduleDoc.exports.classes.length > 0)
+        ) {
           const componentType =
             moduleDoc.exports.classes.length > 0
               ? 'class'
@@ -605,8 +610,8 @@ export class LLMAnnotationAnalyzer {
     annotation: LLMAnnotation,
     request: AnnotationRequest
   ): Promise<string> {
-    const { writeFile, mkdir } = await import('fs/promises');
-    const { join } = await import('path');
+    const { writeFile, mkdir } = await import('node:fs/promises');
+    const { join } = await import('node:path');
 
     const outputDir = request.targetDirectory || './output/annotations';
     await mkdir(outputDir, { recursive: true });
