@@ -1,6 +1,6 @@
 /**
  * Environment Configuration Module for Carmack Coder
- * 
+ *
  * Provides type-safe environment variable loading and validation using Zod schemas.
  * Follows the project's principles of runtime validation and formal correctness.
  */
@@ -42,20 +42,20 @@ const RepositoryEnvironmentSchema = z.object({
 const LLMEnvironmentSchema = z.object({
   LLM_PROVIDER: z.enum(['openai', 'anthropic', 'local', 'mock']).default('mock'),
   LLM_MODEL: z.string().default('gpt-4'),
-  
+
   // OpenAI
   OPENAI_API_KEY: z.string().optional(),
   OPENAI_BASE_URL: z.string().url().default('https://api.openai.com/v1'),
   OPENAI_ORGANIZATION: z.string().optional(),
-  
+
   // Anthropic
   ANTHROPIC_API_KEY: z.string().optional(),
   ANTHROPIC_BASE_URL: z.string().url().default('https://api.anthropic.com'),
-  
+
   // Local LLM
   LOCAL_LLM_URL: z.string().url().default('http://localhost:11434'),
   LOCAL_LLM_MODEL: z.string().default('codellama:7b'),
-  
+
   // LLM Request Settings
   LLM_TEMPERATURE: z.coerce.number().min(0).max(2).default(0.1),
   LLM_MAX_TOKENS: z.coerce.number().positive().default(4000),
@@ -221,8 +221,7 @@ const FeatureFlagsEnvironmentSchema = z.object({
 /**
  * Complete environment configuration schema
  */
-export const EnvironmentSchema = CoreEnvironmentSchema
-  .merge(RepositoryEnvironmentSchema)
+export const EnvironmentSchema = CoreEnvironmentSchema.merge(RepositoryEnvironmentSchema)
   .merge(LLMEnvironmentSchema)
   .merge(TransformationEnvironmentSchema)
   .merge(QualityEnvironmentSchema)
@@ -249,10 +248,10 @@ export function loadEnvironmentConfig(): EnvironmentConfig {
   try {
     const rawEnv = process.env;
     const validatedEnv = EnvironmentSchema.parse(rawEnv);
-    
+
     // Post-validation processing
     const processedEnv = processEnvironmentConfig(validatedEnv);
-    
+
     return processedEnv;
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -262,7 +261,7 @@ export function loadEnvironmentConfig(): EnvironmentConfig {
       });
       process.exit(1);
     }
-    
+
     console.error('❌ Failed to load environment configuration:', error);
     process.exit(1);
   }
@@ -277,40 +276,32 @@ function processEnvironmentConfig(env: EnvironmentConfig): EnvironmentConfig {
   if (!repositoryUrl && env.NODE_ENV === 'production') {
     throw new Error('CARMACK_REPOSITORY_URL or REPOSITORY_URL is required in production');
   }
-  
+
   // Resolve workspace directory precedence
   const workspace = env.WORKSPACE_DIR || env.CARMACK_WORKSPACE;
-  
+
   // Resolve log level precedence
   const logLevel = env.LOG_LEVEL || env.CARMACK_LOG_LEVEL;
-  
+
   // Parse transformation order
-  const transformationOrder = env.TRANSFORMATION_PREFERRED_ORDER
-    .split(',')
-    .map(s => s.trim())
-    .filter(s => ['template', 'ast', 'llm'].includes(s));
-  
+  const transformationOrder = env.TRANSFORMATION_PREFERRED_ORDER.split(',')
+    .map((s) => s.trim())
+    .filter((s) => ['template', 'ast', 'llm'].includes(s));
+
   // Parse allowed file extensions
-  const allowedExtensions = env.ALLOWED_FILE_EXTENSIONS
-    .split(',')
-    .map(s => s.trim())
-    .filter(s => s.startsWith('.'));
-  
+  const allowedExtensions = env.ALLOWED_FILE_EXTENSIONS.split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.startsWith('.'));
+
   // Parse CORS origins
-  const corsOrigins = env.CORS_ORIGINS
-    .split(',')
-    .map(s => s.trim());
-  
+  const corsOrigins = env.CORS_ORIGINS.split(',').map((s) => s.trim());
+
   // Parse allowed workspace paths
-  const allowedPaths = env.ALLOWED_WORKSPACE_PATHS
-    .split(',')
-    .map(s => s.trim());
-  
+  const allowedPaths = env.ALLOWED_WORKSPACE_PATHS.split(',').map((s) => s.trim());
+
   // Parse restricted file patterns
-  const restrictedPatterns = env.RESTRICTED_FILE_PATTERNS
-    .split(',')
-    .map(s => s.trim());
-  
+  const restrictedPatterns = env.RESTRICTED_FILE_PATTERNS.split(',').map((s) => s.trim());
+
   return {
     ...env,
     CARMACK_REPOSITORY_URL: repositoryUrl,
@@ -337,17 +328,19 @@ export function validateLLMConfig(env: EnvironmentConfig): void {
         throw new Error('OPENAI_API_KEY is required when using OpenAI provider in production');
       }
       break;
-    
+
     case 'anthropic':
       if (!env.ANTHROPIC_API_KEY && env.NODE_ENV === 'production') {
-        throw new Error('ANTHROPIC_API_KEY is required when using Anthropic provider in production');
+        throw new Error(
+          'ANTHROPIC_API_KEY is required when using Anthropic provider in production'
+        );
       }
       break;
-    
+
     case 'local':
       // Local LLM validation could include connectivity checks
       break;
-    
+
     case 'mock':
       if (env.NODE_ENV === 'production') {
         console.warn('⚠️ Using mock LLM provider in production environment');
@@ -368,14 +361,14 @@ export function getEnvironmentOverrides(env: EnvironmentConfig): Partial<Environ
         ENABLE_DAFNY_VERIFICATION: false,
         CARMACK_TELEMETRY_ENABLED: false,
       };
-    
+
     case 'staging':
       return {
         CARMACK_TELEMETRY_ENABLED: true,
         ENABLE_DAFNY_VERIFICATION: true,
         CARMACK_LOG_LEVEL: 'info',
       };
-    
+
     case 'production':
       return {
         CARMACK_TELEMETRY_ENABLED: true,
@@ -384,7 +377,7 @@ export function getEnvironmentOverrides(env: EnvironmentConfig): Partial<Environ
         ENABLE_BACKUPS: true,
         ENABLE_AUTO_ROLLBACK: true,
       };
-    
+
     default:
       return {};
   }
@@ -453,11 +446,20 @@ export function getLLMConfig() {
   return {
     provider: env.LLM_PROVIDER,
     model: env.LLM_MODEL,
-    apiKey: env.LLM_PROVIDER === 'openai' ? env.OPENAI_API_KEY : 
-            env.LLM_PROVIDER === 'anthropic' ? env.ANTHROPIC_API_KEY : undefined,
-    baseUrl: env.LLM_PROVIDER === 'openai' ? env.OPENAI_BASE_URL :
-             env.LLM_PROVIDER === 'anthropic' ? env.ANTHROPIC_BASE_URL :
-             env.LLM_PROVIDER === 'local' ? env.LOCAL_LLM_URL : undefined,
+    apiKey:
+      env.LLM_PROVIDER === 'openai'
+        ? env.OPENAI_API_KEY
+        : env.LLM_PROVIDER === 'anthropic'
+          ? env.ANTHROPIC_API_KEY
+          : undefined,
+    baseUrl:
+      env.LLM_PROVIDER === 'openai'
+        ? env.OPENAI_BASE_URL
+        : env.LLM_PROVIDER === 'anthropic'
+          ? env.ANTHROPIC_BASE_URL
+          : env.LLM_PROVIDER === 'local'
+            ? env.LOCAL_LLM_URL
+            : undefined,
     temperature: env.LLM_TEMPERATURE,
     maxTokens: env.LLM_MAX_TOKENS,
     timeout: env.LLM_TIMEOUT,

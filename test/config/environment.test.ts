@@ -1,18 +1,18 @@
 /**
  * Environment Configuration Tests
- * 
+ *
  * Tests for the environment configuration loading and validation system.
  */
 
 import { describe, expect, it, beforeEach, afterEach } from 'bun:test';
-import { 
-  loadEnvironmentConfig, 
-  validateLLMConfig, 
+import {
+  loadEnvironmentConfig,
+  validateLLMConfig,
   getLLMConfig,
   isDevelopment,
   isProduction,
   getLogLevel,
-  isTelemetryEnabled
+  isTelemetryEnabled,
 } from '../../src/config/environment.js';
 
 describe('Environment Configuration', () => {
@@ -32,9 +32,9 @@ describe('Environment Configuration', () => {
     it('should load configuration with defaults', () => {
       // Clear environment
       process.env = {};
-      
+
       const config = loadEnvironmentConfig();
-      
+
       expect(config.NODE_ENV).toBe('development');
       expect(config.LLM_PROVIDER).toBe('mock');
       expect(config.CARMACK_WORKSPACE).toBe('./workspace');
@@ -50,9 +50,9 @@ describe('Environment Configuration', () => {
         ENABLE_VALIDATION: 'false',
         CARMACK_TELEMETRY_ENABLED: 'false',
       };
-      
+
       const config = loadEnvironmentConfig();
-      
+
       expect(config.NODE_ENV).toBe('production');
       expect(config.LLM_PROVIDER).toBe('openai');
       expect(config.CARMACK_WORKSPACE).toBe('/custom/workspace');
@@ -67,9 +67,9 @@ describe('Environment Configuration', () => {
         MAX_FILES_PER_BATCH: '20',
         MIN_TEST_COVERAGE: '90',
       };
-      
+
       const config = loadEnvironmentConfig();
-      
+
       expect(config.LLM_TEMPERATURE).toBe(0.5);
       expect(config.LLM_MAX_TOKENS).toBe(8000);
       expect(config.MAX_FILES_PER_BATCH).toBe(20);
@@ -83,9 +83,9 @@ describe('Environment Configuration', () => {
         DEBUG_MODE: '1',
         VERBOSE_LOGGING: '0',
       };
-      
+
       const config = loadEnvironmentConfig();
-      
+
       expect(config.ENABLE_DAFNY_VERIFICATION).toBe(true);
       expect(config.TRANSFORMATION_FALLBACK_ENABLED).toBe(false);
       expect(config.DEBUG_MODE).toBe(true);
@@ -97,7 +97,7 @@ describe('Environment Configuration', () => {
     it('should pass validation for mock provider', () => {
       const config = loadEnvironmentConfig();
       config.LLM_PROVIDER = 'mock';
-      
+
       expect(() => validateLLMConfig(config)).not.toThrow();
     });
 
@@ -106,7 +106,7 @@ describe('Environment Configuration', () => {
       config.NODE_ENV = 'production';
       config.LLM_PROVIDER = 'openai';
       config.OPENAI_API_KEY = undefined;
-      
+
       expect(() => validateLLMConfig(config)).toThrow('OPENAI_API_KEY is required');
     });
 
@@ -115,7 +115,7 @@ describe('Environment Configuration', () => {
       config.NODE_ENV = 'production';
       config.LLM_PROVIDER = 'anthropic';
       config.ANTHROPIC_API_KEY = undefined;
-      
+
       expect(() => validateLLMConfig(config)).toThrow('ANTHROPIC_API_KEY is required');
     });
 
@@ -124,7 +124,7 @@ describe('Environment Configuration', () => {
       config.NODE_ENV = 'development';
       config.LLM_PROVIDER = 'openai';
       config.OPENAI_API_KEY = undefined;
-      
+
       expect(() => validateLLMConfig(config)).not.toThrow();
     });
   });
@@ -139,9 +139,9 @@ describe('Environment Configuration', () => {
         LLM_TEMPERATURE: '0.2',
         LLM_MAX_TOKENS: '2000',
       };
-      
+
       const llmConfig = getLLMConfig();
-      
+
       expect(llmConfig.provider).toBe('openai');
       expect(llmConfig.model).toBe('gpt-4');
       expect(llmConfig.apiKey).toBe('sk-test-key');
@@ -157,9 +157,9 @@ describe('Environment Configuration', () => {
         ANTHROPIC_API_KEY: 'sk-ant-test-key',
         ANTHROPIC_BASE_URL: 'https://api.anthropic.com',
       };
-      
+
       const llmConfig = getLLMConfig();
-      
+
       expect(llmConfig.provider).toBe('anthropic');
       expect(llmConfig.model).toBe('claude-3-sonnet-20240229');
       expect(llmConfig.apiKey).toBe('sk-ant-test-key');
@@ -172,9 +172,9 @@ describe('Environment Configuration', () => {
         LOCAL_LLM_URL: 'http://localhost:11434',
         LOCAL_LLM_MODEL: 'codellama:7b',
       };
-      
+
       const llmConfig = getLLMConfig();
-      
+
       expect(llmConfig.provider).toBe('local');
       expect(llmConfig.baseUrl).toBe('http://localhost:11434');
     });
@@ -196,7 +196,7 @@ describe('Environment Configuration', () => {
     it('should return correct log level', () => {
       process.env = { CARMACK_LOG_LEVEL: 'debug' };
       expect(getLogLevel()).toBe('debug');
-      
+
       process.env = { LOG_LEVEL: 'error', CARMACK_LOG_LEVEL: 'warn' };
       expect(getLogLevel()).toBe('warn'); // CARMACK_LOG_LEVEL takes precedence
     });
@@ -204,7 +204,7 @@ describe('Environment Configuration', () => {
     it('should detect telemetry status', () => {
       process.env = { CARMACK_TELEMETRY_ENABLED: 'true' };
       expect(isTelemetryEnabled()).toBe(true);
-      
+
       process.env = { CARMACK_TELEMETRY_ENABLED: 'false' };
       expect(isTelemetryEnabled()).toBe(false);
     });
@@ -213,31 +213,31 @@ describe('Environment Configuration', () => {
   describe('validation edge cases', () => {
     it('should handle invalid NODE_ENV gracefully', () => {
       process.env = { NODE_ENV: 'invalid' };
-      
+
       expect(() => loadEnvironmentConfig()).toThrow();
     });
 
     it('should handle invalid numeric values', () => {
       process.env = { LLM_TEMPERATURE: 'invalid' };
-      
+
       expect(() => loadEnvironmentConfig()).toThrow();
     });
 
     it('should handle invalid boolean values', () => {
       process.env = { ENABLE_VALIDATION: 'maybe' };
-      
+
       expect(() => loadEnvironmentConfig()).toThrow();
     });
 
     it('should handle invalid URL values', () => {
       process.env = { OPENAI_BASE_URL: 'not-a-url' };
-      
+
       expect(() => loadEnvironmentConfig()).toThrow();
     });
 
     it('should handle invalid email values', () => {
       process.env = { GIT_USER_EMAIL: 'not-an-email' };
-      
+
       expect(() => loadEnvironmentConfig()).toThrow();
     });
   });
@@ -248,7 +248,7 @@ describe('Environment Configuration', () => {
         REPOSITORY_URL: 'https://github.com/old/repo',
         CARMACK_REPOSITORY_URL: 'https://github.com/new/repo',
       };
-      
+
       const config = loadEnvironmentConfig();
       expect(config.CARMACK_REPOSITORY_URL).toBe('https://github.com/new/repo');
     });
@@ -258,7 +258,7 @@ describe('Environment Configuration', () => {
         CARMACK_WORKSPACE: './old-workspace',
         WORKSPACE_DIR: './new-workspace',
       };
-      
+
       const config = loadEnvironmentConfig();
       expect(config.CARMACK_WORKSPACE).toBe('./new-workspace');
     });
@@ -268,7 +268,7 @@ describe('Environment Configuration', () => {
         CARMACK_LOG_LEVEL: 'info',
         LOG_LEVEL: 'debug',
       };
-      
+
       const config = loadEnvironmentConfig();
       expect(config.CARMACK_LOG_LEVEL).toBe('debug');
     });
