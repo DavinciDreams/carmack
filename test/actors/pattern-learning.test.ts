@@ -11,17 +11,18 @@ import {
 
 describe('Pattern Learning System', () => {
   const testDir = './test-pattern-data';
-  const dataDir = './data';
+  const testDataDir = './test-pattern-data/data';
 
   beforeEach(async () => {
     await mkdir(testDir, { recursive: true });
-    await mkdir(dataDir, { recursive: true });
+    await mkdir(testDataDir, { recursive: true });
   });
 
   afterEach(async () => {
     try {
-      await unlink(join(dataDir, 'pattern-effectiveness.json'));
-      await unlink(join(dataDir, 'discovered-patterns.json'));
+      // Only clean up test data files, not the main data directory
+      await unlink(join(testDataDir, 'pattern-effectiveness.json'));
+      await unlink(join(testDataDir, 'discovered-patterns.json'));
     } catch {
       // Files might not exist
     }
@@ -29,7 +30,7 @@ describe('Pattern Learning System', () => {
 
   describe('PatternLearner Class', () => {
     test('should create pattern learner with default configuration', () => {
-      const learner = new PatternLearner();
+      const learner = new PatternLearner(testDataDir);
       expect(learner).toBeDefined();
     });
 
@@ -39,7 +40,7 @@ describe('Pattern Learning System', () => {
     });
 
     test('should learn from successful transformation', async () => {
-      const learner = new PatternLearner();
+      const learner = new PatternLearner(testDataDir);
 
       const input: PatternLearningInput = {
         operation: 'learn',
@@ -88,7 +89,7 @@ describe('Pattern Learning System', () => {
     });
 
     test('should learn from failed transformation', async () => {
-      const learner = new PatternLearner();
+      const learner = new PatternLearner(testDataDir);
 
       const input: PatternLearningInput = {
         operation: 'learn',
@@ -128,7 +129,7 @@ describe('Pattern Learning System', () => {
     });
 
     test('should discover new patterns', async () => {
-      const learner = new PatternLearner();
+      const learner = new PatternLearner(testDataDir);
 
       const input: PatternLearningInput = {
         operation: 'discover',
@@ -149,7 +150,7 @@ describe('Pattern Learning System', () => {
     });
 
     test('should optimize existing patterns', async () => {
-      const learner = new PatternLearner();
+      const learner = new PatternLearner(testDataDir);
 
       // First, simulate some pattern usage to build effectiveness data
       await learner.processLearningRequest({
@@ -203,7 +204,7 @@ describe('Pattern Learning System', () => {
     });
 
     test('should evaluate pattern effectiveness', async () => {
-      const learner = new PatternLearner();
+      const learner = new PatternLearner(testDataDir);
 
       const input: PatternLearningInput = {
         operation: 'evaluate',
@@ -230,7 +231,7 @@ describe('Pattern Learning System', () => {
     });
 
     test('should handle missing transformation data gracefully', async () => {
-      const learner = new PatternLearner();
+      const learner = new PatternLearner(testDataDir);
 
       const input: PatternLearningInput = {
         operation: 'learn',
@@ -246,7 +247,7 @@ describe('Pattern Learning System', () => {
     });
 
     test('should handle unknown operation gracefully', async () => {
-      const learner = new PatternLearner();
+      const learner = new PatternLearner(testDataDir);
 
       const input = {
         operation: 'unknown-operation',
@@ -261,7 +262,7 @@ describe('Pattern Learning System', () => {
     });
 
     test('should persist and load learning data', async () => {
-      const learner1 = new PatternLearner();
+      const learner1 = new PatternLearner(testDataDir);
 
       // Generate some learning data
       await learner1.processLearningRequest({
@@ -292,7 +293,7 @@ describe('Pattern Learning System', () => {
       });
 
       // Create a new learner instance (should load persisted data)
-      const learner2 = new PatternLearner();
+      const learner2 = new PatternLearner(testDataDir);
 
       const result = await learner2.processLearningRequest({
         operation: 'evaluate',
@@ -353,7 +354,7 @@ describe('Pattern Learning System', () => {
 
   describe('Pattern Discovery', () => {
     test('should discover patterns from transformation history', async () => {
-      const learner = new PatternLearner();
+      const learner = new PatternLearner(testDataDir);
 
       // Simulate multiple successful transformations
       for (let i = 0; i < 3; i++) {
@@ -394,7 +395,7 @@ describe('Pattern Learning System', () => {
     });
 
     test('should analyze codebase context for insights', async () => {
-      const learner = new PatternLearner();
+      const learner = new PatternLearner(testDataDir);
 
       const input: PatternLearningInput = {
         operation: 'learn',
@@ -429,7 +430,7 @@ describe('Pattern Learning System', () => {
 
   describe('Pattern Lifecycle Management', () => {
     test('should promote experimental patterns to stable', async () => {
-      const learner = new PatternLearner();
+      const learner = new PatternLearner(testDataDir);
 
       // Simulate many successful uses of an experimental pattern
       for (let i = 0; i < 15; i++) {
@@ -482,7 +483,7 @@ describe('Pattern Learning System', () => {
     });
 
     test('should deprecate consistently failing patterns', async () => {
-      const learner = new PatternLearner();
+      const learner = new PatternLearner(testDataDir);
 
       // Simulate many failed uses of a pattern
       for (let i = 0; i < 15; i++) {
@@ -536,7 +537,7 @@ describe('Pattern Learning System', () => {
 
   describe('Performance and Metrics', () => {
     test('should track learning performance metrics', async () => {
-      const learner = new PatternLearner();
+      const learner = new PatternLearner(testDataDir);
 
       const startTime = Date.now();
 
@@ -562,7 +563,7 @@ describe('Pattern Learning System', () => {
     });
 
     test('should provide meaningful insights and recommendations', async () => {
-      const learner = new PatternLearner();
+      const learner = new PatternLearner(testDataDir);
 
       const result = await learner.processLearningRequest({
         operation: 'learn',
