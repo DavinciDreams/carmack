@@ -12,12 +12,12 @@ import { createTransformationTelemetry } from '../src/telemetry/integration.js';
 /**
  * Test helper for generating realistic code samples
  */
-class CodeSampleGenerator {
-  /**
-   * Generate small file sample (<100 lines)
-   */
-  static generateSmallFile(): string {
-    return `
+
+/**
+ * Generate small file sample (<100 lines)
+ */
+function generateSmallFile(): string {
+  return `
 // Small TypeScript file for testing
 function calculateSum(a: number, b: number): number {
   if (a < 0 || b < 0) {
@@ -29,15 +29,15 @@ function calculateSum(a: number, b: number): number {
 const result = calculateSum(5, 10);
 console.log('Result:', result);
 `;
-  }
+}
 
-  /**
-   * Generate medium file sample (100-1000 lines)
-   */
-  static generateMediumFile(): string {
-    const baseCode = CodeSampleGenerator.generateSmallFile();
-    const functionTemplate = `
-function processData${Math.floor(Math.random() * 1000)}(input: any[]): any[] {
+/**
+ * Generate medium file sample (100-1000 lines)
+ */
+function generateMediumFile(): string {
+  const baseCode = generateSmallFile();
+  const functionTemplate = `
+function processData${Math.floor(Math.random() * 1000)}(input: unknown[]): unknown[] {
   const result = [];
   for (let i = 0; i < input.length; i++) {
     if (input[i] && typeof input[i] === 'object') {
@@ -52,29 +52,29 @@ function processData${Math.floor(Math.random() * 1000)}(input: any[]): any[] {
 }
 `;
 
-    // Generate 20-30 similar functions to reach medium size
-    let mediumCode = baseCode;
-    for (let i = 0; i < 25; i++) {
-      mediumCode += functionTemplate;
-    }
-
-    return mediumCode;
+  // Generate 20-30 similar functions to reach medium size
+  let mediumCode = baseCode;
+  for (let i = 0; i < 25; i++) {
+    mediumCode += functionTemplate;
   }
 
-  /**
-   * Generate large file sample (>1000 lines)
-   */
-  static generateLargeFile(): string {
-    const mediumCode = CodeSampleGenerator.generateMediumFile();
-    const classTemplate = `
+  return mediumCode;
+}
+
+/**
+ * Generate large file sample (>1000 lines)
+ */
+function generateLargeFile(): string {
+  const mediumCode = generateMediumFile();
+  const classTemplate = `
 class DataProcessor${Math.floor(Math.random() * 1000)} {
-  private data: any[] = [];
+  private data: unknown[] = [];
   
-  constructor(initialData: any[]) {
+  constructor(initialData: unknown[]) {
     this.data = initialData;
   }
   
-  process(): any[] {
+  process(): unknown[] {
     return this.data.map(item => {
       if (typeof item === 'string') {
         return item.toUpperCase();
@@ -86,30 +86,30 @@ class DataProcessor${Math.floor(Math.random() * 1000)} {
     });
   }
   
-  filter(predicate: (item: any) => boolean): any[] {
+  filter(predicate: (item: unknown) => boolean): unknown[] {
     return this.data.filter(predicate);
   }
   
-  sort(compareFn?: (a: any, b: any) => number): any[] {
+  sort(compareFn?: (a: unknown, b: unknown) => number): unknown[] {
     return [...this.data].sort(compareFn);
   }
 }
 `;
 
-    // Generate multiple classes to reach large size
-    let largeCode = mediumCode;
-    for (let i = 0; i < 15; i++) {
-      largeCode += classTemplate;
-    }
-
-    return largeCode;
+  // Generate multiple classes to reach large size
+  let largeCode = mediumCode;
+  for (let i = 0; i < 15; i++) {
+    largeCode += classTemplate;
   }
 
-  /**
-   * Generate code with intentional errors for error testing
-   */
-  static generateErrorProneCode(): string {
-    return `
+  return largeCode;
+}
+
+/**
+ * Generate code with intentional errors for error testing
+ */
+function generateErrorProneCode(): string {
+  return `
 // Code with various syntax and semantic errors
 function brokenFunction() {
   const unclosedString = "this string is not closed;
@@ -129,126 +129,143 @@ class BrokenClass {
     return this.nonExistentProperty;
   
 `;
-  }
+}
 
-  /**
-   * Generate code optimized for specific pattern types
-   */
-  static generatePatternTargetCode(patterns: string[]): string {
-    let code = '// Code targeting specific patterns\n';
+/**
+ * Generate code optimized for specific pattern types
+ */
+function generatePatternTargetCode(patterns: string[]): string {
+  let code = '// Code targeting specific patterns\n';
 
-    if (patterns.includes('var-to-const')) {
-      code += `
+  if (patterns.includes('var-to-const')) {
+    code += `
 var counter = 0;
 var userName = 'john';
 var isActive = true;
 `;
-    }
+  }
 
-    if (patterns.includes('strict-equality')) {
-      code += `
+  if (patterns.includes('strict-equality')) {
+    code += `
 if (value == null) { return false; }
 if (count != 0) { processData(); }
 `;
-    }
+  }
 
-    if (patterns.includes('arrow-functions')) {
-      code += `
+  if (patterns.includes('arrow-functions')) {
+    code += `
 const double = (x) => { return x * 2; };
 const greet = (name) => { return 'Hello ' + name; };
 `;
-    }
+  }
 
-    if (patterns.includes('object-shorthand')) {
-      code += `
+  if (patterns.includes('object-shorthand')) {
+    code += `
 const name = 'John';
 const age = 30;
 const user = { name: name, age: age };
 `;
-    }
-
-    return code;
   }
+
+  return code;
 }
 
 /**
  * Telemetry validation helpers
  */
-class TelemetryValidator {
-  /**
-   * Validate telemetry event structure
-   */
-  static validateEventStructure(event: any, expectedType: string): boolean {
-    return (
-      event &&
-      event.id === expectedType &&
-      typeof event.eventId === 'string' &&
-      typeof event.timestamp === 'number' &&
-      typeof event.sessionId === 'string' &&
-      typeof event.version === 'string'
-    );
+
+interface TelemetryEvent {
+  id: string;
+  eventId: string;
+  timestamp: number;
+  sessionId: string;
+  version: string;
+}
+
+interface PerformanceMetrics {
+  overhead: number;
+  p99: number;
+  avg: number;
+}
+
+interface MemoryTimelineEntry {
+  rss: number;
+}
+
+/**
+ * Validate telemetry event structure
+ */
+function validateEventStructure(event: unknown, expectedType: string): boolean {
+  const typedEvent = event as TelemetryEvent;
+  return (
+    typedEvent &&
+    typedEvent.id === expectedType &&
+    typeof typedEvent.eventId === 'string' &&
+    typeof typedEvent.timestamp === 'number' &&
+    typeof typedEvent.sessionId === 'string' &&
+    typeof typedEvent.version === 'string'
+  );
+}
+
+/**
+ * Validate performance metrics within acceptable bounds
+ */
+function validatePerformanceMetrics(metrics: PerformanceMetrics): {
+  valid: boolean;
+  issues: string[];
+} {
+  const issues: string[] = [];
+
+  if (metrics.overhead > 10) {
+    issues.push(`Telemetry overhead too high: ${metrics.overhead}%`);
   }
 
-  /**
-   * Validate performance metrics within acceptable bounds
-   */
-  static validatePerformanceMetrics(metrics: any): {
-    valid: boolean;
-    issues: string[];
-  } {
-    const issues: string[] = [];
-
-    if (metrics.overhead > 10) {
-      issues.push(`Telemetry overhead too high: ${metrics.overhead}%`);
-    }
-
-    if (metrics.p99 > 100) {
-      issues.push(`P99 latency too high: ${metrics.p99}ms`);
-    }
-
-    if (metrics.avg > 50) {
-      issues.push(`Average latency too high: ${metrics.avg}ms`);
-    }
-
-    return {
-      valid: issues.length === 0,
-      issues,
-    };
+  if (metrics.p99 > 100) {
+    issues.push(`P99 latency too high: ${metrics.p99}ms`);
   }
 
-  /**
-   * Validate memory usage patterns
-   */
-  static validateMemoryUsage(timeline: any[]): {
-    valid: boolean;
-    issues: string[];
-  } {
-    const issues: string[] = [];
-
-    if (timeline.length === 0) {
-      issues.push('Empty memory timeline');
-      return { valid: false, issues };
-    }
-
-    const memoryGrowth = timeline[timeline.length - 1].rss - timeline[0].rss;
-    const growthRate = memoryGrowth / timeline.length;
-
-    if (growthRate > 1024 * 1024) {
-      // > 1MB per sample
-      issues.push(`Memory growth rate too high: ${growthRate} bytes/sample`);
-    }
-
-    const maxMemory = Math.max(...timeline.map((t) => t.rss));
-    if (maxMemory > 500 * 1024 * 1024) {
-      // > 500MB
-      issues.push(`Peak memory usage too high: ${maxMemory} bytes`);
-    }
-
-    return {
-      valid: issues.length === 0,
-      issues,
-    };
+  if (metrics.avg > 50) {
+    issues.push(`Average latency too high: ${metrics.avg}ms`);
   }
+
+  return {
+    valid: issues.length === 0,
+    issues,
+  };
+}
+
+/**
+ * Validate memory usage patterns
+ */
+function validateMemoryUsage(timeline: MemoryTimelineEntry[]): {
+  valid: boolean;
+  issues: string[];
+} {
+  const issues: string[] = [];
+
+  if (timeline.length === 0) {
+    issues.push('Empty memory timeline');
+    return { valid: false, issues };
+  }
+
+  const memoryGrowth = timeline[timeline.length - 1].rss - timeline[0].rss;
+  const growthRate = memoryGrowth / timeline.length;
+
+  if (growthRate > 1024 * 1024) {
+    // > 1MB per sample
+    issues.push(`Memory growth rate too high: ${growthRate} bytes/sample`);
+  }
+
+  const maxMemory = Math.max(...timeline.map((t) => t.rss));
+  if (maxMemory > 500 * 1024 * 1024) {
+    // > 500MB
+    issues.push(`Peak memory usage too high: ${maxMemory} bytes`);
+  }
+
+  return {
+    valid: issues.length === 0,
+    issues,
+  };
 }
 
 describe('Telemetry System', () => {
@@ -289,7 +306,7 @@ describe('Telemetry System', () => {
       // Simulate 1000 rapid transformations
       for (let i = 0; i < 1000; i++) {
         const transformationId = randomUUID();
-        const code = CodeSampleGenerator.generateSmallFile();
+        const code = generateSmallFile();
         const telemetry = createTransformationTelemetry(
           transformationId,
           'template',
@@ -325,7 +342,7 @@ describe('Telemetry System', () => {
 
       // Validate telemetry overhead
       const healthMetrics = collector.getHealthMetrics();
-      const performanceValidation = TelemetryValidator.validatePerformanceMetrics(
+      const performanceValidation = validatePerformanceMetrics(
         healthMetrics.performanceStats
       );
 
@@ -344,7 +361,7 @@ describe('Telemetry System', () => {
   describe('Scenario 2: Large File Processing', () => {
     test('should handle large file transformation with memory profiling', async () => {
       const transformationId = randomUUID();
-      const largeCode = CodeSampleGenerator.generateLargeFile();
+      const largeCode = generateLargeFile();
       const telemetry = createTransformationTelemetry(
         transformationId,
         'ast',
@@ -370,7 +387,7 @@ describe('Telemetry System', () => {
       expect(memoryEvents.length).toBeGreaterThan(0);
 
       for (const memEvent of memoryEvents) {
-        const memoryValidation = TelemetryValidator.validateMemoryUsage(memEvent.timeline);
+        const memoryValidation = validateMemoryUsage(memEvent.timeline);
         expect(memoryValidation.valid).toBe(true);
         if (!memoryValidation.valid) {
           console.warn('Memory issues:', memoryValidation.issues);
@@ -389,7 +406,7 @@ describe('Telemetry System', () => {
 
   describe('Scenario 3: Error-Heavy Workload', () => {
     test('should track error patterns and recovery behavior', async () => {
-      const _errorCode = CodeSampleGenerator.generateErrorProneCode();
+      const _errorCode = generateErrorProneCode();
 
       // Simulate multiple error scenarios
       const errorScenarios = [
@@ -421,7 +438,7 @@ describe('Telemetry System', () => {
       expect(errorEvents).toHaveLength(3);
 
       for (const errorEvent of errorEvents) {
-        expect(TelemetryValidator.validateEventStructure(errorEvent, 'TEL-008')).toBe(true);
+        expect(validateEventStructure(errorEvent, 'TEL-008')).toBe(true);
         expect(errorEvent.userActions).toHaveLength(3);
         expect(errorEvent.finalOutcome).toBe('resolved');
         expect(errorEvent.resolutionTime).toBe(2500);
@@ -502,7 +519,7 @@ describe('Telemetry System', () => {
       const telemetryTimes: number[] = [];
 
       for (let i = 0; i < iterations; i++) {
-        const _code = CodeSampleGenerator.generateMediumFile();
+        const _code = generateMediumFile();
 
         // Measure transformation time without telemetry
         const transformStart = performance.now();
@@ -578,7 +595,7 @@ describe('Telemetry System', () => {
       ];
 
       for (const testCase of testCases) {
-        const _code = CodeSampleGenerator.generatePatternTargetCode(testCase.patterns);
+        const _code = generatePatternTargetCode(testCase.patterns);
 
         // Apply patterns multiple times
         for (let i = 0; i < 50; i++) {
@@ -639,7 +656,7 @@ describe('Telemetry Integration', () => {
     });
 
     const transformationId = randomUUID();
-    const originalCode = CodeSampleGenerator.generatePatternTargetCode([
+    const originalCode = generatePatternTargetCode([
       'var-to-const',
       'strict-equality',
     ]);
