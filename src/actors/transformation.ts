@@ -47,9 +47,9 @@ export const transformationActor = fromPromise(
       case 'template':
         return await applyTemplateTransformation(files, patterns, dryRun);
       case 'ast':
-        return await applyAstTransformation(files, patterns, dryRun);
+        return await applyAstTransformation(files, patterns);
       case 'llm':
-        return await applyLlmTransformation(files, request, dryRun);
+        return await applyLlmTransformation(files, request);
       default:
         throw new Error(`Unknown transformation mode: ${mode}`);
     }
