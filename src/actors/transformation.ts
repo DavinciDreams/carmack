@@ -7,14 +7,8 @@ import type { AstPattern, TransformationRequest } from '../types.js';
 import { type LLMTransformationInput, LLMTransformer } from './llm-transformation.js';
 
 // AST-grep language interface
-interface AstGrepLanguage {
-  parse(content: string): AstGrepRoot;
-}
+// (Removed unused AstGrepLanguage interface)
 
-// AST-grep root node interface - more flexible to match actual SgRoot
-interface AstGrepRoot {
-  [key: string]: unknown;
-}
 
 // Transformation input schema
 const TransformationInputSchema = z.object({
