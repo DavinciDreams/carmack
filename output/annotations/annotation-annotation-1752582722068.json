@@ -1,0 +1,42 @@
+{
+  "id": "annotation-1752582722068",
+  "timestamp": "2025-07-15T12:32:02.068Z",
+  "version": "1.0.0",
+  "metadata": {
+    "analyzer": "LLMAnnotationAnalyzer",
+    "confidence": 0.5,
+    "processingTime": 7,
+    "sourceFiles": 0,
+    "totalLines": 0
+  },
+  "context": {
+    "filePath": "unknown",
+    "language": "typescript",
+    "purpose": "General application logic and business rules",
+    "complexity": 0,
+    "dependencies": [],
+    "exports": []
+  },
+  "patterns": [],
+  "architecture": [],
+  "opportunities": [],
+  "summary": {
+    "overview": "Analyzed typescript codebase with 0 components, 0 patterns detected, and 0 improvement opportunities identified.",
+    "keyFindings": [
+      "0 design patterns implemented",
+      "0 anti-patterns requiring attention",
+      "Average complexity: 0.00",
+      "0 external dependencies"
+    ],
+    "recommendations": [],
+    "riskAreas": [],
+    "strengths": ["Low complexity codebase", "No anti-patterns detected"]
+  },
+  "llmPrompts": {
+    "codeReview": "Review this typescript codebase focusing on: . Pay attention to 0 identified improvement areas.",
+    "refactoring": "Suggest refactoring strategies for this typescript project. Priority areas: .",
+    "optimization": "Analyze performance optimization opportunities in this codebase with 0.0 average complexity. Focus on: .",
+    "testing": "Generate comprehensive test strategies for this typescript project with 0 exported functions/classes.",
+    "documentation": "Create documentation for this General application logic and business rules codebase, highlighting: ."
+  }
+}
