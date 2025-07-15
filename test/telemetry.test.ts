@@ -351,8 +351,12 @@ describe('Telemetry System', () => {
 
       // Validate event collection
       expect(capturedEvents.length).toBeGreaterThan(0);
-      expect(capturedEvents.filter((e) => (e as { id?: string }).id === 'TEL-001')).toHaveLength(1000); // Pattern success events
-      expect(capturedEvents.filter((e) => (e as { id?: string }).id === 'TEL-004').length).toBeGreaterThanOrEqual(100); // Latency events (sampled)
+      expect(capturedEvents.filter((e) => (e as { id?: string }).id === 'TEL-001')).toHaveLength(
+        1000
+      ); // Pattern success events
+      expect(
+        capturedEvents.filter((e) => (e as { id?: string }).id === 'TEL-004').length
+      ).toBeGreaterThanOrEqual(100); // Latency events (sampled)
     });
   });
 
@@ -643,7 +647,9 @@ describe('Telemetry System', () => {
 
       // Overall signal quality should be high
       const totalEvents = patternEvents.length;
-      const meaningfulEvents = patternEvents.filter((e) => (e as { successRate: number }).successRate !== 0.5).length; // Not random
+      const meaningfulEvents = patternEvents.filter(
+        (e) => (e as { successRate: number }).successRate !== 0.5
+      ).length; // Not random
       const signalRatio = meaningfulEvents / totalEvents;
 
       expect(signalRatio).toBeGreaterThan(0.8); // >80% signal-to-noise ratio

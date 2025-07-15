@@ -9,7 +9,6 @@ import { type LLMTransformationInput, LLMTransformer } from './llm-transformatio
 // AST-grep language interface
 // (Removed unused AstGrepLanguage interface)
 
-
 // Transformation input schema
 const TransformationInputSchema = z.object({
   mode: z.enum(['template', 'ast', 'llm']),

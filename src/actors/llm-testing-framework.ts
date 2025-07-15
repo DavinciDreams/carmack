@@ -997,7 +997,8 @@ async function collectPerformanceMetrics(
   let memoryUsage = 0;
   try {
     // @ts-ignore
-    memoryUsage = typeof process !== 'undefined' && process.memoryUsage ? process.memoryUsage().heapUsed : 0;
+    memoryUsage =
+      typeof process !== 'undefined' && process.memoryUsage ? process.memoryUsage().heapUsed : 0;
   } catch {
     memoryUsage = 0;
   }
@@ -1014,4 +1015,3 @@ async function collectPerformanceMetrics(
     transformationsApplied: actualOutput?.transformationsApplied,
   };
 }
-
