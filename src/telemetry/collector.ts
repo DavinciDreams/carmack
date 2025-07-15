@@ -335,10 +335,18 @@ export class TelemetryCollector extends EventEmitter {
       const peakMemory = Math.max(...memoryTimeline.map((t) => t.rss));
       const memoryGrowthRate =
         memoryTimeline.length > 1
-          ? ((memoryTimeline[memoryTimeline.length - 1]!.rss - memoryTimeline[0]!.rss) /
-              (memoryTimeline[memoryTimeline.length - 1]!.timestamp -
-                memoryTimeline[0]!.timestamp)) *
-            1000
+          ? (() => {
+              const timeDiff = memoryTimeline[memoryTimeline.length - 1]!.timestamp - memoryTimeline[0]!.timestamp;
+              const memoryDiff = memoryTimeline[memoryTimeline.length - 1]!.rss - memoryTimeline[0]!.rss;
+              
+              // Prevent division by zero and ensure valid number
+              if (timeDiff <= 0 || !Number.isFinite(timeDiff) || !Number.isFinite(memoryDiff)) {
+                return 0;
+              }
+              
+              const rate = (memoryDiff / timeDiff) * 1000;
+              return Number.isFinite(rate) ? rate : 0;
+            })()
           : 0;
 
       const metric: MemoryProfileMetric = {
