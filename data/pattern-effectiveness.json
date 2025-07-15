@@ -35,6 +35,18 @@
     "usageCount": 1,
     "lifecycle": "experimental"
   },
+  "console-log-to-console-error": {
+    "patternId": "console-log-to-console-error",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1752544839739,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
   "promise-to-async-await": {
     "patternId": "promise-to-async-await",
     "successRate": 0,
@@ -97,18 +109,6 @@
   },
   "remove-unnecessary-returns": {
     "patternId": "remove-unnecessary-returns",
-    "successRate": 0,
-    "averagePerformance": 0,
-    "complexityReduction": 0,
-    "errorRate": 0.1,
-    "userSatisfaction": 5,
-    "applicabilityScore": 0.5,
-    "lastUpdated": 1752544839739,
-    "usageCount": 1,
-    "lifecycle": "experimental"
-  },
-  "console-log-to-console-error": {
-    "patternId": "console-log-to-console-error",
     "successRate": 0,
     "averagePerformance": 0,
     "complexityReduction": 0,
