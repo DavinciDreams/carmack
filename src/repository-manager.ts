@@ -545,7 +545,11 @@ export class RepositoryManager {
     _clonePath: string,
     analysis: RepositoryAnalysis,
     transformations: TransformationResult[],
-    documentation: any
+    documentation: {
+      apiDocs?: string;
+      architectureDocs?: string;
+      patternDocs?: string;
+    }
   ): Promise<string> {
     const { writeFile, mkdir } = await import('node:fs/promises');
     const { join } = await import('node:path');

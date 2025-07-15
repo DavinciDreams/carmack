@@ -307,7 +307,7 @@ function processEnvironmentConfig(env: EnvironmentConfig): EnvironmentConfig {
     CARMACK_REPOSITORY_URL: repositoryUrl,
     CARMACK_WORKSPACE: workspace,
     CARMACK_LOG_LEVEL: logLevel,
-    // Store processed arrays as metadata (would need additional schema for this)
+    // Store processed arrays as metadata
     _processed: {
       transformationOrder,
       allowedExtensions,
@@ -315,7 +315,15 @@ function processEnvironmentConfig(env: EnvironmentConfig): EnvironmentConfig {
       allowedPaths,
       restrictedPatterns,
     },
-  } as EnvironmentConfig & { _processed: any };
+  } as EnvironmentConfig & {
+    _processed: {
+      transformationOrder: string[];
+      allowedExtensions: string[];
+      corsOrigins: string[];
+      allowedPaths: string[];
+      restrictedPatterns: string[];
+    };
+  };
 }
 
 /**
