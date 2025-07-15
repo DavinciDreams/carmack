@@ -360,7 +360,7 @@ async function executePipelineStages(input: PipelineRequest, state: any): Promis
       // Stop pipeline if critical error, but allow postprocessing to run
       if (!errorInfo.recoverable && stage.name !== 'postprocessing') {
         // Skip to postprocessing stage for cleanup
-        const postprocessingStage = stages.find(s => s.name === 'postprocessing');
+        const postprocessingStage = stages.find((s) => s.name === 'postprocessing');
         if (postprocessingStage) {
           const postStageStart = Date.now();
           try {
@@ -368,11 +368,16 @@ async function executePipelineStages(input: PipelineRequest, state: any): Promis
             await postprocessingStage.fn(input, state);
             const elapsed = Date.now() - postStageStart;
             state.stageTimings[postprocessingStage.name] = Math.max(elapsed, 1);
-            console.log(`✅ Stage completed: ${postprocessingStage.name} (${state.stageTimings[postprocessingStage.name]}ms)`);
+            console.log(
+              `✅ Stage completed: ${postprocessingStage.name} (${state.stageTimings[postprocessingStage.name]}ms)`
+            );
           } catch (postError) {
             const elapsed = Date.now() - postStageStart;
             state.stageTimings[postprocessingStage.name] = Math.max(elapsed, 1);
-            console.warn(`⚠️ Stage failed: ${postprocessingStage.name} (${state.stageTimings[postprocessingStage.name]}ms)`, postError);
+            console.warn(
+              `⚠️ Stage failed: ${postprocessingStage.name} (${state.stageTimings[postprocessingStage.name]}ms)`,
+              postError
+            );
           }
         }
         break;
@@ -854,7 +859,7 @@ async function feedbackStage(input: PipelineRequest, state: any): Promise<void> 
 async function postprocessingStage(input: PipelineRequest, state: any): Promise<void> {
   // Ensure minimum processing time for test consistency
   const minProcessingTime = 2; // 2ms minimum to ensure timing is recorded
-  
+
   // Apply final formatting if needed
   if (input.config.quality.enableFormatCheck && !input.transformationRequest.dryRun) {
     try {
@@ -1021,7 +1026,7 @@ async function getDefaultTemplatePatterns(): Promise<any[]> {
     // has a different format that causes regex parsing issues
     const fallbackContent = await readFile(join(process.cwd(), 'patterns.json'), 'utf-8');
     const fallbackData = JSON.parse(fallbackContent);
-    
+
     // Filter for template patterns and convert to expected format
     return fallbackData.patterns
       .filter((p: any) => p.mode === 'template')
@@ -1069,7 +1074,7 @@ async function getDefaultASTPatterns(): Promise<any[]> {
   try {
     const patternsContent = await readFile(join(process.cwd(), 'patterns.json'), 'utf-8');
     const patternsData = JSON.parse(patternsContent);
-    
+
     // Filter for AST patterns and convert to expected format
     return patternsData.patterns
       .filter((p: any) => p.mode === 'ast')
