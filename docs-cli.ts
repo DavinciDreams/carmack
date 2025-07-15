@@ -2,7 +2,7 @@
 
 /**
  * Carmack Coder Documentation Generator CLI Entry Point
- * 
+ *
  * Provides a simple entry point for the documentation generation system
  * using the enhanced CLI implementation with watch mode support.
  */
