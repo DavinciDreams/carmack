@@ -1,65 +1,73 @@
-import { js, ts } from '@ast-grep/napi';
+import { ts } from '@ast-grep/napi';
 
-// Test the exact patterns I need for the tests
-console.log('=== Testing Final Patterns ===');
-
-// 1. Function to arrow pattern
-const functionCode = `function add(a, b) { return a + b; }
-function multiply(x, y) { return x * y; }`;
-
-console.log('\n--- Function Code ---');
-console.log(functionCode);
-
-const functionRoot = ts.parse(functionCode);
-const functionPattern = 'function $NAME($$$) { return $$$; }';
-
-console.log(`\nTesting function pattern: "${functionPattern}"`);
-const functionMatches = functionRoot.root().findAll(functionPattern);
-console.log(`Function matches: ${functionMatches.length}`);
-
-for (const match of functionMatches) {
-  console.log(`  Match: "${match.text()}"`);
-  const nameMatch = match.getMatch('NAME');
-  console.log(`  NAME: "${nameMatch ? nameMatch.text() : 'not found'}"`);
-}
-
-// 2. Object property shorthand pattern
-const objectCode = `const name = "test";
-const age = 25;
-const user = { name: name, age: age };`;
-
-console.log('\n--- Object Code ---');
+// Test object pattern
+const objectCode = `const user = { name: name, age: age };`;
+console.log('=== Object Code ===');
 console.log(objectCode);
 
 const objectRoot = ts.parse(objectCode);
 
-// Try to match individual pairs
-const pairPattern = '$KEY: $VALUE';
-console.log(`\nTesting pair pattern: "${pairPattern}"`);
-const pairMatches = objectRoot.root().findAll(pairPattern);
-console.log(`Pair matches: ${pairMatches.length}`);
+// Test the actual node kinds we found
+console.log('\n=== Testing Actual Node Kinds ===');
 
-for (const match of pairMatches) {
-  console.log(`  Match: "${match.text()}"`);
-  console.log(`  Kind: "${match.kind()}"`);
+// Test object nodes
+const objects = objectRoot.root().findAll('object');
+console.log(`\nObject nodes: ${objects.length}`);
+for (const obj of objects) {
+  console.log(`Object: "${obj.text()}" (${obj.kind()})`);
+}
 
-  try {
-    const keyMatch = match.getMatch('KEY');
-    const valueMatch = match.getMatch('VALUE');
-    console.log(`  KEY: "${keyMatch ? keyMatch.text() : 'not found'}"`);
-    console.log(`  VALUE: "${valueMatch ? valueMatch.text() : 'not found'}"`);
-  } catch (error) {
-    console.log(`  Variable extraction error: ${error.message}`);
+// Test pair nodes
+const pairs = objectRoot.root().findAll('pair');
+console.log(`\nPair nodes: ${pairs.length}`);
+for (const pair of pairs) {
+  console.log(`Pair: "${pair.text()}" (${pair.kind()})`);
+  
+  // Test if we can match the pattern on pairs
+  const children = pair.children();
+  console.log(`  Children: ${children.length}`);
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i];
+    console.log(`    Child ${i}: "${child.text()}" (${child.kind()})`);
   }
 }
 
-// Try matching specific shorthand candidates
-const shorthands = ['name: name', 'age: age'];
-for (const shorthand of shorthands) {
-  console.log(`\nTesting literal pattern: "${shorthand}"`);
-  const matches = objectRoot.root().findAll(shorthand);
-  console.log(`Matches: ${matches.length}`);
-  for (const match of matches) {
-    console.log(`  Match: "${match.text()}" (${match.kind()})`);
+// Test property_identifier nodes
+const propIds = objectRoot.root().findAll('property_identifier');
+console.log(`\nProperty identifier nodes: ${propIds.length}`);
+for (const propId of propIds) {
+  console.log(`Property ID: "${propId.text()}" (${propId.kind()})`);
+}
+
+// Now test patterns that should work
+console.log('\n=== Testing Working Patterns ===');
+
+// Test pattern for pairs where key equals value
+const workingPatterns = [
+  'property_identifier: property_identifier',
+  '$KEY: $KEY',
+  '$PROP: $PROP',
+];
+
+for (const pattern of workingPatterns) {
+  console.log(`\n--- Testing pattern: ${pattern} ---`);
+  try {
+    const matches = objectRoot.root().findAll(pattern);
+    console.log(`Matches found: ${matches.length}`);
+    for (const match of matches) {
+      console.log(`Match: "${match.text()}" (${match.kind()})`);
+      
+      // Try to extract variables
+      try {
+        const keyMatch = match.getMatch?.('KEY') || match.getMatch?.('PROP');
+        if (keyMatch) {
+          console.log(`Variable: "${keyMatch.text()}"`);
+        }
+      } catch (e) {
+        console.log('Variable extraction error:', e.message);
+      }
+    }
+  } catch (error) {
+    console.log('Error:', error.message);
   }
 }
