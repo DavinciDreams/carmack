@@ -352,7 +352,7 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
 
       for (const match of [...functionMatches, ...arrowMatches]) {
         const nameMatch = match.getMatch('NAME')?.text();
-        
+
         // Extract parameters from the match text since we use generic wildcards
         const matchText = match.text();
         const params = this.extractParametersFromText(matchText, nameMatch || '');
@@ -492,19 +492,19 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
       if (functionMatch?.[1] !== undefined) {
         return functionMatch[1].trim();
       }
-      
+
       // For arrow functions: const name = (params) => ...
       const arrowMatch = functionText.match(/const\s+\w+\s*=\s*\(([^)]*)\)\s*=>/);
       if (arrowMatch?.[1] !== undefined) {
         return arrowMatch[1].trim();
       }
-      
+
       // For arrow functions without parentheses: const name = param => ...
       const singleParamMatch = functionText.match(/const\s+\w+\s*=\s*(\w+)\s*=>/);
       if (singleParamMatch?.[1] !== undefined) {
         return singleParamMatch[1].trim();
       }
-      
+
       return '';
     } catch (error) {
       console.warn(`Failed to extract parameters from: ${functionText.substring(0, 50)}...`);
