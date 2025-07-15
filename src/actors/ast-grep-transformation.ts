@@ -883,7 +883,7 @@ export const BUILTIN_AST_PATTERNS: AstGrepPattern[] = [
     language: 'typescript',
     pattern: {
       rule: {
-        pattern: '$ARR.indexOf($ITEM) !== -1',
+        pattern: '$ARR.includes($ITEM)',
       },
     },
     replacement: {
