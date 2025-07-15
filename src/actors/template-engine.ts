@@ -351,7 +351,7 @@ function findBasicTemplateMatches(content: string, pattern: TemplatePattern): Te
   // Convert template pattern to regex with variable capture
   const { regex, variableNames } = templateToRegex(pattern.pattern.template);
 
-  let match;
+  let match: RegExpExecArray | null;
   while ((match = regex.exec(content)) !== null) {
     // Extract line number and context
     const beforeMatch = content.substring(0, match.index);
@@ -643,7 +643,7 @@ function findCallbackPatterns(content: string, pattern: TemplatePattern): Templa
   // Pattern: function(callback) or method(params, callback)
   const callbackRegex = /(\w+)\s*\(\s*([^)]*?),?\s*function\s*\([^)]*\)\s*\{[^}]*\}\s*\)/g;
 
-  let match;
+  let match: RegExpExecArray | null;
   while ((match = callbackRegex.exec(content)) !== null) {
     const [fullMatch, functionName, params] = match;
     if (!functionName || !params) continue;
@@ -684,7 +684,7 @@ function findFunctionModernizationPatterns(
   // Pattern: function name() { return expression; }
   const simpleFunctionRegex = /function\s+(\w+)\s*\(([^)]*)\)\s*\{\s*return\s+([^;]+);\s*\}/g;
 
-  let match;
+  let match: RegExpExecArray | null;
   while ((match = simpleFunctionRegex.exec(content)) !== null) {
     const [fullMatch, functionName, params, returnExpr] = match;
     if (!functionName || !params || !returnExpr) continue;
@@ -732,7 +732,7 @@ function findDestructuringOpportunities(
     match: RegExpExecArray;
   }> = [];
 
-  let match;
+  let match: RegExpExecArray | null;
   while ((match = propertyAccessRegex.exec(content)) !== null) {
     const [, varName, objName, propName] = match;
     if (!varName || !objName || !propName) continue;
@@ -805,7 +805,7 @@ function findStringConcatenationPatterns(
   // Pattern: 'string' + variable + 'string'
   const concatenationRegex = /(['"`])([^'"`]*?)\1\s*\+\s*(\w+)\s*\+\s*(['"`])([^'"`]*?)\4/g;
 
-  let match;
+  let match: RegExpExecArray | null;
   while ((match = concatenationRegex.exec(content)) !== null) {
     const [fullMatch, , prefix, variable, , suffix] = match;
     if (!prefix || !variable || !suffix) continue;
