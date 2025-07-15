@@ -89,3 +89,130 @@ test-temp/
 
 # Recursive ignore for production builds
 repository
+
+# TypeScript specific
+*.tsbuildinfo
+*.d.ts.map
+tsconfig.tsbuildinfo
+
+# Bun specific patterns
+.bun/
+bun.lockb
+*.bun
+
+# Development and debugging files
+debug-*.js
+debug-*.ts
+test-*.ts
+temp-*.ts
+scratch-*.ts
+playground-*.ts
+
+# Pattern and configuration artifacts
+patterns-*.json
+*-patterns.json
+*.patterns.json
+cleanup-patterns.*
+
+# AST-grep specific
+.ast-grep/
+ast-grep-cache/
+*.ast-grep.json
+
+# Dafny verification artifacts
+*.dfy.bpl
+*.dfy.bpl.bak
+*.dfy.tmp
+dafny-output/
+
+# Zod validation artifacts
+*.zod.cache
+validation-cache/
+
+# XState artifacts
+*.xstate.cache
+state-machine-cache/
+
+# LLM and AI artifacts
+llm-cache/
+ai-responses/
+*.llm.json
+*.ai.cache
+
+# Performance and profiling
+*.cpuprofile
+*.heapprofile
+*.heapsnapshot
+perf-*.json
+benchmark-results/
+
+# Security and secrets
+.secrets/
+*.key
+*.pem
+*.p12
+*.pfx
+auth-tokens/
+
+# Documentation generation artifacts
+docs-temp/
+api-docs-cache/
+*.doc.cache
+
+# Test pattern data
+test-pattern-data/
+pattern-test-results/
+test-artifacts/
+
+# Monitoring and telemetry
+monitoring-data/
+telemetry-cache/
+metrics-cache/
+alerts-cache/
+
+# Container and deployment
+.docker/
+k8s-temp/
+deployment-cache/
+helm-cache/
+
+# Editor and IDE specific (expanded)
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+.vscode/.ropeproject
+.idea/
+*.sublime-project
+*.sublime-workspace
+.atom/
+.brackets.json
+
+# OS specific (expanded)
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Backup and temporary files (expanded)
+*.backup
+*.bak
+*.old
+*.orig
+*.rej
+*.swp
+*.swo
+*.tmp
+*.temp
+*~
+.#*
+#*#
+
+# Runtime directories
+runtime/
+.runtime/
+execution-cache/
