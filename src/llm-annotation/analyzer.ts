@@ -120,7 +120,7 @@ export class LLMAnnotationAnalyzer {
    * Analyze code context and dependencies
    */
   private async analyzeCodeContext(request: AnnotationRequest): Promise<CodeContext> {
-    const { readFile } = await import('fs/promises');
+    const { readFile } = await import('node:fs/promises');
     // const { extname } = await import('path');
 
     // Analyze primary files to understand context
@@ -252,7 +252,7 @@ export class LLMAnnotationAnalyzer {
           if (!this.astAnalyzer) {
             await this.initializeAnalyzer();
           }
-          const matches = await this.astAnalyzer!.findPatternUsage(patternDef.astPattern, filePath);
+          const matches = await this.astAnalyzer?.findPatternUsage(patternDef.astPattern, filePath);
 
           for (const match of matches) {
             patterns.push({
@@ -295,7 +295,7 @@ export class LLMAnnotationAnalyzer {
         if (!this.astAnalyzer) {
           await this.initializeAnalyzer();
         }
-        const moduleDoc = await this.astAnalyzer!.analyzeFile(filePath);
+        const moduleDoc = await this.astAnalyzer?.analyzeFile(filePath);
 
         // Create architectural annotation for each significant component
         if (moduleDoc.exports.functions.length > 0 || moduleDoc.exports.classes.length > 0) {
@@ -605,8 +605,8 @@ export class LLMAnnotationAnalyzer {
     annotation: LLMAnnotation,
     request: AnnotationRequest
   ): Promise<string> {
-    const { writeFile, mkdir } = await import('fs/promises');
-    const { join } = await import('path');
+    const { writeFile, mkdir } = await import('node:fs/promises');
+    const { join } = await import('node:path');
 
     const outputDir = request.targetDirectory || './output/annotations';
     await mkdir(outputDir, { recursive: true });

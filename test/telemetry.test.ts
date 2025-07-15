@@ -4,8 +4,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
-import { randomUUID } from 'crypto';
-import { performance } from 'perf_hooks';
+import { randomUUID } from 'node:crypto';
+import { performance } from 'node:perf_hooks';
 import { initializeTelemetry, type TelemetryCollector } from '../src/telemetry/collector.js';
 import { createTransformationTelemetry } from '../src/telemetry/integration.js';
 
@@ -389,7 +389,7 @@ describe('Telemetry System', () => {
 
   describe('Scenario 3: Error-Heavy Workload', () => {
     test('should track error patterns and recovery behavior', async () => {
-      const errorCode = CodeSampleGenerator.generateErrorProneCode();
+      const _errorCode = CodeSampleGenerator.generateErrorProneCode();
 
       // Simulate multiple error scenarios
       const errorScenarios = [
@@ -502,7 +502,7 @@ describe('Telemetry System', () => {
       const telemetryTimes: number[] = [];
 
       for (let i = 0; i < iterations; i++) {
-        const code = CodeSampleGenerator.generateMediumFile();
+        const _code = CodeSampleGenerator.generateMediumFile();
 
         // Measure transformation time without telemetry
         const transformStart = performance.now();
@@ -578,7 +578,7 @@ describe('Telemetry System', () => {
       ];
 
       for (const testCase of testCases) {
-        const code = CodeSampleGenerator.generatePatternTargetCode(testCase.patterns);
+        const _code = CodeSampleGenerator.generatePatternTargetCode(testCase.patterns);
 
         // Apply patterns multiple times
         for (let i = 0; i < 50; i++) {

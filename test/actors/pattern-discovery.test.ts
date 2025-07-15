@@ -33,7 +33,7 @@ describe('Pattern Discovery Actor', () => {
     // Create test directory
     try {
       await mkdir(testDir, { recursive: true });
-    } catch (error) {
+    } catch (_error) {
       // Directory might already exist
     }
   });

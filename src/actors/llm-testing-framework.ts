@@ -387,7 +387,7 @@ async function executeTransformation(input: TestCase['input']): Promise<Transfor
             break;
           default:
             // For unknown patterns, make a small change to show transformation occurred
-            transformedCode = transformedCode + ' // transformed';
+            transformedCode = `${transformedCode} // transformed`;
             break;
         }
       }

@@ -763,7 +763,7 @@ export class PatternLearner {
       for (const [key, value] of Object.entries(effectiveness)) {
         this.effectivenessCache.set(key, value as PatternEffectiveness);
       }
-    } catch (error) {
+    } catch (_error) {
       console.log('No existing effectiveness data found, starting fresh');
     }
 
@@ -774,7 +774,7 @@ export class PatternLearner {
       for (const [key, value] of Object.entries(discovered)) {
         this.discoveredPatterns.set(key, value as DiscoveredPattern);
       }
-    } catch (error) {
+    } catch (_error) {
       console.log('No existing discovered patterns found, starting fresh');
     }
   }

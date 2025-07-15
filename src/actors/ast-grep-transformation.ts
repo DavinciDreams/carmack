@@ -478,7 +478,7 @@ function extractVariables(node: SgNode, pattern: AstGrepPattern): Record<string,
             variables[varName] = manualValue;
           }
         }
-      } catch (error) {
+      } catch (_error) {
         // Fallback to manual extraction on any error
         const manualValue = extractVariableFromText(nodeText, patternText, varName);
         if (manualValue) {

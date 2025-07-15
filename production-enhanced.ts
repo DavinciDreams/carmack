@@ -10,12 +10,7 @@ import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { createActor } from 'xstate';
 import { z } from 'zod';
-import {
-  CARMACK_REPOSITORY_URL,
-  carmackConfig,
-  getCarmackRepositoryUrl,
-} from './carmack.config.ts';
-import { defaultProductionConfig, ProductionConfigSchema } from './production.config.ts';
+import { CARMACK_REPOSITORY_URL, carmackConfig } from './carmack.config.ts';
 import { DocumentationGenerator } from './src/docs/generator.ts';
 import { carmackCoderMachine } from './src/machine.ts';
 import {
@@ -167,7 +162,7 @@ export class CarmackPipelineOrchestrator {
     }
 
     // Validate consolidated patterns
-    const patternPath = this.repoManager['config'].patterns.consolidated;
+    const patternPath = this.repoManager.config.patterns.consolidated;
     if (!existsSync(patternPath)) {
       throw new Error('Pattern consolidation failed - no consolidated patterns found');
     }
@@ -180,7 +175,7 @@ export class CarmackPipelineOrchestrator {
    */
   private async generatePreTransformationDocs(
     repoPath: string,
-    args: EnhancedCLIArgs
+    _args: EnhancedCLIArgs
   ): Promise<void> {
     console.log('📝 STAGE 3: Pre-transformation Documentation');
 
@@ -272,7 +267,7 @@ export class CarmackPipelineOrchestrator {
       input: transformationRequest, // This was the missing piece!
     });
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve, _reject) => {
       actor.subscribe((state) => {
         if (args.verbose) {
           console.log(
@@ -316,7 +311,7 @@ export class CarmackPipelineOrchestrator {
    */
   private async executeValidationPipeline(
     repoState: any,
-    transformationResult: any,
+    _transformationResult: any,
     args: EnhancedCLIArgs
   ): Promise<void> {
     console.log('🔍 STAGE 5: Validation Pipeline');
@@ -349,7 +344,7 @@ export class CarmackPipelineOrchestrator {
    */
   private async generatePostTransformationDocs(
     repoPath: string,
-    args: EnhancedCLIArgs
+    _args: EnhancedCLIArgs
   ): Promise<void> {
     console.log('📝 STAGE 6: Post-transformation Documentation');
 
@@ -480,7 +475,7 @@ export class CarmackPipelineOrchestrator {
   // ===== HELPER METHODS =====
 
   private async analyzeRepositoryReadiness(
-    repoPath: string
+    _repoPath: string
   ): Promise<{ fileCount: number; complexity: string }> {
     // Placeholder for repository analysis
     return { fileCount: 42, complexity: 'medium' };
@@ -551,27 +546,27 @@ export class CarmackPipelineOrchestrator {
     return args['risk-level'] === 'low' ? 'template' : 'ast';
   }
 
-  private async executeValidationStep(step: string, repoPath: string): Promise<void> {
+  private async executeValidationStep(_step: string, _repoPath: string): Promise<void> {
     // Implement specific validation logic for each step
     // This would integrate with TypeScript compiler, ESLint, test runners, etc.
   }
 
-  private async compareDocumentationChanges(repoPath: string): Promise<void> {
+  private async compareDocumentationChanges(_repoPath: string): Promise<void> {
     // Compare pre and post transformation documentation
     console.log('   📈 Documentation changes analyzed');
   }
 
-  private async analyzeTransformationEffectiveness(result: any): Promise<number> {
+  private async analyzeTransformationEffectiveness(_result: any): Promise<number> {
     // Analyze how effective the transformations were
     return 0.85; // Placeholder
   }
 
-  private async extractNewPatterns(result: any): Promise<any[]> {
+  private async extractNewPatterns(_result: any): Promise<any[]> {
     // Extract patterns from successful transformations
     return []; // Placeholder
   }
 
-  private async updateConsolidatedPatterns(newPatterns: any[]): Promise<void> {
+  private async updateConsolidatedPatterns(_newPatterns: any[]): Promise<void> {
     // Update the consolidated pattern file with new learned patterns
   }
 

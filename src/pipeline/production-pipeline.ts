@@ -376,7 +376,7 @@ async function preprocessingStage(input: PipelineRequest, state: any): Promise<v
   for (const filePath of input.files) {
     try {
       await readFile(filePath, 'utf-8');
-    } catch (error) {
+    } catch (_error) {
       throw new Error(`Cannot read file: ${filePath}`);
     }
   }

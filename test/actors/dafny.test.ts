@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
-import { mkdir, rm, writeFile } from 'fs/promises';
-import { tmpdir } from 'os';
-import { join } from 'path';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { createActor, waitFor } from 'xstate';
 import { dafnyActor } from '../../src/actors/dafny.js';
 
@@ -35,7 +35,7 @@ describe('Dafny Actor', () => {
     process.chdir(originalCwd);
     try {
       await rm(testDir, { recursive: true, force: true });
-    } catch (error) {
+    } catch (_error) {
       // Ignore cleanup errors
     }
   });
@@ -48,9 +48,9 @@ describe('Dafny Actor', () => {
 
   function assertDafnyResult(result: DafnyResult | undefined): asserts result is DafnyResult {
     expect(result).toBeDefined();
-    expect(result!.verified).toBeDefined();
-    expect(result!.conditions).toBeGreaterThan(0);
-    expect(result!.verificationTime).toBeGreaterThan(0);
+    expect(result?.verified).toBeDefined();
+    expect(result?.conditions).toBeGreaterThan(0);
+    expect(result?.verificationTime).toBeGreaterThan(0);
   }
 
   describe('Basic Verification', () => {
@@ -482,7 +482,7 @@ describe('Dafny Actor', () => {
       const results = await Promise.all(promises);
 
       expect(results).toHaveLength(3);
-      results.forEach((verificationResult, index) => {
+      results.forEach((verificationResult, _index) => {
         assertDafnyResult(verificationResult);
         expect(verificationResult.verified).toBe(true);
       });

@@ -397,8 +397,8 @@ export class DocumentationGenerator {
    * Discover source files in the project
    */
   private async discoverSourceFiles(): Promise<string[]> {
-    const { readdir, stat } = await import('fs/promises');
-    const { join } = await import('path');
+    const { readdir, stat } = await import('node:fs/promises');
+    const { join } = await import('node:path');
 
     const files: string[] = [];
 
@@ -561,7 +561,7 @@ export class DocumentationGenerator {
    */
   private async loadPatterns(): Promise<PatternDoc[]> {
     try {
-      const { readFile } = await import('fs/promises');
+      const { readFile } = await import('node:fs/promises');
       const content = await readFile('./src/patterns/enhanced-templates.json', 'utf-8');
       const data = JSON.parse(content);
 

@@ -211,7 +211,7 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
   // Private helper methods
   private async readFile(filePath: string): Promise<string> {
     try {
-      const { readFile } = await import('fs/promises');
+      const { readFile } = await import('node:fs/promises');
       return await readFile(filePath, 'utf-8');
     } catch (error) {
       console.warn(`Failed to read file ${filePath}:`, error);
@@ -435,7 +435,7 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
         for (let j = i; j < lineNumber; j++) {
           const docLine = lines[j]?.trim();
           if (docLine?.startsWith('*') && !docLine.startsWith('*/')) {
-            description = docLine.replace(/^\*\s?/, '') + '\n' + description;
+            description = `${docLine.replace(/^\*\s?/, '')}\n${description}`;
           }
           if (docLine?.includes('*/')) break;
         }
@@ -485,7 +485,7 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
           break;
         }
         if (trimmed.startsWith('*')) {
-          description += trimmed.replace(/^\*\s?/, '') + '\n';
+          description += `${trimmed.replace(/^\*\s?/, '')}\n`;
         }
       }
 

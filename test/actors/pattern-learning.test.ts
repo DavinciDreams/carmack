@@ -1,9 +1,8 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
-import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
+import { mkdir, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
   createPatternLearner,
-  type LearningResult,
   PatternLearner,
   type PatternLearningInput,
   validatePatternLearningInput,

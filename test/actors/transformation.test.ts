@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
-import { mkdir, readFile, rm, writeFile } from 'fs/promises';
-import { tmpdir } from 'os';
-import { join } from 'path';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { createActor, waitFor } from 'xstate';
 import { transformationActor } from '../../src/actors/transformation.js';
 
@@ -33,7 +33,7 @@ describe('Transformation Actor', () => {
   afterEach(async () => {
     try {
       await rm(testDir, { recursive: true, force: true });
-    } catch (error) {
+    } catch (_error) {
       // Ignore cleanup errors
     }
   });

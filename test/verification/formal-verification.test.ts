@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
-import { mkdir, readFile, rm, writeFile } from 'fs/promises';
-import { tmpdir } from 'os';
-import { join } from 'path';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { createActor, waitFor } from 'xstate';
 import { dafnyActor } from '../../src/actors/dafny.js';
 
@@ -20,7 +20,7 @@ describe('Formal Verification Testing', () => {
     process.chdir(originalCwd);
     try {
       await rm(testDir, { recursive: true, force: true });
-    } catch (error) {
+    } catch (_error) {
       // Ignore cleanup errors
     }
   });
@@ -541,10 +541,10 @@ describe('Formal Verification Testing', () => {
         expect(verification).toBeDefined();
         expect(verification.verified).toBe(false);
         expect(verification.errors).toBeDefined();
-        expect(verification.errors!.length).toBeGreaterThan(0);
+        expect(verification.errors?.length).toBeGreaterThan(0);
 
         console.log(`   Invalid transformation correctly rejected: ${!verification.verified}`);
-        console.log(`   Errors detected: ${verification.errors!.length}`);
+        console.log(`   Errors detected: ${verification.errors?.length}`);
         console.log('   ✅ Error handling working correctly');
       } catch (error) {
         console.log(`   ⚠️ Dafny verification unavailable: ${error}`);

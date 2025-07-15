@@ -282,15 +282,15 @@ async function main(): Promise<void> {
       console.log('🤖 Generated LLM Prompts:');
       console.log(
         '   Code Review:',
-        result.annotation.llmPrompts.codeReview.substring(0, 100) + '...'
+        `${result.annotation.llmPrompts.codeReview.substring(0, 100)}...`
       );
       console.log(
         '   Refactoring:',
-        result.annotation.llmPrompts.refactoring.substring(0, 100) + '...'
+        `${result.annotation.llmPrompts.refactoring.substring(0, 100)}...`
       );
       console.log(
         '   Optimization:',
-        result.annotation.llmPrompts.optimization.substring(0, 100) + '...'
+        `${result.annotation.llmPrompts.optimization.substring(0, 100)}...`
       );
     }
 

@@ -1,15 +1,15 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
-import { execSync } from 'child_process';
-import { mkdir, rm, writeFile } from 'fs/promises';
-import { tmpdir } from 'os';
-import { join } from 'path';
+import { execSync } from 'node:child_process';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { createActor, waitFor } from 'xstate';
 import { analysisActor } from '../../src/actors/analysis.js';
 import { dafnyActor } from '../../src/actors/dafny.js';
 import { gitActor } from '../../src/actors/git.js';
 import { transformationActor } from '../../src/actors/transformation.js';
 import { validationActor } from '../../src/actors/validation.js';
-import type { AstPattern, GitCheckpoint } from '../../src/types.js';
+import type { AstPattern } from '../../src/types.js';
 
 describe('Actor Integration Tests', () => {
   let testDir: string;
@@ -26,7 +26,7 @@ describe('Actor Integration Tests', () => {
       execSync('git init', { cwd: testDir, stdio: 'pipe' });
       execSync('git config user.name "Test User"', { cwd: testDir, stdio: 'pipe' });
       execSync('git config user.email "test@example.com"', { cwd: testDir, stdio: 'pipe' });
-    } catch (error) {
+    } catch (_error) {
       // Git setup might fail in some environments
     }
   });
@@ -35,7 +35,7 @@ describe('Actor Integration Tests', () => {
     process.chdir(originalCwd);
     try {
       await rm(testDir, { recursive: true, force: true });
-    } catch (error) {
+    } catch (_error) {
       // Ignore cleanup errors
     }
   });
@@ -356,7 +356,7 @@ describe('Actor Integration Tests', () => {
             );
 
             expect(rollbackResult.output).toBeDefined();
-            expect(rollbackResult.output!.description).toContain('Rolled back to:');
+            expect(rollbackResult.output?.description).toContain('Rolled back to:');
           }
         }
       } catch (error) {
@@ -553,7 +553,7 @@ describe('Actor Integration Tests', () => {
         { timeout: 15000 }
       );
 
-      const transformation = transformationResult.output!;
+      const _transformation = transformationResult.output!;
 
       // Step 4: Formal verification with Dafny
       const dafnyInput = {
@@ -763,9 +763,9 @@ describe('Actor Integration Tests', () => {
 
       // Verify all analyses completed successfully
       expect(results).toHaveLength(3);
-      results.forEach((result, index) => {
+      results.forEach((result, _index) => {
         expect(result).toBeDefined();
-        expect(result!.complexity).toBeDefined();
+        expect(result?.complexity).toBeDefined();
       });
     });
 
@@ -824,7 +824,7 @@ describe('Actor Integration Tests', () => {
       expect(results).toHaveLength(2);
       results.forEach((result, index) => {
         expect(result).toBeDefined();
-        expect(result!.filesModified).toContain(files[index]);
+        expect(result?.filesModified).toContain(files[index]);
       });
     });
   });
@@ -883,7 +883,7 @@ describe('Actor Integration Tests', () => {
 
       // Should complete and provide results
       expect(validationResult.output).toBeDefined();
-      expect(validationResult.output!.isValid).toBeDefined();
+      expect(validationResult.output?.isValid).toBeDefined();
     });
 
     test('should maintain data consistency across pipeline failures', async () => {
@@ -931,7 +931,7 @@ describe('Actor Integration Tests', () => {
         await waitFor(transformationActorInstance, (state) => state.status === 'done', {
           timeout: 10000,
         });
-      } catch (error) {
+      } catch (_error) {
         // Expected to fail
       }
 
@@ -951,7 +951,7 @@ describe('Actor Integration Tests', () => {
       );
 
       expect(rollbackResult.output).toBeDefined();
-      expect(rollbackResult.output!.description).toContain('Rolled back to:');
+      expect(rollbackResult.output?.description).toContain('Rolled back to:');
     });
   });
 });

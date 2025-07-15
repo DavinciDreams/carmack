@@ -118,7 +118,7 @@ async function validateFormat(files: string[]): Promise<ValidationResult> {
 
   try {
     // Use Biome for format validation
-    const { execSync } = await import('child_process');
+    const { execSync } = await import('node:child_process');
 
     let hasErrors = false;
     const errors: Array<{
@@ -210,7 +210,7 @@ async function fixFormat(files: string[]): Promise<ValidationResult> {
 
   try {
     // Use Biome to fix formatting
-    const { execSync } = await import('child_process');
+    const { execSync } = await import('node:child_process');
 
     const errors: Array<{
       code: string;
@@ -322,7 +322,7 @@ async function validateTypesWithExec(
   _files: string[],
   signal: AbortSignal
 ): Promise<ValidationResult> {
-  const { execSync } = await import('child_process');
+  const { execSync } = await import('node:child_process');
 
   try {
     const bunCmd = getBunExecutable();
@@ -498,7 +498,7 @@ async function fixTypes(files: string[], errors: ErrorInfo[]): Promise<Validatio
         if (!errorsByFile.has(error.file)) {
           errorsByFile.set(error.file, []);
         }
-        errorsByFile.get(error.file)!.push(error);
+        errorsByFile.get(error.file)?.push(error);
       }
     }
 
@@ -666,7 +666,7 @@ async function verifyTypeFixes(
   filePath: string
 ): Promise<{ isValid: boolean; errors: ErrorInfo[] }> {
   try {
-    const { execSync } = await import('child_process');
+    const { execSync } = await import('node:child_process');
     const bunCmd = getBunExecutable();
 
     // Run TypeScript compiler on the specific file

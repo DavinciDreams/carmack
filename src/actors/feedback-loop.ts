@@ -341,7 +341,7 @@ function groupFeedbackByPattern(feedback: FeedbackData[]): Record<string, Feedba
     if (!groups[item.patternId]) {
       groups[item.patternId] = [];
     }
-    groups[item.patternId]!.push(item);
+    groups[item.patternId]?.push(item);
   }
 
   return groups;

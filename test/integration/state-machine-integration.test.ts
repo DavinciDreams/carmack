@@ -1,9 +1,8 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
-import { execSync } from 'child_process';
-import { mkdir, rm, writeFile } from 'fs/promises';
-import { tmpdir } from 'os';
-import { join } from 'path';
-import { createActor, waitFor } from 'xstate';
+import { execSync } from 'node:child_process';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 // Import the main state machine (we'll need to check if it exists)
 // import { transformationMachine } from '../../src/machine.js';
@@ -23,7 +22,7 @@ describe('State Machine Integration Tests', () => {
       execSync('git init', { cwd: testDir, stdio: 'pipe' });
       execSync('git config user.name "Test User"', { cwd: testDir, stdio: 'pipe' });
       execSync('git config user.email "test@example.com"', { cwd: testDir, stdio: 'pipe' });
-    } catch (error) {
+    } catch (_error) {
       // Git setup might fail in some environments
     }
   });
@@ -32,7 +31,7 @@ describe('State Machine Integration Tests', () => {
     process.chdir(originalCwd);
     try {
       await rm(testDir, { recursive: true, force: true });
-    } catch (error) {
+    } catch (_error) {
       // Ignore cleanup errors
     }
   });
@@ -207,7 +206,7 @@ describe('State Machine Integration Tests', () => {
       });
 
       // Simulate transformation actor input/output
-      const transformationInput = {
+      const _transformationInput = {
         mode: analysisOutput.recommendedMode,
         files: ['communication-test.ts'],
         patterns: [],
@@ -299,7 +298,7 @@ describe('State Machine Integration Tests', () => {
 
             // Wait before retry
             await new Promise((resolve) => setTimeout(resolve, 100 * attempt));
-          } catch (error) {
+          } catch (_error) {
             executions.push({
               actorName,
               attempt,
@@ -314,7 +313,7 @@ describe('State Machine Integration Tests', () => {
 
       // Test multiple actors with retry logic
       const actors = ['analysis', 'transformation', 'validation'];
-      const results = await Promise.all(actors.map((actor) => simulateActorExecution(actor)));
+      const _results = await Promise.all(actors.map((actor) => simulateActorExecution(actor)));
 
       // Verify executions were recorded
       expect(executions.length).toBeGreaterThan(0);

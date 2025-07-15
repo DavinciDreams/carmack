@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
-import { execSync } from 'child_process';
-import { mkdir, rm, writeFile } from 'fs/promises';
-import { tmpdir } from 'os';
-import { join } from 'path';
+import { execSync } from 'node:child_process';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { createActor, waitFor } from 'xstate';
 import { gitActor } from '../../src/actors/git.js';
 import type { GitCheckpoint } from '../../src/types.js';
@@ -28,7 +28,7 @@ describe('Git Actor', () => {
     process.chdir(originalCwd);
     try {
       await rm(testDir, { recursive: true, force: true });
-    } catch (error) {
+    } catch (_error) {
       // Ignore cleanup errors
     }
   });
@@ -43,7 +43,7 @@ describe('Git Actor', () => {
     try {
       execSync('git config user.name "Test User"', { cwd: testDir, stdio: 'pipe' });
       execSync('git config user.email "test@example.com"', { cwd: testDir, stdio: 'pipe' });
-    } catch (error) {
+    } catch (_error) {
       // Git config might fail in some environments, that's okay
     }
   }
@@ -53,10 +53,10 @@ describe('Git Actor', () => {
     expectedDescription: string
   ): asserts checkpoint is GitCheckpoint {
     expect(checkpoint).toBeDefined();
-    expect(checkpoint!.description).toBe(expectedDescription);
-    expect(checkpoint!.hash).toBeDefined();
-    expect(checkpoint!.branch).toBeDefined();
-    expect(checkpoint!.timestamp).toBeGreaterThan(0);
+    expect(checkpoint?.description).toBe(expectedDescription);
+    expect(checkpoint?.hash).toBeDefined();
+    expect(checkpoint?.branch).toBeDefined();
+    expect(checkpoint?.timestamp).toBeGreaterThan(0);
   }
 
   describe('Create Checkpoint Operation', () => {
@@ -65,7 +65,7 @@ describe('Git Actor', () => {
       try {
         execSync('git init', { cwd: testDir, stdio: 'pipe' });
         await createTestFile('test.txt', 'Hello, World!');
-      } catch (error) {
+      } catch (_error) {
         // Skip test if git is not available
         return;
       }
@@ -110,7 +110,7 @@ describe('Git Actor', () => {
         execSync('git init', { cwd: testDir, stdio: 'pipe' });
         await createTestFile('existing.txt', 'Existing content');
         await createTestFile('new.txt', 'New content');
-      } catch (error) {
+      } catch (_error) {
         // Skip test if git is not available
         return;
       }
@@ -135,7 +135,7 @@ describe('Git Actor', () => {
       setupGitConfig();
       try {
         execSync('git init', { cwd: testDir, stdio: 'pipe' });
-      } catch (error) {
+      } catch (_error) {
         // Skip tests if git is not available
       }
     });
@@ -234,7 +234,7 @@ describe('Git Actor', () => {
           timestamp: Date.now(),
           description: 'Initial commit',
         };
-      } catch (error) {
+      } catch (_error) {
         // Create a mock checkpoint if git is not available
         testCheckpoint = {
           hash: 'a'.repeat(40),
@@ -258,10 +258,10 @@ describe('Git Actor', () => {
       const rollbackResult = result.output;
 
       expect(rollbackResult).toBeDefined();
-      expect(rollbackResult!.description).toContain('Rolled back to:');
-      expect(rollbackResult!.hash).toBeDefined();
-      expect(rollbackResult!.branch).toBe(testCheckpoint.branch);
-      expect(rollbackResult!.timestamp).toBeGreaterThan(testCheckpoint.timestamp);
+      expect(rollbackResult?.description).toContain('Rolled back to:');
+      expect(rollbackResult?.hash).toBeDefined();
+      expect(rollbackResult?.branch).toBe(testCheckpoint.branch);
+      expect(rollbackResult?.timestamp).toBeGreaterThan(testCheckpoint.timestamp);
     });
 
     test('should handle rollback with fallback when not in git repo', async () => {
@@ -282,9 +282,9 @@ describe('Git Actor', () => {
       const rollbackResult = result.output;
 
       expect(rollbackResult).toBeDefined();
-      expect(rollbackResult!.description).toContain('Rollback to:');
-      expect(rollbackResult!.hash).toBe(testCheckpoint.hash);
-      expect(rollbackResult!.branch).toBe(testCheckpoint.branch);
+      expect(rollbackResult?.description).toContain('Rollback to:');
+      expect(rollbackResult?.hash).toBe(testCheckpoint.hash);
+      expect(rollbackResult?.branch).toBe(testCheckpoint.branch);
 
       // Cleanup
       process.chdir(testDir);
@@ -312,7 +312,7 @@ describe('Git Actor', () => {
 
       expect(rollbackResult).toBeDefined();
       // Should fallback gracefully
-      expect(rollbackResult!.description).toContain('Rollback to:');
+      expect(rollbackResult?.description).toContain('Rollback to:');
     });
   });
 
@@ -321,7 +321,7 @@ describe('Git Actor', () => {
       setupGitConfig();
       try {
         execSync('git init', { cwd: testDir, stdio: 'pipe' });
-      } catch (error) {
+      } catch (_error) {
         // Skip tests if git is not available
       }
     });
@@ -406,8 +406,8 @@ describe('Git Actor', () => {
       const rollbackCheckpoint = rollbackResult.output;
 
       expect(rollbackCheckpoint).toBeDefined();
-      expect(rollbackCheckpoint!.description).toContain('Rolled back to:');
-      expect(rollbackCheckpoint!.description).toContain('Before risky transformation');
+      expect(rollbackCheckpoint?.description).toContain('Rolled back to:');
+      expect(rollbackCheckpoint?.description).toContain('Before risky transformation');
     });
 
     test('should handle multiple checkpoints in sequence', async () => {

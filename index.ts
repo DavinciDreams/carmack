@@ -72,7 +72,7 @@ function parseCliArgs(): CliOptions {
           process.exit(1);
         }
         const complexity = Number.parseInt(complexityArg, 10);
-        if (isNaN(complexity) || complexity < 1) {
+        if (Number.isNaN(complexity) || complexity < 1) {
           console.error(`❌ Invalid complexity: ${complexityArg}. Must be a positive number.`);
           process.exit(1);
         }

@@ -92,7 +92,7 @@ async function analyzeComplexity(files: string[]): Promise<ComplexityMetrics> {
   let totalClassCount = 0;
 
   try {
-    const { readFile } = await import('fs/promises');
+    const { readFile } = await import('node:fs/promises');
 
     for (const filePath of files) {
       try {

@@ -469,11 +469,11 @@ class TestInfrastructureValidator {
       MockSetupUtility.setupAllMocks();
 
       // Create test data
-      const patterns = TestFixtures.createTestPatterns();
+      const _patterns = TestFixtures.createTestPatterns();
       const codeSamples = TestFixtures.createCodeSamples();
 
       // Create test file
-      const testFile = await envManager.createTestFile(testDir, 'e2e-test.ts', codeSamples.simple);
+      const _testFile = await envManager.createTestFile(testDir, 'e2e-test.ts', codeSamples.simple);
 
       // Test health monitoring
       testHealthMonitor.startTest('e2e-validation', 'integration');
