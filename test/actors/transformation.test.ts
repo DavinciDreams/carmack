@@ -1,9 +1,9 @@
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
+import { mkdir, readFile, rm, writeFile } from 'fs/promises';
+import { tmpdir } from 'os';
+import { join } from 'path';
 import { createActor, waitFor } from 'xstate';
 import { transformationActor } from '../../src/actors/transformation.js';
-import { writeFile, readFile, mkdir, rm } from 'fs/promises';
-import { join } from 'path';
-import { tmpdir } from 'os';
 
 // Test input type that matches the transformation actor
 interface TransformationInput {
@@ -50,26 +50,31 @@ describe('Transformation Actor', () => {
 
   describe('Template Transformations', () => {
     test('should apply simple template transformation', async () => {
-      const testFile = await createTestFile('simple.ts', `
+      const testFile = await createTestFile(
+        'simple.ts',
+        `
 function oldFunction() {
   var x = 1;
   return x;
 }
-      `);
+      `
+      );
 
       const input: TransformationInput = {
         mode: 'template',
         files: [testFile],
-        patterns: [{
-          id: 'smart-var-to-const-let',
-          language: 'typescript',
-          pattern: 'var $VAR = $VALUE',
-          replacement: 'const $VAR = $VALUE',
-          description: 'Convert var to const',
-          complexity: 1,
-          riskLevel: 'low',
-          mode: 'template',
-        }],
+        patterns: [
+          {
+            id: 'smart-var-to-const-let',
+            language: 'typescript',
+            pattern: 'var $VAR = $VALUE',
+            replacement: 'const $VAR = $VALUE',
+            description: 'Convert var to const',
+            complexity: 1,
+            riskLevel: 'low',
+            mode: 'template',
+          },
+        ],
       };
 
       const actor = createActor(transformationActor, { input });
@@ -88,7 +93,9 @@ function oldFunction() {
     });
 
     test('should handle multiple pattern transformations', async () => {
-      const testFile = await createTestFile('multiple.ts', `
+      const testFile = await createTestFile(
+        'multiple.ts',
+        `
 function testFunction() {
   var x = 1;
   var y = 2;
@@ -97,7 +104,8 @@ function testFunction() {
   }
   return x != y;
 }
-      `);
+      `
+      );
 
       const input: TransformationInput = {
         mode: 'template',
@@ -153,26 +161,31 @@ function testFunction() {
     });
 
     test('should handle console log to error transformation', async () => {
-      const testFile = await createTestFile('console.ts', `
+      const testFile = await createTestFile(
+        'console.ts',
+        `
 function logError() {
   console.log('Error: Something went wrong');
   console.log("Error: Another issue");
 }
-      `);
+      `
+      );
 
       const input: TransformationInput = {
         mode: 'template',
         files: [testFile],
-        patterns: [{
-          id: 'console-log-to-console-error',
-          language: 'typescript',
-          pattern: 'console.log(\'Error:',
-          replacement: 'console.error(\'Error:',
-          description: 'Convert console.log to console.error for errors',
-          complexity: 1,
-          riskLevel: 'low',
-          mode: 'template',
-        }],
+        patterns: [
+          {
+            id: 'console-log-to-console-error',
+            language: 'typescript',
+            pattern: "console.log('Error:",
+            replacement: "console.error('Error:",
+            description: 'Convert console.log to console.error for errors',
+            complexity: 1,
+            riskLevel: 'low',
+            mode: 'template',
+          },
+        ],
       };
 
       const actor = createActor(transformationActor, { input });
@@ -185,30 +198,35 @@ function logError() {
       expect(transformationResult?.filesModified).toContain(testFile);
 
       const modifiedContent = await readTestFile(testFile);
-      expect(modifiedContent).toContain('console.error(\'Error:');
+      expect(modifiedContent).toContain("console.error('Error:");
       expect(modifiedContent).toContain('console.error("Error:');
     });
 
     test('should handle array includes transformation', async () => {
-      const testFile = await createTestFile('includes.ts', `
+      const testFile = await createTestFile(
+        'includes.ts',
+        `
 function hasItem(arr: string[], item: string) {
   return arr.indexOf(item) !== -1;
 }
-      `);
+      `
+      );
 
       const input: TransformationInput = {
         mode: 'template',
         files: [testFile],
-        patterns: [{
-          id: 'array-includes-instead-of-indexof',
-          language: 'typescript',
-          pattern: '$ARRAY.indexOf($ITEM) !== -1',
-          replacement: '$ARRAY.includes($ITEM)',
-          description: 'Use includes instead of indexOf',
-          complexity: 1,
-          riskLevel: 'low',
-          mode: 'template',
-        }],
+        patterns: [
+          {
+            id: 'array-includes-instead-of-indexof',
+            language: 'typescript',
+            pattern: '$ARRAY.indexOf($ITEM) !== -1',
+            replacement: '$ARRAY.includes($ITEM)',
+            description: 'Use includes instead of indexOf',
+            complexity: 1,
+            riskLevel: 'low',
+            mode: 'template',
+          },
+        ],
       };
 
       const actor = createActor(transformationActor, { input });
@@ -227,26 +245,31 @@ function hasItem(arr: string[], item: string) {
 
   describe('AST Transformations', () => {
     test('should apply AST-based transformation', async () => {
-      const testFile = await createTestFile('ast.ts', `
+      const testFile = await createTestFile(
+        'ast.ts',
+        `
 function asyncFunction() {
   var result = "test";
   return result;
 }
-      `);
+      `
+      );
 
       const input: TransformationInput = {
         mode: 'ast',
         files: [testFile],
-        patterns: [{
-          id: 'smart-var-to-const-let',
-          language: 'typescript',
-          pattern: 'var $NAME = $VALUE',
-          replacement: 'const $NAME = $VALUE',
-          description: 'Convert var to const using AST',
-          complexity: 3,
-          riskLevel: 'medium',
-          mode: 'ast',
-        }],
+        patterns: [
+          {
+            id: 'smart-var-to-const-let',
+            language: 'typescript',
+            pattern: 'var $NAME = $VALUE',
+            replacement: 'const $NAME = $VALUE',
+            description: 'Convert var to const using AST',
+            complexity: 3,
+            riskLevel: 'medium',
+            mode: 'ast',
+          },
+        ],
       };
 
       const actor = createActor(transformationActor, { input });
@@ -263,27 +286,32 @@ function asyncFunction() {
     });
 
     test('should handle promise to async/await transformation', async () => {
-      const testFile = await createTestFile('promise.ts', `
+      const testFile = await createTestFile(
+        'promise.ts',
+        `
 function handlePromise() {
   promise.then((result) => {
     console.log(result);
   });
 }
-      `);
+      `
+      );
 
       const input: TransformationInput = {
         mode: 'ast',
         files: [testFile],
-        patterns: [{
-          id: 'promise-to-async-await',
-          language: 'typescript',
-          pattern: '$PROMISE.then(($PARAM) => { $BODY })',
-          replacement: 'const $PARAM = await $PROMISE; $BODY',
-          description: 'Convert Promise.then to async/await',
-          complexity: 4,
-          riskLevel: 'medium',
-          mode: 'ast',
-        }],
+        patterns: [
+          {
+            id: 'promise-to-async-await',
+            language: 'typescript',
+            pattern: '$PROMISE.then(($PARAM) => { $BODY })',
+            replacement: 'const $PARAM = await $PROMISE; $BODY',
+            description: 'Convert Promise.then to async/await',
+            complexity: 4,
+            riskLevel: 'medium',
+            mode: 'ast',
+          },
+        ],
       };
 
       const actor = createActor(transformationActor, { input });
@@ -302,7 +330,9 @@ function handlePromise() {
 
   describe('LLM Transformations', () => {
     test('should handle LLM transformation request', async () => {
-      const testFile = await createTestFile('llm.ts', `
+      const testFile = await createTestFile(
+        'llm.ts',
+        `
 // This function needs refactoring
 function complexFunction(a: any, b: any, c: any) {
   if (a) {
@@ -314,24 +344,27 @@ function complexFunction(a: any, b: any, c: any) {
   }
   return 0;
 }
-      `);
+      `
+      );
 
       const input: TransformationInput = {
         mode: 'llm',
         files: [testFile],
-        patterns: [{
-          id: 'refactor-complex',
-          language: 'typescript',
-          pattern: 'function complexFunction',
-          replacement: '// Refactored function',
-          description: 'Refactor complex nested conditions',
-          complexity: 5,
-          riskLevel: 'high',
-          mode: 'llm',
-        }],
+        patterns: [
+          {
+            id: 'refactor-complex',
+            language: 'typescript',
+            pattern: 'function complexFunction',
+            replacement: '// Refactored function',
+            description: 'Refactor complex nested conditions',
+            complexity: 5,
+            riskLevel: 'high',
+            mode: 'llm',
+          },
+        ],
         request: {
-          prompt: 'Refactor this complex function to be more readable'
-        }
+          prompt: 'Refactor this complex function to be more readable',
+        },
       };
 
       const actor = createActor(transformationActor, { input });
@@ -352,16 +385,18 @@ function complexFunction(a: any, b: any, c: any) {
       const input: TransformationInput = {
         mode: 'template',
         files: ['/nonexistent/file.ts'],
-        patterns: [{
-          id: 'test-pattern',
-          language: 'typescript',
-          pattern: 'var $VAR',
-          replacement: 'const $VAR',
-          description: 'Test pattern',
-          complexity: 1,
-          riskLevel: 'low',
-          mode: 'template',
-        }],
+        patterns: [
+          {
+            id: 'test-pattern',
+            language: 'typescript',
+            pattern: 'var $VAR',
+            replacement: 'const $VAR',
+            description: 'Test pattern',
+            complexity: 1,
+            riskLevel: 'low',
+            mode: 'template',
+          },
+        ],
       };
 
       const actor = createActor(transformationActor, { input });
@@ -376,7 +411,9 @@ function complexFunction(a: any, b: any, c: any) {
     });
 
     test('should respect complexity limits in template mode', async () => {
-      const testFile = await createTestFile('complex.ts', `
+      const testFile = await createTestFile(
+        'complex.ts',
+        `
 function veryComplexFunction() {
   // This function has high complexity
   for (let i = 0; i < 10; i++) {
@@ -391,21 +428,24 @@ function veryComplexFunction() {
     }
   }
 }
-      `);
+      `
+      );
 
       const input: TransformationInput = {
         mode: 'template',
         files: [testFile],
-        patterns: [{
-          id: 'high-complexity-pattern',
-          language: 'typescript',
-          pattern: 'function veryComplexFunction',
-          replacement: 'function refactoredFunction',
-          description: 'High complexity transformation',
-          complexity: 15, // High complexity - should be filtered out in template mode
-          riskLevel: 'high',
-          mode: 'template',
-        }],
+        patterns: [
+          {
+            id: 'high-complexity-pattern',
+            language: 'typescript',
+            pattern: 'function veryComplexFunction',
+            replacement: 'function refactoredFunction',
+            description: 'High complexity transformation',
+            complexity: 15, // High complexity - should be filtered out in template mode
+            riskLevel: 'high',
+            mode: 'template',
+          },
+        ],
       };
 
       const actor = createActor(transformationActor, { input });
@@ -432,16 +472,18 @@ function veryComplexFunction() {
       const input: TransformationInput = {
         mode: 'template',
         files,
-        patterns: [{
-          id: 'smart-var-to-const-let',
-          language: 'typescript',
-          pattern: 'var $VAR = $VALUE',
-          replacement: 'const $VAR = $VALUE',
-          description: 'Convert var to const',
-          complexity: 1,
-          riskLevel: 'low',
-          mode: 'template',
-        }],
+        patterns: [
+          {
+            id: 'smart-var-to-const-let',
+            language: 'typescript',
+            pattern: 'var $VAR = $VALUE',
+            replacement: 'const $VAR = $VALUE',
+            description: 'Convert var to const',
+            complexity: 1,
+            riskLevel: 'low',
+            mode: 'template',
+          },
+        ],
       };
 
       const startTime = Date.now();
@@ -454,32 +496,37 @@ function veryComplexFunction() {
 
       expect(transformationResult?.mode).toBe('template');
       expect(transformationResult?.filesModified).toHaveLength(5);
-      
+
       // Should complete within reasonable time
       const processingTime = endTime - startTime;
       expect(processingTime).toBeLessThan(5000); // 5 seconds max
     });
 
     test('should provide transformation count information', async () => {
-      const testFile = await createTestFile('timing.ts', `
+      const testFile = await createTestFile(
+        'timing.ts',
+        `
 var a = 1;
 var b = 2;
 var c = 3;
-      `);
+      `
+      );
 
       const input: TransformationInput = {
         mode: 'template',
         files: [testFile],
-        patterns: [{
-          id: 'smart-var-to-const-let',
-          language: 'typescript',
-          pattern: 'var $VAR = $VALUE',
-          replacement: 'const $VAR = $VALUE',
-          description: 'Convert var to const',
-          complexity: 1,
-          riskLevel: 'low',
-          mode: 'template',
-        }],
+        patterns: [
+          {
+            id: 'smart-var-to-const-let',
+            language: 'typescript',
+            pattern: 'var $VAR = $VALUE',
+            replacement: 'const $VAR = $VALUE',
+            description: 'Convert var to const',
+            complexity: 1,
+            riskLevel: 'low',
+            mode: 'template',
+          },
+        ],
       };
 
       const actor = createActor(transformationActor, { input });
@@ -495,10 +542,13 @@ var c = 3;
 
   describe('Pattern Filtering', () => {
     test('should filter patterns by complexity in template mode', async () => {
-      const testFile = await createTestFile('filter.ts', `
+      const testFile = await createTestFile(
+        'filter.ts',
+        `
 var x = 1;
 function test() { return "hello"; }
-      `);
+      `
+      );
 
       const input: TransformationInput = {
         mode: 'template',
@@ -542,10 +592,13 @@ function test() { return "hello"; }
     });
 
     test('should only apply AST patterns in AST mode', async () => {
-      const testFile = await createTestFile('mode-filter.ts', `
+      const testFile = await createTestFile(
+        'mode-filter.ts',
+        `
 var x = 1;
 var y = 2;
-      `);
+      `
+      );
 
       const input: TransformationInput = {
         mode: 'ast',

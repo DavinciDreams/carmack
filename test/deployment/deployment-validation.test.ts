@@ -1,9 +1,9 @@
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { FileTestUtils } from '../test-helpers.js';
 
 /**
  * Deployment and Monitoring Validation System
- * 
+ *
  * Comprehensive testing of deployment configurations, monitoring setup,
  * production readiness, and operational health checks for the Carmack Coder system.
  */
@@ -160,8 +160,8 @@ class DeploymentValidator {
     checks.push(await this.checkCertificates());
 
     // Determine overall status
-    const failedChecks = checks.filter(c => c.status === 'fail').length;
-    const warnChecks = checks.filter(c => c.status === 'warn').length;
+    const failedChecks = checks.filter((c) => c.status === 'fail').length;
+    const warnChecks = checks.filter((c) => c.status === 'warn').length;
 
     let status: HealthCheckResult['status'];
     if (failedChecks > 0) {
@@ -185,7 +185,7 @@ class DeploymentValidator {
    */
   private async checkSystemResources(): Promise<HealthCheckResult['checks'][0]> {
     const start = Date.now();
-    
+
     try {
       const memoryUsage = process.memoryUsage();
       const heapUsedMB = memoryUsage.heapUsed / 1024 / 1024;
@@ -199,7 +199,8 @@ class DeploymentValidator {
           message: `High memory utilization: ${memoryUtilization.toFixed(1)}%`,
           duration: Math.max(1, Date.now() - start),
         };
-      } else if (memoryUtilization > 75) {
+      }
+      if (memoryUtilization > 75) {
         return {
           name: 'system-resources',
           status: 'warn',
@@ -207,7 +208,7 @@ class DeploymentValidator {
           duration: Math.max(1, Date.now() - start),
         };
       }
-  
+
       return {
         name: 'system-resources',
         status: 'pass',
@@ -229,10 +230,10 @@ class DeploymentValidator {
    */
   private async checkDatabaseConnection(): Promise<HealthCheckResult['checks'][0]> {
     const start = Date.now();
-    
+
     // Simulate database connection check
-    await new Promise(resolve => setTimeout(resolve, Math.max(1, Math.random() * 20)));
-    
+    await new Promise((resolve) => setTimeout(resolve, Math.max(1, Math.random() * 20)));
+
     return {
       name: 'database-connection',
       status: 'pass',
@@ -246,12 +247,12 @@ class DeploymentValidator {
    */
   private async checkExternalDependencies(): Promise<HealthCheckResult['checks'][0]> {
     const start = Date.now();
-    
+
     try {
       // Check if git is available
       const { execSync } = await import('child_process');
       execSync('git --version', { stdio: 'pipe' });
-      
+
       return {
         name: 'external-dependencies',
         status: 'pass',
@@ -273,11 +274,11 @@ class DeploymentValidator {
    */
   private async checkFileSystemAccess(): Promise<HealthCheckResult['checks'][0]> {
     const start = Date.now();
-    
+
     try {
       const { access, constants } = await import('fs/promises');
       await access('./temp', constants.F_OK);
-      
+
       return {
         name: 'filesystem-access',
         status: 'pass',
@@ -299,10 +300,10 @@ class DeploymentValidator {
    */
   private async checkActorSystem(): Promise<HealthCheckResult['checks'][0]> {
     const start = Date.now();
-    
+
     // Simulate actor system health check
-    await new Promise(resolve => setTimeout(resolve, Math.max(1, Math.random() * 10)));
-    
+    await new Promise((resolve) => setTimeout(resolve, Math.max(1, Math.random() * 10)));
+
     return {
       name: 'actor-system',
       status: 'pass',
@@ -316,10 +317,10 @@ class DeploymentValidator {
    */
   private async checkTransformationEngine(): Promise<HealthCheckResult['checks'][0]> {
     const start = Date.now();
-    
+
     // Simulate transformation engine check
-    await new Promise(resolve => setTimeout(resolve, Math.max(1, Math.random() * 20)));
-    
+    await new Promise((resolve) => setTimeout(resolve, Math.max(1, Math.random() * 20)));
+
     return {
       name: 'transformation-engine',
       status: 'pass',
@@ -333,10 +334,10 @@ class DeploymentValidator {
    */
   private async checkValidationSystem(): Promise<HealthCheckResult['checks'][0]> {
     const start = Date.now();
-    
+
     // Simulate validation system check
-    await new Promise(resolve => setTimeout(resolve, Math.max(1, Math.random() * 15)));
-    
+    await new Promise((resolve) => setTimeout(resolve, Math.max(1, Math.random() * 15)));
+
     return {
       name: 'validation-system',
       status: 'pass',
@@ -350,15 +351,15 @@ class DeploymentValidator {
    */
   private async checkSecurityConfiguration(): Promise<HealthCheckResult['checks'][0]> {
     const start = Date.now();
-    
+
     // Check for security best practices
     const issues: string[] = [];
-    
+
     // Check environment variables
     if (!process.env.NODE_ENV) {
       issues.push('NODE_ENV not set');
     }
-    
+
     if (issues.length > 0) {
       return {
         name: 'security-configuration',
@@ -367,7 +368,7 @@ class DeploymentValidator {
         duration: Math.max(1, Date.now() - start),
       };
     }
-    
+
     return {
       name: 'security-configuration',
       status: 'pass',
@@ -381,10 +382,10 @@ class DeploymentValidator {
    */
   private async checkCertificates(): Promise<HealthCheckResult['checks'][0]> {
     const start = Date.now();
-    
+
     // Simulate certificate check
-    await new Promise(resolve => setTimeout(resolve, Math.max(1, Math.random() * 10)));
-    
+    await new Promise((resolve) => setTimeout(resolve, Math.max(1, Math.random() * 10)));
+
     return {
       name: 'certificates',
       status: 'pass',
@@ -398,7 +399,7 @@ class DeploymentValidator {
    */
   async collectMetrics(): Promise<MonitoringMetrics> {
     const memoryUsage = process.memoryUsage();
-    
+
     return {
       system: {
         cpuUsage: Math.random() * 100, // Simulated
@@ -588,11 +589,11 @@ describe('Deployment and Monitoring Validation System', () => {
       console.log('   ✅ Health checks completed');
       console.log(`   📊 Overall status: ${healthResult.status}`);
       console.log(`   🔍 Total checks: ${healthResult.checks.length}`);
-      
-      const passedChecks = healthResult.checks.filter(c => c.status === 'pass').length;
-      const warnChecks = healthResult.checks.filter(c => c.status === 'warn').length;
-      const failedChecks = healthResult.checks.filter(c => c.status === 'fail').length;
-      
+
+      const passedChecks = healthResult.checks.filter((c) => c.status === 'pass').length;
+      const warnChecks = healthResult.checks.filter((c) => c.status === 'warn').length;
+      const failedChecks = healthResult.checks.filter((c) => c.status === 'fail').length;
+
       console.log(`   ✅ Passed: ${passedChecks}`);
       console.log(`   ⚠️ Warnings: ${warnChecks}`);
       console.log(`   ❌ Failed: ${failedChecks}`);
@@ -602,7 +603,7 @@ describe('Deployment and Monitoring Validation System', () => {
       console.log('🔬 Testing individual system component checks');
 
       const healthResult = await validator.performHealthChecks();
-      
+
       const expectedChecks = [
         'system-resources',
         'database-connection',
@@ -616,7 +617,7 @@ describe('Deployment and Monitoring Validation System', () => {
       ];
 
       for (const expectedCheck of expectedChecks) {
-        const check = healthResult.checks.find(c => c.name === expectedCheck);
+        const check = healthResult.checks.find((c) => c.name === expectedCheck);
         expect(check).toBeDefined();
         expect(['pass', 'warn', 'fail'].includes(check!.status)).toBe(true);
         expect(check!.duration).toBeGreaterThan(0);
@@ -636,7 +637,9 @@ describe('Deployment and Monitoring Validation System', () => {
 
       expect(totalTime).toBeLessThan(5000); // Should complete within 5 seconds
 
-      const avgCheckTime = healthResult.checks.reduce((sum, check) => sum + check.duration, 0) / healthResult.checks.length;
+      const avgCheckTime =
+        healthResult.checks.reduce((sum, check) => sum + check.duration, 0) /
+        healthResult.checks.length;
 
       console.log('   ✅ Health check performance measured');
       console.log(`   ⏱️ Total time: ${totalTime}ms`);
@@ -673,7 +676,9 @@ describe('Deployment and Monitoring Validation System', () => {
       console.log(`   💻 CPU Usage: ${metrics.system.cpuUsage.toFixed(1)}%`);
       console.log(`   💾 Memory Usage: ${metrics.system.memoryUsage.toFixed(1)}%`);
       console.log(`   📊 Requests/sec: ${metrics.application.requestsPerSecond.toFixed(0)}`);
-      console.log(`   ⚡ Avg Response Time: ${metrics.application.averageResponseTime.toFixed(0)}ms`);
+      console.log(
+        `   ⚡ Avg Response Time: ${metrics.application.averageResponseTime.toFixed(0)}ms`
+      );
       console.log(`   🔄 Transformations Processed: ${metrics.transformations.totalProcessed}`);
       console.log(`   ✅ Success Rate: ${metrics.transformations.successRate.toFixed(1)}%`);
     });
@@ -703,7 +708,7 @@ describe('Deployment and Monitoring Validation System', () => {
       expect(metrics.transformations.queueLength).toBeGreaterThanOrEqual(0);
 
       console.log('   ✅ Metric ranges validated');
-      console.log(`   📊 All metrics within expected ranges`);
+      console.log('   📊 All metrics within expected ranges');
     });
   });
 
@@ -746,7 +751,7 @@ describe('Deployment and Monitoring Validation System', () => {
       const metrics = await validator.collectMetrics();
 
       // Production readiness criteria
-      const isProductionReady = 
+      const isProductionReady =
         configValidation.isValid &&
         healthCheck.status !== 'unhealthy' &&
         metrics.system.memoryUsage < 80 &&
@@ -801,10 +806,9 @@ describe('Deployment and Monitoring Validation System', () => {
       expect(result.isValid).toBe(false);
       expect(result.errors.length).toBeGreaterThan(0);
 
-      const criticalIssues = result.errors.filter(error => 
-        error.includes('TLS') || 
-        error.includes('monitoring') || 
-        error.includes('replicas')
+      const criticalIssues = result.errors.filter(
+        (error) =>
+          error.includes('TLS') || error.includes('monitoring') || error.includes('replicas')
       );
 
       expect(criticalIssues.length).toBeGreaterThan(0);
@@ -847,7 +851,7 @@ describe('Deployment and Monitoring Validation System', () => {
       console.log('🔬 Testing alerting thresholds');
 
       const metrics = await validator.collectMetrics();
-      
+
       // Define alerting thresholds
       const thresholds = {
         cpuUsage: 80,
@@ -872,12 +876,20 @@ describe('Deployment and Monitoring Validation System', () => {
       }
 
       console.log('   ✅ Alerting thresholds tested');
-      console.log(`   📊 CPU: ${metrics.system.cpuUsage.toFixed(1)}% (threshold: ${thresholds.cpuUsage}%)`);
-      console.log(`   💾 Memory: ${metrics.system.memoryUsage.toFixed(1)}% (threshold: ${thresholds.memoryUsage}%)`);
-      console.log(`   🚨 Error rate: ${metrics.application.errorRate.toFixed(1)}% (threshold: ${thresholds.errorRate}%)`);
-      console.log(`   ⏱️ Response time: ${metrics.application.averageResponseTime.toFixed(0)}ms (threshold: ${thresholds.responseTime}ms)`);
+      console.log(
+        `   📊 CPU: ${metrics.system.cpuUsage.toFixed(1)}% (threshold: ${thresholds.cpuUsage}%)`
+      );
+      console.log(
+        `   💾 Memory: ${metrics.system.memoryUsage.toFixed(1)}% (threshold: ${thresholds.memoryUsage}%)`
+      );
+      console.log(
+        `   🚨 Error rate: ${metrics.application.errorRate.toFixed(1)}% (threshold: ${thresholds.errorRate}%)`
+      );
+      console.log(
+        `   ⏱️ Response time: ${metrics.application.averageResponseTime.toFixed(0)}ms (threshold: ${thresholds.responseTime}ms)`
+      );
       console.log(`   🔔 Active alerts: ${alerts.length}`);
-      
+
       if (alerts.length > 0) {
         alerts.forEach((alert, i) => {
           console.log(`   ${i + 1}. ${alert}`);

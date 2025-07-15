@@ -2,11 +2,11 @@
  * Basic telemetry testing - simplified version to avoid hanging issues
  */
 
-import { describe, test, expect } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { TelemetryCollector } from '../src/telemetry/collector.js';
 import {
-  PatternSuccessMetricSchema,
   LatencyMetricSchema,
+  PatternSuccessMetricSchema,
   TelemetryConfigSchema,
 } from '../src/telemetry/types.js';
 

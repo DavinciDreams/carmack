@@ -1,9 +1,9 @@
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
+import { mkdir, rm, writeFile } from 'fs/promises';
+import { tmpdir } from 'os';
+import { join } from 'path';
 import { createActor, waitFor } from 'xstate';
 import { dafnyActor } from '../../src/actors/dafny.js';
-import { writeFile, mkdir, rm } from 'fs/promises';
-import { join } from 'path';
-import { tmpdir } from 'os';
 
 // Dafny input type matching the actual implementation
 interface DafnyInput {
@@ -56,7 +56,10 @@ describe('Dafny Actor', () => {
   describe('Basic Verification', () => {
     test('should verify simple TypeScript files', async () => {
       await createTestFile('simple.ts', 'const x: number = 42;');
-      await createTestFile('function.ts', 'function add(a: number, b: number): number { return a + b; }');
+      await createTestFile(
+        'function.ts',
+        'function add(a: number, b: number): number { return a + b; }'
+      );
 
       const input: DafnyInput = {
         files: ['simple.ts', 'function.ts'],
@@ -314,7 +317,10 @@ describe('Dafny Actor', () => {
     });
 
     test('should generate appropriate conditions for LLM mode', async () => {
-      await createTestFile('llm-test.ts', 'class DataProcessor { process(input: string): string { return input.toUpperCase(); } }');
+      await createTestFile(
+        'llm-test.ts',
+        'class DataProcessor { process(input: string): string { return input.toUpperCase(); } }'
+      );
 
       const input: DafnyInput = {
         files: ['llm-test.ts'],
@@ -344,7 +350,7 @@ describe('Dafny Actor', () => {
       try {
         const actor = createActor(dafnyActor, { input: invalidInput as any });
         actor.start();
-        
+
         await waitFor(actor, (state) => state.status === 'done', { timeout: 5000 });
         expect(false).toBe(true); // Should not reach here
       } catch (error) {
@@ -362,7 +368,7 @@ describe('Dafny Actor', () => {
       try {
         const actor = createActor(dafnyActor, { input: incompleteInput as any });
         actor.start();
-        
+
         await waitFor(actor, (state) => state.status === 'done', { timeout: 5000 });
         expect(false).toBe(true); // Should not reach here
       } catch (error) {
@@ -431,10 +437,13 @@ describe('Dafny Actor', () => {
 
   describe('Performance and Reliability', () => {
     test('should complete verification within reasonable time', async () => {
-      await createTestFile('perf-test.ts', 'function fibonacci(n: number): number { return n <= 1 ? n : fibonacci(n-1) + fibonacci(n-2); }');
+      await createTestFile(
+        'perf-test.ts',
+        'function fibonacci(n: number): number { return n <= 1 ? n : fibonacci(n-1) + fibonacci(n-2); }'
+      );
 
       const startTime = Date.now();
-      
+
       const input: DafnyInput = {
         files: ['perf-test.ts'],
         transformationMode: 'ast',
@@ -471,7 +480,7 @@ describe('Dafny Actor', () => {
       });
 
       const results = await Promise.all(promises);
-      
+
       expect(results).toHaveLength(3);
       results.forEach((verificationResult, index) => {
         assertDafnyResult(verificationResult);
@@ -480,7 +489,10 @@ describe('Dafny Actor', () => {
     });
 
     test('should maintain consistency across multiple runs', async () => {
-      await createTestFile('consistency.ts', 'interface Config { debug: boolean; timeout: number; }');
+      await createTestFile(
+        'consistency.ts',
+        'interface Config { debug: boolean; timeout: number; }'
+      );
 
       const input: DafnyInput = {
         files: ['consistency.ts'],
@@ -495,7 +507,7 @@ describe('Dafny Actor', () => {
         actor.start();
         const result = await waitFor(actor, (state) => state.status === 'done', { timeout: 10000 });
         const verificationResult = result.output;
-        
+
         assertDafnyResult(verificationResult);
         results.push(verificationResult);
       }
@@ -515,10 +527,12 @@ describe('Dafny Actor', () => {
       // Create a moderate number of files to test scalability
       const fileCount = 10;
       const files: string[] = [];
-      
+
       for (let i = 0; i < fileCount; i++) {
         const fileName = `large-set-${i}.ts`;
-        await createTestFile(fileName, `
+        await createTestFile(
+          fileName,
+          `
           export class Component${i} {
             private value: number = ${i};
             
@@ -530,7 +544,8 @@ describe('Dafny Actor', () => {
               this.value = newValue;
             }
           }
-        `);
+        `
+        );
         files.push(fileName);
       }
 
@@ -554,7 +569,7 @@ describe('Dafny Actor', () => {
     test('should verify var-to-const transformation', async () => {
       const originalCode = 'var x = 1;\nvar y = "hello";\nvar z = true;';
       const transformedCode = 'const x = 1;\nconst y = "hello";\nconst z = true;';
-      
+
       await createTestFile('var-to-const.ts', transformedCode);
 
       const input: DafnyInput = {
@@ -577,7 +592,7 @@ describe('Dafny Actor', () => {
     test('should verify equality operator transformation', async () => {
       const originalCode = 'if (x == null) { return false; }';
       const transformedCode = 'if (x === null) { return false; }';
-      
+
       await createTestFile('equality.ts', transformedCode);
 
       const input: DafnyInput = {
@@ -609,7 +624,7 @@ describe('Dafny Actor', () => {
           return result;
         }
       `;
-      
+
       const transformedCode = `
         function processData(data: any[]): string[] {
           const result: string[] = [];
@@ -621,7 +636,7 @@ describe('Dafny Actor', () => {
           return result;
         }
       `;
-      
+
       await createTestFile('refactor.ts', transformedCode);
 
       const input: DafnyInput = {

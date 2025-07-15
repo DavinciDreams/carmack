@@ -1,9 +1,6 @@
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
-import type {
-  TransformationResult,
-  AstPattern,
-} from './types.js';
+import type { AstPattern, TransformationResult } from './types.js';
 
 // Repository management types and schemas
 export const RepositoryConfigSchema = z.object({
@@ -30,13 +27,15 @@ export const RepositoryAnalysisSchema = z.object({
     distribution: z.record(z.number()),
   }),
   patterns: z.array(z.any()), // AstPattern array
-  issues: z.array(z.object({
-    file: z.string(),
-    line: z.number(),
-    severity: z.enum(['error', 'warning', 'info']),
-    message: z.string(),
-    rule: z.string(),
-  })),
+  issues: z.array(
+    z.object({
+      file: z.string(),
+      line: z.number(),
+      severity: z.enum(['error', 'warning', 'info']),
+      message: z.string(),
+      rule: z.string(),
+    })
+  ),
   recommendations: z.array(z.string()),
 });
 
@@ -45,11 +44,13 @@ export const RepositoryProcessingResultSchema = z.object({
   status: z.enum(['success', 'partial', 'failed']),
   analysis: RepositoryAnalysisSchema,
   transformations: z.array(z.any()), // TransformationResult array
-  documentation: z.object({
-    apiDocs: z.string().optional(),
-    architectureDocs: z.string().optional(),
-    patternDocs: z.string().optional(),
-  }).optional(),
+  documentation: z
+    .object({
+      apiDocs: z.string().optional(),
+      architectureDocs: z.string().optional(),
+      patternDocs: z.string().optional(),
+    })
+    .optional(),
   errors: z.array(z.string()),
   warnings: z.array(z.string()),
   processingTime: z.number(),
@@ -63,7 +64,7 @@ export type RepositoryProcessingResult = z.infer<typeof RepositoryProcessingResu
 
 /**
  * Repository Manager
- * 
+ *
  * Handles cloning, analyzing, and processing external repositories
  * with comprehensive transformation and documentation capabilities.
  */
@@ -82,7 +83,7 @@ export class RepositoryManager {
   async processRepository(config: RepositoryConfig): Promise<RepositoryProcessingResult> {
     const startTime = Date.now();
     const validatedConfig = RepositoryConfigSchema.parse(config);
-    
+
     let clonePath = '';
     let analysis: RepositoryAnalysis | null = null;
     const transformations: TransformationResult[] = [];
@@ -112,7 +113,12 @@ export class RepositoryManager {
       console.log('📖 Documentation generated');
 
       // Step 5: Create output package
-      const outputPath = await this.packageResults(clonePath, analysis, transformations, documentation);
+      const outputPath = await this.packageResults(
+        clonePath,
+        analysis,
+        transformations,
+        documentation
+      );
       console.log(`📦 Results packaged to: ${outputPath}`);
 
       return {
@@ -126,10 +132,9 @@ export class RepositoryManager {
         processingTime: Date.now() - startTime,
         outputPath,
       };
-
     } catch (error) {
       errors.push(error instanceof Error ? error.message : String(error));
-      
+
       return {
         repositoryUrl: validatedConfig.url,
         status: 'failed',
@@ -159,7 +164,7 @@ export class RepositoryManager {
     // Create temporary directory
     await mkdir(this.tempDir, { recursive: true });
     const tempPath = await mkdtemp(join(this.tempDir, 'repo-'));
-    
+
     // Extract repository name for directory
     const repoName = config.url.split('/').pop()?.replace('.git', '') || 'repository';
     const clonePath = join(tempPath, repoName);
@@ -168,17 +173,19 @@ export class RepositoryManager {
     const cloneCommand = [
       this.gitCommand,
       'clone',
-      '--depth', '1', // Shallow clone for faster processing
-      '--branch', config.branch,
+      '--depth',
+      '1', // Shallow clone for faster processing
+      '--branch',
+      config.branch,
       config.url,
-      clonePath
+      clonePath,
     ].join(' ');
 
     try {
-      execSync(cloneCommand, { 
+      execSync(cloneCommand, {
         stdio: 'pipe',
         timeout: config.timeout,
-        encoding: 'utf-8'
+        encoding: 'utf-8',
       });
     } catch (error) {
       throw new Error(`Failed to clone repository: ${error}`);
@@ -190,10 +197,13 @@ export class RepositoryManager {
   /**
    * Analyze repository structure and complexity
    */
-  private async analyzeRepository(clonePath: string, config: RepositoryConfig): Promise<RepositoryAnalysis> {
+  private async analyzeRepository(
+    clonePath: string,
+    config: RepositoryConfig
+  ): Promise<RepositoryAnalysis> {
     const { readdir, stat, readFile } = await import('fs/promises');
     const { join, extname, relative } = await import('path');
-    
+
     const analysis: RepositoryAnalysis = {
       repositoryUrl: config.url,
       clonePath,
@@ -219,22 +229,24 @@ export class RepositoryManager {
     const analyzeDirectory = async (dirPath: string): Promise<void> => {
       try {
         const entries = await readdir(dirPath);
-        
+
         for (const entry of entries) {
           const fullPath = join(dirPath, entry);
           const stats = await stat(fullPath);
-          
+
           if (stats.isDirectory()) {
             // Skip excluded directories
             const relativePath = relative(clonePath, fullPath);
-            if (!config.excludePatterns.some(pattern => 
-              relativePath.includes(pattern.replace('/**', ''))
-            )) {
+            if (
+              !config.excludePatterns.some((pattern) =>
+                relativePath.includes(pattern.replace('/**', ''))
+              )
+            ) {
               await analyzeDirectory(fullPath);
             }
           } else if (stats.isFile()) {
             analysis.totalFiles++;
-            
+
             // Check file size limit
             if (stats.size > config.maxFileSize) {
               analysis.skippedFiles++;
@@ -243,10 +255,10 @@ export class RepositoryManager {
 
             // Check include/exclude patterns
             const relativePath = relative(clonePath, fullPath);
-            const shouldInclude = config.includePatterns.some(pattern =>
+            const shouldInclude = config.includePatterns.some((pattern) =>
               relativePath.match(pattern.replace('**/', '').replace('*', '.*'))
             );
-            const shouldExclude = config.excludePatterns.some(pattern =>
+            const shouldExclude = config.excludePatterns.some((pattern) =>
               relativePath.match(pattern.replace('**/', '').replace('*', '.*'))
             );
 
@@ -259,23 +271,22 @@ export class RepositoryManager {
             try {
               const content = await readFile(fullPath, 'utf-8');
               const fileAnalysis = await this.analyzeFile(fullPath, content);
-              
+
               analysis.analyzedFiles++;
               analysis.totalLinesOfCode += fileAnalysis.linesOfCode;
-              
+
               // Track language statistics
               const ext = extname(fullPath);
               analysis.languages[ext] = (analysis.languages[ext] || 0) + 1;
-              
+
               // Track complexity
               complexityScores.push(fileAnalysis.complexity);
-              
+
               // Detect patterns
               detectedPatterns.push(...fileAnalysis.patterns);
-              
+
               // Track issues
               analysis.issues.push(...fileAnalysis.issues);
-              
             } catch (error) {
               analysis.skippedFiles++;
               console.warn(`Failed to analyze ${relativePath}:`, error);
@@ -285,23 +296,26 @@ export class RepositoryManager {
       } catch (error) {
         console.warn(`Failed to read directory ${dirPath}:`, error);
       }
-    }
+    };
 
     await analyzeDirectory(clonePath);
 
     // Calculate complexity statistics
     if (complexityScores.length > 0) {
-      analysis.complexity.average = complexityScores.reduce((a, b) => a + b, 0) / complexityScores.length;
+      analysis.complexity.average =
+        complexityScores.reduce((a, b) => a + b, 0) / complexityScores.length;
       analysis.complexity.max = Math.max(...complexityScores);
-      
+
       // Create complexity distribution
-      const buckets = [0, 5, 10, 15, 20, Infinity];
+      const buckets = [0, 5, 10, 15, 20, Number.POSITIVE_INFINITY];
       for (let i = 0; i < buckets.length - 1; i++) {
         const min = buckets[i];
         const max = buckets[i + 1];
         if (min !== undefined && max !== undefined) {
-          const count = complexityScores.filter(score => score >= min && score < max).length;
-          analysis.complexity.distribution[`${min}-${max === Infinity ? '+' : max}`] = count;
+          const count = complexityScores.filter((score) => score >= min && score < max).length;
+          analysis.complexity.distribution[
+            `${min}-${max === Number.POSITIVE_INFINITY ? '+' : max}`
+          ] = count;
         }
       }
     }
@@ -318,7 +332,10 @@ export class RepositoryManager {
   /**
    * Analyze individual file
    */
-  private async analyzeFile(filePath: string, content: string): Promise<{
+  private async analyzeFile(
+    filePath: string,
+    content: string
+  ): Promise<{
     linesOfCode: number;
     complexity: number;
     patterns: AstPattern[];
@@ -331,16 +348,24 @@ export class RepositoryManager {
     }>;
   }> {
     const lines = content.split('\n');
-    const linesOfCode = lines.filter(line => line.trim() && !line.trim().startsWith('//')).length;
-    
+    const linesOfCode = lines.filter((line) => line.trim() && !line.trim().startsWith('//')).length;
+
     // Simple complexity calculation
     let complexity = 1; // Base complexity
     const complexityPatterns = [
-      /\bif\b/g, /\belse\b/g, /\bwhile\b/g, /\bfor\b/g,
-      /\bswitch\b/g, /\bcase\b/g, /\btry\b/g, /\bcatch\b/g,
-      /\?\s*.*\s*:/g, /&&/g, /\|\|/g
+      /\bif\b/g,
+      /\belse\b/g,
+      /\bwhile\b/g,
+      /\bfor\b/g,
+      /\bswitch\b/g,
+      /\bcase\b/g,
+      /\btry\b/g,
+      /\bcatch\b/g,
+      /\?\s*.*\s*:/g,
+      /&&/g,
+      /\|\|/g,
     ];
-    
+
     for (const pattern of complexityPatterns) {
       const matches = content.match(pattern);
       if (matches) {
@@ -365,22 +390,22 @@ export class RepositoryManager {
         id: 'var-to-const',
         description: 'Convert var to const/let',
         severity: 'warning' as const,
-        message: 'Use const or let instead of var'
+        message: 'Use const or let instead of var',
       },
       {
         pattern: /==(?!=)/g,
         id: 'strict-equality',
         description: 'Use strict equality',
         severity: 'warning' as const,
-        message: 'Use === instead of =='
+        message: 'Use === instead of ==',
       },
       {
         pattern: /!=(?!=)/g,
         id: 'strict-inequality',
         description: 'Use strict inequality',
         severity: 'warning' as const,
-        message: 'Use !== instead of !='
-      }
+        message: 'Use !== instead of !=',
+      },
     ];
 
     for (const check of patternChecks) {
@@ -428,11 +453,11 @@ export class RepositoryManager {
     analysis: RepositoryAnalysis
   ): Promise<TransformationResult[]> {
     const transformations: TransformationResult[] = [];
-    
+
     // Group patterns by priority and risk level
-    const lowRiskPatterns = analysis.patterns.filter(p => p.riskLevel === 'low');
-    const mediumRiskPatterns = analysis.patterns.filter(p => p.riskLevel === 'medium');
-    
+    const lowRiskPatterns = analysis.patterns.filter((p) => p.riskLevel === 'low');
+    const mediumRiskPatterns = analysis.patterns.filter((p) => p.riskLevel === 'medium');
+
     // Apply low-risk transformations first
     for (const pattern of lowRiskPatterns) {
       try {
@@ -508,7 +533,7 @@ export class RepositoryManager {
     // This would integrate with the documentation system
     return {
       apiDocs: `# API Documentation\n\nGenerated for ${analysis.repositoryUrl}\n\nTotal files analyzed: ${analysis.analyzedFiles}`,
-      architectureDocs: `# Architecture\n\nRepository structure and complexity analysis.`,
+      architectureDocs: '# Architecture\n\nRepository structure and complexity analysis.',
       patternDocs: `# Patterns\n\nDetected ${analysis.patterns.length} transformation opportunities.`,
     };
   }
@@ -524,25 +549,22 @@ export class RepositoryManager {
   ): Promise<string> {
     const { writeFile, mkdir } = await import('fs/promises');
     const { join } = await import('path');
-    
+
     const outputDir = './output/repositories';
     const repoName = analysis.repositoryUrl.split('/').pop()?.replace('.git', '') || 'repository';
     const outputPath = join(outputDir, `${repoName}-${Date.now()}`);
-    
+
     await mkdir(outputPath, { recursive: true });
-    
+
     // Write analysis report
-    await writeFile(
-      join(outputPath, 'analysis.json'),
-      JSON.stringify(analysis, null, 2)
-    );
-    
+    await writeFile(join(outputPath, 'analysis.json'), JSON.stringify(analysis, null, 2));
+
     // Write transformation results
     await writeFile(
       join(outputPath, 'transformations.json'),
       JSON.stringify(transformations, null, 2)
     );
-    
+
     // Write documentation
     if (documentation.apiDocs) {
       await writeFile(join(outputPath, 'api.md'), documentation.apiDocs);
@@ -553,7 +575,7 @@ export class RepositoryManager {
     if (documentation.patternDocs) {
       await writeFile(join(outputPath, 'patterns.md'), documentation.patternDocs);
     }
-    
+
     return outputPath;
   }
 
@@ -562,7 +584,7 @@ export class RepositoryManager {
    */
   private aggregatePatterns(patterns: AstPattern[]): AstPattern[] {
     const patternMap = new Map<string, AstPattern>();
-    
+
     for (const pattern of patterns) {
       if (patternMap.has(pattern.id)) {
         // Pattern already exists, could increment usage count
@@ -570,7 +592,7 @@ export class RepositoryManager {
       }
       patternMap.set(pattern.id, pattern);
     }
-    
+
     return Array.from(patternMap.values());
   }
 
@@ -579,25 +601,33 @@ export class RepositoryManager {
    */
   private generateRecommendations(analysis: RepositoryAnalysis): string[] {
     const recommendations: string[] = [];
-    
+
     if (analysis.complexity.average > 10) {
-      recommendations.push('Consider refactoring high-complexity functions to improve maintainability');
+      recommendations.push(
+        'Consider refactoring high-complexity functions to improve maintainability'
+      );
     }
-    
+
     if (analysis.issues.length > analysis.analyzedFiles * 0.1) {
-      recommendations.push('High number of code quality issues detected - consider running automated fixes');
+      recommendations.push(
+        'High number of code quality issues detected - consider running automated fixes'
+      );
     }
-    
+
     if (analysis.patterns.length > 0) {
-      recommendations.push(`${analysis.patterns.length} transformation patterns detected - apply automated improvements`);
+      recommendations.push(
+        `${analysis.patterns.length} transformation patterns detected - apply automated improvements`
+      );
     }
-    
+
     const jsFiles = analysis.languages['.js'] || 0;
     const tsFiles = analysis.languages['.ts'] || 0;
     if (jsFiles > tsFiles) {
-      recommendations.push('Consider migrating JavaScript files to TypeScript for better type safety');
+      recommendations.push(
+        'Consider migrating JavaScript files to TypeScript for better type safety'
+      );
     }
-    
+
     return recommendations;
   }
 
@@ -642,7 +672,9 @@ export const repositoryManagerActor = fromPromise(
 );
 
 // Export convenience functions
-export const processRepository = async (config: RepositoryConfig): Promise<RepositoryProcessingResult> => {
+export const processRepository = async (
+  config: RepositoryConfig
+): Promise<RepositoryProcessingResult> => {
   const manager = new RepositoryManager();
   return await manager.processRepository(config);
 };

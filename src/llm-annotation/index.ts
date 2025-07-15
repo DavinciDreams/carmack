@@ -1,11 +1,16 @@
 import { fromPromise } from 'xstate';
-import { LLMAnnotationAnalyzer, llmAnnotationActor, generateLLMAnnotations, validateAnnotationRequest } from './analyzer.js';
+import {
+  generateLLMAnnotations,
+  LLMAnnotationAnalyzer,
+  llmAnnotationActor,
+  validateAnnotationRequest,
+} from './analyzer.js';
 import type { AnnotationRequest, AnnotationResult, LLMAnnotation } from './types.js';
 // import { AnnotationRequestSchema } from './types.js';
 
 /**
  * LLM Annotation System
- * 
+ *
  * Main interface for generating LLM-optimized code annotations
  * that help language models understand code structure, patterns,
  * and transformation opportunities.
@@ -36,15 +41,15 @@ export class LLMAnnotationSystem {
 
     // Recursively find source files
     const sourceFiles: string[] = [];
-    
+
     const scanDirectory = async (dirPath: string): Promise<void> => {
       try {
         const entries = await readdir(dirPath);
-        
+
         for (const entry of entries) {
           const fullPath = join(dirPath, entry);
           const stats = await stat(fullPath);
-          
+
           if (stats.isDirectory()) {
             // Skip common directories to exclude
             if (!['node_modules', '.git', 'dist', 'build', 'coverage'].includes(entry)) {
@@ -100,10 +105,14 @@ export class LLMAnnotationSystem {
       // Sort by impact and effort
       const impactOrder = { critical: 4, high: 3, medium: 2, low: 1 };
       const effortOrder = { trivial: 1, small: 2, medium: 3, large: 4, epic: 5 };
-      
-      const aScore = (impactOrder[a.risk as keyof typeof impactOrder] || 0) / (effortOrder[a.effort as keyof typeof effortOrder] || 1);
-      const bScore = (impactOrder[b.risk as keyof typeof impactOrder] || 0) / (effortOrder[b.effort as keyof typeof effortOrder] || 1);
-      
+
+      const aScore =
+        (impactOrder[a.risk as keyof typeof impactOrder] || 0) /
+        (effortOrder[a.effort as keyof typeof effortOrder] || 1);
+      const bScore =
+        (impactOrder[b.risk as keyof typeof impactOrder] || 0) /
+        (effortOrder[b.effort as keyof typeof effortOrder] || 1);
+
       return bScore - aScore;
     });
   }
@@ -125,27 +134,34 @@ export class LLMAnnotationSystem {
 ${annotation.summary.overview}
 
 ## Key Findings
-${annotation.summary.keyFindings.map(finding => `- ${finding}`).join('\n')}
+${annotation.summary.keyFindings.map((finding) => `- ${finding}`).join('\n')}
 
 ## Top Recommendations
-${annotation.summary.recommendations.slice(0, 5).map((rec, i) => `${i + 1}. ${rec}`).join('\n')}
+${annotation.summary.recommendations
+  .slice(0, 5)
+  .map((rec, i) => `${i + 1}. ${rec}`)
+  .join('\n')}
 
 ## Priority Transformation Opportunities
 
-${topOpportunities.map((opp, i) => `### ${i + 1}. ${opp.title}
+${topOpportunities
+  .map(
+    (opp, i) => `### ${i + 1}. ${opp.title}
 - **Type:** ${opp.type}
 - **Effort:** ${opp.effort}
 - **Risk:** ${opp.risk}
 - **Benefits:** ${opp.benefits.join(', ')}
 
 ${opp.description}
-`).join('\n')}
+`
+  )
+  .join('\n')}
 
 ## Code Patterns Detected
-${annotation.patterns.map(pattern => `- **${pattern.name}** (${pattern.type}): ${pattern.description}`).join('\n')}
+${annotation.patterns.map((pattern) => `- **${pattern.name}** (${pattern.type}): ${pattern.description}`).join('\n')}
 
 ## Architecture Analysis
-${annotation.architecture.map(arch => `- **${arch.component}** (${arch.type}): ${arch.role}`).join('\n')}
+${annotation.architecture.map((arch) => `- **${arch.component}** (${arch.type}): ${arch.role}`).join('\n')}
 
 ## LLM Integration Prompts
 
@@ -186,7 +202,9 @@ export const llmAnnotationSystemActor = fromPromise(
 );
 
 // Export convenience functions
-export const createLLMAnnotations = async (request: AnnotationRequest): Promise<AnnotationResult> => {
+export const createLLMAnnotations = async (
+  request: AnnotationRequest
+): Promise<AnnotationResult> => {
   const system = new LLMAnnotationSystem();
   return await system.annotate(request);
 };
@@ -199,12 +217,19 @@ export const annotateDirectory = async (
   return await system.annotateDirectory(directoryPath, options);
 };
 
-export const annotateProject = async (options: Partial<AnnotationRequest> = {}): Promise<AnnotationResult> => {
+export const annotateProject = async (
+  options: Partial<AnnotationRequest> = {}
+): Promise<AnnotationResult> => {
   const system = new LLMAnnotationSystem();
   return await system.annotateProject(options);
 };
 
 // Re-export types and components
-export { LLMAnnotationAnalyzer, llmAnnotationActor, generateLLMAnnotations, validateAnnotationRequest };
+export {
+  LLMAnnotationAnalyzer,
+  llmAnnotationActor,
+  generateLLMAnnotations,
+  validateAnnotationRequest,
+};
 export type { AnnotationRequest, AnnotationResult, LLMAnnotation };
 export * from './types.js';

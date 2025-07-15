@@ -34,7 +34,7 @@ if (existsSync(specFile)) {
 console.log('\n3. Verifying working Dafny specification...');
 try {
   const output = execSync(`dafny verify ${specFile}`, { encoding: 'utf8' });
-  
+
   if (output.includes('finished with') && output.includes('0 errors')) {
     const match = output.match(/finished with (\d+) verified, 0 errors/);
     const verifiedCount = match ? match[1] : 'unknown';
@@ -52,11 +52,11 @@ try {
 // Test 4: Test our formal verification test suite
 console.log('\n4. Testing formal verification test suite...');
 try {
-  const testOutput = execSync('bun test test/verification/formal-verification.test.ts', { 
+  const testOutput = execSync('bun test test/verification/formal-verification.test.ts', {
     encoding: 'utf8',
-    timeout: 30000 // 30 second timeout
+    timeout: 30000, // 30 second timeout
   });
-  
+
   if (testOutput.includes('pass') && !testOutput.includes('fail')) {
     const passMatch = testOutput.match(/(\d+) pass/);
     const passCount = passMatch ? passMatch[1] : 'unknown';
@@ -73,11 +73,11 @@ try {
 // Test 5: Validate Dafny actor integration
 console.log('\n5. Testing Dafny actor integration...');
 try {
-  const actorTestOutput = execSync('bun test test/actors/dafny.test.ts', { 
+  const actorTestOutput = execSync('bun test test/actors/dafny.test.ts', {
     encoding: 'utf8',
-    timeout: 15000 // 15 second timeout
+    timeout: 15000, // 15 second timeout
   });
-  
+
   if (actorTestOutput.includes('pass') && !actorTestOutput.includes('fail')) {
     const passMatch = actorTestOutput.match(/(\d+) pass/);
     const passCount = passMatch ? passMatch[1] : 'unknown';
@@ -98,4 +98,6 @@ console.log('   ✅ Working specification with 7 verified methods');
 console.log('   ✅ Formal verification test suite functional');
 console.log('   ✅ Dafny actor integration working');
 console.log('   ✅ Graceful fallback handling implemented');
-console.log('\n🚀 The Carmack Coder system now has fully functional formal verification capabilities!');
+console.log(
+  '\n🚀 The Carmack Coder system now has fully functional formal verification capabilities!'
+);

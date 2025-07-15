@@ -143,6 +143,118 @@ export const MachineEventSchema = z.union([
   }),
 ]);
 
+// Standardized Actor Result Interfaces for Production Pipeline
+export const ActorResultBaseSchema = z.object({
+  success: z.boolean(),
+  mode: z.enum(['template', 'ast-grep', 'llm']),
+  executionTime: z.number().optional(),
+  errors: z.array(z.string()).optional(),
+  warnings: z.array(z.string()).optional(),
+});
+
+// Template Engine Actor Result
+export const TemplateEngineResultSchema = ActorResultBaseSchema.extend({
+  mode: z.literal('template'),
+  filesModified: z.array(z.string()),
+  transformationsApplied: z.number(),
+  appliedPatterns: z.array(
+    z.object({
+      file: z.string(),
+      pattern: z.string(),
+      count: z.number(),
+    })
+  ),
+});
+
+// AST-grep Transformation Actor Result
+export const AstGrepResultSchema = ActorResultBaseSchema.extend({
+  mode: z.literal('ast-grep'),
+  filesModified: z.array(z.string()),
+  transformationsApplied: z.number(),
+  appliedPatterns: z.array(
+    z.object({
+      file: z.string(),
+      pattern: z.string(),
+      count: z.number(),
+    })
+  ),
+});
+
+// LLM Transformation Actor Result
+export const LLMTransformationResultSchema = ActorResultBaseSchema.extend({
+  mode: z.literal('llm'),
+  filesModified: z.array(z.string()),
+  transformationsApplied: z.number(),
+  totalTokensUsed: z.number().optional(),
+  averageConfidence: z.number().optional(),
+});
+
+// Pattern Discovery Actor Result
+export const PatternDiscoveryResultSchema = z.object({
+  operation: z.enum(['discover', 'analyze', 'generate', 'validate']),
+  patterns: z.array(z.any()), // DiscoveredPattern array
+  summary: z.object({
+    totalAnalyzed: z.number(),
+    patternsDiscovered: z.number(),
+    averageConfidence: z.number(),
+    categories: z.array(z.string()),
+  }),
+  timestamp: z.string(),
+});
+
+// Pattern Learning Actor Result
+export const PatternLearningResultSchema = z.object({
+  newPatterns: z.array(z.any()), // LearnedPattern array
+  optimizedPatterns: z.array(z.any()), // LearnedPattern array
+  deprecatedPatterns: z.array(z.string()), // pattern IDs
+  insights: z.array(z.string()),
+  recommendations: z.array(z.string()),
+  metrics: z.object({
+    patternsDiscovered: z.number(),
+    patternsOptimized: z.number(),
+    averageConfidence: z.number(),
+    learningTime: z.number(),
+  }),
+});
+
+// Validation Actor Result
+export const ValidationActorResultSchema = z.object({
+  type: z.enum(['types', 'format', 'quality', 'formatFix']),
+  errors: z.array(z.string()).optional(),
+  warnings: z.array(z.string()).optional(),
+  success: z.boolean(),
+});
+
+// LLM Testing Framework Actor Result
+export const LLMTestingResultSchema = z.object({
+  suiteResults: z
+    .array(
+      z.object({
+        passed: z.boolean(),
+        description: z.string(),
+        error: z.string().optional(),
+      })
+    )
+    .optional(),
+  summary: z
+    .object({
+      coverage: z.number(),
+      totalTests: z.number(),
+      passedTests: z.number(),
+      failedTests: z.number(),
+    })
+    .optional(),
+});
+
+// Feedback Loop Actor Result
+export const FeedbackLoopResultSchema = z.object({
+  operation: z.enum(['collect', 'analyze', 'optimize']),
+  feedbackProcessed: z.number(),
+  insights: z.array(z.string()),
+  recommendations: z.array(z.string()),
+  optimizationResults: z.any().optional(),
+});
+
 // Type exports from schemas
 export type FilePath = z.infer<typeof FilePathSchema>;
 export type GitHash = z.infer<typeof GitHashSchema>;
@@ -158,6 +270,23 @@ export type TransformationRequest = z.infer<typeof TransformationRequestSchema>;
 export type TransformationResult = z.infer<typeof TransformationResultSchema>;
 export type MachineContext = z.infer<typeof MachineContextSchema>;
 export type MachineEvent = z.infer<typeof MachineEventSchema>;
+
+// Actor Result Types
+export type ActorResultBase = z.infer<typeof ActorResultBaseSchema>;
+export type TemplateEngineResult = z.infer<typeof TemplateEngineResultSchema>;
+export type AstGrepResult = z.infer<typeof AstGrepResultSchema>;
+export type LLMTransformationResult = z.infer<typeof LLMTransformationResultSchema>;
+export type PatternDiscoveryResult = z.infer<typeof PatternDiscoveryResultSchema>;
+export type PatternLearningResult = z.infer<typeof PatternLearningResultSchema>;
+export type ValidationActorResult = z.infer<typeof ValidationActorResultSchema>;
+export type LLMTestingResult = z.infer<typeof LLMTestingResultSchema>;
+export type FeedbackLoopResult = z.infer<typeof FeedbackLoopResultSchema>;
+
+// Union type for all transformation actor results
+export type TransformationActorResult =
+  | TemplateEngineResult
+  | AstGrepResult
+  | LLMTransformationResult;
 
 // Validation helper functions
 export const validateTransformationRequest = (data: unknown): TransformationRequest => {

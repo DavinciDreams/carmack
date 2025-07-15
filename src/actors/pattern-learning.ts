@@ -1,6 +1,6 @@
+import { readFile, writeFile } from 'node:fs/promises';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
-import { readFile, writeFile } from 'node:fs/promises';
 import type { AstPattern, ComplexityMetrics } from '../types.js';
 
 // Extended pattern type for learning with confidence
@@ -10,11 +10,11 @@ type LearnedPattern = AstPattern & {
 
 /**
  * Pattern Learning System
- * 
+ *
  * This module implements machine learning-based pattern discovery and continuous improvement
  * for the Carmack Coder system. It analyzes transformation results, discovers new patterns,
  * and optimizes existing patterns based on success rates and performance metrics.
- * 
+ *
  * Key Features:
  * - Automatic pattern discovery from successful transformations
  * - Pattern effectiveness scoring and optimization
@@ -26,35 +26,45 @@ type LearnedPattern = AstPattern & {
 // Pattern Learning Input Schema
 const PatternLearningInputSchema = z.object({
   operation: z.enum(['learn', 'discover', 'optimize', 'evaluate']),
-  transformation: z.object({
-    id: z.string(),
-    mode: z.enum(['template', 'ast', 'llm']),
-    filesModified: z.array(z.string()),
-    complexity: z.any().optional(), // ComplexityMetrics
-    validation: z.any().optional(),
-    startTime: z.number(),
-    endTime: z.number().optional(),
-    errors: z.array(z.string()),
-    summary: z.string().optional(),
-  }).optional(),
+  transformation: z
+    .object({
+      id: z.string(),
+      mode: z.enum(['template', 'ast', 'llm']),
+      filesModified: z.array(z.string()),
+      complexity: z.any().optional(), // ComplexityMetrics
+      validation: z.any().optional(),
+      startTime: z.number(),
+      endTime: z.number().optional(),
+      errors: z.array(z.string()),
+      summary: z.string().optional(),
+    })
+    .optional(),
   patterns: z.array(z.any()).optional(), // AstPattern array
-  context: z.object({
-    codebase: z.object({
-      language: z.string().default('typescript'),
-      framework: z.string().optional(),
-      complexity: z.number().default(5),
-      size: z.number().default(1000), // lines of code
-    }).optional(),
-    environment: z.object({
-      performance: z.object({
-        transformationTime: z.number(),
-        memoryUsage: z.number().optional(),
-        cpuUsage: z.number().optional(),
-      }).optional(),
-      success: z.boolean().default(true),
-      userFeedback: z.number().min(0).max(10).optional(), // 0-10 rating
-    }).optional(),
-  }).optional(),
+  context: z
+    .object({
+      codebase: z
+        .object({
+          language: z.string().default('typescript'),
+          framework: z.string().optional(),
+          complexity: z.number().default(5),
+          size: z.number().default(1000), // lines of code
+        })
+        .optional(),
+      environment: z
+        .object({
+          performance: z
+            .object({
+              transformationTime: z.number(),
+              memoryUsage: z.number().optional(),
+              cpuUsage: z.number().optional(),
+            })
+            .optional(),
+          success: z.boolean().default(true),
+          userFeedback: z.number().min(0).max(10).optional(), // 0-10 rating
+        })
+        .optional(),
+    })
+    .optional(),
 });
 
 // Pattern Effectiveness Metrics Schema
@@ -89,11 +99,13 @@ const DiscoveredPatternSchema = z.object({
   }),
   metadata: z.object({
     discoveredAt: z.number(),
-    examples: z.array(z.object({
-      file: z.string(),
-      lineNumber: z.number(),
-      context: z.string(),
-    })),
+    examples: z.array(
+      z.object({
+        file: z.string(),
+        lineNumber: z.number(),
+        context: z.string(),
+      })
+    ),
     relatedPatterns: z.array(z.string()).optional(),
   }),
 });
@@ -124,9 +136,9 @@ export type LearningResult = z.infer<typeof LearningResultSchema>;
 export const patternLearningActor = fromPromise(
   async ({ input }: { input: PatternLearningInput }) => {
     const validatedInput = PatternLearningInputSchema.parse(input);
-    
+
     console.log(`🧠 Starting pattern learning operation: ${validatedInput.operation}`);
-    
+
     const learner = new PatternLearner();
     return await learner.processLearningRequest(validatedInput);
   }
@@ -153,10 +165,10 @@ export class PatternLearner {
    */
   async processLearningRequest(input: PatternLearningInput): Promise<LearningResult> {
     const startTime = Date.now();
-    
+
     try {
       let result: LearningResult;
-      
+
       switch (input.operation) {
         case 'learn':
           result = await this.learnFromTransformation(input);
@@ -173,22 +185,24 @@ export class PatternLearner {
         default:
           throw new Error(`Unknown learning operation: ${input.operation}`);
       }
-      
+
       // Record learning history
       this.learningHistory.push({
         timestamp: Date.now(),
         operation: input.operation,
         results: result,
       });
-      
+
       // Update metrics
       result.metrics.learningTime = Date.now() - startTime;
-      
+
       // Persist learning data
       await this.persistLearningData();
-      
-      console.log(`🎓 Pattern learning completed: ${result.metrics.patternsDiscovered} discovered, ${result.metrics.patternsOptimized} optimized`);
-      
+
+      console.log(
+        `🎓 Pattern learning completed: ${result.metrics.patternsDiscovered} discovered, ${result.metrics.patternsOptimized} optimized`
+      );
+
       return result;
     } catch (error) {
       console.error('❌ Pattern learning failed:', error);
@@ -213,24 +227,25 @@ export class PatternLearner {
    */
   private async learnFromTransformation(input: PatternLearningInput): Promise<LearningResult> {
     const { transformation, patterns, context } = input;
-    
+
     if (!transformation) {
       throw new Error('Transformation data required for learning');
     }
-    
+
     const newPatterns: LearnedPattern[] = [];
     const optimizedPatterns: LearnedPattern[] = [];
     const insights: string[] = [];
     const recommendations: string[] = [];
-    
+
     // Analyze transformation success
     const wasSuccessful = transformation.errors.length === 0 && transformation.endTime;
-    const transformationTime = transformation.endTime ? 
-      transformation.endTime - transformation.startTime : 0;
-    
+    const transformationTime = transformation.endTime
+      ? transformation.endTime - transformation.startTime
+      : 0;
+
     if (wasSuccessful) {
       insights.push(`Successful ${transformation.mode} transformation in ${transformationTime}ms`);
-      
+
       // Learn from successful patterns
       if (patterns && patterns.length > 0) {
         for (const pattern of patterns) {
@@ -241,21 +256,24 @@ export class PatternLearner {
           });
         }
       }
-      
+
       // Discover new patterns from successful transformations
       const discovered = await this.analyzeTransformationForPatterns(transformation);
       newPatterns.push(...discovered);
-      
+
       if (discovered.length > 0) {
-        insights.push(`Discovered ${discovered.length} new patterns from successful transformation`);
+        insights.push(
+          `Discovered ${discovered.length} new patterns from successful transformation`
+        );
       }
     } else {
       insights.push(`Failed transformation: ${transformation.errors.join(', ')}`);
-      
+
       // Learn from failed patterns
       if (patterns && patterns.length > 0) {
         for (const pattern of patterns) {
-          const errorReason = transformation.errors.length > 0 ? transformation.errors[0] : undefined;
+          const errorReason =
+            transformation.errors.length > 0 ? transformation.errors[0] : undefined;
           if (errorReason) {
             await this.updatePatternEffectiveness(pattern.id, {
               success: false,
@@ -268,16 +286,16 @@ export class PatternLearner {
           }
         }
       }
-      
+
       recommendations.push('Consider adjusting pattern complexity or adding validation');
     }
-    
+
     // Analyze context for optimization opportunities
     if (context?.codebase) {
       const contextInsights = this.analyzeCodebaseContext(context.codebase);
       insights.push(...contextInsights);
     }
-    
+
     return {
       newPatterns,
       optimizedPatterns,
@@ -287,8 +305,10 @@ export class PatternLearner {
       metrics: {
         patternsDiscovered: newPatterns.length,
         patternsOptimized: optimizedPatterns.length,
-        averageConfidence: newPatterns.length > 0 ? 
-          newPatterns.reduce((sum, p) => sum + (p.confidence || 0.5), 0) / newPatterns.length : 0,
+        averageConfidence:
+          newPatterns.length > 0
+            ? newPatterns.reduce((sum, p) => sum + (p.confidence || 0.5), 0) / newPatterns.length
+            : 0,
         learningTime: 0, // Will be set by caller
       },
     };
@@ -300,10 +320,10 @@ export class PatternLearner {
   private async discoverNewPatterns(_input: PatternLearningInput): Promise<LearningResult> {
     const insights: string[] = [];
     const newPatterns: LearnedPattern[] = [];
-    
+
     // Analyze transformation history for common patterns
     const commonPatterns = await this.findCommonTransformationPatterns();
-    
+
     for (const discovered of commonPatterns) {
       if (discovered.confidence > 0.7 && discovered.frequency >= 3) {
         const newPattern = await this.convertDiscoveredPatternToAstPattern(discovered);
@@ -313,20 +333,23 @@ export class PatternLearner {
         }
       }
     }
-    
+
     return {
       newPatterns,
       optimizedPatterns: [],
       deprecatedPatterns: [],
       insights,
-      recommendations: newPatterns.length > 0 ? 
-        ['Test new patterns in controlled environment before production use'] : 
-        ['Collect more transformation data to improve pattern discovery'],
+      recommendations:
+        newPatterns.length > 0
+          ? ['Test new patterns in controlled environment before production use']
+          : ['Collect more transformation data to improve pattern discovery'],
       metrics: {
         patternsDiscovered: newPatterns.length,
         patternsOptimized: 0,
-        averageConfidence: newPatterns.length > 0 ? 
-          newPatterns.reduce((sum, p) => sum + (p.confidence || 0.5), 0) / newPatterns.length : 0,
+        averageConfidence:
+          newPatterns.length > 0
+            ? newPatterns.reduce((sum, p) => sum + (p.confidence || 0.5), 0) / newPatterns.length
+            : 0,
         learningTime: 0,
       },
     };
@@ -341,7 +364,7 @@ export class PatternLearner {
     const deprecatedPatterns: string[] = [];
     const insights: string[] = [];
     const recommendations: string[] = [];
-    
+
     if (!patterns || patterns.length === 0) {
       return {
         newPatterns: [],
@@ -357,36 +380,42 @@ export class PatternLearner {
         },
       };
     }
-    
+
     for (const pattern of patterns) {
       const effectiveness = this.effectivenessCache.get(pattern.id);
-      
+
       if (!effectiveness) {
         insights.push(`No effectiveness data for pattern ${pattern.id}`);
         continue;
       }
-      
+
       // Optimize based on effectiveness metrics
       if (effectiveness.successRate < 0.5 && effectiveness.usageCount > 10) {
         // Pattern is consistently failing - deprecate it
         deprecatedPatterns.push(pattern.id);
-        insights.push(`Deprecated low-performing pattern: ${pattern.id} (${(effectiveness.successRate * 100).toFixed(1)}% success rate)`);
+        insights.push(
+          `Deprecated low-performing pattern: ${pattern.id} (${(effectiveness.successRate * 100).toFixed(1)}% success rate)`
+        );
       } else if (effectiveness.successRate > 0.8 && effectiveness.lifecycle === 'experimental') {
         // Promote successful experimental pattern to stable
         const optimized = { ...pattern };
         optimized.riskLevel = 'low';
         optimized.confidence = Math.min(0.95, effectiveness.successRate);
         optimizedPatterns.push(optimized);
-        
+
         // Update lifecycle
         await this.updatePatternLifecycle(pattern.id, 'stable');
-        insights.push(`Promoted pattern ${pattern.id} to stable (${(effectiveness.successRate * 100).toFixed(1)}% success rate)`);
+        insights.push(
+          `Promoted pattern ${pattern.id} to stable (${(effectiveness.successRate * 100).toFixed(1)}% success rate)`
+        );
       } else if (effectiveness.averagePerformance > 5000) {
         // Pattern is slow - suggest optimization
-        recommendations.push(`Consider optimizing pattern ${pattern.id} for better performance (avg: ${effectiveness.averagePerformance}ms)`);
+        recommendations.push(
+          `Consider optimizing pattern ${pattern.id} for better performance (avg: ${effectiveness.averagePerformance}ms)`
+        );
       }
     }
-    
+
     return {
       newPatterns: [],
       optimizedPatterns,
@@ -396,8 +425,11 @@ export class PatternLearner {
       metrics: {
         patternsDiscovered: 0,
         patternsOptimized: optimizedPatterns.length,
-        averageConfidence: optimizedPatterns.length > 0 ? 
-          optimizedPatterns.reduce((sum, p) => sum + (p.confidence || 0.5), 0) / optimizedPatterns.length : 0,
+        averageConfidence:
+          optimizedPatterns.length > 0
+            ? optimizedPatterns.reduce((sum, p) => sum + (p.confidence || 0.5), 0) /
+              optimizedPatterns.length
+            : 0,
         learningTime: 0,
       },
     };
@@ -410,7 +442,7 @@ export class PatternLearner {
     const { patterns } = input;
     const insights: string[] = [];
     const recommendations: string[] = [];
-    
+
     if (!patterns || patterns.length === 0) {
       return {
         newPatterns: [],
@@ -426,32 +458,38 @@ export class PatternLearner {
         },
       };
     }
-    
+
     let totalConfidence = 0;
     let evaluatedCount = 0;
-    
+
     for (const pattern of patterns) {
       const effectiveness = this.effectivenessCache.get(pattern.id);
-      
+
       if (effectiveness) {
         totalConfidence += effectiveness.successRate;
         evaluatedCount++;
-        
-        insights.push(`Pattern ${pattern.id}: ${(effectiveness.successRate * 100).toFixed(1)}% success, ${effectiveness.usageCount} uses, ${effectiveness.lifecycle} lifecycle`);
-        
+
+        insights.push(
+          `Pattern ${pattern.id}: ${(effectiveness.successRate * 100).toFixed(1)}% success, ${effectiveness.usageCount} uses, ${effectiveness.lifecycle} lifecycle`
+        );
+
         if (effectiveness.successRate < 0.3) {
-          recommendations.push(`Review pattern ${pattern.id} - low success rate may indicate issues`);
+          recommendations.push(
+            `Review pattern ${pattern.id} - low success rate may indicate issues`
+          );
         } else if (effectiveness.successRate > 0.9 && effectiveness.usageCount > 50) {
-          recommendations.push(`Pattern ${pattern.id} is highly effective - consider expanding its use cases`);
+          recommendations.push(
+            `Pattern ${pattern.id} is highly effective - consider expanding its use cases`
+          );
         }
       } else {
         insights.push(`Pattern ${pattern.id}: No effectiveness data available`);
       }
     }
-    
+
     const averageEffectiveness = evaluatedCount > 0 ? totalConfidence / evaluatedCount : 0;
     insights.push(`Overall pattern effectiveness: ${(averageEffectiveness * 100).toFixed(1)}%`);
-    
+
     return {
       newPatterns: [],
       optimizedPatterns: [],
@@ -471,7 +509,7 @@ export class PatternLearner {
    * Update pattern effectiveness metrics
    */
   private async updatePatternEffectiveness(
-    patternId: string, 
+    patternId: string,
     result: {
       success: boolean;
       performanceTime?: number;
@@ -480,7 +518,7 @@ export class PatternLearner {
     }
   ): Promise<void> {
     let effectiveness = this.effectivenessCache.get(patternId);
-    
+
     if (!effectiveness) {
       effectiveness = {
         patternId,
@@ -495,22 +533,22 @@ export class PatternLearner {
         lifecycle: 'experimental',
       };
     }
-    
+
     // Update metrics using exponential moving average
     const alpha = 0.1; // Learning rate
     effectiveness.usageCount++;
-    
+
     if (result.success) {
       effectiveness.successRate = effectiveness.successRate * (1 - alpha) + alpha;
       if (result.performanceTime) {
-        effectiveness.averagePerformance = effectiveness.averagePerformance * (1 - alpha) + 
-          result.performanceTime * alpha;
+        effectiveness.averagePerformance =
+          effectiveness.averagePerformance * (1 - alpha) + result.performanceTime * alpha;
       }
     } else {
       effectiveness.successRate = effectiveness.successRate * (1 - alpha);
       effectiveness.errorRate = effectiveness.errorRate * (1 - alpha) + alpha;
     }
-    
+
     effectiveness.lastUpdated = Date.now();
     this.effectivenessCache.set(patternId, effectiveness);
   }
@@ -520,10 +558,10 @@ export class PatternLearner {
    */
   private async analyzeTransformationForPatterns(transformation: any): Promise<LearnedPattern[]> {
     const patterns: LearnedPattern[] = [];
-    
+
     // This is a simplified pattern discovery - in a real implementation,
     // this would use more sophisticated ML techniques
-    
+
     if (transformation.filesModified.length > 0) {
       // Analyze the first modified file for patterns
       try {
@@ -532,7 +570,7 @@ export class PatternLearner {
         // 1. Read the file before/after transformation
         // 2. Use AST analysis to find transformation patterns
         // 3. Extract reusable patterns using ML techniques
-        
+
         // For now, create a mock discovered pattern
         const discoveredPattern: LearnedPattern = {
           id: `discovered-${Date.now()}`,
@@ -545,13 +583,13 @@ export class PatternLearner {
           mode: transformation.mode,
           confidence: 0.7,
         };
-        
+
         patterns.push(discoveredPattern);
       } catch (error) {
         console.warn('Failed to analyze transformation for patterns:', error);
       }
     }
-    
+
     return patterns;
   }
 
@@ -586,7 +624,9 @@ export class PatternLearner {
   /**
    * Convert discovered pattern to AST pattern
    */
-  private async convertDiscoveredPatternToAstPattern(discovered: DiscoveredPattern): Promise<LearnedPattern | null> {
+  private async convertDiscoveredPatternToAstPattern(
+    discovered: DiscoveredPattern
+  ): Promise<LearnedPattern | null> {
     try {
       return {
         id: discovered.id,
@@ -610,28 +650,31 @@ export class PatternLearner {
    */
   private analyzeCodebaseContext(codebase: any): string[] {
     const insights: string[] = [];
-    
+
     if (codebase.complexity > 8) {
       insights.push('High complexity codebase - consider more aggressive refactoring patterns');
     } else if (codebase.complexity < 3) {
       insights.push('Low complexity codebase - focus on style and consistency patterns');
     }
-    
+
     if (codebase.framework) {
       insights.push(`Framework-specific patterns for ${codebase.framework} may be beneficial`);
     }
-    
+
     if (codebase.size > 10000) {
       insights.push('Large codebase - batch processing and performance optimization important');
     }
-    
+
     return insights;
   }
 
   /**
    * Update pattern lifecycle
    */
-  private async updatePatternLifecycle(patternId: string, lifecycle: PatternEffectiveness['lifecycle']): Promise<void> {
+  private async updatePatternLifecycle(
+    patternId: string,
+    lifecycle: PatternEffectiveness['lifecycle']
+  ): Promise<void> {
     const effectiveness = this.effectivenessCache.get(patternId);
     if (effectiveness) {
       effectiveness.lifecycle = lifecycle;
@@ -654,7 +697,7 @@ export class PatternLearner {
     } catch (error) {
       console.log('No existing effectiveness data found, starting fresh');
     }
-    
+
     try {
       // Load discovered patterns
       const discoveredData = await readFile('./data/discovered-patterns.json', 'utf-8');
@@ -674,15 +717,18 @@ export class PatternLearner {
     try {
       // Ensure data directory exists
       await writeFile('./data/.gitkeep', '');
-      
+
       // Save effectiveness data
       const effectivenessObj = Object.fromEntries(this.effectivenessCache);
-      await writeFile('./data/pattern-effectiveness.json', JSON.stringify(effectivenessObj, null, 2));
-      
+      await writeFile(
+        './data/pattern-effectiveness.json',
+        JSON.stringify(effectivenessObj, null, 2)
+      );
+
       // Save discovered patterns
       const discoveredObj = Object.fromEntries(this.discoveredPatterns);
       await writeFile('./data/discovered-patterns.json', JSON.stringify(discoveredObj, null, 2));
-      
+
       console.log('💾 Pattern learning data persisted');
     } catch (error) {
       console.warn('Failed to persist learning data:', error);

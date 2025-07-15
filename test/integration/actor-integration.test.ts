@@ -1,15 +1,15 @@
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
+import { execSync } from 'child_process';
+import { mkdir, rm, writeFile } from 'fs/promises';
+import { tmpdir } from 'os';
+import { join } from 'path';
 import { createActor, waitFor } from 'xstate';
 import { analysisActor } from '../../src/actors/analysis.js';
-import { validationActor } from '../../src/actors/validation.js';
-import { transformationActor } from '../../src/actors/transformation.js';
-import { gitActor } from '../../src/actors/git.js';
 import { dafnyActor } from '../../src/actors/dafny.js';
-import { writeFile, mkdir, rm } from 'fs/promises';
-import { join } from 'path';
-import { tmpdir } from 'os';
-import { execSync } from 'child_process';
-import type { GitCheckpoint, AstPattern } from '../../src/types.js';
+import { gitActor } from '../../src/actors/git.js';
+import { transformationActor } from '../../src/actors/transformation.js';
+import { validationActor } from '../../src/actors/validation.js';
+import type { AstPattern, GitCheckpoint } from '../../src/types.js';
 
 describe('Actor Integration Tests', () => {
   let testDir: string;
@@ -20,7 +20,7 @@ describe('Actor Integration Tests', () => {
     testDir = join(tmpdir(), `integration-test-${Date.now()}`);
     await mkdir(testDir, { recursive: true });
     process.chdir(testDir);
-    
+
     // Setup git for integration tests
     try {
       execSync('git init', { cwd: testDir, stdio: 'pipe' });
@@ -49,7 +49,9 @@ describe('Actor Integration Tests', () => {
   describe('Analysis → Validation Pipeline', () => {
     test('should analyze code and then validate the analysis results', async () => {
       // Step 1: Create test files
-      await createTestFile('complex.ts', `
+      await createTestFile(
+        'complex.ts',
+        `
         function calculateComplexity(data: any[]): number {
           let result = 0;
           for (let i = 0; i < data.length; i++) {
@@ -63,7 +65,8 @@ describe('Actor Integration Tests', () => {
           }
           return result;
         }
-      `);
+      `
+      );
 
       // Step 2: Run analysis with proper input format
       const analysisInput = {
@@ -75,8 +78,8 @@ describe('Actor Integration Tests', () => {
       analysisActorInstance.start();
 
       const analysisResult = await waitFor(
-        analysisActorInstance, 
-        (state) => state.status === 'done', 
+        analysisActorInstance,
+        (state) => state.status === 'done',
         { timeout: 10000 }
       );
 
@@ -95,8 +98,8 @@ describe('Actor Integration Tests', () => {
       validationActorInstance.start();
 
       const validationResult = await waitFor(
-        validationActorInstance, 
-        (state) => state.status === 'done', 
+        validationActorInstance,
+        (state) => state.status === 'done',
         { timeout: 10000 }
       );
 
@@ -113,13 +116,18 @@ describe('Actor Integration Tests', () => {
 
     test('should handle analysis of multiple files and validate them together', async () => {
       // Create multiple related files
-      await createTestFile('utils.ts', `
+      await createTestFile(
+        'utils.ts',
+        `
         export function helper(x: any): string {
           return x == null ? '' : x.toString();
         }
-      `);
+      `
+      );
 
-      await createTestFile('main.ts', `
+      await createTestFile(
+        'main.ts',
+        `
         import { helper } from './utils';
         
         function process(data: any[]): string[] {
@@ -129,7 +137,8 @@ describe('Actor Integration Tests', () => {
           }
           return results;
         }
-      `);
+      `
+      );
 
       // Analyze all files
       const analysisInput = {
@@ -141,8 +150,8 @@ describe('Actor Integration Tests', () => {
       analysisActorInstance.start();
 
       const analysisResult = await waitFor(
-        analysisActorInstance, 
-        (state) => state.status === 'done', 
+        analysisActorInstance,
+        (state) => state.status === 'done',
         { timeout: 10000 }
       );
 
@@ -159,8 +168,8 @@ describe('Actor Integration Tests', () => {
       validationActorInstance.start();
 
       const validationResult = await waitFor(
-        validationActorInstance, 
-        (state) => state.status === 'done', 
+        validationActorInstance,
+        (state) => state.status === 'done',
         { timeout: 10000 }
       );
 
@@ -184,26 +193,26 @@ describe('Actor Integration Tests', () => {
       const gitActorInstance = createActor(gitActor, { input: checkpointInput });
       gitActorInstance.start();
 
-      const checkpointResult = await waitFor(
-        gitActorInstance, 
-        (state) => state.status === 'done', 
-        { timeout: 5000 }
-      );
+      const checkpointResult = await waitFor(gitActorInstance, (state) => state.status === 'done', {
+        timeout: 5000,
+      });
 
       const checkpoint = checkpointResult.output!;
       expect(checkpoint.description).toBe('Before transformation');
 
       // Step 3: Apply transformation with proper pattern format
-      const patterns: AstPattern[] = [{
-        id: 'var-to-const',
-        language: 'typescript',
-        pattern: 'var\\s+(\\w+)\\s*=',
-        replacement: 'const $1 =',
-        description: 'Convert var to const',
-        complexity: 2,
-        riskLevel: 'low',
-        mode: 'template', // Required by the schema
-      }];
+      const patterns: AstPattern[] = [
+        {
+          id: 'var-to-const',
+          language: 'typescript',
+          pattern: 'var\\s+(\\w+)\\s*=',
+          replacement: 'const $1 =',
+          description: 'Convert var to const',
+          complexity: 2,
+          riskLevel: 'low',
+          mode: 'template', // Required by the schema
+        },
+      ];
 
       const transformationInput = {
         mode: 'template' as const,
@@ -211,12 +220,14 @@ describe('Actor Integration Tests', () => {
         patterns,
       };
 
-      const transformationActorInstance = createActor(transformationActor, { input: transformationInput });
+      const transformationActorInstance = createActor(transformationActor, {
+        input: transformationInput,
+      });
       transformationActorInstance.start();
 
       const transformationResult = await waitFor(
-        transformationActorInstance, 
-        (state) => state.status === 'done', 
+        transformationActorInstance,
+        (state) => state.status === 'done',
         { timeout: 10000 }
       );
 
@@ -233,20 +244,22 @@ describe('Actor Integration Tests', () => {
       validationActorInstance.start();
 
       const validationResult = await waitFor(
-        validationActorInstance, 
-        (state) => state.status === 'done', 
+        validationActorInstance,
+        (state) => state.status === 'done',
         { timeout: 10000 }
       );
 
       const validation = validationResult.output!;
-      
+
       // After transformation, code should be valid or have fewer issues
       expect(validation.isValid).toBeDefined();
     });
 
     test('should handle transformation failure and rollback', async () => {
       // Step 1: Create file with complex content
-      await createTestFile('risky-transform.ts', `
+      await createTestFile(
+        'risky-transform.ts',
+        `
         function complexFunction(data: any): any {
           var result = {};
           for (var key in data) {
@@ -256,7 +269,8 @@ describe('Actor Integration Tests', () => {
           }
           return result;
         }
-      `);
+      `
+      );
 
       // Step 2: Create checkpoint
       const checkpointInput = {
@@ -267,25 +281,25 @@ describe('Actor Integration Tests', () => {
       const gitActorInstance = createActor(gitActor, { input: checkpointInput });
       gitActorInstance.start();
 
-      const checkpointResult = await waitFor(
-        gitActorInstance, 
-        (state) => state.status === 'done', 
-        { timeout: 5000 }
-      );
+      const checkpointResult = await waitFor(gitActorInstance, (state) => state.status === 'done', {
+        timeout: 5000,
+      });
 
       const checkpoint = checkpointResult.output!;
 
       // Step 3: Attempt risky transformation
-      const riskyPatterns: AstPattern[] = [{
-        id: 'complex-refactor',
-        language: 'typescript',
-        pattern: 'function\\s+(\\w+)\\([^)]*\\)\\s*{[^}]*}',
-        replacement: '// Complex refactoring attempted',
-        description: 'Complex function refactoring',
-        complexity: 8,
-        riskLevel: 'high',
-        mode: 'llm', // Required by the schema
-      }];
+      const riskyPatterns: AstPattern[] = [
+        {
+          id: 'complex-refactor',
+          language: 'typescript',
+          pattern: 'function\\s+(\\w+)\\([^)]*\\)\\s*{[^}]*}',
+          replacement: '// Complex refactoring attempted',
+          description: 'Complex function refactoring',
+          complexity: 8,
+          riskLevel: 'high',
+          mode: 'llm', // Required by the schema
+        },
+      ];
 
       const riskyTransformationInput = {
         mode: 'llm' as const,
@@ -297,12 +311,14 @@ describe('Actor Integration Tests', () => {
       };
 
       try {
-        const transformationActorInstance = createActor(transformationActor, { input: riskyTransformationInput });
+        const transformationActorInstance = createActor(transformationActor, {
+          input: riskyTransformationInput,
+        });
         transformationActorInstance.start();
 
         const transformationResult = await waitFor(
-          transformationActorInstance, 
-          (state) => state.status === 'done', 
+          transformationActorInstance,
+          (state) => state.status === 'done',
           { timeout: 15000 }
         );
 
@@ -317,8 +333,8 @@ describe('Actor Integration Tests', () => {
           validationActorInstance.start();
 
           const validationResult = await waitFor(
-            validationActorInstance, 
-            (state) => state.status === 'done', 
+            validationActorInstance,
+            (state) => state.status === 'done',
             { timeout: 10000 }
           );
 
@@ -333,8 +349,8 @@ describe('Actor Integration Tests', () => {
             rollbackActorInstance.start();
 
             const rollbackResult = await waitFor(
-              rollbackActorInstance, 
-              (state) => state.status === 'done', 
+              rollbackActorInstance,
+              (state) => state.status === 'done',
               { timeout: 5000 }
             );
 
@@ -352,7 +368,9 @@ describe('Actor Integration Tests', () => {
   describe('Analysis → Transformation → Dafny Pipeline', () => {
     test('should analyze code, apply transformation, and verify with Dafny', async () => {
       // Step 1: Create code with known patterns
-      await createTestFile('verify-transform.ts', `
+      await createTestFile(
+        'verify-transform.ts',
+        `
         function processArray(items: any[]): string[] {
           var results = [];
           for (var i = 0; i < items.length; i++) {
@@ -362,7 +380,8 @@ describe('Actor Integration Tests', () => {
           }
           return results;
         }
-      `);
+      `
+      );
 
       // Step 2: Analyze to identify patterns
       const analysisInput = {
@@ -374,8 +393,8 @@ describe('Actor Integration Tests', () => {
       analysisActorInstance.start();
 
       const analysisResult = await waitFor(
-        analysisActorInstance, 
-        (state) => state.status === 'done', 
+        analysisActorInstance,
+        (state) => state.status === 'done',
         { timeout: 10000 }
       );
 
@@ -383,16 +402,18 @@ describe('Actor Integration Tests', () => {
       expect(analysis.complexity).toBeDefined();
 
       // Step 3: Apply transformation based on analysis
-      const safePatterns: AstPattern[] = [{
-        id: 'var-to-const',
-        language: 'typescript',
-        pattern: 'var\\s+(\\w+)\\s*=',
-        replacement: 'const $1 =',
-        description: 'Convert var to const',
-        complexity: 2,
-        riskLevel: 'low',
-        mode: 'template',
-      }];
+      const safePatterns: AstPattern[] = [
+        {
+          id: 'var-to-const',
+          language: 'typescript',
+          pattern: 'var\\s+(\\w+)\\s*=',
+          replacement: 'const $1 =',
+          description: 'Convert var to const',
+          complexity: 2,
+          riskLevel: 'low',
+          mode: 'template',
+        },
+      ];
 
       const transformationInput = {
         mode: 'template' as const,
@@ -400,12 +421,14 @@ describe('Actor Integration Tests', () => {
         patterns: safePatterns,
       };
 
-      const transformationActorInstance = createActor(transformationActor, { input: transformationInput });
+      const transformationActorInstance = createActor(transformationActor, {
+        input: transformationInput,
+      });
       transformationActorInstance.start();
 
       const transformationResult = await waitFor(
-        transformationActorInstance, 
-        (state) => state.status === 'done', 
+        transformationActorInstance,
+        (state) => state.status === 'done',
         { timeout: 10000 }
       );
 
@@ -433,11 +456,9 @@ describe('Actor Integration Tests', () => {
       const dafnyActorInstance = createActor(dafnyActor, { input: dafnyInput });
       dafnyActorInstance.start();
 
-      const dafnyResult = await waitFor(
-        dafnyActorInstance, 
-        (state) => state.status === 'done', 
-        { timeout: 15000 }
-      );
+      const dafnyResult = await waitFor(dafnyActorInstance, (state) => state.status === 'done', {
+        timeout: 15000,
+      });
 
       const verification = dafnyResult.output!;
       expect(verification.verified).toBe(true);
@@ -446,7 +467,9 @@ describe('Actor Integration Tests', () => {
 
     test('should handle complex transformation with formal verification', async () => {
       // Step 1: Create complex code requiring careful transformation
-      await createTestFile('complex-verify.ts', `
+      await createTestFile(
+        'complex-verify.ts',
+        `
         class DataProcessor {
           private cache: any = {};
           
@@ -475,7 +498,8 @@ describe('Actor Integration Tests', () => {
             return output;
           }
         }
-      `);
+      `
+      );
 
       // Step 2: Analyze complexity and patterns
       const analysisInput = {
@@ -487,8 +511,8 @@ describe('Actor Integration Tests', () => {
       analysisActorInstance.start();
 
       const analysisResult = await waitFor(
-        analysisActorInstance, 
-        (state) => state.status === 'done', 
+        analysisActorInstance,
+        (state) => state.status === 'done',
         { timeout: 10000 }
       );
 
@@ -498,16 +522,18 @@ describe('Actor Integration Tests', () => {
       }
 
       // Step 3: Apply AST-based transformation for better safety
-      const lowRiskPatterns: AstPattern[] = [{
-        id: 'var-to-const',
-        language: 'typescript',
-        pattern: 'var\\s+(\\w+)\\s*=',
-        replacement: 'const $1 =',
-        description: 'Convert var to const',
-        complexity: 2,
-        riskLevel: 'low',
-        mode: 'ast',
-      }];
+      const lowRiskPatterns: AstPattern[] = [
+        {
+          id: 'var-to-const',
+          language: 'typescript',
+          pattern: 'var\\s+(\\w+)\\s*=',
+          replacement: 'const $1 =',
+          description: 'Convert var to const',
+          complexity: 2,
+          riskLevel: 'low',
+          mode: 'ast',
+        },
+      ];
 
       const transformationInput = {
         mode: 'ast' as const,
@@ -515,12 +541,14 @@ describe('Actor Integration Tests', () => {
         patterns: lowRiskPatterns,
       };
 
-      const transformationActorInstance = createActor(transformationActor, { input: transformationInput });
+      const transformationActorInstance = createActor(transformationActor, {
+        input: transformationInput,
+      });
       transformationActorInstance.start();
 
       const transformationResult = await waitFor(
-        transformationActorInstance, 
-        (state) => state.status === 'done', 
+        transformationActorInstance,
+        (state) => state.status === 'done',
         { timeout: 15000 }
       );
 
@@ -535,11 +563,9 @@ describe('Actor Integration Tests', () => {
       const dafnyActorInstance = createActor(dafnyActor, { input: dafnyInput });
       dafnyActorInstance.start();
 
-      const dafnyResult = await waitFor(
-        dafnyActorInstance, 
-        (state) => state.status === 'done', 
-        { timeout: 15000 }
-      );
+      const dafnyResult = await waitFor(dafnyActorInstance, (state) => state.status === 'done', {
+        timeout: 15000,
+      });
 
       const verification = dafnyResult.output!;
       expect(verification.verified).toBe(true);
@@ -550,7 +576,9 @@ describe('Actor Integration Tests', () => {
   describe('Full Pipeline Integration', () => {
     test('should execute complete transformation pipeline', async () => {
       // Step 1: Create source files
-      await createTestFile('pipeline-test.ts', `
+      await createTestFile(
+        'pipeline-test.ts',
+        `
         function legacyFunction(data: any): any {
           var result = [];
           for (var i = 0; i < data.length; i++) {
@@ -561,7 +589,8 @@ describe('Actor Integration Tests', () => {
           }
           return result;
         }
-      `);
+      `
+      );
 
       // Step 2: Initial analysis
       const analysisInput = {
@@ -573,8 +602,8 @@ describe('Actor Integration Tests', () => {
       analysisActorInstance.start();
 
       const analysisResult = await waitFor(
-        analysisActorInstance, 
-        (state) => state.status === 'done', 
+        analysisActorInstance,
+        (state) => state.status === 'done',
         { timeout: 10000 }
       );
 
@@ -590,25 +619,25 @@ describe('Actor Integration Tests', () => {
       const gitActorInstance = createActor(gitActor, { input: checkpointInput });
       gitActorInstance.start();
 
-      const checkpointResult = await waitFor(
-        gitActorInstance, 
-        (state) => state.status === 'done', 
-        { timeout: 5000 }
-      );
+      const checkpointResult = await waitFor(gitActorInstance, (state) => state.status === 'done', {
+        timeout: 5000,
+      });
 
       const checkpoint = checkpointResult.output!;
 
       // Step 4: Apply transformations
-      const safePatterns: AstPattern[] = [{
-        id: 'var-to-const',
-        language: 'typescript',
-        pattern: 'var\\s+(\\w+)\\s*=',
-        replacement: 'const $1 =',
-        description: 'Convert var to const',
-        complexity: 2,
-        riskLevel: 'low',
-        mode: 'template',
-      }];
+      const safePatterns: AstPattern[] = [
+        {
+          id: 'var-to-const',
+          language: 'typescript',
+          pattern: 'var\\s+(\\w+)\\s*=',
+          replacement: 'const $1 =',
+          description: 'Convert var to const',
+          complexity: 2,
+          riskLevel: 'low',
+          mode: 'template',
+        },
+      ];
 
       const transformationInput = {
         mode: 'template' as const,
@@ -616,12 +645,14 @@ describe('Actor Integration Tests', () => {
         patterns: safePatterns,
       };
 
-      const transformationActorInstance = createActor(transformationActor, { input: transformationInput });
+      const transformationActorInstance = createActor(transformationActor, {
+        input: transformationInput,
+      });
       transformationActorInstance.start();
 
       const transformationResult = await waitFor(
-        transformationActorInstance, 
-        (state) => state.status === 'done', 
+        transformationActorInstance,
+        (state) => state.status === 'done',
         { timeout: 10000 }
       );
 
@@ -637,8 +668,8 @@ describe('Actor Integration Tests', () => {
       validationActorInstance.start();
 
       const validationResult = await waitFor(
-        validationActorInstance, 
-        (state) => state.status === 'done', 
+        validationActorInstance,
+        (state) => state.status === 'done',
         { timeout: 10000 }
       );
 
@@ -653,11 +684,9 @@ describe('Actor Integration Tests', () => {
       const dafnyActorInstance = createActor(dafnyActor, { input: dafnyInput });
       dafnyActorInstance.start();
 
-      const dafnyResult = await waitFor(
-        dafnyActorInstance, 
-        (state) => state.status === 'done', 
-        { timeout: 15000 }
-      );
+      const dafnyResult = await waitFor(dafnyActorInstance, (state) => state.status === 'done', {
+        timeout: 15000,
+      });
 
       const verification = dafnyResult.output!;
 
@@ -673,8 +702,8 @@ describe('Actor Integration Tests', () => {
         commitActorInstance.start();
 
         const commitResult = await waitFor(
-          commitActorInstance, 
-          (state) => state.status === 'done', 
+          commitActorInstance,
+          (state) => state.status === 'done',
           { timeout: 5000 }
         );
 
@@ -694,9 +723,11 @@ describe('Actor Integration Tests', () => {
     test('should handle multiple concurrent analysis operations', async () => {
       // Create multiple files for concurrent analysis
       const files = ['concurrent1.ts', 'concurrent2.ts', 'concurrent3.ts'];
-      
+
       for (let i = 0; i < files.length; i++) {
-        await createTestFile(files[i], `
+        await createTestFile(
+          files[i],
+          `
           function process${i}(data: any[]): any {
             var result = [];
             for (var j = 0; j < data.length; j++) {
@@ -706,7 +737,8 @@ describe('Actor Integration Tests', () => {
             }
             return result;
           }
-        `);
+        `
+        );
       }
 
       // Run concurrent analysis operations
@@ -719,11 +751,9 @@ describe('Actor Integration Tests', () => {
         const analysisActorInstance = createActor(analysisActor, { input: analysisInput });
         analysisActorInstance.start();
 
-        const result = await waitFor(
-          analysisActorInstance, 
-          (state) => state.status === 'done', 
-          { timeout: 10000 }
-        );
+        const result = await waitFor(analysisActorInstance, (state) => state.status === 'done', {
+          timeout: 10000,
+        });
 
         return result.output;
       });
@@ -741,26 +771,31 @@ describe('Actor Integration Tests', () => {
     test('should handle concurrent transformation operations safely', async () => {
       // Create separate files for concurrent transformation
       const files = ['transform1.ts', 'transform2.ts'];
-      
+
       for (let i = 0; i < files.length; i++) {
-        await createTestFile(files[i], `
+        await createTestFile(
+          files[i],
+          `
           var value${i} = ${i};
           var message${i} = "test${i}";
-        `);
+        `
+        );
       }
 
       // Run concurrent transformations
       const transformationPromises = files.map(async (file) => {
-        const patterns: AstPattern[] = [{
-          id: 'var-to-const',
-          language: 'typescript',
-          pattern: 'var\\s+(\\w+)\\s*=',
-          replacement: 'const $1 =',
-          description: 'Convert var to const',
-          complexity: 2,
-          riskLevel: 'low',
-          mode: 'template',
-        }];
+        const patterns: AstPattern[] = [
+          {
+            id: 'var-to-const',
+            language: 'typescript',
+            pattern: 'var\\s+(\\w+)\\s*=',
+            replacement: 'const $1 =',
+            description: 'Convert var to const',
+            complexity: 2,
+            riskLevel: 'low',
+            mode: 'template',
+          },
+        ];
 
         const transformationInput = {
           mode: 'template' as const,
@@ -768,12 +803,14 @@ describe('Actor Integration Tests', () => {
           patterns,
         };
 
-        const transformationActorInstance = createActor(transformationActor, { input: transformationInput });
+        const transformationActorInstance = createActor(transformationActor, {
+          input: transformationInput,
+        });
         transformationActorInstance.start();
 
         const result = await waitFor(
-          transformationActorInstance, 
-          (state) => state.status === 'done', 
+          transformationActorInstance,
+          (state) => state.status === 'done',
           { timeout: 10000 }
         );
 
@@ -794,7 +831,9 @@ describe('Actor Integration Tests', () => {
   describe('Error Recovery and Resilience', () => {
     test('should handle actor failures gracefully', async () => {
       // Create a file that might cause issues
-      await createTestFile('problematic.ts', `
+      await createTestFile(
+        'problematic.ts',
+        `
         // This file has intentional issues
         function problematic(x: any): any {
           var result;
@@ -805,7 +844,8 @@ describe('Actor Integration Tests', () => {
           }
           return result;
         }
-      `);
+      `
+      );
 
       // Test analysis resilience
       const analysisInput = {
@@ -817,8 +857,8 @@ describe('Actor Integration Tests', () => {
       analysisActorInstance.start();
 
       const analysisResult = await waitFor(
-        analysisActorInstance, 
-        (state) => state.status === 'done', 
+        analysisActorInstance,
+        (state) => state.status === 'done',
         { timeout: 10000 }
       );
 
@@ -835,8 +875,8 @@ describe('Actor Integration Tests', () => {
       validationActorInstance.start();
 
       const validationResult = await waitFor(
-        validationActorInstance, 
-        (state) => state.status === 'done', 
+        validationActorInstance,
+        (state) => state.status === 'done',
         { timeout: 10000 }
       );
 
@@ -856,24 +896,24 @@ describe('Actor Integration Tests', () => {
 
       const gitActorInstance = createActor(gitActor, { input: checkpointInput });
       gitActorInstance.start();
-      const checkpointResult = await waitFor(
-        gitActorInstance, 
-        (state) => state.status === 'done', 
-        { timeout: 5000 }
-      );
+      const checkpointResult = await waitFor(gitActorInstance, (state) => state.status === 'done', {
+        timeout: 5000,
+      });
       const checkpoint = checkpointResult.output!;
 
       // Attempt transformation that might fail
-      const riskyPatterns: AstPattern[] = [{
-        id: 'risky-transform',
-        language: 'typescript',
-        pattern: 'var\\s+(\\w+)\\s*=',
-        replacement: 'INVALID SYNTAX $1 =',
-        description: 'Intentionally broken transformation',
-        complexity: 9,
-        riskLevel: 'high',
-        mode: 'template',
-      }];
+      const riskyPatterns: AstPattern[] = [
+        {
+          id: 'risky-transform',
+          language: 'typescript',
+          pattern: 'var\\s+(\\w+)\\s*=',
+          replacement: 'INVALID SYNTAX $1 =',
+          description: 'Intentionally broken transformation',
+          complexity: 9,
+          riskLevel: 'high',
+          mode: 'template',
+        },
+      ];
 
       try {
         const transformationInput = {
@@ -882,14 +922,14 @@ describe('Actor Integration Tests', () => {
           patterns: riskyPatterns,
         };
 
-        const transformationActorInstance = createActor(transformationActor, { input: transformationInput });
+        const transformationActorInstance = createActor(transformationActor, {
+          input: transformationInput,
+        });
         transformationActorInstance.start();
 
-        await waitFor(
-          transformationActorInstance, 
-          (state) => state.status === 'done', 
-          { timeout: 10000 }
-        );
+        await waitFor(transformationActorInstance, (state) => state.status === 'done', {
+          timeout: 10000,
+        });
       } catch (error) {
         // Expected to fail
       }
@@ -904,8 +944,8 @@ describe('Actor Integration Tests', () => {
       rollbackActorInstance.start();
 
       const rollbackResult = await waitFor(
-        rollbackActorInstance, 
-        (state) => state.status === 'done', 
+        rollbackActorInstance,
+        (state) => state.status === 'done',
         { timeout: 5000 }
       );
 

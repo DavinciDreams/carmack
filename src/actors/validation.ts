@@ -1,7 +1,7 @@
-import { fromPromise } from 'xstate';
-import { z } from 'zod';
 import { execSync } from 'node:child_process';
 import { join } from 'node:path';
+import { fromPromise } from 'xstate';
+import { z } from 'zod';
 import type { ErrorInfo, ValidationResult } from '../types.js';
 
 // Utility function to get the correct Bun executable path
@@ -283,7 +283,9 @@ async function validateTypes(files: string[]): Promise<ValidationResult> {
 }
 
 async function fixTypes(files: string[], errors: ErrorInfo[]): Promise<ValidationResult> {
-  console.log(`Fixing TypeScript type errors for ${files.length} files with ${errors.length} errors...`);
+  console.log(
+    `Fixing TypeScript type errors for ${files.length} files with ${errors.length} errors...`
+  );
 
   const fixedErrors: ErrorInfo[] = [];
   const remainingErrors: ErrorInfo[] = [];
@@ -292,7 +294,7 @@ async function fixTypes(files: string[], errors: ErrorInfo[]): Promise<Validatio
   try {
     // Import LLM transformation system for type fixing
     const { LLMTransformer } = await import('./llm-transformation.js');
-    
+
     const llmTransformer = new LLMTransformer({
       provider: 'mock', // Use mock for now, can be configured for real LLM
       model: 'gpt-4',
@@ -317,10 +319,10 @@ async function fixTypes(files: string[], errors: ErrorInfo[]): Promise<Validatio
       try {
         const { readFile } = await import('node:fs/promises');
         const originalContent = await readFile(filePath, 'utf-8');
-        
+
         // Create context-aware prompt for type fixing
         const typeFixPrompt = generateTypeFixPrompt(originalContent, fileErrors);
-        
+
         // Use LLM to fix type errors
         const transformationInput = {
           files: [filePath],
@@ -340,11 +342,11 @@ async function fixTypes(files: string[], errors: ErrorInfo[]): Promise<Validatio
         };
 
         const result = await llmTransformer.transformFiles(transformationInput);
-        
+
         if (result.filesModified.length > 0 && !result.errors) {
           // Verify the fixes by re-running type checking
           const verificationResult = await verifyTypeFixes(filePath);
-          
+
           if (verificationResult.isValid) {
             fixedErrors.push(...fileErrors);
             console.log(`✅ Fixed ${fileErrors.length} type errors in ${filePath}`);
@@ -386,7 +388,7 @@ async function fixTypes(files: string[], errors: ErrorInfo[]): Promise<Validatio
     };
   } catch (error) {
     console.warn('Type fixing failed, using fallback:', error);
-    
+
     // Fallback: return original errors as unfixed
     return {
       isValid: false,
@@ -407,9 +409,9 @@ async function fixTypes(files: string[], errors: ErrorInfo[]): Promise<Validatio
  * Generate a context-aware prompt for type error fixing
  */
 function generateTypeFixPrompt(content: string, errors: ErrorInfo[]): string {
-  const errorDescriptions = errors.map(error =>
-    `Line ${error.line}: ${error.code} - ${error.message}`
-  ).join('\n');
+  const errorDescriptions = errors
+    .map((error) => `Line ${error.line}: ${error.code} - ${error.message}`)
+    .join('\n');
 
   return `Fix the following TypeScript type errors in this code:
 
@@ -439,7 +441,7 @@ function analyzeTypeComplexity(content: string, errors: ErrorInfo[]): any {
   const hasUnionTypes = content.includes('|');
   const hasInterfaceDefinitions = content.includes('interface ');
   const hasTypeDefinitions = content.includes('type ');
-  
+
   let complexity = errors.length;
   if (hasGenericTypes) complexity += 2;
   if (hasUnionTypes) complexity += 1;
@@ -460,37 +462,39 @@ function analyzeTypeComplexity(content: string, errors: ErrorInfo[]): any {
  * Detect framework from code content for better context
  */
 function detectFramework(content: string): string | undefined {
-  if (content.includes('import React') || content.includes('from \'react\'')) return 'React';
-  if (content.includes('import Vue') || content.includes('from \'vue\'')) return 'Vue';
-  if (content.includes('@angular/') || content.includes('from \'@angular')) return 'Angular';
-  if (content.includes('express') || content.includes('from \'express\'')) return 'Express';
+  if (content.includes('import React') || content.includes("from 'react'")) return 'React';
+  if (content.includes('import Vue') || content.includes("from 'vue'")) return 'Vue';
+  if (content.includes('@angular/') || content.includes("from '@angular")) return 'Angular';
+  if (content.includes('express') || content.includes("from 'express'")) return 'Express';
   return undefined;
 }
 
 /**
  * Verify that type fixes were successful
  */
-async function verifyTypeFixes(filePath: string): Promise<{ isValid: boolean; errors: ErrorInfo[] }> {
+async function verifyTypeFixes(
+  filePath: string
+): Promise<{ isValid: boolean; errors: ErrorInfo[] }> {
   try {
     const { execSync } = await import('child_process');
     const bunCmd = getBunExecutable();
-    
+
     // Run TypeScript compiler on the specific file
     execSync(`${bunCmd} tsc --noEmit --skipLibCheck ${filePath}`, {
       encoding: 'utf8',
       stdio: 'pipe',
     });
-    
+
     return { isValid: true, errors: [] };
   } catch (error: any) {
     // Parse any remaining errors
     const errorOutput = error.stdout || error.stderr || '';
     const errors: ErrorInfo[] = [];
-    
+
     const errorLines = errorOutput
       .split('\n')
       .filter((line: string) => line.includes(': error TS'));
-    
+
     for (const line of errorLines) {
       const match = line.match(/^(.+?)\((\d+),(\d+)\): error (TS\d+): (.+)$/);
       if (match) {
@@ -505,7 +509,7 @@ async function verifyTypeFixes(filePath: string): Promise<{ isValid: boolean; er
         });
       }
     }
-    
+
     return { isValid: errors.length === 0, errors };
   }
 }
@@ -520,7 +524,7 @@ async function validateQuality(files: string[]): Promise<ValidationResult> {
   try {
     // Try to use ESLint programmatically
     const { ESLint } = await import('eslint');
-    
+
     const eslint = new ESLint({
       overrideConfigFile: true,
       overrideConfig: {
@@ -533,9 +537,9 @@ async function validateQuality(files: string[]): Promise<ValidationResult> {
           'prefer-const': 'warn',
           'no-var': 'error',
           'no-unused-vars': 'warn',
-          'eqeqeq': 'error',
+          eqeqeq: 'error',
           'no-console': 'warn',
-          'complexity': ['warn', { max: 15 }],
+          complexity: ['warn', { max: 15 }],
           'max-depth': ['warn', { max: 4 }],
           'max-lines-per-function': ['warn', { max: 50 }],
           'no-duplicate-imports': 'error',
@@ -550,7 +554,7 @@ async function validateQuality(files: string[]): Promise<ValidationResult> {
     for (const filePath of files) {
       try {
         const results = await eslint.lintFiles([filePath]);
-        
+
         for (const result of results) {
           for (const message of result.messages) {
             const errorInfo: ErrorInfo = {
@@ -592,7 +596,7 @@ async function validateQuality(files: string[]): Promise<ValidationResult> {
     };
   } catch (eslintError) {
     console.warn('ESLint not available, using fallback quality analysis:', eslintError);
-    
+
     // Fallback: Basic quality analysis using regex patterns
     return await fallbackQualityAnalysis(files);
   }
@@ -684,7 +688,7 @@ async function fallbackQualityAnalysis(files: string[]): Promise<ValidationResul
             fixableIssues++;
           }
         }
-        
+
         // Reset regex lastIndex for next iteration
         rule.pattern.lastIndex = 0;
       }
@@ -692,7 +696,6 @@ async function fallbackQualityAnalysis(files: string[]): Promise<ValidationResul
       // Check for complexity issues
       const complexityIssues = analyzeCodeComplexity(content, filePath);
       warnings.push(...complexityIssues);
-
     } catch (fileError) {
       console.warn(`Failed to analyze ${filePath}:`, fileError);
       warnings.push({
@@ -721,23 +724,23 @@ function analyzeCodeComplexity(content: string, filePath: string): ErrorInfo[] {
   // Check for overly complex functions
   const functionRegex = /function\s+(\w+)|const\s+(\w+)\s*=\s*\([^)]*\)\s*=>/g;
   let match;
-  
+
   while ((match = functionRegex.exec(content)) !== null) {
     const functionName = match[1] || match[2];
     const functionStart = match.index;
-    
+
     // Find function body and analyze complexity
     const afterFunction = content.substring(functionStart);
     const braceMatch = afterFunction.match(/\{/);
-    
+
     if (braceMatch) {
       const bodyStart = functionStart + braceMatch.index! + 1;
       const functionBody = extractFunctionBody(content, bodyStart);
-      
+
       if (functionBody) {
         const complexity = calculateFunctionComplexity(functionBody);
         const lineNumber = content.substring(0, functionStart).split('\n').length;
-        
+
         if (complexity > 15) {
           warnings.push({
             code: 'complexity',
@@ -747,7 +750,7 @@ function analyzeCodeComplexity(content: string, filePath: string): ErrorInfo[] {
             severity: 'warning',
           });
         }
-        
+
         if (functionBody.split('\n').length > 50) {
           warnings.push({
             code: 'max-lines-per-function',
@@ -770,18 +773,18 @@ function analyzeCodeComplexity(content: string, filePath: string): ErrorInfo[] {
 function extractFunctionBody(content: string, startPos: number): string | null {
   let braceCount = 1;
   let pos = startPos;
-  
+
   while (pos < content.length && braceCount > 0) {
     const char = content[pos];
     if (char === '{') braceCount++;
     else if (char === '}') braceCount--;
     pos++;
   }
-  
+
   if (braceCount === 0) {
     return content.substring(startPos, pos - 1);
   }
-  
+
   return null;
 }
 
@@ -790,15 +793,22 @@ function extractFunctionBody(content: string, startPos: number): string | null {
  */
 function calculateFunctionComplexity(functionBody: string): number {
   let complexity = 1; // Base complexity
-  
+
   const complexityPatterns = [
-    /\bif\b/g, /\belse\s+if\b/g, /\bwhile\b/g, /\bfor\b/g,
-    /\bswitch\b/g, /\bcase\b/g, /\btry\b/g, /\bcatch\b/g,
+    /\bif\b/g,
+    /\belse\s+if\b/g,
+    /\bwhile\b/g,
+    /\bfor\b/g,
+    /\bswitch\b/g,
+    /\bcase\b/g,
+    /\btry\b/g,
+    /\bcatch\b/g,
     /\?\s*.*\s*:/g, // Ternary operator
-    /&&/g, /\|\|/g, // Logical operators
+    /&&/g,
+    /\|\|/g, // Logical operators
   ];
 
-  complexityPatterns.forEach(pattern => {
+  complexityPatterns.forEach((pattern) => {
     const matches = functionBody.match(pattern);
     if (matches) complexity += matches.length;
   });

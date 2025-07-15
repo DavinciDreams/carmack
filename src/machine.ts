@@ -5,11 +5,11 @@ import { analysisActor } from './actors/analysis.ts';
 import { complexityActor } from './actors/complexity.ts';
 import { dafnyActor } from './actors/dafny.ts';
 import { gitActor } from './actors/git.ts';
-import { transformationActor } from './actors/transformation.ts';
-import { templateEngineActor, type TemplatePattern } from './actors/template-engine.ts';
-import { validationActor } from './actors/validation.ts';
 import { patternLearningActor } from './actors/pattern-learning.ts';
-import type { MachineContext, MachineEvent, AstPattern } from './types.ts';
+import { type TemplatePattern, templateEngineActor } from './actors/template-engine.ts';
+import { transformationActor } from './actors/transformation.ts';
+import { validationActor } from './actors/validation.ts';
+import type { AstPattern, MachineContext, MachineEvent } from './types.ts';
 import { MachineContextSchema } from './types.ts';
 
 /**
@@ -378,9 +378,10 @@ const _carmackCoderMachine = setup({
         input: ({ context }: { context: MachineContext }) => ({
           targetFiles: context.activeFiles,
           patterns: context.patterns
-            .filter(p =>
-              (p.mode === 'template' || !p.mode) &&
-              p.complexity <= (context.currentTransformation?.request?.maxComplexity || 5)
+            .filter(
+              (p) =>
+                (p.mode === 'template' || !p.mode) &&
+                p.complexity <= (context.currentTransformation?.request?.maxComplexity || 5)
             )
             .map(convertAstPatternToTemplatePattern),
           options: {
@@ -654,17 +655,19 @@ const _carmackCoderMachine = setup({
         src: 'patternLearningActor',
         input: ({ context }: { context: MachineContext }) => ({
           operation: 'learn' as const,
-          transformation: context.currentTransformation ? {
-            id: context.currentTransformation.id,
-            mode: context.currentTransformation.mode,
-            filesModified: context.currentTransformation.filesModified,
-            startTime: context.currentTransformation.startTime,
-            endTime: context.currentTransformation.endTime,
-            errors: context.currentTransformation.errors.map(e => e.message),
-            summary: context.currentTransformation.summary,
-            complexity: context.currentTransformation.complexity,
-            validation: context.currentTransformation.validation,
-          } : undefined,
+          transformation: context.currentTransformation
+            ? {
+                id: context.currentTransformation.id,
+                mode: context.currentTransformation.mode,
+                filesModified: context.currentTransformation.filesModified,
+                startTime: context.currentTransformation.startTime,
+                endTime: context.currentTransformation.endTime,
+                errors: context.currentTransformation.errors.map((e) => e.message),
+                summary: context.currentTransformation.summary,
+                complexity: context.currentTransformation.complexity,
+                validation: context.currentTransformation.validation,
+              }
+            : undefined,
           patterns: context.patterns,
           context: {
             codebase: {
@@ -675,8 +678,11 @@ const _carmackCoderMachine = setup({
             environment: {
               success: context.currentTransformation?.errors.length === 0,
               performance: {
-                transformationTime: context.currentTransformation?.endTime && context.currentTransformation?.startTime ?
-                  context.currentTransformation.endTime - context.currentTransformation.startTime : 0,
+                transformationTime:
+                  context.currentTransformation?.endTime && context.currentTransformation?.startTime
+                    ? context.currentTransformation.endTime -
+                      context.currentTransformation.startTime
+                    : 0,
               },
             },
           },

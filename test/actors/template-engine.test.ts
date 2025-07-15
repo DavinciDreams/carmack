@@ -1,12 +1,12 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { templateEngineActor, type TemplatePattern } from '../../src/actors/template-engine';
-import { createActor } from 'xstate';
-import { writeFile, mkdir, rm } from 'node:fs/promises';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { createActor } from 'xstate';
+import { type TemplatePattern, templateEngineActor } from '../../src/actors/template-engine';
 
 describe('Enhanced Template Engine', () => {
   const testDir = join(process.cwd(), 'test-temp-template');
-  
+
   beforeEach(async () => {
     await mkdir(testDir, { recursive: true });
   });
@@ -59,7 +59,7 @@ console.log("Hello " + userName);
       });
 
       actor.start();
-      
+
       const result = await new Promise((resolve) => {
         actor.subscribe((state) => {
           if (state.status === 'done') {
@@ -122,7 +122,7 @@ function multiply(x, y) {
       });
 
       actor.start();
-      
+
       const result = await new Promise((resolve) => {
         actor.subscribe((state) => {
           if (state.status === 'done') {
@@ -186,7 +186,7 @@ items.push("item");
       });
 
       actor.start();
-      
+
       const result = await new Promise((resolve) => {
         actor.subscribe((state) => {
           if (state.status === 'done') {
@@ -244,7 +244,7 @@ const url = "https://api.example.com/" + endpoint + "/data";
       });
 
       actor.start();
-      
+
       const result = await new Promise((resolve) => {
         actor.subscribe((state) => {
           if (state.status === 'done') {
@@ -305,7 +305,7 @@ const configPort = config.port;
       });
 
       actor.start();
-      
+
       const result = await new Promise((resolve) => {
         actor.subscribe((state) => {
           if (state.status === 'done') {
@@ -375,7 +375,7 @@ const hasPermission = true;
       });
 
       actor.start();
-      
+
       const result = await new Promise((resolve) => {
         actor.subscribe((state) => {
           if (state.status === 'done') {
@@ -435,7 +435,7 @@ const api_endpoint = "/api/users";
       });
 
       actor.start();
-      
+
       const result = await new Promise((resolve) => {
         actor.subscribe((state) => {
           if (state.status === 'done') {
@@ -515,7 +515,7 @@ var userAge = 25;
       });
 
       actor.start();
-      
+
       const result = await new Promise((resolve) => {
         actor.subscribe((state) => {
           if (state.status === 'done') {
@@ -534,7 +534,7 @@ var userAge = 25;
   describe('Performance and Batching', () => {
     it('should handle multiple files efficiently', async () => {
       const files: string[] = [];
-      
+
       // Create multiple test files
       for (let i = 0; i < 5; i++) {
         const filePath = join(testDir, `batch-file-${i}.ts`);
@@ -586,7 +586,7 @@ console.log("Processing " + message${i});
       });
 
       actor.start();
-      
+
       const result = await new Promise((resolve) => {
         actor.subscribe((state) => {
           if (state.status === 'done') {
@@ -662,7 +662,7 @@ class UserService {
       });
 
       actor.start();
-      
+
       const result = await new Promise((resolve) => {
         actor.subscribe((state) => {
           if (state.status === 'done') {
@@ -717,7 +717,7 @@ class UserService {
       });
 
       actor.start();
-      
+
       const result = await new Promise((resolve) => {
         actor.subscribe((state) => {
           if (state.status === 'done') {

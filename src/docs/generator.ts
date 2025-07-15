@@ -1,21 +1,21 @@
 import { fromPromise } from 'xstate';
+import { ASTGrepAnalyzer } from './ast-analyzer.js';
 // import { z } from 'zod';
 import type {
+  ArchitectureDoc,
+  ClassDoc,
   DocumentationRequest,
   DocumentationResult,
+  FunctionDoc,
   // DocumentationType,
   // DocumentationFormat,
   ModuleDoc,
-  FunctionDoc,
-  ClassDoc,
   PatternDoc,
-  ArchitectureDoc,
 } from './types.js';
-import { ASTGrepAnalyzer } from './ast-analyzer.js';
 
 /**
  * Documentation Generator
- * 
+ *
  * Generates comprehensive documentation from codebase analysis using AST-grep
  * and pattern recognition. Supports multiple output formats and documentation types.
  */
@@ -31,14 +31,14 @@ export class DocumentationGenerator {
    */
   async generateDocumentation(request: DocumentationRequest): Promise<DocumentationResult> {
     const startTime = Date.now();
-    
+
     try {
       // Discover source files if not provided
-      const sourceFiles = request.sourceFiles || await this.discoverSourceFiles();
-      
+      const sourceFiles = request.sourceFiles || (await this.discoverSourceFiles());
+
       // Generate documentation based on type
       let content: string;
-      let metadata: any = {
+      const metadata: any = {
         generatedAt: new Date().toISOString(),
         sourceFiles,
         totalFunctions: 0,
@@ -106,7 +106,7 @@ export class DocumentationGenerator {
     request: DocumentationRequest
   ): Promise<string> {
     const modules: ModuleDoc[] = [];
-    
+
     for (const filePath of sourceFiles) {
       try {
         const moduleDoc = await this.analyzer.analyzeFile(filePath);
@@ -136,7 +136,7 @@ export class DocumentationGenerator {
     request: DocumentationRequest
   ): Promise<string> {
     const architecture = await this.analyzeArchitecture(sourceFiles);
-    
+
     switch (request.format) {
       case 'markdown':
         return this.generateArchitectureMarkdown(architecture);
@@ -154,7 +154,7 @@ export class DocumentationGenerator {
    */
   private async generatePatternDocumentation(request: DocumentationRequest): Promise<string> {
     const patterns = await this.loadPatterns();
-    
+
     switch (request.format) {
       case 'markdown':
         return this.generatePatternMarkdown(patterns);
@@ -175,7 +175,7 @@ export class DocumentationGenerator {
     request: DocumentationRequest
   ): Promise<string> {
     const examples = await this.extractUsageExamples(sourceFiles);
-    
+
     switch (request.format) {
       case 'markdown':
         return this.generateUsageMarkdown(examples);
@@ -196,7 +196,7 @@ export class DocumentationGenerator {
     request: DocumentationRequest
   ): Promise<string> {
     const changes = await this.analyzeChanges(sourceFiles);
-    
+
     switch (request.format) {
       case 'markdown':
         return this.generateChangelogMarkdown(changes);
@@ -215,7 +215,7 @@ export class DocumentationGenerator {
   private generateAPIMarkdown(modules: ModuleDoc[], request: DocumentationRequest): string {
     let markdown = '# API Documentation\n\n';
     markdown += `Generated on ${new Date().toISOString()}\n\n`;
-    
+
     // Table of contents
     markdown += '## Table of Contents\n\n';
     for (const module of modules) {
@@ -226,7 +226,7 @@ export class DocumentationGenerator {
     // Module documentation
     for (const module of modules) {
       markdown += `## ${module.name}\n\n`;
-      
+
       if (module.description) {
         markdown += `${module.description}\n\n`;
       }
@@ -297,7 +297,7 @@ export class DocumentationGenerator {
     }
 
     let markdown = `#### \`${func.signature}\`\n\n`;
-    
+
     if (func.description) {
       markdown += `${func.description}\n\n`;
     }
@@ -334,7 +334,7 @@ export class DocumentationGenerator {
     const badges: string[] = [];
     if (func.isAsync) badges.push('`async`');
     if (func.isExported) badges.push('`exported`');
-    
+
     if (badges.length > 0) {
       markdown += `**Tags:** ${badges.join(' ')}\n\n`;
     }
@@ -351,7 +351,7 @@ export class DocumentationGenerator {
     }
 
     let markdown = `#### \`${cls.name}\`\n\n`;
-    
+
     if (cls.description) {
       markdown += `${cls.description}\n\n`;
     }
@@ -361,7 +361,7 @@ export class DocumentationGenerator {
     }
 
     if (cls.implements && cls.implements.length > 0) {
-      markdown += `**Implements:** ${cls.implements.map(i => `\`${i}\``).join(', ')}\n\n`;
+      markdown += `**Implements:** ${cls.implements.map((i) => `\`${i}\``).join(', ')}\n\n`;
     }
 
     // Properties
@@ -371,7 +371,7 @@ export class DocumentationGenerator {
         const modifiers: string[] = [];
         if (prop.readonly) modifiers.push('readonly');
         if (prop.optional) modifiers.push('optional');
-        
+
         const modifierStr = modifiers.length > 0 ? ` (${modifiers.join(', ')})` : '';
         markdown += `- \`${prop.name}: ${prop.type}\`${modifierStr}`;
         if (prop.description) {
@@ -399,17 +399,17 @@ export class DocumentationGenerator {
   private async discoverSourceFiles(): Promise<string[]> {
     const { readdir, stat } = await import('fs/promises');
     const { join } = await import('path');
-    
+
     const files: string[] = [];
-    
+
     async function scanDirectory(dir: string): Promise<void> {
       try {
         const entries = await readdir(dir);
-        
+
         for (const entry of entries) {
           const fullPath = join(dir, entry);
           const stats = await stat(fullPath);
-          
+
           if (stats.isDirectory() && !entry.startsWith('.') && entry !== 'node_modules') {
             await scanDirectory(fullPath);
           } else if (stats.isFile() && /\.(ts|js)$/.test(entry)) {
@@ -420,7 +420,7 @@ export class DocumentationGenerator {
         console.warn(`Failed to scan directory ${dir}:`, error);
       }
     }
-    
+
     await scanDirectory('./src');
     return files;
   }
@@ -431,18 +431,18 @@ export class DocumentationGenerator {
   private async analyzeArchitecture(sourceFiles: string[]): Promise<ArchitectureDoc> {
     const components: ArchitectureDoc['components'] = [];
     const dataFlow: ArchitectureDoc['dataFlow'] = [];
-    
+
     for (const filePath of sourceFiles) {
       try {
         const moduleDoc = await this.analyzer.analyzeFile(filePath);
-        
+
         // Determine component type
         let type: 'actor' | 'utility' | 'type' | 'pattern' | 'config' = 'utility';
         if (filePath.includes('/actors/')) type = 'actor';
         else if (filePath.includes('/types')) type = 'type';
         else if (filePath.includes('/patterns/')) type = 'pattern';
         else if (filePath.includes('config')) type = 'config';
-        
+
         components.push({
           name: moduleDoc.name,
           type,
@@ -451,7 +451,7 @@ export class DocumentationGenerator {
           dependencies: moduleDoc.dependencies,
           dependents: [], // Would need reverse dependency analysis
         });
-        
+
         // Analyze data flow from imports
         for (const imp of moduleDoc.imports) {
           dataFlow.push({
@@ -465,31 +465,33 @@ export class DocumentationGenerator {
         console.warn(`Failed to analyze architecture for ${filePath}:`, error);
       }
     }
-    
+
     // Define architectural layers
     const layers = [
       {
         name: 'Presentation',
-        components: components.filter(c => c.type === 'config').map(c => c.name),
+        components: components.filter((c) => c.type === 'config').map((c) => c.name),
         description: 'Configuration and external interfaces',
       },
       {
         name: 'Business Logic',
-        components: components.filter(c => c.type === 'actor').map(c => c.name),
+        components: components.filter((c) => c.type === 'actor').map((c) => c.name),
         description: 'Core business logic and state management',
       },
       {
         name: 'Data',
-        components: components.filter(c => c.type === 'type' || c.type === 'pattern').map(c => c.name),
+        components: components
+          .filter((c) => c.type === 'type' || c.type === 'pattern')
+          .map((c) => c.name),
         description: 'Data structures and transformation patterns',
       },
       {
         name: 'Utilities',
-        components: components.filter(c => c.type === 'utility').map(c => c.name),
+        components: components.filter((c) => c.type === 'utility').map((c) => c.name),
         description: 'Shared utilities and helper functions',
       },
     ];
-    
+
     return { components, dataFlow, layers };
   }
 
@@ -499,17 +501,18 @@ export class DocumentationGenerator {
   private generateArchitectureMarkdown(architecture: ArchitectureDoc): string {
     let markdown = '# Architecture Documentation\n\n';
     markdown += `Generated on ${new Date().toISOString()}\n\n`;
-    
+
     // Overview
     markdown += '## Overview\n\n';
-    markdown += 'This document describes the architectural structure of the Carmack Coder system.\n\n';
-    
+    markdown +=
+      'This document describes the architectural structure of the Carmack Coder system.\n\n';
+
     // Layers
     markdown += '## Architectural Layers\n\n';
     for (const layer of architecture.layers) {
       markdown += `### ${layer.name}\n\n`;
       markdown += `${layer.description}\n\n`;
-      
+
       if (layer.components.length > 0) {
         markdown += '**Components:**\n';
         for (const component of layer.components) {
@@ -518,7 +521,7 @@ export class DocumentationGenerator {
         markdown += '\n';
       }
     }
-    
+
     // Components
     markdown += '## Components\n\n';
     for (const component of architecture.components) {
@@ -526,7 +529,7 @@ export class DocumentationGenerator {
       markdown += `**Type:** ${component.type}\n\n`;
       markdown += `**File:** \`${component.filePath}\`\n\n`;
       markdown += `${component.description}\n\n`;
-      
+
       if (component.dependencies.length > 0) {
         markdown += '**Dependencies:**\n';
         for (const dep of component.dependencies) {
@@ -535,21 +538,21 @@ export class DocumentationGenerator {
         markdown += '\n';
       }
     }
-    
+
     // Data Flow
     markdown += '## Data Flow\n\n';
     markdown += 'The following diagram shows the data flow between components:\n\n';
     markdown += '```mermaid\n';
     markdown += 'graph TD\n';
-    
+
     for (const flow of architecture.dataFlow) {
       const fromSafe = flow.from.replace(/[^a-zA-Z0-9]/g, '_');
       const toSafe = flow.to.replace(/[^a-zA-Z0-9]/g, '_');
       markdown += `  ${fromSafe}[${flow.from}] --> ${toSafe}[${flow.to}]\n`;
     }
-    
+
     markdown += '```\n\n';
-    
+
     return markdown;
   }
 
@@ -561,7 +564,7 @@ export class DocumentationGenerator {
       const { readFile } = await import('fs/promises');
       const content = await readFile('./src/patterns/enhanced-templates.json', 'utf-8');
       const data = JSON.parse(content);
-      
+
       return data.patterns.map((pattern: any) => ({
         id: pattern.id,
         name: pattern.id.replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
@@ -571,11 +574,12 @@ export class DocumentationGenerator {
         riskLevel: pattern.riskLevel,
         pattern: pattern.pattern.template || pattern.pattern,
         replacement: pattern.replacement.template || pattern.replacement,
-        examples: pattern.testCases?.map((test: any) => ({
-          before: test.input,
-          after: test.expected,
-          description: test.description,
-        })) || [],
+        examples:
+          pattern.testCases?.map((test: any) => ({
+            before: test.input,
+            after: test.expected,
+            description: test.description,
+          })) || [],
         performance: pattern.performance,
       }));
     } catch (error) {
@@ -590,30 +594,30 @@ export class DocumentationGenerator {
   private generatePatternMarkdown(patterns: PatternDoc[]): string {
     let markdown = '# Transformation Patterns\n\n';
     markdown += `Generated on ${new Date().toISOString()}\n\n`;
-    
+
     // Group patterns by category
-    const categories = [...new Set(patterns.map(p => p.category))];
-    
+    const categories = [...new Set(patterns.map((p) => p.category))];
+
     for (const category of categories) {
-      const categoryPatterns = patterns.filter(p => p.category === category);
-      
+      const categoryPatterns = patterns.filter((p) => p.category === category);
+
       markdown += `## ${category.charAt(0).toUpperCase() + category.slice(1)}\n\n`;
-      
+
       for (const pattern of categoryPatterns) {
         markdown += `### ${pattern.name}\n\n`;
         markdown += `${pattern.description}\n\n`;
-        
+
         markdown += `**Complexity:** ${pattern.complexity}/10\n\n`;
         markdown += `**Risk Level:** ${pattern.riskLevel}\n\n`;
-        
+
         markdown += '**Pattern:**\n```typescript\n';
         markdown += pattern.pattern;
         markdown += '\n```\n\n';
-        
+
         markdown += '**Replacement:**\n```typescript\n';
         markdown += pattern.replacement;
         markdown += '\n```\n\n';
-        
+
         if (pattern.examples.length > 0) {
           markdown += '**Examples:**\n\n';
           for (const example of pattern.examples) {
@@ -626,16 +630,19 @@ export class DocumentationGenerator {
             markdown += '\n```\n\n';
           }
         }
-        
+
         markdown += '---\n\n';
       }
     }
-    
+
     return markdown;
   }
 
   // Placeholder methods for other documentation types
-  private async generateAPIHTML(_modules: ModuleDoc[], _request: DocumentationRequest): Promise<string> {
+  private async generateAPIHTML(
+    _modules: ModuleDoc[],
+    _request: DocumentationRequest
+  ): Promise<string> {
     return '<html><body><h1>API Documentation</h1><p>HTML format not yet implemented</p></body></html>';
   }
 

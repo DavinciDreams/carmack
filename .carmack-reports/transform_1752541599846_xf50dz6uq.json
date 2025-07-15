@@ -1,0 +1,34 @@
+{
+  "transformationId": "transform_1752541599846_xf50dz6uq",
+  "timestamp": "2025-07-15T01:07:15.527Z",
+  "input": {
+    "files": ["C:\\Users\\lmwat\\carmack\\test-file.ts"],
+    "transformationType": "auto"
+  },
+  "results": {
+    "success": true,
+    "filesModified": ["C:\\Users\\lmwat\\carmack\\test-file.ts"],
+    "transformationsApplied": [
+      {
+        "type": "llm",
+        "success": true,
+        "filesModified": ["C:\\Users\\lmwat\\carmack\\test-file.ts"],
+        "patternsUsed": [],
+        "executionTime": 1594,
+        "confidence": 0.8
+      }
+    ],
+    "executionTime": 35681
+  },
+  "quality": {
+    "typeErrors": 1,
+    "formatIssues": 1,
+    "qualityIssues": 2
+  },
+  "testing": {
+    "passed": 0,
+    "failed": 1,
+    "coverage": 0
+  },
+  "errors": []
+}

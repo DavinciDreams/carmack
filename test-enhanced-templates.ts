@@ -254,7 +254,7 @@ async function benchmarkTemplateVsAST() {
     console.log('\n🎯 Speed Hierarchy Validation:');
     console.log(`  🚀 Template Engine: ~${templateDuration}ms (fastest)`);
     console.log(`  🌳 AST Engine: ~${astDuration}ms (medium)`);
-    console.log(`  🧠 LLM Engine: ~2000-5000ms (intelligent but slower)`);
+    console.log('  🧠 LLM Engine: ~2000-5000ms (intelligent but slower)');
   } catch (error) {
     console.error('❌ Benchmark failed:', error);
   } finally {

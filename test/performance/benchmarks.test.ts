@@ -1,11 +1,11 @@
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
+import { mkdir, readFile, rm, writeFile } from 'fs/promises';
+import { tmpdir } from 'os';
+import { join } from 'path';
 import { createActor, waitFor } from 'xstate';
 import { analysisActor } from '../../src/actors/analysis.js';
 import { transformationActor } from '../../src/actors/transformation.js';
 import { validationActor } from '../../src/actors/validation.js';
-import { writeFile, readFile, mkdir, rm } from 'fs/promises';
-import { join } from 'path';
-import { tmpdir } from 'os';
 import type { AstPattern } from '../../src/types.js';
 
 describe('Performance Benchmarks', () => {
@@ -117,7 +117,7 @@ describe('Performance Benchmarks', () => {
       await createTestFile('small.ts', smallCode);
 
       const startTime = Date.now();
-      
+
       const analysisInput = {
         files: ['small.ts'],
         patterns: [],
@@ -126,18 +126,16 @@ describe('Performance Benchmarks', () => {
       const analysisActorInstance = createActor(analysisActor, { input: analysisInput });
       analysisActorInstance.start();
 
-      const result = await waitFor(
-        analysisActorInstance,
-        (state) => state.status === 'done',
-        { timeout: 5000 }
-      );
+      const result = await waitFor(analysisActorInstance, (state) => state.status === 'done', {
+        timeout: 5000,
+      });
 
       const duration = Date.now() - startTime;
       const analysis = result.output!;
 
       expect(analysis.complexity).toBeDefined();
       expect(duration).toBeLessThan(1000); // Should complete within 1 second
-      
+
       console.log(`   Small file analysis: ${duration}ms`);
       console.log(`   Complexity: ${analysis.complexity?.cyclomaticComplexity}`);
     });
@@ -147,7 +145,7 @@ describe('Performance Benchmarks', () => {
       await createTestFile('medium.ts', mediumCode);
 
       const startTime = Date.now();
-      
+
       const analysisInput = {
         files: ['medium.ts'],
         patterns: [],
@@ -156,18 +154,16 @@ describe('Performance Benchmarks', () => {
       const analysisActorInstance = createActor(analysisActor, { input: analysisInput });
       analysisActorInstance.start();
 
-      const result = await waitFor(
-        analysisActorInstance,
-        (state) => state.status === 'done',
-        { timeout: 10000 }
-      );
+      const result = await waitFor(analysisActorInstance, (state) => state.status === 'done', {
+        timeout: 10000,
+      });
 
       const duration = Date.now() - startTime;
       const analysis = result.output!;
 
       expect(analysis.complexity).toBeDefined();
       expect(duration).toBeLessThan(3000); // Should complete within 3 seconds
-      
+
       console.log(`   Medium file analysis: ${duration}ms`);
       console.log(`   Complexity: ${analysis.complexity?.cyclomaticComplexity}`);
     });
@@ -177,7 +173,7 @@ describe('Performance Benchmarks', () => {
       await createTestFile('large.ts', largeCode);
 
       const startTime = Date.now();
-      
+
       const analysisInput = {
         files: ['large.ts'],
         patterns: [],
@@ -186,18 +182,16 @@ describe('Performance Benchmarks', () => {
       const analysisActorInstance = createActor(analysisActor, { input: analysisInput });
       analysisActorInstance.start();
 
-      const result = await waitFor(
-        analysisActorInstance,
-        (state) => state.status === 'done',
-        { timeout: 15000 }
-      );
+      const result = await waitFor(analysisActorInstance, (state) => state.status === 'done', {
+        timeout: 15000,
+      });
 
       const duration = Date.now() - startTime;
       const analysis = result.output!;
 
       expect(analysis.complexity).toBeDefined();
       expect(duration).toBeLessThan(8000); // Should complete within 8 seconds
-      
+
       console.log(`   Large file analysis: ${duration}ms`);
       console.log(`   Complexity: ${analysis.complexity?.cyclomaticComplexity}`);
     });
@@ -212,7 +206,7 @@ describe('Performance Benchmarks', () => {
       }
 
       const startTime = Date.now();
-      
+
       const analysisInput = {
         files,
         patterns: [],
@@ -221,18 +215,16 @@ describe('Performance Benchmarks', () => {
       const analysisActorInstance = createActor(analysisActor, { input: analysisInput });
       analysisActorInstance.start();
 
-      const result = await waitFor(
-        analysisActorInstance,
-        (state) => state.status === 'done',
-        { timeout: 15000 }
-      );
+      const result = await waitFor(analysisActorInstance, (state) => state.status === 'done', {
+        timeout: 15000,
+      });
 
       const duration = Date.now() - startTime;
       const analysis = result.output!;
 
       expect(analysis.complexity).toBeDefined();
       expect(duration).toBeLessThan(10000); // Should complete within 10 seconds
-      
+
       console.log(`   Multi-file analysis (${files.length} files): ${duration}ms`);
       console.log(`   Average per file: ${Math.round(duration / files.length)}ms`);
     });
@@ -269,7 +261,7 @@ describe('Performance Benchmarks', () => {
         complexity: 1,
         riskLevel: 'low',
         mode: 'template',
-      }
+      },
     ];
 
     test('should transform small files quickly', async () => {
@@ -277,14 +269,16 @@ describe('Performance Benchmarks', () => {
       await createTestFile('transform-small.ts', smallCode);
 
       const startTime = Date.now();
-      
+
       const transformationInput = {
         mode: 'template' as const,
         files: ['transform-small.ts'],
         patterns,
       };
 
-      const transformationActorInstance = createActor(transformationActor, { input: transformationInput });
+      const transformationActorInstance = createActor(transformationActor, {
+        input: transformationInput,
+      });
       transformationActorInstance.start();
 
       const result = await waitFor(
@@ -298,7 +292,7 @@ describe('Performance Benchmarks', () => {
 
       expect(transformation).toBeDefined();
       expect(duration).toBeLessThan(2000); // Should complete within 2 seconds
-      
+
       console.log(`   Small file transformation: ${duration}ms`);
       console.log(`   Transformations applied: ${transformation.transformationsApplied || 0}`);
     });
@@ -308,14 +302,16 @@ describe('Performance Benchmarks', () => {
       await createTestFile('transform-medium.ts', mediumCode);
 
       const startTime = Date.now();
-      
+
       const transformationInput = {
         mode: 'template' as const,
         files: ['transform-medium.ts'],
         patterns,
       };
 
-      const transformationActorInstance = createActor(transformationActor, { input: transformationInput });
+      const transformationActorInstance = createActor(transformationActor, {
+        input: transformationInput,
+      });
       transformationActorInstance.start();
 
       const result = await waitFor(
@@ -329,7 +325,7 @@ describe('Performance Benchmarks', () => {
 
       expect(transformation).toBeDefined();
       expect(duration).toBeLessThan(5000); // Should complete within 5 seconds
-      
+
       console.log(`   Medium file transformation: ${duration}ms`);
       console.log(`   Transformations applied: ${transformation.transformationsApplied || 0}`);
     });
@@ -339,14 +335,16 @@ describe('Performance Benchmarks', () => {
       await createTestFile('transform-large.ts', largeCode);
 
       const startTime = Date.now();
-      
+
       const transformationInput = {
         mode: 'template' as const,
         files: ['transform-large.ts'],
         patterns,
       };
 
-      const transformationActorInstance = createActor(transformationActor, { input: transformationInput });
+      const transformationActorInstance = createActor(transformationActor, {
+        input: transformationInput,
+      });
       transformationActorInstance.start();
 
       const result = await waitFor(
@@ -360,7 +358,7 @@ describe('Performance Benchmarks', () => {
 
       expect(transformation).toBeDefined();
       expect(duration).toBeLessThan(10000); // Should complete within 10 seconds
-      
+
       console.log(`   Large file transformation: ${duration}ms`);
       console.log(`   Transformations applied: ${transformation.transformationsApplied || 0}`);
     });
@@ -375,14 +373,16 @@ describe('Performance Benchmarks', () => {
       }
 
       const startTime = Date.now();
-      
+
       const transformationInput = {
         mode: 'template' as const,
         files,
         patterns,
       };
 
-      const transformationActorInstance = createActor(transformationActor, { input: transformationInput });
+      const transformationActorInstance = createActor(transformationActor, {
+        input: transformationInput,
+      });
       transformationActorInstance.start();
 
       const result = await waitFor(
@@ -396,7 +396,7 @@ describe('Performance Benchmarks', () => {
 
       expect(transformation).toBeDefined();
       expect(duration).toBeLessThan(15000); // Should complete within 15 seconds
-      
+
       console.log(`   Batch transformation (${files.length} files): ${duration}ms`);
       console.log(`   Average per file: ${Math.round(duration / files.length)}ms`);
       console.log(`   Total transformations: ${transformation.transformationsApplied || 0}`);
@@ -413,7 +413,7 @@ describe('Performance Benchmarks', () => {
       await createTestFile('validate-small.ts', smallCode);
 
       const startTime = Date.now();
-      
+
       const validationInput = {
         type: 'format' as const,
         files: ['validate-small.ts'],
@@ -423,18 +423,16 @@ describe('Performance Benchmarks', () => {
       validationActorInstance.start();
 
       try {
-        const result = await waitFor(
-          validationActorInstance,
-          (state) => state.status === 'done',
-          { timeout: 3000 }
-        );
+        const result = await waitFor(validationActorInstance, (state) => state.status === 'done', {
+          timeout: 3000,
+        });
 
         const duration = Date.now() - startTime;
         const validation = result.output!;
 
         expect(validation).toBeDefined();
         expect(duration).toBeLessThan(2000); // Should complete within 2 seconds
-        
+
         console.log(`   Small file validation: ${duration}ms`);
         console.log(`   Valid: ${validation.isValid}`);
       } catch (error) {
@@ -449,7 +447,7 @@ describe('Performance Benchmarks', () => {
       await createTestFile('validate-medium.ts', mediumCode);
 
       const startTime = Date.now();
-      
+
       const validationInput = {
         type: 'format' as const,
         files: ['validate-medium.ts'],
@@ -459,18 +457,16 @@ describe('Performance Benchmarks', () => {
       validationActorInstance.start();
 
       try {
-        const result = await waitFor(
-          validationActorInstance,
-          (state) => state.status === 'done',
-          { timeout: 5000 }
-        );
+        const result = await waitFor(validationActorInstance, (state) => state.status === 'done', {
+          timeout: 5000,
+        });
 
         const duration = Date.now() - startTime;
         const validation = result.output!;
 
         expect(validation).toBeDefined();
         expect(duration).toBeLessThan(4000); // Should complete within 4 seconds
-        
+
         console.log(`   Medium file validation: ${duration}ms`);
         console.log(`   Valid: ${validation.isValid}`);
       } catch (error) {
@@ -492,7 +488,7 @@ describe('Performance Benchmarks', () => {
         complexity: 2,
         riskLevel: 'low',
         mode: 'template',
-      }
+      },
     ];
 
     test('should handle large data structures efficiently', async () => {
@@ -533,14 +529,16 @@ describe('Performance Benchmarks', () => {
 
       const startTime = Date.now();
       const initialMemory = process.memoryUsage();
-      
+
       const transformationInput = {
         mode: 'template' as const,
         files: ['memory-test.ts'],
         patterns: memoryPatterns,
       };
 
-      const transformationActorInstance = createActor(transformationActor, { input: transformationInput });
+      const transformationActorInstance = createActor(transformationActor, {
+        input: transformationInput,
+      });
       transformationActorInstance.start();
 
       const result = await waitFor(
@@ -555,7 +553,7 @@ describe('Performance Benchmarks', () => {
 
       expect(result.output).toBeDefined();
       expect(memoryDelta).toBeLessThan(100 * 1024 * 1024); // Should use less than 100MB additional memory
-      
+
       console.log(`   Large file processing: ${duration}ms`);
       console.log(`   Memory delta: ${Math.round(memoryDelta / 1024 / 1024)}MB`);
       console.log(`   Peak heap: ${Math.round(finalMemory.heapUsed / 1024 / 1024)}MB`);
@@ -583,7 +581,7 @@ describe('Performance Benchmarks', () => {
         complexity: 1,
         riskLevel: 'low',
         mode: 'template',
-      }
+      },
     ];
 
     test('should handle concurrent transformations efficiently', async () => {
@@ -611,11 +609,9 @@ describe('Performance Benchmarks', () => {
         const actorInstance = createActor(transformationActor, { input: transformationInput });
         actorInstance.start();
 
-        const promise = waitFor(
-          actorInstance,
-          (state) => state.status === 'done',
-          { timeout: 10000 }
-        );
+        const promise = waitFor(actorInstance, (state) => state.status === 'done', {
+          timeout: 10000,
+        });
 
         promises.push(promise);
       }
@@ -625,10 +621,10 @@ describe('Performance Benchmarks', () => {
 
       expect(results).toHaveLength(files.length);
       expect(duration).toBeLessThan(12000); // Should complete within 12 seconds
-      
+
       console.log(`   Concurrent processing (${files.length} files): ${duration}ms`);
       console.log(`   Average per file: ${Math.round(duration / files.length)}ms`);
-      
+
       const totalTransformations = results.reduce((sum, result) => {
         return sum + (result.output?.transformationsApplied || 0);
       }, 0);

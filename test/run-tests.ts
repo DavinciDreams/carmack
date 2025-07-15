@@ -2,7 +2,7 @@
 
 /**
  * Comprehensive Test Runner for Carmack Coder
- * 
+ *
  * Executes all test suites and provides detailed reporting on test coverage,
  * performance, and component validation.
  */
@@ -87,7 +87,7 @@ const TEST_SUITES: TestSuite[] = [
     category: 'unit',
     priority: 'medium',
   },
-  
+
   // Integration Tests - High Priority
   {
     name: 'Actor Integration',
@@ -110,7 +110,7 @@ const TEST_SUITES: TestSuite[] = [
     category: 'integration',
     priority: 'medium',
   },
-  
+
   // Performance Tests - Medium Priority
   {
     name: 'Performance Benchmarks',
@@ -126,7 +126,7 @@ const TEST_SUITES: TestSuite[] = [
     category: 'performance',
     priority: 'low',
   },
-  
+
   // E2E Tests - High Priority
   {
     name: 'End-to-End Pipeline Validation (Simplified)',
@@ -142,7 +142,7 @@ const TEST_SUITES: TestSuite[] = [
     category: 'e2e',
     priority: 'medium',
   },
-  
+
   // E2E Tests - Low Priority
   {
     name: 'Repository Processing',
@@ -158,7 +158,7 @@ const TEST_SUITES: TestSuite[] = [
     category: 'e2e',
     priority: 'low',
   },
-  
+
   // Existing Tests
   {
     name: 'Telemetry Basic',
@@ -178,18 +178,20 @@ const TEST_SUITES: TestSuite[] = [
 
 class TestRunner {
   private results: TestResult[] = [];
-  private startTime: number = 0;
+  private startTime = 0;
 
   /**
    * Run all test suites
    */
-  async runAllTests(options: {
-    category?: string;
-    priority?: string;
-    pattern?: string;
-    verbose?: boolean;
-    coverage?: boolean;
-  } = {}): Promise<TestReport> {
+  async runAllTests(
+    options: {
+      category?: string;
+      priority?: string;
+      pattern?: string;
+      verbose?: boolean;
+      coverage?: boolean;
+    } = {}
+  ): Promise<TestReport> {
     console.log('🚀 Starting Carmack Coder Test Suite');
     console.log('=====================================\n');
 
@@ -220,29 +222,29 @@ class TestRunner {
     let suites = TEST_SUITES;
 
     if (options.category) {
-      suites = suites.filter(suite => suite.category === options.category);
+      suites = suites.filter((suite) => suite.category === options.category);
     }
 
     if (options.priority) {
-      suites = suites.filter(suite => suite.priority === options.priority);
+      suites = suites.filter((suite) => suite.priority === options.priority);
     }
 
     if (options.pattern) {
       const pattern = new RegExp(options.pattern, 'i');
-      suites = suites.filter(suite => 
-        pattern.test(suite.name) || pattern.test(suite.description)
+      suites = suites.filter(
+        (suite) => pattern.test(suite.name) || pattern.test(suite.description)
       );
     }
 
     // Filter only existing test files
-    return suites.filter(suite => existsSync(suite.path));
+    return suites.filter((suite) => existsSync(suite.path));
   }
 
   /**
    * Run a single test suite
    */
   private async runTestSuite(
-    suite: TestSuite, 
+    suite: TestSuite,
     options: { verbose?: boolean; coverage?: boolean }
   ): Promise<void> {
     console.log(`🧪 ${suite.name} (${suite.category})`);
@@ -253,7 +255,7 @@ class TestRunner {
     try {
       // Build test command
       let command = `bun test ${suite.path}`;
-      
+
       if (options.coverage) {
         command += ' --coverage';
       }
@@ -263,9 +265,9 @@ class TestRunner {
       }
 
       // Execute test
-      const output = execSync(command, { 
+      const output = execSync(command, {
         encoding: 'utf8',
-        stdio: options.verbose ? 'inherit' : 'pipe'
+        stdio: options.verbose ? 'inherit' : 'pipe',
       });
 
       const duration = Date.now() - startTime;
@@ -284,11 +286,12 @@ class TestRunner {
 
       // Display result
       const status = result.failed === 0 ? '✅ PASSED' : '❌ FAILED';
-      console.log(`   ${status} - ${result.passed} passed, ${result.failed} failed (${duration}ms)\n`);
-
+      console.log(
+        `   ${status} - ${result.passed} passed, ${result.failed} failed (${duration}ms)\n`
+      );
     } catch (error) {
       const duration = Date.now() - startTime;
-      
+
       console.log(`   ❌ ERROR - Test suite failed to run (${duration}ms)`);
       if (options.verbose) {
         console.log(`   Error: ${error}\n`);
@@ -309,16 +312,17 @@ class TestRunner {
    */
   private generateReport(): TestReport {
     const totalDuration = Date.now() - this.startTime;
-    
+
     const totalPassed = this.results.reduce((sum, r) => sum + r.passed, 0);
     const totalFailed = this.results.reduce((sum, r) => sum + r.failed, 0);
     const totalSkipped = this.results.reduce((sum, r) => sum + r.skipped, 0);
     const totalTests = totalPassed + totalFailed + totalSkipped;
 
-    const coverageResults = this.results.filter(r => r.coverage !== undefined);
-    const overallCoverage = coverageResults.length > 0
-      ? coverageResults.reduce((sum, r) => sum + (r.coverage || 0), 0) / coverageResults.length
-      : 0;
+    const coverageResults = this.results.filter((r) => r.coverage !== undefined);
+    const overallCoverage =
+      coverageResults.length > 0
+        ? coverageResults.reduce((sum, r) => sum + (r.coverage || 0), 0) / coverageResults.length
+        : 0;
 
     const recommendations = this.generateRecommendations();
 
@@ -349,7 +353,7 @@ class TestRunner {
     console.log(`Failed: ${report.totalFailed} ${report.totalFailed > 0 ? '❌' : '✅'}`);
     console.log(`Skipped: ${report.totalSkipped}`);
     console.log(`Duration: ${report.totalDuration}ms`);
-    
+
     if (report.overallCoverage > 0) {
       console.log(`Coverage: ${report.overallCoverage.toFixed(1)}%`);
     }
@@ -359,10 +363,13 @@ class TestRunner {
 
     if (report.recommendations.length > 0) {
       console.log('\n💡 Recommendations:');
-      report.recommendations.forEach(rec => console.log(`   • ${rec}`));
+      report.recommendations.forEach((rec) => console.log(`   • ${rec}`));
     }
 
-    console.log('\n🎯 Test Status:', report.totalFailed === 0 ? 'ALL TESTS PASSED ✅' : 'SOME TESTS FAILED ❌');
+    console.log(
+      '\n🎯 Test Status:',
+      report.totalFailed === 0 ? 'ALL TESTS PASSED ✅' : 'SOME TESTS FAILED ❌'
+    );
   }
 
   /**
@@ -370,25 +377,27 @@ class TestRunner {
    */
   private generateRecommendations(): string[] {
     const recommendations: string[] = [];
-    
-    const failedSuites = this.results.filter(r => r.failed > 0);
+
+    const failedSuites = this.results.filter((r) => r.failed > 0);
     if (failedSuites.length > 0) {
       recommendations.push(`Fix ${failedSuites.length} failing test suite(s)`);
     }
 
-    const slowSuites = this.results.filter(r => r.duration > 5000);
+    const slowSuites = this.results.filter((r) => r.duration > 5000);
     if (slowSuites.length > 0) {
       recommendations.push(`Optimize ${slowSuites.length} slow test suite(s) (>5s)`);
     }
 
-    const missingTests = TEST_SUITES.filter(suite => !existsSync(suite.path));
+    const missingTests = TEST_SUITES.filter((suite) => !existsSync(suite.path));
     if (missingTests.length > 0) {
       recommendations.push(`Implement ${missingTests.length} missing test suite(s)`);
     }
 
-    const highPriorityMissing = missingTests.filter(suite => suite.priority === 'high');
+    const highPriorityMissing = missingTests.filter((suite) => suite.priority === 'high');
     if (highPriorityMissing.length > 0) {
-      recommendations.push(`Prioritize implementing ${highPriorityMissing.length} high-priority test suite(s)`);
+      recommendations.push(
+        `Prioritize implementing ${highPriorityMissing.length} high-priority test suite(s)`
+      );
     }
 
     return recommendations;
@@ -398,24 +407,24 @@ class TestRunner {
   private extractPassedCount(output: string): number {
     if (!output) return 0;
     const match = output.match(/(\d+) pass/);
-    return match ? parseInt(match[1], 10) : 0;
+    return match ? Number.parseInt(match[1], 10) : 0;
   }
 
   private extractFailedCount(output: string): number {
     if (!output) return 0;
     const match = output.match(/(\d+) fail/);
-    return match ? parseInt(match[1], 10) : 0;
+    return match ? Number.parseInt(match[1], 10) : 0;
   }
 
   private extractSkippedCount(output: string): number {
     if (!output) return 0;
     const match = output.match(/(\d+) skip/);
-    return match ? parseInt(match[1], 10) : 0;
+    return match ? Number.parseInt(match[1], 10) : 0;
   }
 
   private extractCoverage(output: string): number {
     const match = output.match(/(\d+\.?\d*)% coverage/);
-    return match ? parseFloat(match[1]) : 0;
+    return match ? Number.parseFloat(match[1]) : 0;
   }
 }
 
@@ -424,11 +433,11 @@ class TestRunner {
  */
 async function main() {
   const args = process.argv.slice(2);
-  
+
   const options = {
-    category: args.find(arg => arg.startsWith('--category='))?.split('=')[1],
-    priority: args.find(arg => arg.startsWith('--priority='))?.split('=')[1],
-    pattern: args.find(arg => arg.startsWith('--pattern='))?.split('=')[1],
+    category: args.find((arg) => arg.startsWith('--category='))?.split('=')[1],
+    priority: args.find((arg) => arg.startsWith('--priority='))?.split('=')[1],
+    pattern: args.find((arg) => arg.startsWith('--pattern='))?.split('=')[1],
     verbose: args.includes('--verbose') || args.includes('-v'),
     coverage: args.includes('--coverage') || args.includes('-c'),
   };
@@ -466,7 +475,7 @@ Examples:
 
 // Run if called directly
 if (import.meta.main) {
-  main().catch(error => {
+  main().catch((error) => {
     console.error('Test runner failed:', error);
     process.exit(1);
   });

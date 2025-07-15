@@ -1,18 +1,18 @@
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
-import { writeFile, readFile, unlink, mkdir } from 'node:fs/promises';
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
+import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { 
-  LLMTransformer, 
+import {
   createLLMTransformer,
-  validateLLMConfig,
   type LLMConfig,
-  type LLMTransformationInput 
+  type LLMTransformationInput,
+  LLMTransformer,
+  validateLLMConfig,
 } from '../../src/actors/llm-transformation.js';
 
 describe('LLM Transformation System', () => {
   const testDir = './test-temp';
   const testFile = join(testDir, 'test-code.ts');
-  
+
   beforeEach(async () => {
     await mkdir(testDir, { recursive: true });
   });
@@ -254,7 +254,7 @@ export { addUser, User };
     test('should apply defaults for missing config', () => {
       const config = {};
       const validated = validateLLMConfig(config);
-      
+
       expect(validated.provider).toBe('mock');
       expect(validated.model).toBe('gpt-4');
       expect(validated.maxTokens).toBe(4000);
@@ -319,7 +319,7 @@ export { addUser, User };
       expect(result.mode).toBe('llm');
       expect(result.errors).toBeDefined();
       expect(result.errors!.length).toBeGreaterThan(0);
-      
+
       // Should still return original code
       const content = await readFile(testFile, 'utf-8');
       expect(content).toBe(testCode);
@@ -371,10 +371,10 @@ export { addUser, User };
 
       // First call
       const result1 = await transformer.transformFiles(input);
-      
+
       // Reset file content
       await writeFile(testFile, testCode);
-      
+
       // Second call should use cache
       const result2 = await transformer.transformFiles(input);
 

@@ -4,7 +4,7 @@ import { js, ts } from '@ast-grep/napi';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
 import type { AstPattern, TransformationRequest } from '../types.js';
-import { LLMTransformer, type LLMTransformationInput } from './llm-transformation.js';
+import { type LLMTransformationInput, LLMTransformer } from './llm-transformation.js';
 
 // Transformation input schema
 const TransformationInputSchema = z.object({
@@ -398,10 +398,9 @@ async function smartVarToConstLetAST(_root: any, content: string, _lang: any): P
       if (isLiteralValue(trimmedValue)) {
         console.log(`✅ Converting var ${varName} to const (literal value)`);
         return `${indent}const ${varName} = ${value};`;
-      } else {
-        console.log(`✅ Converting var ${varName} to let (non-literal value)`);
-        return `${indent}let ${varName} = ${value};`;
       }
+      console.log(`✅ Converting var ${varName} to let (non-literal value)`);
+      return `${indent}let ${varName} = ${value};`;
     });
 
     if (modifiedContent !== content) {
@@ -481,7 +480,11 @@ async function enhanceObjectDestructuring(
 /**
  * Remove unnecessary return statements
  */
-async function removeUnnecessaryReturnsAST(_root: any, content: string, _lang: any): Promise<string> {
+async function removeUnnecessaryReturnsAST(
+  _root: any,
+  content: string,
+  _lang: any
+): Promise<string> {
   try {
     // Remove unnecessary return statements from arrow functions
     let modifiedContent = content;
@@ -704,7 +707,7 @@ async function applyLlmTransformation(files: string[], request?: TransformationR
  */
 async function applyFallbackLlmTransformation(files: string[], request?: TransformationRequest) {
   console.log('Using fallback rule-based LLM transformation...');
-  
+
   const transformedFiles: string[] = [];
 
   for (const filePath of files) {
@@ -743,7 +746,7 @@ async function applyFallbackLlmTransformation(files: string[], request?: Transfo
 function detectProjectFramework(files: string[]): string | undefined {
   // Simple framework detection based on file names and common patterns
   const fileNames = files.join(' ').toLowerCase();
-  
+
   if (fileNames.includes('react') || fileNames.includes('.jsx') || fileNames.includes('.tsx')) {
     return 'React';
   }
@@ -759,7 +762,7 @@ function detectProjectFramework(files: string[]): string | undefined {
   if (fileNames.includes('xstate') || fileNames.includes('machine')) {
     return 'XState';
   }
-  
+
   return undefined;
 }
 
@@ -920,7 +923,6 @@ async function arrayIncludesAST(_root: any, content: string, _lang: any): Promis
     return content;
   }
 }
-
 
 /**
  * AST-based object property shorthand conversion

@@ -1,10 +1,10 @@
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
-import { FileTestUtils, CodeSampleGenerator, MockDataGenerator } from '../test-helpers.js';
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import type { AstPattern } from '../../src/types.js';
+import { CodeSampleGenerator, FileTestUtils, MockDataGenerator } from '../test-helpers.js';
 
 /**
  * Pattern Validation System
- * 
+ *
  * Comprehensive testing and validation of transformation patterns to ensure
  * they are safe, effective, and correctly structured. Validates pattern syntax,
  * semantic correctness, performance impact, and safety constraints.
@@ -69,25 +69,25 @@ class PatternValidator {
 
     // Validate pattern structure
     this.validatePatternStructure(pattern, result);
-    
+
     // Validate pattern syntax
     this.validatePatternSyntax(pattern, result);
-    
+
     // Analyze performance characteristics
     await this.analyzePerformance(pattern, result);
-    
+
     // Assess safety and semantic preservation
     await this.assessSafety(pattern, result);
-    
+
     // Test pattern coverage
     await this.testPatternCoverage(pattern, result);
-    
+
     // Determine overall risk level
     this.determineRiskLevel(result);
-    
+
     // Final validation status
     result.isValid = result.errors.length === 0;
-    
+
     return result;
   }
 
@@ -156,7 +156,7 @@ class PatternValidator {
     // Validate replacement variables
     const patternVars = (pattern.pattern.match(/\$\w+/g) || []) as string[];
     const replacementVars = (pattern.replacement.match(/\$\w+/g) || []) as string[];
-    
+
     for (const replVar of replacementVars) {
       if (!patternVars.includes(replVar)) {
         result.errors.push(`Replacement variable ${replVar} not found in pattern`);
@@ -175,9 +175,7 @@ class PatternValidator {
 
     // Check for valid AST node types
     const nodeTypes = ['function', 'class', 'variable', 'expression', 'statement'];
-    const hasValidNodeType = nodeTypes.some(type => 
-      pattern.pattern.toLowerCase().includes(type)
-    );
+    const hasValidNodeType = nodeTypes.some((type) => pattern.pattern.toLowerCase().includes(type));
 
     if (!hasValidNodeType) {
       result.warnings.push('AST pattern should target specific node types');
@@ -195,7 +193,7 @@ class PatternValidator {
 
     // Check for clear transformation intent
     const intentKeywords = ['convert', 'transform', 'replace', 'refactor', 'modernize'];
-    const hasIntent = intentKeywords.some(keyword => 
+    const hasIntent = intentKeywords.some((keyword) =>
       pattern.description.toLowerCase().includes(keyword)
     );
 
@@ -207,7 +205,10 @@ class PatternValidator {
   /**
    * Analyze pattern performance characteristics
    */
-  private async analyzePerformance(pattern: AstPattern, result: PatternValidationResult): Promise<void> {
+  private async analyzePerformance(
+    pattern: AstPattern,
+    result: PatternValidationResult
+  ): Promise<void> {
     // Estimate complexity based on pattern characteristics
     let complexity = 1;
 
@@ -237,7 +238,7 @@ class PatternValidator {
    */
   private analyzeRegexComplexity(pattern: string): number {
     let complexity = 1;
-    
+
     // Count complexity-increasing constructs
     complexity += (pattern.match(/\*/g) || []).length; // Kleene star
     complexity += (pattern.match(/\+/g) || []).length; // Plus quantifier
@@ -295,12 +296,15 @@ class PatternValidator {
   /**
    * Test pattern coverage with sample code
    */
-  private async testPatternCoverage(pattern: AstPattern, result: PatternValidationResult): Promise<void> {
+  private async testPatternCoverage(
+    pattern: AstPattern,
+    result: PatternValidationResult
+  ): Promise<void> {
     const testCases = this.generateTestCases(pattern);
-    
+
     for (const testCase of testCases) {
       const matches = this.testPatternMatch(pattern, testCase);
-      
+
       if (matches && testCase.shouldMatch) {
         result.coverage.matchCount++;
       } else if (matches && !testCase.shouldMatch) {
@@ -312,8 +316,14 @@ class PatternValidator {
 
     // Calculate coverage metrics
     const totalTests = testCases.length;
-    const accuracy = (result.coverage.matchCount + (totalTests - result.coverage.matchCount - result.coverage.falsePositives - result.coverage.falseNegatives)) / totalTests;
-    
+    const accuracy =
+      (result.coverage.matchCount +
+        (totalTests -
+          result.coverage.matchCount -
+          result.coverage.falsePositives -
+          result.coverage.falseNegatives)) /
+      totalTests;
+
     if (accuracy < 0.8) {
       result.warnings.push(`Low pattern accuracy: ${(accuracy * 100).toFixed(1)}%`);
     }
@@ -334,7 +344,7 @@ class PatternValidator {
         shouldMatch: true,
         description: 'Basic var to const conversion',
       });
-      
+
       testCases.push({
         name: 'Var with string',
         input: 'var name = "test";',
@@ -386,7 +396,7 @@ class PatternValidator {
         return false;
       }
     }
-    
+
     // For AST and LLM patterns, use simplified matching
     return testCase.input.includes(pattern.pattern.replace(/\$\w+/g, ''));
   }
@@ -399,18 +409,18 @@ class PatternValidator {
 
     // Errors increase risk significantly
     riskScore += result.errors.length * 3;
-    
+
     // Warnings increase risk moderately
     riskScore += result.warnings.length * 1;
-    
+
     // Performance issues increase risk
     if (result.performance.complexity > 10) riskScore += 2;
-    
+
     // Safety issues increase risk
     if (!result.safety.preservesSemantics) riskScore += 3;
     riskScore += result.safety.breakingChanges.length * 2;
     riskScore += result.safety.sideEffects.length * 1;
-    
+
     // Coverage issues increase risk
     if (result.coverage.falsePositives > 0) riskScore += 2;
     if (result.coverage.falseNegatives > 0) riskScore += 1;
@@ -505,7 +515,7 @@ describe('Pattern Validation System', () => {
 
       const result = await validator.validatePattern(patternWithoutDescription);
 
-      expect(result.warnings.some(w => w.includes('description'))).toBe(true);
+      expect(result.warnings.some((w) => w.includes('description'))).toBe(true);
 
       console.log('   ✅ Optional fields handled gracefully');
       console.log(`   ⚠️ Warnings for missing optional fields: ${result.warnings.length}`);
@@ -537,11 +547,11 @@ describe('Pattern Validation System', () => {
 
       for (const testCase of templatePatterns) {
         const result = await validator.validatePattern(testCase.pattern);
-        
+
         if (testCase.shouldBeValid) {
-          expect(result.errors.filter(e => e.includes('regex')).length).toBe(0);
+          expect(result.errors.filter((e) => e.includes('regex')).length).toBe(0);
         } else {
-          expect(result.errors.some(e => e.includes('regex'))).toBe(true);
+          expect(result.errors.some((e) => e.includes('regex'))).toBe(true);
         }
 
         console.log(`   📝 Pattern: ${testCase.pattern.pattern.substring(0, 30)}...`);
@@ -595,7 +605,7 @@ describe('Pattern Validation System', () => {
 
       for (const testCase of llmPatterns) {
         const result = await validator.validatePattern(testCase.pattern);
-        
+
         if (testCase.expectWarnings) {
           expect(result.warnings.length).toBeGreaterThan(0);
         }
@@ -641,7 +651,7 @@ describe('Pattern Validation System', () => {
 
       for (const testCase of patterns) {
         const result = await validator.validatePattern(testCase.pattern);
-        
+
         expect(result.performance.complexity).toBeGreaterThan(0);
         expect(result.performance.estimatedTime).toBeGreaterThan(0);
         expect(result.performance.memoryUsage).toBeGreaterThan(0);
@@ -665,12 +675,12 @@ describe('Pattern Validation System', () => {
 
       const result = await validator.validatePattern(complexPattern);
 
-      const hasPerformanceWarning = result.warnings.some(w => 
-        w.includes('performance') || w.includes('complexity')
+      const hasPerformanceWarning = result.warnings.some(
+        (w) => w.includes('performance') || w.includes('complexity')
       );
 
       expect(result.performance.complexity).toBeGreaterThan(5);
-      
+
       console.log('   ✅ High-complexity pattern analysis completed');
       console.log(`   📊 Complexity score: ${result.performance.complexity}`);
       console.log(`   ⚠️ Performance warning: ${hasPerformanceWarning}`);
@@ -757,7 +767,10 @@ describe('Pattern Validation System', () => {
       const result = await validator.validatePattern(strictEqualityPattern);
 
       // Should have some coverage metrics
-      const totalTests = result.coverage.matchCount + result.coverage.falsePositives + result.coverage.falseNegatives;
+      const totalTests =
+        result.coverage.matchCount +
+        result.coverage.falsePositives +
+        result.coverage.falseNegatives;
       expect(totalTests).toBeGreaterThan(0);
 
       console.log('   ✅ Pattern accuracy metrics calculated');
@@ -847,7 +860,7 @@ describe('Pattern Validation System', () => {
 
       for (const pattern of commonPatterns) {
         const result = await validator.validatePattern(pattern);
-        
+
         expect(result).toBeDefined();
         expect(typeof result.isValid).toBe('boolean');
         expect(Array.isArray(result.errors)).toBe(true);

@@ -1,6 +1,6 @@
+import { readFile } from 'node:fs/promises';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
-import { readFile } from 'node:fs/promises';
 import type { ComplexityMetrics } from '../types.js';
 
 // Complexity input schema
@@ -56,7 +56,7 @@ async function calculateComplexityMetrics(files: string[]): Promise<ComplexityMe
     try {
       const content = await readFile(filePath, 'utf-8');
       const fileMetrics = analyzeFileComplexity(content);
-      
+
       totalCyclomaticComplexity += fileMetrics.cyclomaticComplexity;
       totalCognitiveComplexity += fileMetrics.cognitiveComplexity;
       totalLinesOfCode += fileMetrics.linesOfCode;
@@ -84,7 +84,7 @@ async function calculateComplexityMetrics(files: string[]): Promise<ComplexityMe
  */
 function analyzeFileComplexity(content: string): ComplexityMetrics {
   const lines = content.split('\n');
-  const linesOfCode = lines.filter(line => {
+  const linesOfCode = lines.filter((line) => {
     const trimmed = line.trim();
     return trimmed.length > 0 && !trimmed.startsWith('//') && !trimmed.startsWith('/*');
   }).length;
@@ -92,13 +92,21 @@ function analyzeFileComplexity(content: string): ComplexityMetrics {
   // Calculate cyclomatic complexity
   let cyclomaticComplexity = 1; // Base complexity
   const cyclomaticPatterns = [
-    /\bif\b/g, /\belse\s+if\b/g, /\bwhile\b/g, /\bfor\b/g, /\bdo\b/g,
-    /\bswitch\b/g, /\bcase\b/g, /\btry\b/g, /\bcatch\b/g,
+    /\bif\b/g,
+    /\belse\s+if\b/g,
+    /\bwhile\b/g,
+    /\bfor\b/g,
+    /\bdo\b/g,
+    /\bswitch\b/g,
+    /\bcase\b/g,
+    /\btry\b/g,
+    /\bcatch\b/g,
     /\?\s*.*\s*:/g, // Ternary operator
-    /&&/g, /\|\|/g, // Logical operators
+    /&&/g,
+    /\|\|/g, // Logical operators
   ];
 
-  cyclomaticPatterns.forEach(pattern => {
+  cyclomaticPatterns.forEach((pattern) => {
     const matches = content.match(pattern);
     if (matches) cyclomaticComplexity += matches.length;
   });
@@ -149,7 +157,7 @@ function analyzeFileComplexity(content: string): ComplexityMetrics {
   ];
 
   let functionCount = 0;
-  functionPatterns.forEach(pattern => {
+  functionPatterns.forEach((pattern) => {
     const matches = content.match(pattern);
     if (matches) functionCount += matches.length;
   });

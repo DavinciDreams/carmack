@@ -2,11 +2,11 @@
 
 /**
  * Test script for Repository Manager
- * 
+ *
  * Tests the repository manager functionality with a sample repository
  */
 
-import { RepositoryManager, type RepositoryConfig } from './src/repository-manager.js';
+import { type RepositoryConfig, RepositoryManager } from './src/repository-manager.js';
 
 async function testRepositoryManager() {
   console.log('🧪 Testing Repository Manager...\n');
@@ -86,7 +86,6 @@ async function testRepositoryManager() {
 
     console.log('\n🎉 Repository Manager test completed successfully!');
     return true;
-
   } catch (error) {
     console.error('❌ Repository Manager test failed:', error);
     return false;

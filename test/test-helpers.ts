@@ -1,6 +1,6 @@
 /**
  * Test Helpers and Utilities for Carmack Coder
- * 
+ *
  * Provides common testing utilities, mock data generators, and assertion helpers
  * for comprehensive component testing.
  */
@@ -9,12 +9,12 @@ import { randomUUID } from 'crypto';
 import type {
   AstPattern,
   ComplexityMetrics,
-  TransformationRequest,
-  ValidationResult,
   ErrorInfo,
   GitCheckpoint,
-  TransformationResult,
   MachineContext,
+  TransformationRequest,
+  TransformationResult,
+  ValidationResult,
 } from '../src/types.js';
 
 /**
@@ -56,11 +56,13 @@ export class MockDataGenerator {
   /**
    * Generate a mock transformation request
    */
-  static createTransformationRequest(overrides: Partial<TransformationRequest> = {}): TransformationRequest {
+  static createTransformationRequest(
+    overrides: Partial<TransformationRequest> = {}
+  ): TransformationRequest {
     return {
       targetFiles: ['./test/fixtures/sample.ts'],
       transformationType: 'template',
-      patterns: [this.createAstPattern()],
+      patterns: [MockDataGenerator.createAstPattern()],
       maxComplexity: 10,
       dryRun: false,
       ...overrides,
@@ -111,10 +113,12 @@ export class MockDataGenerator {
   /**
    * Generate a mock transformation result
    */
-  static createTransformationResult(overrides: Partial<TransformationResult> = {}): TransformationResult {
+  static createTransformationResult(
+    overrides: Partial<TransformationResult> = {}
+  ): TransformationResult {
     return {
       id: randomUUID(),
-      request: this.createTransformationRequest(),
+      request: MockDataGenerator.createTransformationRequest(),
       status: 'completed',
       mode: 'template',
       startTime: Date.now() - 1000,
@@ -132,7 +136,7 @@ export class MockDataGenerator {
     return {
       activeFiles: ['./test/fixtures/sample.ts'],
       checkpoints: [],
-      patterns: [this.createAstPattern()],
+      patterns: [MockDataGenerator.createAstPattern()],
       maxRetries: 3,
       currentRetries: 0,
       timeoutMs: 300000,
@@ -310,13 +314,13 @@ export class TestAssertions {
   static assertComplexityMetrics(metrics: ComplexityMetrics): void {
     const requiredFields = [
       'cyclomaticComplexity',
-      'cognitiveComplexity', 
+      'cognitiveComplexity',
       'linesOfCode',
       'nestingDepth',
       'functionCount',
-      'classCount'
+      'classCount',
     ];
-    
+
     for (const field of requiredFields) {
       if (typeof (metrics as any)[field] !== 'number' || (metrics as any)[field] < 0) {
         throw new Error(`Complexity metrics missing or invalid ${field}`);
@@ -351,7 +355,7 @@ export class FileTestUtils {
     const { writeFile, mkdtemp } = await import('node:fs/promises');
     const { join } = await import('node:path');
     const { tmpdir } = await import('node:os');
-    
+
     const tempDir = await mkdtemp(join(tmpdir(), 'carmack-test-'));
     const filePath = join(tempDir, `test-file${extension}`);
     await writeFile(filePath, content, 'utf8');
@@ -411,7 +415,7 @@ export class PerformanceTestUtils {
     const results: T[] = [];
 
     for (let i = 0; i < iterations; i++) {
-      const { result, timeMs } = await this.measureTime(fn);
+      const { result, timeMs } = await PerformanceTestUtils.measureTime(fn);
       times.push(timeMs);
       results.push(result);
     }
@@ -441,17 +445,13 @@ export class ActorTestUtils {
   /**
    * Test XState actor with timeout
    */
-  static async testActorWithTimeout<T>(
-    actor: any,
-    input: any,
-    timeoutMs = 5000
-  ): Promise<T> {
+  static async testActorWithTimeout<T>(actor: any, input: any, timeoutMs = 5000): Promise<T> {
     const { createActor } = await import('xstate');
-    
+
     return Promise.race([
       new Promise<T>((resolve, reject) => {
         const actorInstance = createActor(actor, { input });
-        
+
         actorInstance.subscribe({
           complete: () => {
             const snapshot = actorInstance.getSnapshot();
@@ -465,7 +465,7 @@ export class ActorTestUtils {
             reject(error);
           },
         });
-        
+
         actorInstance.start();
       }),
       new Promise<never>((_, reject) =>
@@ -477,12 +477,9 @@ export class ActorTestUtils {
   /**
    * Test XState actor error handling
    */
-  static async testActorError(
-    actor: any,
-    input: any
-  ): Promise<Error | null> {
+  static async testActorError(actor: any, input: any): Promise<Error | null> {
     try {
-      await this.testActorWithTimeout(actor, input);
+      await ActorTestUtils.testActorWithTimeout(actor, input);
       return null; // No error thrown
     } catch (error) {
       return error instanceof Error ? error : new Error(String(error));
@@ -543,21 +540,18 @@ export class TelemetryTestUtils {
    */
   static async createTestFiles(): Promise<string[]> {
     const files: string[] = [];
-    
+
     // Create TypeScript test file
-    const tsFile = await FileTestUtils.createTempFile(
-      CodeSampleGenerator.generateVarCode(),
-      '.ts'
-    );
+    const tsFile = await FileTestUtils.createTempFile(CodeSampleGenerator.generateVarCode(), '.ts');
     files.push(tsFile);
-    
+
     // Create JavaScript test file
     const jsFile = await FileTestUtils.createTempFile(
       CodeSampleGenerator.generateLooseEqualityCode(),
       '.js'
     );
     files.push(jsFile);
-    
+
     return files;
   }
 

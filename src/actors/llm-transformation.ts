@@ -1,11 +1,11 @@
+import { readFile, writeFile } from 'node:fs/promises';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
-import { readFile, writeFile } from 'node:fs/promises';
 import type { TransformationRequest } from '../types.js';
 
 /**
  * Comprehensive LLM Transformation System
- * 
+ *
  * This module implements production-ready LLM-based code transformations with:
  * - Multiple LLM provider support (OpenAI, Anthropic, Local models)
  * - Intelligent prompt engineering for code transformation
@@ -18,28 +18,32 @@ import type { TransformationRequest } from '../types.js';
 const LLMProviderSchema = z.enum(['openai', 'anthropic', 'local', 'mock']);
 
 // LLM Configuration schema
-const LLMConfigSchema = z.object({
-  provider: LLMProviderSchema.default('mock'),
-  apiKey: z.string().optional(),
-  model: z.string().default('gpt-4'),
-  baseURL: z.string().optional(), // For local models
-  maxTokens: z.number().default(4000),
-  temperature: z.number().min(0).max(2).default(0.1), // Low temperature for deterministic code
-  timeout: z.number().default(30000), // 30 second timeout
-  retries: z.number().default(3),
-}).default({});
+const LLMConfigSchema = z
+  .object({
+    provider: LLMProviderSchema.default('mock'),
+    apiKey: z.string().optional(),
+    model: z.string().default('gpt-4'),
+    baseURL: z.string().optional(), // For local models
+    maxTokens: z.number().default(4000),
+    temperature: z.number().min(0).max(2).default(0.1), // Low temperature for deterministic code
+    timeout: z.number().default(30000), // 30 second timeout
+    retries: z.number().default(3),
+  })
+  .default({});
 
 // LLM Transformation input schema
 const LLMTransformationInputSchema = z.object({
   files: z.array(z.string()),
   request: z.any().optional(), // TransformationRequest
   config: LLMConfigSchema.optional(),
-  context: z.object({
-    complexity: z.any().optional(), // ComplexityMetrics
-    patterns: z.array(z.any()).optional(),
-    projectType: z.string().optional(),
-    framework: z.string().optional(),
-  }).optional(),
+  context: z
+    .object({
+      complexity: z.any().optional(), // ComplexityMetrics
+      patterns: z.array(z.any()).optional(),
+      projectType: z.string().optional(),
+      framework: z.string().optional(),
+    })
+    .optional(),
 });
 
 // LLM Response schema
@@ -74,9 +78,9 @@ export type LLMTransformationResult = z.infer<typeof LLMTransformationResultSche
 export const llmTransformationActor = fromPromise(
   async ({ input }: { input: LLMTransformationInput }) => {
     const validatedInput = LLMTransformationInputSchema.parse(input);
-    
+
     console.log(`🤖 Starting LLM transformations on ${validatedInput.files.length} files`);
-    
+
     const transformer = new LLMTransformer(validatedInput.config);
     return await transformer.transformFiles(validatedInput);
   }
@@ -88,7 +92,7 @@ export const llmTransformationActor = fromPromise(
 export class LLMTransformer {
   private config: LLMConfig;
   private cache: Map<string, LLMResponse> = new Map();
-  private tokenUsage: number = 0;
+  private tokenUsage = 0;
 
   constructor(config?: Partial<LLMConfig>) {
     this.config = LLMConfigSchema.parse(config || {});
@@ -108,23 +112,28 @@ export class LLMTransformer {
     for (const filePath of input.files) {
       try {
         const result = await this.transformSingleFile(filePath, input);
-        
+
         if (result.success) {
           filesModified.push(filePath);
           totalTransformations += result.transformationCount;
           totalConfidence += result.confidence;
           confidenceCount++;
-          
+
           if (result.warnings) {
             warnings.push(...result.warnings);
           }
-          
+
           // Check if this was a fallback response (confidence 0 indicates fallback)
-          if (result.confidence === 0 && result.warnings?.some(w => w.includes('LLM transformation failed'))) {
+          if (
+            result.confidence === 0 &&
+            result.warnings?.some((w) => w.includes('LLM transformation failed'))
+          ) {
             errors.push(`LLM API failed for ${filePath}, used fallback`);
           }
-          
-          console.log(`✅ LLM transformed ${filePath} (confidence: ${result.confidence.toFixed(2)})`);
+
+          console.log(
+            `✅ LLM transformed ${filePath} (confidence: ${result.confidence.toFixed(2)})`
+          );
         } else {
           const errorMsg = `Failed to transform ${filePath}: ${result.error}`;
           errors.push(errorMsg);
@@ -154,7 +163,7 @@ export class LLMTransformer {
    * Transform a single file
    */
   private async transformSingleFile(
-    filePath: string, 
+    filePath: string,
     input: LLMTransformationInput
   ): Promise<{
     success: boolean;
@@ -166,32 +175,32 @@ export class LLMTransformer {
     try {
       // Read file content
       const originalContent = await readFile(filePath, 'utf-8');
-      
+
       // Analyze file context
       const fileContext = await this.analyzeFileContext(originalContent, filePath, input.context);
-      
+
       // Generate transformation prompt
       const prompt = this.generateTransformationPrompt(originalContent, fileContext, input.request);
-      
+
       // Check cache first
       const cacheKey = this.generateCacheKey(originalContent, prompt);
       let llmResponse = this.cache.get(cacheKey);
-      
+
       if (!llmResponse) {
         // Call LLM API
         llmResponse = await this.callLLMAPI(prompt, originalContent);
-        
+
         // Cache the response
         this.cache.set(cacheKey, llmResponse);
       }
-      
+
       // Validate the transformation
       const validationResult = await this.validateTransformation(
-        originalContent, 
-        llmResponse.transformedCode, 
+        originalContent,
+        llmResponse.transformedCode,
         filePath
       );
-      
+
       if (!validationResult.isValid) {
         return {
           success: false,
@@ -200,30 +209,31 @@ export class LLMTransformer {
           error: `Validation failed: ${validationResult.errors.join(', ')}`,
         };
       }
-      
+
       // Apply the transformation if it's different
       if (originalContent !== llmResponse.transformedCode) {
         await writeFile(filePath, llmResponse.transformedCode, 'utf-8');
-        
+
         return {
           success: true,
           transformationCount: llmResponse.appliedTransformations.length,
           confidence: llmResponse.confidence,
           ...(llmResponse.warnings && { warnings: llmResponse.warnings }),
         };
-      } else {
-        // Check if this was a fallback response (no changes but confidence 0)
-        const warnings = llmResponse.confidence === 0 && llmResponse.warnings?.some(w => w.includes('LLM transformation failed'))
+      }
+      // Check if this was a fallback response (no changes but confidence 0)
+      const warnings =
+        llmResponse.confidence === 0 &&
+        llmResponse.warnings?.some((w) => w.includes('LLM transformation failed'))
           ? llmResponse.warnings
           : ['No changes needed'];
-          
-        return {
-          success: true,
-          transformationCount: 0,
-          confidence: llmResponse.confidence,
-          warnings,
-        };
-      }
+
+      return {
+        success: true,
+        transformationCount: 0,
+        confidence: llmResponse.confidence,
+        warnings,
+      };
     } catch (error) {
       return {
         success: false,
@@ -238,8 +248,8 @@ export class LLMTransformer {
    * Analyze file context for better transformation prompts
    */
   private async analyzeFileContext(
-    content: string, 
-    filePath: string, 
+    content: string,
+    filePath: string,
     context?: LLMTransformationInput['context']
   ): Promise<{
     language: string;
@@ -256,15 +266,15 @@ export class LLMTransformer {
     const exports = this.extractExports(content);
     const functions = (content.match(/function\s+\w+|const\s+\w+\s*=\s*\(/g) || []).length;
     const classes = (content.match(/class\s+\w+/g) || []).length;
-    
+
     // Simple complexity calculation
     const complexity = this.calculateSimpleComplexity(content);
-    
+
     // Detect common patterns
     const patterns = this.detectCodePatterns(content);
-    
+
     const detectedFramework = context?.framework || this.detectFramework(imports);
-    
+
     const result: {
       language: string;
       framework?: string;
@@ -283,11 +293,11 @@ export class LLMTransformer {
       functions,
       classes,
     };
-    
+
     if (detectedFramework) {
       result.framework = detectedFramework;
     }
-    
+
     return result;
   }
 
@@ -295,8 +305,8 @@ export class LLMTransformer {
    * Generate intelligent transformation prompt
    */
   private generateTransformationPrompt(
-    content: string, 
-    context: any, 
+    content: string,
+    context: any,
     request?: TransformationRequest
   ): string {
     const basePrompt = `You are an expert code transformation assistant. Transform the following ${context.language} code to improve it using modern best practices.
@@ -378,33 +388,33 @@ Respond in this JSON format:
    */
   private async callLLMAPI(prompt: string, originalCode: string): Promise<LLMResponse> {
     let lastError: Error | null = null;
-    
+
     for (let attempt = 1; attempt <= this.config.retries; attempt++) {
       try {
         console.log(`🔄 Calling LLM API (attempt ${attempt}/${this.config.retries})`);
-        
+
         const response = await this.makeAPICall(prompt);
-        
+
         // Parse and validate response
         const parsedResponse = this.parseAPIResponse(response);
         const validatedResponse = LLMResponseSchema.parse(parsedResponse);
-        
+
         // Update token usage
         this.tokenUsage += this.estimateTokenUsage(prompt, validatedResponse.transformedCode);
-        
+
         return validatedResponse;
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
         console.warn(`⚠️ LLM API attempt ${attempt} failed:`, lastError.message);
-        
+
         if (attempt < this.config.retries) {
           // Exponential backoff
-          const delay = Math.pow(2, attempt) * 1000;
-          await new Promise(resolve => setTimeout(resolve, delay));
+          const delay = 2 ** attempt * 1000;
+          await new Promise((resolve) => setTimeout(resolve, delay));
         }
       }
     }
-    
+
     // If all retries failed, return a fallback response
     console.error('❌ All LLM API attempts failed, using fallback');
     return this.createFallbackResponse(originalCode, lastError);
@@ -438,7 +448,7 @@ Respond in this JSON format:
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${this.config.apiKey}`,
+        Authorization: `Bearer ${this.config.apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -446,12 +456,13 @@ Respond in this JSON format:
         messages: [
           {
             role: 'system',
-            content: 'You are an expert code transformation assistant. Always respond with valid JSON.'
+            content:
+              'You are an expert code transformation assistant. Always respond with valid JSON.',
           },
           {
             role: 'user',
-            content: prompt
-          }
+            content: prompt,
+          },
         ],
         max_tokens: this.config.maxTokens,
         temperature: this.config.temperature,
@@ -462,7 +473,7 @@ Respond in this JSON format:
       throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json() as any;
+    const data = (await response.json()) as any;
     return data.choices?.[0]?.message?.content;
   }
 
@@ -488,8 +499,8 @@ Respond in this JSON format:
         messages: [
           {
             role: 'user',
-            content: prompt
-          }
+            content: prompt,
+          },
         ],
       }),
     });
@@ -498,7 +509,7 @@ Respond in this JSON format:
       throw new Error(`Anthropic API error: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json() as any;
+    const data = (await response.json()) as any;
     return data.content?.[0]?.text;
   }
 
@@ -507,7 +518,7 @@ Respond in this JSON format:
    */
   private async callLocalModel(prompt: string): Promise<any> {
     const baseURL = this.config.baseURL || 'http://localhost:11434';
-    
+
     const response = await fetch(`${baseURL}/api/generate`, {
       method: 'POST',
       headers: {
@@ -528,7 +539,7 @@ Respond in this JSON format:
       throw new Error(`Local model API error: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json() as any;
+    const data = (await response.json()) as any;
     return data.response;
   }
 
@@ -537,28 +548,28 @@ Respond in this JSON format:
    */
   private async callMockAPI(prompt: string): Promise<any> {
     // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
-    
+    await new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 2000));
+
     // Extract original code from prompt
     const codeMatch = prompt.match(/```[\w]*\n([\s\S]*?)\n```/);
     const originalCode = codeMatch ? codeMatch[1] : '';
-    
+
     // Apply simple mock transformations
     let transformedCode = originalCode || '';
     const appliedTransformations: string[] = [];
-    
+
     // Mock transformation: var to const/let
     if (transformedCode && transformedCode.includes('var ')) {
       transformedCode = transformedCode.replace(/\bvar\s+(\w+)/g, 'const $1');
       appliedTransformations.push('var-to-const');
     }
-    
+
     // Mock transformation: == to ===
     if (transformedCode && transformedCode.includes('==') && !transformedCode.includes('===')) {
       transformedCode = transformedCode.replace(/([^=!])==([^=])/g, '$1===$2');
       appliedTransformations.push('strict-equality');
     }
-    
+
     return JSON.stringify({
       transformedCode,
       explanation: `Applied ${appliedTransformations.length} mock transformations: ${appliedTransformations.join(', ')}`,
@@ -581,13 +592,13 @@ Respond in this JSON format:
       if (jsonMatch && jsonMatch[1]) {
         return JSON.parse(jsonMatch[1]);
       }
-      
+
       // If still no JSON, try to extract from any code block
       const codeMatch = response.match(/```[\w]*\n([\s\S]*?)\n```/);
       if (codeMatch && codeMatch[1]) {
         return JSON.parse(codeMatch[1]);
       }
-      
+
       // Last resort: assume the entire response is the transformed code
       return {
         transformedCode: response,
@@ -616,61 +627,65 @@ Respond in this JSON format:
    * Validate transformation result
    */
   private async validateTransformation(
-    originalCode: string, 
-    transformedCode: string, 
+    originalCode: string,
+    transformedCode: string,
     filePath: string
   ): Promise<{ isValid: boolean; errors: string[] }> {
     const errors: string[] = [];
-    
+
     try {
       // Basic syntax validation for TypeScript/JavaScript
-      if (filePath.endsWith('.ts') || filePath.endsWith('.tsx') || filePath.endsWith('.js') || filePath.endsWith('.jsx')) {
+      if (
+        filePath.endsWith('.ts') ||
+        filePath.endsWith('.tsx') ||
+        filePath.endsWith('.js') ||
+        filePath.endsWith('.jsx')
+      ) {
         // Try to parse with TypeScript compiler API (if available)
         // For now, do basic checks
-        
+
         // Check for balanced braces
         const openBraces = (transformedCode.match(/\{/g) || []).length;
         const closeBraces = (transformedCode.match(/\}/g) || []).length;
         if (openBraces !== closeBraces) {
           errors.push('Unbalanced braces in transformed code');
         }
-        
+
         // Check for balanced parentheses
         const openParens = (transformedCode.match(/\(/g) || []).length;
         const closeParens = (transformedCode.match(/\)/g) || []).length;
         if (openParens !== closeParens) {
           errors.push('Unbalanced parentheses in transformed code');
         }
-        
+
         // Check for basic syntax errors
         if (transformedCode.includes(';;')) {
           errors.push('Double semicolons detected');
         }
-        
+
         // Ensure imports/exports are preserved
         const originalImports = this.extractImports(originalCode);
         const transformedImports = this.extractImports(transformedCode);
-        
+
         if (originalImports.length > 0 && transformedImports.length === 0) {
           errors.push('All imports were removed during transformation');
         }
       }
-      
+
       // Check that the code is not empty
       if (transformedCode.trim().length === 0) {
         errors.push('Transformed code is empty');
       }
-      
+
       // Check that the transformation is not too different (potential hallucination)
       const similarity = this.calculateSimilarity(originalCode, transformedCode);
       if (similarity < 0.3) {
         errors.push('Transformed code is too different from original (possible hallucination)');
       }
-      
     } catch (error) {
       errors.push(`Validation error: ${error instanceof Error ? error.message : String(error)}`);
     }
-    
+
     return {
       isValid: errors.length === 0,
       errors,
@@ -702,12 +717,15 @@ Respond in this JSON format:
 
   private extractImports(content: string): string[] {
     const imports = content.match(/import\s+.*?from\s+['"][^'"]+['"]/g) || [];
-    return imports.map(imp => imp.trim());
+    return imports.map((imp) => imp.trim());
   }
 
   private extractExports(content: string): string[] {
-    const exports = content.match(/export\s+(?:default\s+)?(?:function|class|interface|type|const|let|var)\s+\w+/g) || [];
-    return exports.map(exp => exp.trim());
+    const exports =
+      content.match(
+        /export\s+(?:default\s+)?(?:function|class|interface|type|const|let|var)\s+\w+/g
+      ) || [];
+    return exports.map((exp) => exp.trim());
   }
 
   private detectFramework(imports: string[]): string | undefined {
@@ -723,28 +741,34 @@ Respond in this JSON format:
   private calculateSimpleComplexity(content: string): number {
     let complexity = 1;
     const complexityPatterns = [
-      /\bif\b/g, /\belse\b/g, /\bwhile\b/g, /\bfor\b/g,
-      /\bswitch\b/g, /\btry\b/g, /\bcatch\b/g, /\?\s*.*\s*:/g
+      /\bif\b/g,
+      /\belse\b/g,
+      /\bwhile\b/g,
+      /\bfor\b/g,
+      /\bswitch\b/g,
+      /\btry\b/g,
+      /\bcatch\b/g,
+      /\?\s*.*\s*:/g,
     ];
-    
-    complexityPatterns.forEach(pattern => {
+
+    complexityPatterns.forEach((pattern) => {
       const matches = content.match(pattern);
       if (matches) complexity += matches.length;
     });
-    
+
     return Math.min(complexity, 10); // Cap at 10
   }
 
   private detectCodePatterns(content: string): string[] {
     const patterns: string[] = [];
-    
+
     if (content.includes('var ')) patterns.push('var-declarations');
     if (content.includes('==') && !content.includes('===')) patterns.push('loose-equality');
     if (content.includes('function(')) patterns.push('function-declarations');
     if (content.includes('.then(')) patterns.push('promise-chains');
     if (content.includes('callback')) patterns.push('callbacks');
     if (content.includes('class ')) patterns.push('classes');
-    
+
     return patterns;
   }
 
@@ -754,7 +778,7 @@ Respond in this JSON format:
     let hash = 0;
     for (let i = 0; i < combined.length; i++) {
       const char = combined.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return hash.toString();
@@ -769,7 +793,7 @@ Respond in this JSON format:
     // Simple Jaccard similarity
     const set1 = new Set(str1.split(/\s+/));
     const set2 = new Set(str2.split(/\s+/));
-    const intersection = new Set([...set1].filter(x => set2.has(x)));
+    const intersection = new Set([...set1].filter((x) => set2.has(x)));
     const union = new Set([...set1, ...set2]);
     return intersection.size / union.size;
   }

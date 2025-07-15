@@ -3,21 +3,20 @@
  * Provides high-performance, low-overhead metrics collection with privacy compliance
  */
 
-import { randomUUID } from 'crypto';
-import { createHash } from 'crypto';
-import { performance } from 'perf_hooks';
+import { createHash, randomUUID } from 'crypto';
 import { EventEmitter } from 'events';
+import { performance } from 'perf_hooks';
 import type {
-  TelemetryMetric,
-  TelemetryConfig,
-  PatternSuccessMetric,
+  CacheEfficiencyMetric,
+  ErrorRecoveryMetric,
   LatencyMetric,
   MemoryProfileMetric,
-  CacheEfficiencyMetric,
   ModeSelectionMetric,
-  ErrorRecoveryMetric,
-  TransformationMode,
+  PatternSuccessMetric,
   PipelineStages,
+  TelemetryConfig,
+  TelemetryMetric,
+  TransformationMode,
 } from './types.js';
 import { TelemetryConfigSchema, TelemetryMetricSchema } from './types.js';
 
@@ -124,7 +123,7 @@ class PrivacyManager {
     }
 
     // Keep relative path structure but remove absolute paths
-    return filePath.replace(/^.*[\\\/]/, '').replace(/[\\\/]/g, '/');
+    return filePath.replace(/^.*[\\/]/, '').replace(/[\\/]/g, '/');
   }
 
   destroy(): void {

@@ -1,5 +1,5 @@
 import { fromPromise } from 'xstate';
-import type { ASTNode, FunctionDoc, ClassDoc, ModuleDoc } from './types.js';
+import type { ASTNode, ClassDoc, FunctionDoc, ModuleDoc } from './types.js';
 
 // AST-grep integration for code analysis
 export interface ASTAnalyzer {
@@ -71,7 +71,11 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
     ]);
 
     // Extract module name from file path
-    const moduleName = filePath.split('/').pop()?.replace(/\.(ts|js)$/, '') || 'unknown';
+    const moduleName =
+      filePath
+        .split('/')
+        .pop()
+        ?.replace(/\.(ts|js)$/, '') || 'unknown';
 
     return {
       name: moduleName,
@@ -83,8 +87,8 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
         types: await this.extractTypes(filePath),
         constants: await this.extractConstants(filePath),
       },
-      imports: imports.map(imp => ({ ...imp, isTypeOnly: false })),
-      dependencies: imports.map(imp => imp.module),
+      imports: imports.map((imp) => ({ ...imp, isTypeOnly: false })),
+      dependencies: imports.map((imp) => imp.module),
     };
   }
 
@@ -94,10 +98,10 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
 
     if (this.astGrep) {
       // Use AST-grep for precise extraction
-      functions.push(...await this.extractFunctionsWithASTGrep(content, filePath));
+      functions.push(...(await this.extractFunctionsWithASTGrep(content, filePath)));
     } else {
       // Fallback to regex-based extraction
-      functions.push(...await this.extractFunctionsWithRegex(content, filePath));
+      functions.push(...(await this.extractFunctionsWithRegex(content, filePath)));
     }
 
     return functions;
@@ -108,9 +112,9 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
     const classes: ClassDoc[] = [];
 
     if (this.astGrep) {
-      classes.push(...await this.extractClassesWithASTGrep(content, filePath));
+      classes.push(...(await this.extractClassesWithASTGrep(content, filePath)));
     } else {
-      classes.push(...await this.extractClassesWithRegex(content, filePath));
+      classes.push(...(await this.extractClassesWithRegex(content, filePath)));
     }
 
     return classes;
@@ -134,7 +138,7 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
         if (exportName) {
           if (exportName.includes(',')) {
             // Handle named exports like { foo, bar }
-            exports.push(...exportName.split(',').map(name => name.trim()));
+            exports.push(...exportName.split(',').map((name) => name.trim()));
           } else {
             exports.push(exportName);
           }
@@ -150,15 +154,16 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
     const imports: Array<{ module: string; imports: string[] }> = [];
 
     // Extract import statements
-    const importPattern = /import\s+(?:(?:\{([^}]+)\})|(?:(\w+))|(?:\*\s+as\s+(\w+)))\s+from\s+['"]([^'"]+)['"]/g;
-    
+    const importPattern =
+      /import\s+(?:(?:\{([^}]+)\})|(?:(\w+))|(?:\*\s+as\s+(\w+)))\s+from\s+['"]([^'"]+)['"]/g;
+
     let match;
     while ((match = importPattern.exec(content)) !== null) {
       const [, namedImports, defaultImport, namespaceImport, module] = match;
       const importNames: string[] = [];
 
       if (namedImports) {
-        importNames.push(...namedImports.split(',').map(name => name.trim()));
+        importNames.push(...namedImports.split(',').map((name) => name.trim()));
       }
       if (defaultImport) {
         importNames.push(defaultImport);
@@ -214,12 +219,15 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
     }
   }
 
-  private async extractFunctionsWithASTGrep(content: string, filePath: string): Promise<FunctionDoc[]> {
+  private async extractFunctionsWithASTGrep(
+    content: string,
+    filePath: string
+  ): Promise<FunctionDoc[]> {
     const functions: FunctionDoc[] = [];
 
     try {
       const root = this.astGrep.parse(content);
-      
+
       // Find function declarations
       const functionMatches = root.findAll(AST_PATTERNS.functions.functionDeclaration);
       const arrowMatches = root.findAll(AST_PATTERNS.functions.arrowFunction);
@@ -228,7 +236,7 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
       for (const match of [...functionMatches, ...arrowMatches, ...methodMatches]) {
         const nameMatch = match.getMatch('NAME')?.text();
         const params = match.getMatch('PARAMS')?.text() || '';
-        
+
         if (nameMatch) {
           functions.push({
             name: nameMatch,
@@ -238,7 +246,9 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
             filePath,
             lineNumber: match.range().start.line,
             isExported: this.isExported(content, nameMatch),
-            isAsync: content.includes(`async function ${nameMatch}`) || content.includes(`async ${nameMatch}`),
+            isAsync:
+              content.includes(`async function ${nameMatch}`) ||
+              content.includes(`async ${nameMatch}`),
           });
         }
       }
@@ -249,7 +259,10 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
     return functions;
   }
 
-  private async extractFunctionsWithRegex(content: string, filePath: string): Promise<FunctionDoc[]> {
+  private async extractFunctionsWithRegex(
+    content: string,
+    filePath: string
+  ): Promise<FunctionDoc[]> {
     const functions: FunctionDoc[] = [];
     // const _lines = content.split('\n');
 
@@ -316,7 +329,8 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
   private async extractClassesWithRegex(content: string, filePath: string): Promise<ClassDoc[]> {
     const classes: ClassDoc[] = [];
 
-    const classPattern = /(?:export\s+)?(?:class|interface)\s+(\w+)(?:\s+extends\s+(\w+))?\s*\{([^}]+)\}/g;
+    const classPattern =
+      /(?:export\s+)?(?:class|interface)\s+(\w+)(?:\s+extends\s+(\w+))?\s*\{([^}]+)\}/g;
     let match;
 
     while ((match = classPattern.exec(content)) !== null) {
@@ -339,14 +353,16 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
     return classes;
   }
 
-  private parseParameters(params: string): Array<{ name: string; type: string; optional: boolean }> {
+  private parseParameters(
+    params: string
+  ): Array<{ name: string; type: string; optional: boolean }> {
     if (!params.trim()) return [];
 
-    return params.split(',').map(param => {
+    return params.split(',').map((param) => {
       const trimmed = param.trim();
       const optional = trimmed.includes('?');
-      const [name, type] = trimmed.split(':').map(s => s.trim());
-      
+      const [name, type] = trimmed.split(':').map((s) => s.trim());
+
       return {
         name: name?.replace('?', '') || 'unknown',
         type: type || 'any',
@@ -355,10 +371,13 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
     });
   }
 
-  private parseClassProperties(body: string): Array<{ name: string; type: string; optional: boolean; readonly: boolean }> {
-    const properties: Array<{ name: string; type: string; optional: boolean; readonly: boolean }> = [];
+  private parseClassProperties(
+    body: string
+  ): Array<{ name: string; type: string; optional: boolean; readonly: boolean }> {
+    const properties: Array<{ name: string; type: string; optional: boolean; readonly: boolean }> =
+      [];
     const propertyPattern = /(readonly\s+)?(\w+)(\?)?\s*:\s*([^;,\n]+)/g;
-    
+
     let match;
     while ((match = propertyPattern.exec(body)) !== null) {
       const [, readonly, name, optional, type] = match;
@@ -378,7 +397,7 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
   private async parseClassMethods(body: string, filePath: string): Promise<FunctionDoc[]> {
     const methods: FunctionDoc[] = [];
     const methodPattern = /(\w+)\s*\(([^)]*)\)\s*(?::\s*([^{]+))?\s*\{/g;
-    
+
     let match;
     while ((match = methodPattern.exec(body)) !== null) {
       const [, name, params, returnType] = match;
@@ -399,15 +418,18 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
     return methods;
   }
 
-  private async extractJSDocDescription(content: string, lineNumber: number): Promise<string | undefined> {
+  private async extractJSDocDescription(
+    content: string,
+    lineNumber: number
+  ): Promise<string | undefined> {
     const lines = content.split('\n');
     let description = '';
-    
+
     // Look backwards from the function/class line for JSDoc comments
     for (let i = lineNumber - 2; i >= 0; i--) {
       const line = lines[i]?.trim();
       if (!line) continue;
-      
+
       if (line.startsWith('/**')) {
         // Found start of JSDoc, collect until */
         for (let j = i; j < lineNumber; j++) {
@@ -419,7 +441,7 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
         }
         break;
       }
-      
+
       if (!line.startsWith('*') && !line.startsWith('//')) {
         break; // Hit non-comment line
       }
@@ -429,31 +451,34 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
   }
 
   private isExported(content: string, name: string): boolean {
-    return content.includes(`export { ${name}`) || 
-           content.includes(`export function ${name}`) ||
-           content.includes(`export class ${name}`) ||
-           content.includes(`export interface ${name}`) ||
-           content.includes(`export type ${name}`) ||
-           content.includes(`export const ${name}`) ||
-           content.includes(`export default ${name}`);
+    return (
+      content.includes(`export { ${name}`) ||
+      content.includes(`export function ${name}`) ||
+      content.includes(`export class ${name}`) ||
+      content.includes(`export interface ${name}`) ||
+      content.includes(`export type ${name}`) ||
+      content.includes(`export const ${name}`) ||
+      content.includes(`export default ${name}`)
+    );
   }
 
   private async extractModuleDescription(filePath: string): Promise<string | undefined> {
     const content = await this.readFile(filePath);
     const lines = content.split('\n');
-    
+
     // Look for file-level JSDoc or comments at the top
     let description = '';
     let inComment = false;
-    
-    for (const line of lines.slice(0, 20)) { // Check first 20 lines
+
+    for (const line of lines.slice(0, 20)) {
+      // Check first 20 lines
       const trimmed = line.trim();
-      
+
       if (trimmed.startsWith('/**')) {
         inComment = true;
         continue;
       }
-      
+
       if (inComment) {
         if (trimmed.includes('*/')) {
           inComment = false;
@@ -463,38 +488,40 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
           description += trimmed.replace(/^\*\s?/, '') + '\n';
         }
       }
-      
+
       if (trimmed && !trimmed.startsWith('//') && !trimmed.startsWith('import') && !inComment) {
         break; // Hit actual code
       }
     }
-    
+
     return description.trim() || undefined;
   }
 
   private async extractTypes(filePath: string): Promise<string[]> {
     const content = await this.readFile(filePath);
     const types: string[] = [];
-    
+
     const typePattern = /(?:export\s+)?type\s+(\w+)/g;
     let match;
-    
+
     while ((match = typePattern.exec(content)) !== null) {
       if (match[1]) {
         types.push(match[1]);
       }
     }
-    
+
     return types;
   }
 
-  private async extractConstants(filePath: string): Promise<Array<{ name: string; type: string; value?: string }>> {
+  private async extractConstants(
+    filePath: string
+  ): Promise<Array<{ name: string; type: string; value?: string }>> {
     const content = await this.readFile(filePath);
     const constants: Array<{ name: string; type: string; value?: string }> = [];
-    
+
     const constPattern = /(?:export\s+)?const\s+(\w+)(?:\s*:\s*([^=]+))?\s*=\s*([^;,\n]+)/g;
     let match;
-    
+
     while ((match = constPattern.exec(content)) !== null) {
       const [, name, type, value] = match;
       if (name) {
@@ -505,7 +532,7 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
         });
       }
     }
-    
+
     return constants;
   }
 }
@@ -514,7 +541,7 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
 export const astAnalyzerActor = fromPromise(
   async ({ input }: { input: { filePath: string; operation: string } }) => {
     const analyzer = new ASTGrepAnalyzer();
-    
+
     switch (input.operation) {
       case 'analyze':
         return await analyzer.analyzeFile(input.filePath);

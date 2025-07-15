@@ -1,6 +1,6 @@
-import { fromPromise } from 'xstate';
-import { js, ts } from '@ast-grep/napi';
 import { readFile, writeFile } from 'node:fs/promises';
+import { js, ts } from '@ast-grep/napi';
+import { fromPromise } from 'xstate';
 import { z } from 'zod';
 
 // Enhanced pattern schema with full AST-grep support
@@ -233,31 +233,35 @@ async function applyEnhancedTemplatePattern(
 
   try {
     switch (pattern.id) {
-      case 'smart-var-to-const-let':
+      case 'smart-var-to-const-let': {
         const varResult = applySmartVarTransformation(modifiedContent);
         modifiedContent = varResult.content;
         transformCount = varResult.count;
         break;
+      }
 
-      case 'strict-equality':
+      case 'strict-equality': {
         const eqResult = applyStrictEqualityTransformation(modifiedContent);
         modifiedContent = eqResult.content;
         transformCount = eqResult.count;
         break;
+      }
 
-      case 'strict-inequality':
+      case 'strict-inequality': {
         const neqResult = applyStrictInequalityTransformation(modifiedContent);
         modifiedContent = neqResult.content;
         transformCount = neqResult.count;
         break;
+      }
 
-      case 'console-log-to-console-error':
+      case 'console-log-to-console-error': {
         const consoleResult = applyConsoleErrorTransformation(modifiedContent);
         modifiedContent = consoleResult.content;
         transformCount = consoleResult.count;
         break;
+      }
 
-      default:
+      default: {
         // Generic regex replacement for other patterns
         const regex = new RegExp(patternString.replace(/\$(\w+)/g, '([\\w\\s\\.\\[\\]]+)'), 'g');
         const replacement = pattern.replacement.replace(/\$(\w+)/g, '$$$1');
@@ -266,6 +270,7 @@ async function applyEnhancedTemplatePattern(
           transformCount = matches.length;
           modifiedContent = modifiedContent.replace(regex, replacement);
         }
+      }
     }
 
     return {
@@ -334,7 +339,7 @@ async function applyRealASTPattern(
           transformCount++;
           console.log(`🔄 AST transformed: ${matchText} → ${replacement}`);
         } catch (matchError) {
-          console.error(`Error processing AST match:`, matchError);
+          console.error('Error processing AST match:', matchError);
         }
       }
     }

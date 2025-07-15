@@ -1,12 +1,12 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { validationActor } from '../../src/actors/validation';
-import { createActor } from 'xstate';
-import { writeFile, mkdir, rm } from 'node:fs/promises';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createActor } from 'xstate';
+import { validationActor } from '../../src/actors/validation';
 
 describe('ValidationActor', () => {
   const testDir = join(process.cwd(), 'test-temp');
-  
+
   beforeEach(async () => {
     await mkdir(testDir, { recursive: true });
   });
@@ -42,7 +42,7 @@ export { user };
       });
 
       actor.start();
-      
+
       const result = await new Promise((resolve) => {
         actor.subscribe((state) => {
           if (state.status === 'done') {
@@ -83,7 +83,7 @@ export { user };
       });
 
       actor.start();
-      
+
       const result = await new Promise((resolve) => {
         actor.subscribe((state) => {
           if (state.status === 'done') {
@@ -119,7 +119,7 @@ export { user };
       });
 
       actor.start();
-      
+
       const result = await new Promise((resolve) => {
         actor.subscribe((state) => {
           if (state.status === 'done') {
@@ -173,7 +173,7 @@ function complexFunction(a, b, c, d, e) {
       });
 
       actor.start();
-      
+
       const result = await new Promise((resolve) => {
         actor.subscribe((state) => {
           if (state.status === 'done') {
@@ -217,7 +217,7 @@ function test(): any {
       });
 
       actor.start();
-      
+
       const result = await new Promise((resolve) => {
         actor.subscribe((state) => {
           if (state.status === 'done') {
@@ -282,7 +282,7 @@ function veryComplexFunction(a, b, c, d, e, f, g, h, i, j) {
       });
 
       actor.start();
-      
+
       const result = await new Promise((resolve) => {
         actor.subscribe((state) => {
           if (state.status === 'done') {
@@ -321,7 +321,7 @@ export{add};
       });
 
       actor.start();
-      
+
       const result = await new Promise((resolve) => {
         actor.subscribe((state) => {
           if (state.status === 'done') {
@@ -354,7 +354,7 @@ console.log(greeting);
       });
 
       actor.start();
-      
+
       const result = await new Promise((resolve) => {
         actor.subscribe((state) => {
           if (state.status === 'done') {
@@ -383,7 +383,7 @@ console.log(greeting);
       });
 
       actor.start();
-      
+
       const result = await new Promise((resolve) => {
         actor.subscribe((state) => {
           if (state.status === 'done') {
@@ -400,7 +400,7 @@ console.log(greeting);
 
     it('should handle invalid file content gracefully', async () => {
       const binaryFile = join(testDir, 'binary.bin');
-      const binaryContent = Buffer.from([0x00, 0x01, 0x02, 0x03, 0xFF]);
+      const binaryContent = Buffer.from([0x00, 0x01, 0x02, 0x03, 0xff]);
       await writeFile(binaryFile, binaryContent);
 
       const actor = createActor(validationActor, {
@@ -411,7 +411,7 @@ console.log(greeting);
       });
 
       actor.start();
-      
+
       const result = await new Promise((resolve) => {
         actor.subscribe((state) => {
           if (state.status === 'done') {
@@ -430,7 +430,7 @@ console.log(greeting);
   describe('Performance', () => {
     it('should handle multiple files efficiently', async () => {
       const files: string[] = [];
-      
+
       // Create multiple test files
       for (let i = 0; i < 10; i++) {
         const filePath = join(testDir, `file${i}.ts`);
@@ -454,7 +454,7 @@ export function process${i}(input: number): number {
       });
 
       actor.start();
-      
+
       const result = await new Promise((resolve) => {
         actor.subscribe((state) => {
           if (state.status === 'done') {
