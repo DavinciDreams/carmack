@@ -308,7 +308,9 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
       const transformation = state.context.currentTransformation;
       if (transformation) {
         console.log(`📊 Files modified: ${transformation.filesModified.length}`);
-        console.log(`⏱️  Duration: ${(transformation.endTime ?? Date.now()) - transformation.startTime}ms`);
+        console.log(
+          `⏱️  Duration: ${(transformation.endTime ?? Date.now()) - transformation.startTime}ms`
+        );
         console.log(`🧮 Complexity: ${JSON.stringify(transformation.complexity, null, 2)}`);
       }
     } else if (state.matches('failed')) {

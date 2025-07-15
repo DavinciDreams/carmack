@@ -241,15 +241,17 @@ async function handleLearning(input: {
   patterns: unknown[];
 }): Promise<AnalysisResult> {
   // Extract patterns from successful transformations
-  const transformation = input.transformation as {
-    id?: string;
-    mode?: TransformationMode;
-    filesModified?: string[];
-    success?: boolean;
-    executionTime?: number;
-    confidence?: number;
-    appliedPatterns?: Array<{ pattern: string; count: number }>;
-  } | undefined;
+  const transformation = input.transformation as
+    | {
+        id?: string;
+        mode?: TransformationMode;
+        filesModified?: string[];
+        success?: boolean;
+        executionTime?: number;
+        confidence?: number;
+        appliedPatterns?: Array<{ pattern: string; count: number }>;
+      }
+    | undefined;
 
   const newPatterns: AstPattern[] = [];
   const insights: string[] = [];
@@ -266,18 +268,23 @@ async function handleLearning(input: {
           replacement: appliedPattern.pattern, // Simplified - would need actual replacement logic
           description: `Learned pattern from successful transformation ${transformation.id}`,
           complexity: Math.min(10, Math.max(1, Math.floor(appliedPattern.count / 2))),
-          riskLevel: transformation.confidence && transformation.confidence > 0.8 ? 'low' : 'medium',
+          riskLevel:
+            transformation.confidence && transformation.confidence > 0.8 ? 'low' : 'medium',
           mode: transformation.mode ?? 'template',
         };
 
         newPatterns.push(learnedPattern);
-        insights.push(`Pattern "${appliedPattern.pattern}" was successfully applied ${appliedPattern.count} times`);
+        insights.push(
+          `Pattern "${appliedPattern.pattern}" was successfully applied ${appliedPattern.count} times`
+        );
       }
     }
 
     // Generate insights based on transformation characteristics
     if (transformation.mode) {
-      insights.push(`${transformation.mode} transformation mode was effective for this type of change`);
+      insights.push(
+        `${transformation.mode} transformation mode was effective for this type of change`
+      );
     }
 
     if (transformation.executionTime && transformation.executionTime < 1000) {

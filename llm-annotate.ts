@@ -179,7 +179,13 @@ async function main(): Promise<void> {
         '**/coverage/**',
       ],
       analysisDepth: depth,
-      focusAreas: options.focus as ('patterns' | 'architecture' | 'performance' | 'security' | 'maintainability')[],
+      focusAreas: options.focus as (
+        | 'patterns'
+        | 'architecture'
+        | 'performance'
+        | 'security'
+        | 'maintainability'
+      )[],
       outputFormat: format,
       includePrompts,
     };
