@@ -238,12 +238,15 @@ export const LLMTestingResultSchema = z.object({
     .optional(),
   summary: z
     .object({
-      coverage: z.number(),
-      totalTests: z.number(),
-      passedTests: z.number(),
-      failedTests: z.number(),
+      total: z.number(),
+      passed: z.number(),
+      failed: z.number(),
+      skipped: z.number(),
+      duration: z.number(),
+      suites: z.number(),
     })
     .optional(),
+  timestamp: z.string().optional(),
 });
 
 // Feedback Loop Actor Result
