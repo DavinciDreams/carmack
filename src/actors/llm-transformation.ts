@@ -1,7 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
-import type { TransformationRequest } from '../types.js';
+import type { AstPattern, ComplexityMetrics, TransformationRequest } from '../types.js';
 
 /**
  * Comprehensive LLM Transformation System
@@ -34,12 +34,12 @@ const LLMConfigSchema = z
 // LLM Transformation input schema
 const LLMTransformationInputSchema = z.object({
   files: z.array(z.string()),
-  request: z.any().optional(), // TransformationRequest
+  request: z.custom<TransformationRequest>().optional(),
   config: LLMConfigSchema.optional(),
   context: z
     .object({
-      complexity: z.any().optional(), // ComplexityMetrics
-      patterns: z.array(z.any()).optional(),
+      complexity: z.custom<ComplexityMetrics>().optional(),
+      patterns: z.array(z.custom<AstPattern>()).optional(),
       projectType: z.string().optional(),
       framework: z.string().optional(),
     })
@@ -65,6 +65,25 @@ const LLMTransformationResultSchema = z.object({
   errors: z.array(z.string()).optional(),
   warnings: z.array(z.string()).optional(),
 });
+
+// Define proper API response types
+interface OpenAIResponse {
+  choices?: Array<{
+    message?: {
+      content?: string;
+    };
+  }>;
+}
+
+interface AnthropicResponse {
+  content?: Array<{
+    text?: string;
+  }>;
+}
+
+interface LocalModelResponse {
+  response?: string;
+}
 
 export type LLMProvider = z.infer<typeof LLMProviderSchema>;
 export type LLMConfig = z.infer<typeof LLMConfigSchema>;
@@ -126,7 +145,7 @@ export class LLMTransformer {
           // Check if this was a fallback response (confidence 0 indicates fallback)
           if (
             result.confidence === 0 &&
-            result.warnings?.some((w) => w.includes('LLM transformation failed'))
+            result.warnings?.some((w: string) => w.includes('LLM transformation failed'))
           ) {
             errors.push(`LLM API failed for ${filePath}, used fallback`);
           }
@@ -224,7 +243,7 @@ export class LLMTransformer {
       // Check if this was a fallback response (no changes but confidence 0)
       const warnings =
         llmResponse.confidence === 0 &&
-        llmResponse.warnings?.some((w) => w.includes('LLM transformation failed'))
+        llmResponse.warnings?.some((w: string) => w.includes('LLM transformation failed'))
           ? llmResponse.warnings
           : ['No changes needed'];
 
@@ -306,7 +325,16 @@ export class LLMTransformer {
    */
   private generateTransformationPrompt(
     content: string,
-    context: any,
+    context: {
+      language: string;
+      framework?: string;
+      complexity: number;
+      patterns: string[];
+      imports: string[];
+      exports: string[];
+      functions: number;
+      classes: number;
+    },
     request?: TransformationRequest
   ): string {
     const basePrompt = `You are an expert code transformation assistant. Transform the following ${context.language} code to improve it using modern best practices.
@@ -358,7 +386,16 @@ Respond in this JSON format:
   /**
    * Get default transformation goals based on context
    */
-  private getDefaultTransformationGoals(context: any): string {
+  private getDefaultTransformationGoals(context: {
+    language: string;
+    framework?: string;
+    complexity: number;
+    patterns: string[];
+    imports: string[];
+    exports: string[];
+    functions: number;
+    classes: number;
+  }): string {
     const goals = [
       '- Convert var to const/let based on usage patterns',
       '- Transform callbacks to async/await where appropriate',
@@ -423,7 +460,7 @@ Respond in this JSON format:
   /**
    * Make the actual API call based on provider
    */
-  private async makeAPICall(prompt: string): Promise<any> {
+  private async makeAPICall(prompt: string): Promise<string> {
     switch (this.config.provider) {
       case 'openai':
         return await this.callOpenAI(prompt);
@@ -439,7 +476,7 @@ Respond in this JSON format:
   /**
    * Call OpenAI API
    */
-  private async callOpenAI(prompt: string): Promise<any> {
+  private async callOpenAI(prompt: string): Promise<string> {
     if (!this.config.apiKey) {
       throw new Error('OpenAI API key not provided');
     }
@@ -472,14 +509,14 @@ Respond in this JSON format:
       throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
     }
 
-    const data = (await response.json()) as any;
-    return data.choices?.[0]?.message?.content;
+    const data = (await response.json()) as OpenAIResponse;
+    return data.choices?.[0]?.message?.content || '';
   }
 
   /**
    * Call Anthropic API
    */
-  private async callAnthropic(prompt: string): Promise<any> {
+  private async callAnthropic(prompt: string): Promise<string> {
     if (!this.config.apiKey) {
       throw new Error('Anthropic API key not provided');
     }
@@ -508,14 +545,14 @@ Respond in this JSON format:
       throw new Error(`Anthropic API error: ${response.status} ${response.statusText}`);
     }
 
-    const data = (await response.json()) as any;
-    return data.content?.[0]?.text;
+    const data = (await response.json()) as AnthropicResponse;
+    return data.content?.[0]?.text || '';
   }
 
   /**
    * Call local model API
    */
-  private async callLocalModel(prompt: string): Promise<any> {
+  private async callLocalModel(prompt: string): Promise<string> {
     const baseURL = this.config.baseURL || 'http://localhost:11434';
 
     const response = await fetch(`${baseURL}/api/generate`, {
@@ -538,14 +575,14 @@ Respond in this JSON format:
       throw new Error(`Local model API error: ${response.status} ${response.statusText}`);
     }
 
-    const data = (await response.json()) as any;
-    return data.response;
+    const data = (await response.json()) as LocalModelResponse;
+    return data.response || '';
   }
 
   /**
    * Mock API for testing and development
    */
-  private async callMockAPI(prompt: string): Promise<any> {
+  private async callMockAPI(prompt: string): Promise<string> {
     // Simulate API delay
     await new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 2000));
 
@@ -581,7 +618,7 @@ Respond in this JSON format:
   /**
    * Parse API response and handle different formats
    */
-  private parseAPIResponse(response: string): any {
+  private parseAPIResponse(response: string): Record<string, unknown> {
     try {
       // Try to parse as JSON first
       return JSON.parse(response);
