@@ -2,7 +2,7 @@
 
 /**
  * LLM Annotation CLI
- * 
+ *
  * Command-line interface for generating LLM-optimized code annotations
  * that help language models understand code structure and patterns.
  */
@@ -25,10 +25,10 @@ interface CLIOptions {
 
 function parseArgs(args: string[]): CLIOptions {
   const options: CLIOptions = {};
-  
+
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    
+
     switch (arg) {
       case '--help':
       case '-h':
@@ -72,7 +72,7 @@ function parseArgs(args: string[]): CLIOptions {
         break;
     }
   }
-  
+
   return options;
 }
 
@@ -155,16 +155,16 @@ async function main(): Promise<void> {
   console.log(`📄 Format: ${format}`);
   console.log(`🔍 Depth: ${depth}`);
   console.log(`💾 Output: ${outputDir}`);
-  
+
   if (options.focus) {
     console.log(`🎯 Focus: ${options.focus.join(', ')}`);
   }
-  
+
   console.log('');
 
   try {
     const system = new LLMAnnotationSystem();
-    
+
     const request: AnnotationRequest = {
       sourceFiles: [], // Will be populated by annotateDirectory
       targetDirectory: outputDir,
@@ -176,7 +176,7 @@ async function main(): Promise<void> {
         '**/dist/**',
         '**/build/**',
         '**/.git/**',
-        '**/coverage/**'
+        '**/coverage/**',
       ],
       analysisDepth: depth,
       focusAreas: options.focus as any,
@@ -206,7 +206,9 @@ async function main(): Promise<void> {
     console.log(`   Patterns detected: ${result.annotation.patterns.length}`);
     console.log(`   Architecture components: ${result.annotation.architecture.length}`);
     console.log(`   Transformation opportunities: ${result.annotation.opportunities.length}`);
-    console.log(`   Overall confidence: ${(result.annotation.metadata.confidence * 100).toFixed(1)}%`);
+    console.log(
+      `   Overall confidence: ${(result.annotation.metadata.confidence * 100).toFixed(1)}%`
+    );
 
     if (result.outputPath) {
       console.log(`   Output saved: ${result.outputPath}`);
@@ -232,7 +234,7 @@ async function main(): Promise<void> {
     console.log('');
     console.log('📋 Summary:');
     console.log(`   ${result.annotation.summary.overview}`);
-    
+
     if (result.annotation.summary.keyFindings.length > 0) {
       console.log('');
       console.log('🔍 Key Findings:');
@@ -254,10 +256,14 @@ async function main(): Promise<void> {
       .sort((a, b) => {
         const impactOrder = { critical: 4, high: 3, medium: 2, low: 1 };
         const effortOrder = { trivial: 1, small: 2, medium: 3, large: 4, epic: 5 };
-        
-        const aScore = (impactOrder[a.risk as keyof typeof impactOrder] || 0) / (effortOrder[a.effort as keyof typeof effortOrder] || 1);
-        const bScore = (impactOrder[b.risk as keyof typeof impactOrder] || 0) / (effortOrder[b.effort as keyof typeof effortOrder] || 1);
-        
+
+        const aScore =
+          (impactOrder[a.risk as keyof typeof impactOrder] || 0) /
+          (effortOrder[a.effort as keyof typeof effortOrder] || 1);
+        const bScore =
+          (impactOrder[b.risk as keyof typeof impactOrder] || 0) /
+          (effortOrder[b.effort as keyof typeof effortOrder] || 1);
+
         return bScore - aScore;
       })
       .slice(0, 3);
@@ -274,18 +280,26 @@ async function main(): Promise<void> {
     if (includePrompts && options.verbose) {
       console.log('');
       console.log('🤖 Generated LLM Prompts:');
-      console.log('   Code Review:', result.annotation.llmPrompts.codeReview.substring(0, 100) + '...');
-      console.log('   Refactoring:', result.annotation.llmPrompts.refactoring.substring(0, 100) + '...');
-      console.log('   Optimization:', result.annotation.llmPrompts.optimization.substring(0, 100) + '...');
+      console.log(
+        '   Code Review:',
+        result.annotation.llmPrompts.codeReview.substring(0, 100) + '...'
+      );
+      console.log(
+        '   Refactoring:',
+        result.annotation.llmPrompts.refactoring.substring(0, 100) + '...'
+      );
+      console.log(
+        '   Optimization:',
+        result.annotation.llmPrompts.optimization.substring(0, 100) + '...'
+      );
     }
 
     console.log('');
     console.log('🎉 LLM annotation generation completed!');
-    
+
     if (result.outputPath) {
       console.log(`📁 Open ${result.outputPath} to view the full annotation.`);
     }
-
   } catch (error) {
     console.error('❌ LLM annotation failed:', error);
     process.exit(1);

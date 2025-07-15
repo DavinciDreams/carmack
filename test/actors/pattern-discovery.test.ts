@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach } from 'bun:test';
-import { createActor } from 'xstate';
-import { patternDiscoveryActor } from '../../src/actors/pattern-discovery';
-import type { PatternDiscoveryRequest } from '../../src/actors/pattern-discovery';
-import { writeFile, mkdir } from 'node:fs/promises';
+import { beforeEach, describe, expect, it } from 'bun:test';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { createActor } from 'xstate';
+import type { PatternDiscoveryRequest } from '../../src/actors/pattern-discovery';
+import { patternDiscoveryActor } from '../../src/actors/pattern-discovery';
 
 // Helper function to create complete config
 function createConfig(overrides: Partial<PatternDiscoveryRequest['config']> = {}) {
@@ -28,7 +28,7 @@ async function invokePatternDiscovery(request: PatternDiscoveryRequest) {
 
 describe('Pattern Discovery Actor', () => {
   const testDir = join(process.cwd(), 'test-temp');
-  
+
   beforeEach(async () => {
     // Create test directory
     try {
@@ -51,7 +51,7 @@ describe('Pattern Discovery Actor', () => {
         function multiply(x, y) { return x * y; }
         function square(n) { return n * n; }
       `;
-      
+
       await writeFile(testFile, testContent);
 
       const request: PatternDiscoveryRequest = {
@@ -195,7 +195,7 @@ describe('Pattern Discovery Actor', () => {
         var d = 4;
         var e = 5;
       `;
-      
+
       await writeFile(testFile, testContent);
 
       const highThresholdRequest: PatternDiscoveryRequest = {
@@ -227,7 +227,9 @@ describe('Pattern Discovery Actor', () => {
 
       if (highResult && lowResult) {
         // Lower threshold should potentially find more patterns
-        expect(lowResult.summary.patternsDiscovered).toBeGreaterThanOrEqual(highResult.summary.patternsDiscovered);
+        expect(lowResult.summary.patternsDiscovered).toBeGreaterThanOrEqual(
+          highResult.summary.patternsDiscovered
+        );
       }
     });
   });
@@ -241,7 +243,7 @@ describe('Pattern Discovery Actor', () => {
         var age = 30;
         var isActive = true;
       `;
-      
+
       await writeFile(testFile, testContent);
 
       const request: PatternDiscoveryRequest = {
@@ -257,9 +259,9 @@ describe('Pattern Discovery Actor', () => {
       };
 
       const result = await invokePatternDiscovery(request);
-      
+
       if (result) {
-        const varPattern = result.patterns.find(p => p.name.includes('Variable Declaration'));
+        const varPattern = result.patterns.find((p) => p.name.includes('Variable Declaration'));
         if (varPattern) {
           expect(varPattern.pattern.before).toContain('var');
           expect(varPattern.pattern.after).toContain('const');
@@ -276,7 +278,7 @@ describe('Pattern Discovery Actor', () => {
         function subtract(x, y) { return x - y; }
         function multiply(m, n) { return m * n; }
       `;
-      
+
       await writeFile(testFile, testContent);
 
       const request: PatternDiscoveryRequest = {
@@ -292,9 +294,9 @@ describe('Pattern Discovery Actor', () => {
       };
 
       const result = await invokePatternDiscovery(request);
-      
+
       if (result) {
-        const functionPattern = result.patterns.find(p => p.name.includes('Arrow Function'));
+        const functionPattern = result.patterns.find((p) => p.name.includes('Arrow Function'));
         if (functionPattern) {
           expect(functionPattern.pattern.before).toContain('function');
           expect(functionPattern.pattern.after).toContain('=>');
@@ -310,7 +312,7 @@ describe('Pattern Discovery Actor', () => {
         const product = { id: id, price: price };
         const order = { total: total, status: status };
       `;
-      
+
       await writeFile(testFile, testContent);
 
       const request: PatternDiscoveryRequest = {
@@ -326,9 +328,11 @@ describe('Pattern Discovery Actor', () => {
       };
 
       const result = await invokePatternDiscovery(request);
-      
+
       if (result) {
-        const shorthandPattern = result.patterns.find(p => p.name.includes('Object Property Shorthand'));
+        const shorthandPattern = result.patterns.find((p) =>
+          p.name.includes('Object Property Shorthand')
+        );
         if (shorthandPattern) {
           expect(shorthandPattern.pattern.before).toContain('$KEY: $KEY');
           expect(shorthandPattern.pattern.after).toContain('$KEY');
@@ -372,9 +376,9 @@ describe('Pattern Discovery Actor', () => {
       };
 
       const result = await invokePatternDiscovery(request);
-      
+
       if (result) {
-        const learnedPattern = result.patterns.find(p => p.metadata.category === 'learned');
+        const learnedPattern = result.patterns.find((p) => p.metadata.category === 'learned');
         if (learnedPattern) {
           expect(learnedPattern.name).toBe('Learned Pattern');
           expect(learnedPattern.metadata.successRate).toBeGreaterThan(0.5);
@@ -416,11 +420,11 @@ describe('Pattern Discovery Actor', () => {
       };
 
       const result = await invokePatternDiscovery(request);
-      
+
       if (result) {
         // Should not create patterns with success rate < 0.5
-        const lowSuccessPattern = result.patterns.find(p => 
-          p.metadata.category === 'learned' && p.metadata.successRate < 0.5
+        const lowSuccessPattern = result.patterns.find(
+          (p) => p.metadata.category === 'learned' && p.metadata.successRate < 0.5
         );
         expect(lowSuccessPattern).toBeUndefined();
       }
@@ -457,7 +461,7 @@ describe('Pattern Discovery Actor', () => {
       };
 
       const result = await invokePatternDiscovery(request);
-      
+
       if (result) {
         expect(result.operation).toBe('discover');
         expect(result.patterns).toEqual([]);
@@ -474,7 +478,7 @@ describe('Pattern Discovery Actor', () => {
         }
         const obj = { missing: 
       `;
-      
+
       await writeFile(testFile, malformedContent);
 
       const request: PatternDiscoveryRequest = {
@@ -490,7 +494,7 @@ describe('Pattern Discovery Actor', () => {
       };
 
       const result = await invokePatternDiscovery(request);
-      
+
       if (result) {
         // Should not crash, but may have no patterns due to parsing errors
         expect(result.operation).toBe('discover');
@@ -508,7 +512,7 @@ describe('Pattern Discovery Actor', () => {
       };
 
       const result = await invokePatternDiscovery(request);
-      
+
       if (result) {
         expect(result.operation).toBe('discover');
         expect(result.patterns).toBeDefined();
@@ -525,7 +529,7 @@ describe('Pattern Discovery Actor', () => {
         var test2 = "value2";
         var test3 = "value3";
       `;
-      
+
       await writeFile(testFile, testContent);
 
       const request: PatternDiscoveryRequest = {
@@ -541,21 +545,21 @@ describe('Pattern Discovery Actor', () => {
       };
 
       const result = await invokePatternDiscovery(request);
-      
+
       if (result && result.patterns.length > 0) {
         const pattern = result.patterns[0];
-        
+
         // Check pattern structure
         expect(pattern.id).toBeDefined();
         expect(pattern.name).toBeDefined();
         expect(pattern.description).toBeDefined();
-        
+
         // Check pattern definition
         expect(pattern.pattern.before).toBeDefined();
         expect(pattern.pattern.after).toBeDefined();
         expect(Array.isArray(pattern.pattern.variables)).toBe(true);
         expect(typeof pattern.pattern.constraints).toBe('object');
-        
+
         // Check metadata
         expect(['typescript', 'javascript']).toContain(pattern.metadata.language);
         expect(typeof pattern.metadata.category).toBe('string');
@@ -566,14 +570,14 @@ describe('Pattern Discovery Actor', () => {
         expect(pattern.metadata.occurrences).toBeGreaterThan(0);
         expect(pattern.metadata.successRate).toBeGreaterThanOrEqual(0);
         expect(pattern.metadata.successRate).toBeLessThanOrEqual(1);
-        
+
         // Check evidence
         expect(Array.isArray(pattern.evidence.examples)).toBe(true);
         expect(typeof pattern.evidence.statistics).toBe('object');
         expect(pattern.evidence.statistics.totalOccurrences).toBeGreaterThan(0);
         expect(pattern.evidence.statistics.successfulTransformations).toBeGreaterThanOrEqual(0);
         expect(pattern.evidence.statistics.userRating).toBeGreaterThanOrEqual(0);
-        
+
         // Check test cases
         expect(Array.isArray(pattern.testCases)).toBe(true);
         if (pattern.testCases.length > 0) {

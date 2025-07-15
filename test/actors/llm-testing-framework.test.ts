@@ -1,22 +1,22 @@
-import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
-import { readFile, writeFile, mkdir, rm } from 'node:fs/promises';
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createActor } from 'xstate';
-import { 
-  llmTestingFrameworkActor, 
-  BUILTIN_TEST_SUITES, 
+import {
+  BUILTIN_TEST_SUITES,
   generateTestCasesFromPatterns,
+  llmTestingFrameworkActor,
+  type TestCase,
   type TestSuite,
-  type TestCase 
 } from '../../src/actors/llm-testing-framework';
 
 describe('LLM Testing Framework', () => {
   const testDir = join(process.cwd(), 'test-temp', 'llm-testing');
-  
+
   beforeEach(async () => {
     await mkdir(testDir, { recursive: true });
   });
-  
+
   afterEach(async () => {
     try {
       await rm(testDir, { recursive: true, force: true });
@@ -87,12 +87,12 @@ describe('LLM Testing Framework', () => {
 
       actor.start();
 
-      const result = await new Promise((resolve, reject) => {
+      const result = (await new Promise((resolve, reject) => {
         actor.subscribe({
           complete: () => resolve(actor.getSnapshot().output),
           error: reject,
         });
-      }) as any;
+      })) as any;
 
       expect(result).toBeDefined();
       expect(result.summary.total).toBe(1);
@@ -157,12 +157,12 @@ describe('LLM Testing Framework', () => {
 
       actor.start();
 
-      const result = await new Promise((resolve, reject) => {
+      const result = (await new Promise((resolve, reject) => {
         actor.subscribe({
           complete: () => resolve(actor.getSnapshot().output),
           error: reject,
         });
-      }) as any;
+      })) as any;
 
       expect(result.summary.total).toBe(1);
       expect(result.summary.failed).toBeGreaterThan(0);
@@ -230,12 +230,12 @@ describe('LLM Testing Framework', () => {
 
       actor.start();
 
-      const result = await new Promise((resolve, reject) => {
+      const result = (await new Promise((resolve, reject) => {
         actor.subscribe({
           complete: () => resolve(actor.getSnapshot().output),
           error: reject,
         });
-      }) as any;
+      })) as any;
 
       const executionTime = Date.now() - startTime;
 
@@ -250,14 +250,14 @@ describe('LLM Testing Framework', () => {
     it('should have valid built-in test suites', () => {
       expect(BUILTIN_TEST_SUITES).toBeDefined();
       expect(BUILTIN_TEST_SUITES.length).toBeGreaterThan(0);
-      
+
       for (const suite of BUILTIN_TEST_SUITES) {
         expect(suite.id).toBeDefined();
         expect(suite.name).toBeDefined();
         expect(suite.description).toBeDefined();
         expect(suite.testCases).toBeDefined();
         expect(suite.testCases.length).toBeGreaterThan(0);
-        
+
         for (const testCase of suite.testCases) {
           expect(testCase.id).toBeDefined();
           expect(testCase.name).toBeDefined();
@@ -269,7 +269,7 @@ describe('LLM Testing Framework', () => {
     });
 
     it('should execute basic transformations test suite', async () => {
-      const basicSuite = BUILTIN_TEST_SUITES.find(s => s.id === 'basic-transformations');
+      const basicSuite = BUILTIN_TEST_SUITES.find((s) => s.id === 'basic-transformations');
       expect(basicSuite).toBeDefined();
 
       const actor = createActor(llmTestingFrameworkActor, {
@@ -287,12 +287,12 @@ describe('LLM Testing Framework', () => {
 
       actor.start();
 
-      const result = await new Promise((resolve, reject) => {
+      const result = (await new Promise((resolve, reject) => {
         actor.subscribe({
           complete: () => resolve(actor.getSnapshot().output),
           error: reject,
         });
-      }) as any;
+      })) as any;
 
       expect(result.summary.total).toBeGreaterThan(0);
       expect(result.suiteResults).toHaveLength(1);
@@ -326,13 +326,13 @@ describe('LLM Testing Framework', () => {
       const generatedTests = generateTestCasesFromPatterns(mockPatterns);
 
       expect(generatedTests).toHaveLength(2);
-      
+
       expect(generatedTests[0].id).toBe('generated-test-pattern-1-0');
       expect(generatedTests[0].input.language).toBe('typescript');
       expect(generatedTests[0].input.patterns).toEqual(['test-pattern-1']);
       expect(generatedTests[0].metadata.category).toBe('generated');
       expect(generatedTests[0].metadata.timeout).toBe(30000);
-      
+
       expect(generatedTests[1].id).toBe('generated-test-pattern-2-1');
       expect(generatedTests[1].input.language).toBe('javascript');
       expect(generatedTests[1].metadata.tags).toContain('auto-generated');
@@ -416,12 +416,12 @@ describe('LLM Testing Framework', () => {
 
       actor.start();
 
-      const result = await new Promise((resolve, reject) => {
+      const result = (await new Promise((resolve, reject) => {
         actor.subscribe({
           complete: () => resolve(actor.getSnapshot().output),
           error: reject,
         });
-      }) as any;
+      })) as any;
 
       expect(result.summary.passed).toBe(1);
       expect(result.suiteResults[0].results[0].assertions).toHaveLength(2);
@@ -485,12 +485,12 @@ describe('LLM Testing Framework', () => {
 
       actor.start();
 
-      const result = await new Promise((resolve, reject) => {
+      const result = (await new Promise((resolve, reject) => {
         actor.subscribe({
           complete: () => resolve(actor.getSnapshot().output),
           error: reject,
         });
-      }) as any;
+      })) as any;
 
       expect(result.summary.passed).toBe(1);
       expect(result.suiteResults[0].results[0].assertions[0].passed).toBe(true);
@@ -553,12 +553,12 @@ describe('LLM Testing Framework', () => {
 
       actor.start();
 
-      const result = await new Promise((resolve, reject) => {
+      const result = (await new Promise((resolve, reject) => {
         actor.subscribe({
           complete: () => resolve(actor.getSnapshot().output),
           error: reject,
         });
-      }) as any;
+      })) as any;
 
       const testResult = result.suiteResults[0].results[0];
       expect(testResult.performance).toBeDefined();
@@ -627,7 +627,7 @@ describe('LLM Testing Framework', () => {
       await new Promise((resolve, reject) => {
         actor.subscribe(
           () => {}, // next
-          reject,   // error
+          reject, // error
           () => resolve(actor.getSnapshot().output) // complete
         );
       });
@@ -695,12 +695,12 @@ describe('LLM Testing Framework', () => {
 
       actor.start();
 
-      const result = await new Promise((resolve, reject) => {
+      const result = (await new Promise((resolve, reject) => {
         actor.subscribe({
           complete: () => resolve(actor.getSnapshot().output),
           error: reject,
         });
-      }) as any;
+      })) as any;
 
       // The test might timeout or fail, but the framework should handle it gracefully
       expect(result.summary.total).toBe(1);
@@ -786,12 +786,12 @@ describe('LLM Testing Framework', () => {
 
       actor.start();
 
-      const result = await new Promise((resolve, reject) => {
+      const result = (await new Promise((resolve, reject) => {
         actor.subscribe({
           complete: () => resolve(actor.getSnapshot().output),
           error: reject,
         });
-      }) as any;
+      })) as any;
 
       expect(result.summary.failed).toBeGreaterThan(0);
       // In fail-fast mode, execution should stop after first failure

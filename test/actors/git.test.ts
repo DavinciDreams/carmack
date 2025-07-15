@@ -1,14 +1,14 @@
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
+import { execSync } from 'child_process';
+import { mkdir, rm, writeFile } from 'fs/promises';
+import { tmpdir } from 'os';
+import { join } from 'path';
 import { createActor, waitFor } from 'xstate';
 import { gitActor } from '../../src/actors/git.js';
-import { writeFile, mkdir, rm } from 'fs/promises';
-import { join } from 'path';
-import { tmpdir } from 'os';
-import { execSync } from 'child_process';
 import type { GitCheckpoint } from '../../src/types.js';
 
 // Git operation input types matching the actual implementation
-type GitInput = 
+type GitInput =
   | { operation: 'createCheckpoint'; description: string }
   | { operation: 'commit'; message: string; files: string[] }
   | { operation: 'rollback'; checkpoint: GitCheckpoint };
@@ -48,7 +48,10 @@ describe('Git Actor', () => {
     }
   }
 
-  function assertCheckpoint(checkpoint: GitCheckpoint | undefined, expectedDescription: string): asserts checkpoint is GitCheckpoint {
+  function assertCheckpoint(
+    checkpoint: GitCheckpoint | undefined,
+    expectedDescription: string
+  ): asserts checkpoint is GitCheckpoint {
     expect(checkpoint).toBeDefined();
     expect(checkpoint!.description).toBe(expectedDescription);
     expect(checkpoint!.hash).toBeDefined();
@@ -212,19 +215,19 @@ describe('Git Actor', () => {
         execSync('git init', { cwd: testDir, stdio: 'pipe' });
         await createTestFile('rollback-test.txt', 'Original content');
         execSync('git add rollback-test.txt', { cwd: testDir, stdio: 'pipe' });
-        execSync('git commit -m "Initial commit"', { 
-          cwd: testDir, 
+        execSync('git commit -m "Initial commit"', {
+          cwd: testDir,
           stdio: 'pipe',
         });
-        
+
         // Get the commit hash
-        const logResult = execSync('git log -1 --format="%H"', { 
-          cwd: testDir, 
+        const logResult = execSync('git log -1 --format="%H"', {
+          cwd: testDir,
           stdio: 'pipe',
-          encoding: 'utf-8'
+          encoding: 'utf-8',
         });
         const hash = logResult.trim().replace(/"/g, '');
-        
+
         testCheckpoint = {
           hash,
           branch: 'main',
@@ -326,7 +329,7 @@ describe('Git Actor', () => {
     test('should support transformation checkpoint workflow', async () => {
       // Step 1: Create initial files
       await createTestFile('transform.ts', 'var x = 1; // Original code');
-      
+
       // Step 2: Create checkpoint before transformation
       const checkpointInput: GitInput = {
         operation: 'createCheckpoint',
@@ -336,11 +339,9 @@ describe('Git Actor', () => {
       const checkpointActor = createActor(gitActor, { input: checkpointInput });
       checkpointActor.start();
 
-      const checkpointResult = await waitFor(
-        checkpointActor, 
-        (state) => state.status === 'done', 
-        { timeout: 5000 }
-      );
+      const checkpointResult = await waitFor(checkpointActor, (state) => state.status === 'done', {
+        timeout: 5000,
+      });
       const checkpoint = checkpointResult.output;
 
       assertCheckpoint(checkpoint, 'Before var-to-const transformation');
@@ -358,11 +359,9 @@ describe('Git Actor', () => {
       const commitActor = createActor(gitActor, { input: commitInput });
       commitActor.start();
 
-      const commitResult = await waitFor(
-        commitActor, 
-        (state) => state.status === 'done', 
-        { timeout: 5000 }
-      );
+      const commitResult = await waitFor(commitActor, (state) => state.status === 'done', {
+        timeout: 5000,
+      });
       const commitCheckpoint = commitResult.output;
 
       assertCheckpoint(commitCheckpoint, 'Apply var-to-const transformation');
@@ -372,7 +371,7 @@ describe('Git Actor', () => {
     test('should support rollback on transformation failure', async () => {
       // Step 1: Create initial state and checkpoint
       await createTestFile('rollback-test.ts', 'var a = 1;\nvar b = 2;');
-      
+
       const checkpointInput: GitInput = {
         operation: 'createCheckpoint',
         description: 'Before risky transformation',
@@ -381,13 +380,11 @@ describe('Git Actor', () => {
       const checkpointActor = createActor(gitActor, { input: checkpointInput });
       checkpointActor.start();
 
-      const checkpointResult = await waitFor(
-        checkpointActor, 
-        (state) => state.status === 'done', 
-        { timeout: 5000 }
-      );
+      const checkpointResult = await waitFor(checkpointActor, (state) => state.status === 'done', {
+        timeout: 5000,
+      });
       const checkpoint = checkpointResult.output;
-      
+
       expect(checkpoint).toBeDefined();
       if (!checkpoint) return;
 
@@ -403,11 +400,9 @@ describe('Git Actor', () => {
       const rollbackActor = createActor(gitActor, { input: rollbackInput });
       rollbackActor.start();
 
-      const rollbackResult = await waitFor(
-        rollbackActor, 
-        (state) => state.status === 'done', 
-        { timeout: 5000 }
-      );
+      const rollbackResult = await waitFor(rollbackActor, (state) => state.status === 'done', {
+        timeout: 5000,
+      });
       const rollbackCheckpoint = rollbackResult.output;
 
       expect(rollbackCheckpoint).toBeDefined();
@@ -421,7 +416,7 @@ describe('Git Actor', () => {
       // Create multiple checkpoints
       for (let i = 1; i <= 3; i++) {
         await createTestFile(`file${i}.txt`, `Content ${i}`);
-        
+
         const input: GitInput = {
           operation: 'createCheckpoint',
           description: `Checkpoint ${i}`,
@@ -432,7 +427,7 @@ describe('Git Actor', () => {
 
         const result = await waitFor(actor, (state) => state.status === 'done', { timeout: 5000 });
         const checkpoint = result.output;
-        
+
         expect(checkpoint).toBeDefined();
         if (checkpoint) {
           checkpoints.push(checkpoint);
@@ -440,9 +435,9 @@ describe('Git Actor', () => {
       }
 
       expect(checkpoints).toHaveLength(3);
-      
+
       // Verify each checkpoint is unique
-      const hashes = checkpoints.map(cp => cp.hash);
+      const hashes = checkpoints.map((cp) => cp.hash);
       const uniqueHashes = new Set(hashes);
       expect(uniqueHashes.size).toBe(hashes.length);
 
@@ -464,7 +459,7 @@ describe('Git Actor', () => {
       try {
         const actor = createActor(gitActor, { input: invalidInput as any });
         actor.start();
-        
+
         // Should throw during validation
         await waitFor(actor, (state) => state.status === 'done', { timeout: 1000 });
         expect(false).toBe(true); // Should not reach here
@@ -483,7 +478,7 @@ describe('Git Actor', () => {
       try {
         const actor = createActor(gitActor, { input: incompleteInput as any });
         actor.start();
-        
+
         await waitFor(actor, (state) => state.status === 'done', { timeout: 1000 });
         expect(false).toBe(true); // Should not reach here
       } catch (error) {
@@ -502,7 +497,7 @@ describe('Git Actor', () => {
       try {
         const actor = createActor(gitActor, { input });
         actor.start();
-        
+
         await waitFor(actor, (state) => state.status === 'done', { timeout: 1000 });
         expect(false).toBe(true); // Should not reach here
       } catch (error) {
@@ -515,7 +510,7 @@ describe('Git Actor', () => {
   describe('Performance and Reliability', () => {
     test('should complete operations within reasonable time', async () => {
       const startTime = Date.now();
-      
+
       const input: GitInput = {
         operation: 'createCheckpoint',
         description: 'Performance test checkpoint',
@@ -526,7 +521,7 @@ describe('Git Actor', () => {
 
       const result = await waitFor(actor, (state) => state.status === 'done', { timeout: 5000 });
       const endTime = Date.now();
-      
+
       expect(result.output).toBeDefined();
       expect(endTime - startTime).toBeLessThan(5000); // Should complete within 5 seconds
     });
@@ -545,7 +540,7 @@ describe('Git Actor', () => {
       });
 
       const results = await Promise.all(promises);
-      
+
       expect(results).toHaveLength(3);
       results.forEach((checkpoint, index) => {
         expect(checkpoint).toBeDefined();
@@ -557,7 +552,7 @@ describe('Git Actor', () => {
 
     test('should maintain data consistency across operations', async () => {
       await createTestFile('consistency-test.txt', 'Initial content');
-      
+
       // Create checkpoint
       const checkpointInput: GitInput = {
         operation: 'createCheckpoint',
@@ -566,11 +561,9 @@ describe('Git Actor', () => {
 
       const checkpointActor = createActor(gitActor, { input: checkpointInput });
       checkpointActor.start();
-      const checkpointResult = await waitFor(
-        checkpointActor, 
-        (state) => state.status === 'done', 
-        { timeout: 5000 }
-      );
+      const checkpointResult = await waitFor(checkpointActor, (state) => state.status === 'done', {
+        timeout: 5000,
+      });
       const checkpoint = checkpointResult.output;
 
       expect(checkpoint).toBeDefined();
@@ -578,7 +571,7 @@ describe('Git Actor', () => {
 
       // Modify file and commit
       await writeFile(join(testDir, 'consistency-test.txt'), 'Modified content', 'utf-8');
-      
+
       const commitInput: GitInput = {
         operation: 'commit',
         message: 'Modify content',
@@ -587,11 +580,9 @@ describe('Git Actor', () => {
 
       const commitActor = createActor(gitActor, { input: commitInput });
       commitActor.start();
-      const commitResult = await waitFor(
-        commitActor, 
-        (state) => state.status === 'done', 
-        { timeout: 5000 }
-      );
+      const commitResult = await waitFor(commitActor, (state) => state.status === 'done', {
+        timeout: 5000,
+      });
       const commitCheckpoint = commitResult.output;
 
       expect(commitCheckpoint).toBeDefined();

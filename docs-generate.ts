@@ -2,7 +2,7 @@
 
 /**
  * Carmack Coder Documentation Generator CLI
- * 
+ *
  * Command-line interface for generating comprehensive documentation
  * using AST-grep analysis and pattern recognition.
  */
@@ -19,17 +19,17 @@ interface CLIOptions {
 
 function parseArgs(args: string[]): CLIOptions {
   const options: CLIOptions = {};
-  
+
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    
+
     switch (arg) {
       case '--output-dir':
       case '-o':
         options.outputDir = args[++i];
         break;
       case '--format':
-      case '-f':
+      case '-f': {
         const format = args[++i] as 'markdown' | 'html' | 'json';
         if (['markdown', 'html', 'json'].includes(format)) {
           options.format = format;
@@ -38,6 +38,7 @@ function parseArgs(args: string[]): CLIOptions {
           process.exit(1);
         }
         break;
+      }
       case '--include-private':
         options.includePrivate = true;
         break;
@@ -56,7 +57,7 @@ function parseArgs(args: string[]): CLIOptions {
         break;
     }
   }
-  
+
   return options;
 }
 
@@ -118,17 +119,17 @@ multiple output formats. Generated documentation includes:
 async function main() {
   const args = process.argv.slice(2);
   const options = parseArgs(args);
-  
+
   if (options.help) {
     showHelp();
     return;
   }
-  
+
   console.log('🚀 Carmack Coder Documentation Generator');
   console.log('=========================================\n');
-  
+
   const startTime = Date.now();
-  
+
   try {
     await generateAndWriteAll({
       outputDir: options.outputDir || './docs',
@@ -136,10 +137,9 @@ async function main() {
       includePrivate: options.includePrivate || false,
       includeTests: options.includeTests || false,
     });
-    
+
     const duration = Date.now() - startTime;
     console.log(`\n🎉 Documentation generation completed in ${duration}ms`);
-    
   } catch (error) {
     console.error('\n❌ Documentation generation failed:');
 =======
@@ -192,7 +192,7 @@ async function main() {
 
 // Run if called directly
 if (import.meta.main) {
-  main().catch(error => {
+  main().catch((error) => {
     console.error('Fatal error:', error);
     process.exit(1);
   });

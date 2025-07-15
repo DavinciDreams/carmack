@@ -1,6 +1,6 @@
-import { templateEngineActor } from './src/actors/template-engine.js';
 import { readFile } from 'node:fs/promises';
 import type { TemplatePattern } from './src/actors/template-engine.js';
+import { templateEngineActor } from './src/actors/template-engine.js';
 
 /**
  * Test script for the Enhanced Template Engine
@@ -227,7 +227,7 @@ async function demonstratePatternMatching() {
         console.log(`📤 Output: ${transformedContent}`);
         console.log(`🎯 Applied: ${result.transformationsApplied} transformations`);
       } else {
-        console.log(`📤 Output: No transformations applied`);
+        console.log('📤 Output: No transformations applied');
       }
 
       // Clean up

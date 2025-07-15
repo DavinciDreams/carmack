@@ -6,17 +6,19 @@
  */
 
 import { execSync } from 'child_process';
-import { writeFileSync, unlinkSync, mkdtempSync } from 'fs';
-import { join } from 'path';
+import { mkdtempSync, unlinkSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
+import { join } from 'path';
 
 console.log('🔬 Testing Complex Dafny Transformation Specifications...\n');
 
 // Test 1: Verify our working specification
 console.log('1. Verifying working-transformations.dfy specification...');
 try {
-  const output = execSync('dafny verify src/verification/working-transformations.dfy', { encoding: 'utf8' });
-  
+  const output = execSync('dafny verify src/verification/working-transformations.dfy', {
+    encoding: 'utf8',
+  });
+
   if (output.includes('finished with') && output.includes('0 errors')) {
     const match = output.match(/finished with (\d+) verified, 0 errors/);
     const verifiedCount = match ? match[1] : 'unknown';
@@ -118,7 +120,7 @@ try {
 console.log('\n3. Verifying practical transformation examples...');
 try {
   const output = execSync(`dafny verify "${testFile}"`, { encoding: 'utf8' });
-  
+
   if (output.includes('finished with') && output.includes('0 errors')) {
     const match = output.match(/finished with (\d+) verified, 0 errors/);
     const verifiedCount = match ? match[1] : 'unknown';
@@ -172,7 +174,7 @@ method TestTransformationVerificationMethods()
 try {
   writeFileSync(transformationTest, methodTest);
   const output = execSync(`dafny verify "${transformationTest}"`, { encoding: 'utf8' });
-  
+
   if (output.includes('finished with') && output.includes('0 errors')) {
     const match = output.match(/finished with (\d+) verified, 0 errors/);
     const verifiedCount = match ? match[1] : 'unknown';
@@ -200,7 +202,7 @@ try {
   const endTime = Date.now();
   const duration = endTime - startTime;
   console.log(`   ✅ Verification completed in ${duration}ms`);
-  
+
   if (duration < 5000) {
     console.log('   🚀 Performance: Excellent (< 5 seconds)');
   } else if (duration < 10000) {

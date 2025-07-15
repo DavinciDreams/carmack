@@ -1,15 +1,15 @@
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
+import { execSync } from 'child_process';
+import { mkdir, readFile, rm, writeFile } from 'fs/promises';
+import { tmpdir } from 'os';
+import { join } from 'path';
 import { createActor, waitFor } from 'xstate';
 import { analysisActor } from '../../src/actors/analysis.js';
-import { validationActor } from '../../src/actors/validation.js';
-import { transformationActor } from '../../src/actors/transformation.js';
-import { gitActor } from '../../src/actors/git.js';
 import { dafnyActor } from '../../src/actors/dafny.js';
-import { writeFile, readFile, mkdir, rm } from 'fs/promises';
-import { join } from 'path';
-import { tmpdir } from 'os';
-import { execSync } from 'child_process';
-import type { GitCheckpoint, AstPattern } from '../../src/types.js';
+import { gitActor } from '../../src/actors/git.js';
+import { transformationActor } from '../../src/actors/transformation.js';
+import { validationActor } from '../../src/actors/validation.js';
+import type { AstPattern, GitCheckpoint } from '../../src/types.js';
 
 describe('End-to-End Pipeline Validation', () => {
   let testDir: string;
@@ -20,7 +20,7 @@ describe('End-to-End Pipeline Validation', () => {
     testDir = join(tmpdir(), `e2e-pipeline-${Date.now()}`);
     await mkdir(testDir, { recursive: true });
     process.chdir(testDir);
-    
+
     // Setup git for E2E tests
     try {
       execSync('git init', { cwd: testDir, stdio: 'pipe' });
@@ -113,8 +113,8 @@ describe('End-to-End Pipeline Validation', () => {
       gitCheckpointActor.start();
 
       const checkpointResult = await waitFor(
-        gitCheckpointActor, 
-        (state) => state.status === 'done', 
+        gitCheckpointActor,
+        (state) => state.status === 'done',
         { timeout: 5000 }
       );
 
@@ -144,21 +144,23 @@ describe('End-to-End Pipeline Validation', () => {
           complexity: 1,
           riskLevel: 'low',
           mode: 'template',
-        }
+        },
       ];
 
       const transformationInput = {
-        mode: analysis.recommendedMode || 'template' as const,
+        mode: analysis.recommendedMode || ('template' as const),
         files: ['legacy-code.ts'],
         patterns: transformationPatterns,
       };
 
-      const transformationActorInstance = createActor(transformationActor, { input: transformationInput });
+      const transformationActorInstance = createActor(transformationActor, {
+        input: transformationInput,
+      });
       transformationActorInstance.start();
 
       const transformationResult = await waitFor(
-        transformationActorInstance, 
-        (state) => state.status === 'done', 
+        transformationActorInstance,
+        (state) => state.status === 'done',
         { timeout: 15000 }
       );
 
@@ -178,8 +180,8 @@ describe('End-to-End Pipeline Validation', () => {
       validationActorInstance.start();
 
       const validationResult = await waitFor(
-        validationActorInstance, 
-        (state) => state.status === 'done', 
+        validationActorInstance,
+        (state) => state.status === 'done',
         { timeout: 10000 }
       );
 
@@ -200,11 +202,9 @@ describe('End-to-End Pipeline Validation', () => {
       const dafnyActorInstance = createActor(dafnyActor, { input: dafnyInput });
       dafnyActorInstance.start();
 
-      const dafnyResult = await waitFor(
-        dafnyActorInstance, 
-        (state) => state.status === 'done', 
-        { timeout: 20000 }
-      );
+      const dafnyResult = await waitFor(dafnyActorInstance, (state) => state.status === 'done', {
+        timeout: 20000,
+      });
 
       const verification = dafnyResult.output!;
       expect(verification.verified).toBe(true);
@@ -223,11 +223,9 @@ describe('End-to-End Pipeline Validation', () => {
         const commitActor = createActor(gitActor, { input: commitInput });
         commitActor.start();
 
-        const commitResult = await waitFor(
-          commitActor, 
-          (state) => state.status === 'done', 
-          { timeout: 5000 }
-        );
+        const commitResult = await waitFor(commitActor, (state) => state.status === 'done', {
+          timeout: 5000,
+        });
 
         const commitCheckpoint = commitResult.output!;
         expect(commitCheckpoint.description).toBe('E2E Pipeline: Apply automated transformations');
@@ -237,14 +235,14 @@ describe('End-to-End Pipeline Validation', () => {
       // Step 8: Verify Transformations
       console.log('🧪 Phase 7: Verification of Results');
       const transformedCode = await readTestFile('legacy-code.ts');
-      
+
       // Verify var-to-const transformation
       expect(transformedCode).not.toContain('var results');
       expect(transformedCode).not.toContain('var count');
       expect(transformedCode).not.toContain('var i');
       expect(transformedCode).toContain('const results');
       expect(transformedCode).toContain('const count');
-      
+
       // Verify strict equality transformation
       expect(transformedCode).not.toContain('!= null');
       expect(transformedCode).not.toContain('!= undefined');
@@ -334,7 +332,11 @@ describe('End-to-End Pipeline Validation', () => {
 
       const analysisActorInstance = createActor(analysisActor, { input: analysisInput });
       analysisActorInstance.start();
-      const analysisResult = await waitFor(analysisActorInstance, (state) => state.status === 'done', { timeout: 10000 });
+      const analysisResult = await waitFor(
+        analysisActorInstance,
+        (state) => state.status === 'done',
+        { timeout: 10000 }
+      );
       const analysis = analysisResult.output!;
 
       expect(analysis.complexity).toBeDefined();
@@ -348,7 +350,9 @@ describe('End-to-End Pipeline Validation', () => {
 
       const gitActorInstance = createActor(gitActor, { input: checkpointInput });
       gitActorInstance.start();
-      const checkpointResult = await waitFor(gitActorInstance, (state) => state.status === 'done', { timeout: 5000 });
+      const checkpointResult = await waitFor(gitActorInstance, (state) => state.status === 'done', {
+        timeout: 5000,
+      });
       const checkpoint = checkpointResult.output!;
 
       // Transformation with multiple patterns
@@ -382,7 +386,7 @@ describe('End-to-End Pipeline Validation', () => {
           complexity: 1,
           riskLevel: 'low',
           mode: 'template',
-        }
+        },
       ];
 
       const transformationInput = {
@@ -391,9 +395,15 @@ describe('End-to-End Pipeline Validation', () => {
         patterns: complexPatterns,
       };
 
-      const transformationActorInstance = createActor(transformationActor, { input: transformationInput });
+      const transformationActorInstance = createActor(transformationActor, {
+        input: transformationInput,
+      });
       transformationActorInstance.start();
-      const transformationResult = await waitFor(transformationActorInstance, (state) => state.status === 'done', { timeout: 15000 });
+      const transformationResult = await waitFor(
+        transformationActorInstance,
+        (state) => state.status === 'done',
+        { timeout: 15000 }
+      );
       const transformation = transformationResult.output!;
 
       expect(transformation.filesModified).toContain('complex-class.ts');
@@ -407,7 +417,11 @@ describe('End-to-End Pipeline Validation', () => {
 
       const validationActorInstance = createActor(validationActor, { input: validationInput });
       validationActorInstance.start();
-      const validationResult = await waitFor(validationActorInstance, (state) => state.status === 'done', { timeout: 10000 });
+      const validationResult = await waitFor(
+        validationActorInstance,
+        (state) => state.status === 'done',
+        { timeout: 10000 }
+      );
       const validation = validationResult.output!;
 
       // Formal verification
@@ -418,23 +432,25 @@ describe('End-to-End Pipeline Validation', () => {
 
       const dafnyActorInstance = createActor(dafnyActor, { input: dafnyInput });
       dafnyActorInstance.start();
-      const dafnyResult = await waitFor(dafnyActorInstance, (state) => state.status === 'done', { timeout: 20000 });
+      const dafnyResult = await waitFor(dafnyActorInstance, (state) => state.status === 'done', {
+        timeout: 20000,
+      });
       const verification = dafnyResult.output!;
 
       expect(verification.verified).toBe(true);
 
       // Verify transformations
       const transformedCode = await readTestFile('complex-class.ts');
-      
+
       // Should not contain any var declarations
       const varMatches = transformedCode.match(/\bvar\s+\w+/g);
       expect(varMatches).toBeNull();
-      
+
       // Should contain const declarations
       expect(transformedCode).toContain('const results');
       expect(transformedCode).toContain('const errors');
       expect(transformedCode).toContain('const item');
-      
+
       // Should use strict equality
       expect(transformedCode).toContain('!== null');
       expect(transformedCode).toContain('=== undefined');
@@ -472,7 +488,9 @@ describe('End-to-End Pipeline Validation', () => {
 
       const gitActorInstance = createActor(gitActor, { input: checkpointInput });
       gitActorInstance.start();
-      const checkpointResult = await waitFor(gitActorInstance, (state) => state.status === 'done', { timeout: 5000 });
+      const checkpointResult = await waitFor(gitActorInstance, (state) => state.status === 'done', {
+        timeout: 5000,
+      });
       const checkpoint = checkpointResult.output!;
 
       // Attempt risky transformation
@@ -486,7 +504,7 @@ describe('End-to-End Pipeline Validation', () => {
           complexity: 9,
           riskLevel: 'high',
           mode: 'llm',
-        }
+        },
       ];
 
       let transformationSucceeded = false;
@@ -501,7 +519,11 @@ describe('End-to-End Pipeline Validation', () => {
 
         const analysisActorInstance = createActor(analysisActor, { input: analysisInput });
         analysisActorInstance.start();
-        const analysisResult = await waitFor(analysisActorInstance, (state) => state.status === 'done', { timeout: 10000 });
+        const analysisResult = await waitFor(
+          analysisActorInstance,
+          (state) => state.status === 'done',
+          { timeout: 10000 }
+        );
         const analysis = analysisResult.output!;
 
         // Attempt transformation
@@ -511,9 +533,15 @@ describe('End-to-End Pipeline Validation', () => {
           patterns: riskyPatterns,
         };
 
-        const transformationActorInstance = createActor(transformationActor, { input: transformationInput });
+        const transformationActorInstance = createActor(transformationActor, {
+          input: transformationInput,
+        });
         transformationActorInstance.start();
-        const transformationResult = await waitFor(transformationActorInstance, (state) => state.status === 'done', { timeout: 15000 });
+        const transformationResult = await waitFor(
+          transformationActorInstance,
+          (state) => state.status === 'done',
+          { timeout: 15000 }
+        );
 
         if (transformationResult.output) {
           transformationSucceeded = true;
@@ -526,7 +554,11 @@ describe('End-to-End Pipeline Validation', () => {
 
           const validationActorInstance = createActor(validationActor, { input: validationInput });
           validationActorInstance.start();
-          const validationResult = await waitFor(validationActorInstance, (state) => state.status === 'done', { timeout: 10000 });
+          const validationResult = await waitFor(
+            validationActorInstance,
+            (state) => state.status === 'done',
+            { timeout: 10000 }
+          );
 
           validationPassed = validationResult.output?.isValid || false;
         }
@@ -537,7 +569,7 @@ describe('End-to-End Pipeline Validation', () => {
       // If transformation failed or validation failed, rollback
       if (!transformationSucceeded || !validationPassed) {
         console.log('🔄 Rolling back due to failure');
-        
+
         const rollbackInput = {
           operation: 'rollback' as const,
           checkpoint,
@@ -545,7 +577,9 @@ describe('End-to-End Pipeline Validation', () => {
 
         const rollbackActor = createActor(gitActor, { input: rollbackInput });
         rollbackActor.start();
-        const rollbackResult = await waitFor(rollbackActor, (state) => state.status === 'done', { timeout: 5000 });
+        const rollbackResult = await waitFor(rollbackActor, (state) => state.status === 'done', {
+          timeout: 5000,
+        });
 
         expect(rollbackResult.output).toBeDefined();
         expect(rollbackResult.output!.description).toContain('Rolled back to:');
@@ -642,7 +676,11 @@ describe('End-to-End Pipeline Validation', () => {
 
       const analysisActorInstance = createActor(analysisActor, { input: analysisInput });
       analysisActorInstance.start();
-      const analysisResult = await waitFor(analysisActorInstance, (state) => state.status === 'done', { timeout: 10000 });
+      const analysisResult = await waitFor(
+        analysisActorInstance,
+        (state) => state.status === 'done',
+        { timeout: 10000 }
+      );
       const analysis = analysisResult.output!;
 
       expect(analysis.complexity).toBeDefined();
@@ -656,7 +694,9 @@ describe('End-to-End Pipeline Validation', () => {
 
       const gitActorInstance = createActor(gitActor, { input: checkpointInput });
       gitActorInstance.start();
-      const checkpointResult = await waitFor(gitActorInstance, (state) => state.status === 'done', { timeout: 5000 });
+      const checkpointResult = await waitFor(gitActorInstance, (state) => state.status === 'done', {
+        timeout: 5000,
+      });
       const checkpoint = checkpointResult.output!;
 
       // Step 3: Transform all files
@@ -680,7 +720,7 @@ describe('End-to-End Pipeline Validation', () => {
           complexity: 1,
           riskLevel: 'low',
           mode: 'template',
-        }
+        },
       ];
 
       const transformationInput = {
@@ -689,9 +729,15 @@ describe('End-to-End Pipeline Validation', () => {
         patterns,
       };
 
-      const transformationActorInstance = createActor(transformationActor, { input: transformationInput });
+      const transformationActorInstance = createActor(transformationActor, {
+        input: transformationInput,
+      });
       transformationActorInstance.start();
-      const transformationResult = await waitFor(transformationActorInstance, (state) => state.status === 'done', { timeout: 15000 });
+      const transformationResult = await waitFor(
+        transformationActorInstance,
+        (state) => state.status === 'done',
+        { timeout: 15000 }
+      );
       const transformation = transformationResult.output!;
 
       expect(transformation.filesModified.length).toBeGreaterThan(0);
@@ -707,20 +753,24 @@ describe('End-to-End Pipeline Validation', () => {
 
       const validationActorInstance = createActor(validationActor, { input: validationInput });
       validationActorInstance.start();
-      const validationResult = await waitFor(validationActorInstance, (state) => state.status === 'done', { timeout: 10000 });
+      const validationResult = await waitFor(
+        validationActorInstance,
+        (state) => state.status === 'done',
+        { timeout: 10000 }
+      );
       const validation = validationResult.output!;
 
       // Step 5: Verify transformations across all files
       for (const file of files) {
         const transformedCode = await readTestFile(file);
-        
+
         // Should not contain var declarations
         const varMatches = transformedCode.match(/\bvar\s+\w+/g);
         expect(varMatches).toBeNull();
-        
+
         // Should contain const declarations
         expect(transformedCode).toContain('const ');
-        
+
         // Should use strict inequality
         if (transformedCode.includes('!==')) {
           expect(transformedCode).not.toContain('!= null');
@@ -738,7 +788,9 @@ describe('End-to-End Pipeline Validation', () => {
 
         const commitActor = createActor(gitActor, { input: commitInput });
         commitActor.start();
-        const commitResult = await waitFor(commitActor, (state) => state.status === 'done', { timeout: 5000 });
+        const commitResult = await waitFor(commitActor, (state) => state.status === 'done', {
+          timeout: 5000,
+        });
         const commitCheckpoint = commitResult.output!;
 
         expect(commitCheckpoint.description).toBe('Multi-file transformation: modernize codebase');
@@ -804,7 +856,11 @@ describe('End-to-End Pipeline Validation', () => {
 
       const analysisActorInstance = createActor(analysisActor, { input: analysisInput });
       analysisActorInstance.start();
-      const analysisResult = await waitFor(analysisActorInstance, (state) => state.status === 'done', { timeout: 15000 });
+      const analysisResult = await waitFor(
+        analysisActorInstance,
+        (state) => state.status === 'done',
+        { timeout: 15000 }
+      );
       const analysis = analysisResult.output!;
 
       const analysisTime = Date.now() - startTime;
@@ -822,7 +878,7 @@ describe('End-to-End Pipeline Validation', () => {
           complexity: 2,
           riskLevel: 'low',
           mode: 'template',
-        }
+        },
       ];
 
       const transformationInput = {
@@ -831,9 +887,15 @@ describe('End-to-End Pipeline Validation', () => {
         patterns,
       };
 
-      const transformationActorInstance = createActor(transformationActor, { input: transformationInput });
+      const transformationActorInstance = createActor(transformationActor, {
+        input: transformationInput,
+      });
       transformationActorInstance.start();
-      const transformationResult = await waitFor(transformationActorInstance, (state) => state.status === 'done', { timeout: 20000 });
+      const transformationResult = await waitFor(
+        transformationActorInstance,
+        (state) => state.status === 'done',
+        { timeout: 20000 }
+      );
       const transformation = transformationResult.output!;
 
       const transformationTime = Date.now() - transformationStart;
@@ -848,7 +910,11 @@ describe('End-to-End Pipeline Validation', () => {
 
       const validationActorInstance = createActor(validationActor, { input: validationInput });
       validationActorInstance.start();
-      const validationResult = await waitFor(validationActorInstance, (state) => state.status === 'done', { timeout: 15000 });
+      const validationResult = await waitFor(
+        validationActorInstance,
+        (state) => state.status === 'done',
+        { timeout: 15000 }
+      );
 
       const validationTime = Date.now() - validationStart;
       const totalTime = Date.now() - startTime;

@@ -34,8 +34,8 @@ export const dafnyActor = fromPromise(async ({ input }: { input: DafnyInput }) =
 
   // For now, we'll accept both successful verification and graceful fallback
   // This allows the system to work while we continue improving the Dafny integration
-  const fallbackUsed = verificationResult.errors.some(e => e.includes('fallback'));
-  
+  const fallbackUsed = verificationResult.errors.some((e) => e.includes('fallback'));
+
   if (!verificationResult.verified && !fallbackUsed) {
     console.warn(`Dafny verification had issues: ${verificationResult.errors.join(', ')}`);
     // Don't throw error, use graceful degradation

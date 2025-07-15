@@ -5,19 +5,20 @@
  * Handles real codebase transformations with enterprise-grade safety
  */
 
-import { parseArgs } from 'node:util';
 import { existsSync, mkdirSync } from 'node:fs';
+import { readdir, stat } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import { readdir, stat, readFile } from 'node:fs/promises';
+import { parseArgs } from 'node:util';
 import { simpleGit } from 'simple-git';
+import { createActor } from 'xstate';
+import { z } from 'zod';
 import {
-  ProductionConfigSchema,
   defaultProductionConfig,
   type ProductionConfig,
+  ProductionConfigSchema,
 } from './production.config.ts';
-import { createActor } from 'xstate';
 import { carmackCoderMachine } from './src/machine.ts';
-import { z } from 'zod';
+
 //import { ProductionConfigSchema } from './production.config.ts';
 
 
@@ -380,7 +381,7 @@ async function main(): Promise<void> {
     // Convert max-files to number if provided
     const processedArgs = {
       ...rawArgs,
-      'max-files': rawArgs['max-files'] ? parseInt(rawArgs['max-files']) : undefined,
+      'max-files': rawArgs['max-files'] ? Number.parseInt(rawArgs['max-files']) : undefined,
     };
 
     const args = CLIArgsSchema.parse(processedArgs);

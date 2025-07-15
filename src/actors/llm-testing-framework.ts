@@ -1,11 +1,11 @@
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
-import { writeFile, mkdir } from 'node:fs/promises';
-import { join } from 'node:path';
 
 /**
  * Comprehensive LLM Testing Framework
- * 
+ *
  * This framework provides systematic testing capabilities for LLM transformations:
  * - Automated test case generation from patterns
  * - Property-based testing for transformation correctness
@@ -19,7 +19,7 @@ const TestCaseSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string(),
-  
+
   // Input specification
   input: z.object({
     code: z.string(),
@@ -27,25 +27,34 @@ const TestCaseSchema = z.object({
     patterns: z.array(z.string()), // Pattern IDs to apply
     options: z.record(z.any()).optional(),
   }),
-  
+
   // Expected output specification
   expected: z.object({
     code: z.string().optional(),
     transformationsApplied: z.number().optional(),
     filesModified: z.number().optional(),
     mode: z.enum(['template', 'ast', 'llm']).optional(),
-    
+
     // Quality assertions
-    assertions: z.array(z.object({
-      type: z.enum([
-        'contains', 'not_contains', 'matches_regex', 'syntax_valid',
-        'performance_under', 'complexity_reduced', 'type_safe'
-      ]),
-      value: z.any(),
-      message: z.string().optional(),
-    })).optional(),
+    assertions: z
+      .array(
+        z.object({
+          type: z.enum([
+            'contains',
+            'not_contains',
+            'matches_regex',
+            'syntax_valid',
+            'performance_under',
+            'complexity_reduced',
+            'type_safe',
+          ]),
+          value: z.any(),
+          message: z.string().optional(),
+        })
+      )
+      .optional(),
   }),
-  
+
   // Test metadata
   metadata: z.object({
     category: z.string(),
@@ -62,26 +71,32 @@ const TestSuiteSchema = z.object({
   name: z.string(),
   description: z.string(),
   testCases: z.array(TestCaseSchema),
-  
+
   // Suite configuration
-  config: z.object({
-    parallel: z.boolean().default(true),
-    maxConcurrency: z.number().default(4),
-    retries: z.number().default(2),
-    timeout: z.number().default(300000), // 5 minutes
-    reportFormat: z.enum(['json', 'html', 'markdown']).default('json'),
-  }).optional().default({}),
+  config: z
+    .object({
+      parallel: z.boolean().default(true),
+      maxConcurrency: z.number().default(4),
+      retries: z.number().default(2),
+      timeout: z.number().default(300000), // 5 minutes
+      reportFormat: z.enum(['json', 'html', 'markdown']).default('json'),
+    })
+    .optional()
+    .default({}),
 });
 
 const TestExecutionRequestSchema = z.object({
   suites: z.array(TestSuiteSchema),
-  options: z.object({
-    outputDir: z.string().default('./test-results'),
-    generateReport: z.boolean().default(true),
-    includePerformanceMetrics: z.boolean().default(true),
-    includeCoverageAnalysis: z.boolean().default(true),
-    failFast: z.boolean().default(false),
-  }).optional().default({}),
+  options: z
+    .object({
+      outputDir: z.string().default('./test-results'),
+      generateReport: z.boolean().default(true),
+      includePerformanceMetrics: z.boolean().default(true),
+      includeCoverageAnalysis: z.boolean().default(true),
+      failFast: z.boolean().default(false),
+    })
+    .optional()
+    .default({}),
 });
 
 export type TestCase = z.infer<typeof TestCaseSchema>;
@@ -104,11 +119,13 @@ interface TestResult {
     actual?: any;
     expected?: any;
   }>;
-  performance?: {
-    executionTime: number;
-    memoryUsage: number;
-    transformationSpeed: number;
-  } | undefined;
+  performance?:
+    | {
+        executionTime: number;
+        memoryUsage: number;
+        transformationSpeed: number;
+      }
+    | undefined;
 }
 
 interface SuiteResult {
@@ -129,17 +146,17 @@ interface SuiteResult {
 export const llmTestingFrameworkActor = fromPromise(
   async ({ input }: { input: TestExecutionRequest }) => {
     const validatedInput = TestExecutionRequestSchema.parse(input);
-    
+
     console.log(
       `🧪 Starting LLM testing framework with ${validatedInput.suites.length} test suites`
     );
-    
+
     const results = await executeTestSuites(validatedInput);
-    
+
     console.log(
       `✅ Testing completed: ${results.summary.passed}/${results.summary.total} tests passed`
     );
-    
+
     return results;
   }
 );
@@ -150,25 +167,25 @@ export const llmTestingFrameworkActor = fromPromise(
 async function executeTestSuites(request: TestExecutionRequest) {
   const suiteResults: SuiteResult[] = [];
   const startTime = Date.now();
-  
+
   // Ensure output directory exists
   await mkdir(request.options.outputDir, { recursive: true });
-  
+
   for (const suite of request.suites) {
     console.log(`🏃 Running test suite: ${suite.name}`);
-    
+
     const suiteResult = await executeTestSuite(suite, request.options);
     suiteResults.push(suiteResult);
-    
+
     // Fail fast if enabled and suite failed
     if (request.options.failFast && suiteResult.summary.failed > 0) {
       console.log(`❌ Failing fast due to test failures in suite: ${suite.name}`);
       break;
     }
   }
-  
+
   const totalDuration = Date.now() - startTime;
-  
+
   // Calculate overall summary
   const summary = {
     total: suiteResults.reduce((sum, r) => sum + r.summary.total, 0),
@@ -178,35 +195,38 @@ async function executeTestSuites(request: TestExecutionRequest) {
     duration: totalDuration,
     suites: suiteResults.length,
   };
-  
+
   const executionResult = {
     suiteResults,
     summary,
     timestamp: new Date().toISOString(),
   };
-  
+
   // Generate reports if requested
   if (request.options.generateReport) {
     await generateTestReport(executionResult, request.options);
   }
-  
+
   return executionResult;
 }
 
 /**
  * Execute a single test suite
  */
-async function executeTestSuite(suite: TestSuite, options: TestExecutionRequest['options']): Promise<SuiteResult> {
+async function executeTestSuite(
+  suite: TestSuite,
+  options: TestExecutionRequest['options']
+): Promise<SuiteResult> {
   const results: TestResult[] = [];
   const startTime = Date.now();
-  
+
   // Execute tests based on parallelization settings
   if (suite.config.parallel) {
     const chunks = chunkArray(suite.testCases, suite.config.maxConcurrency);
-    
+
     for (const chunk of chunks) {
       const chunkResults = await Promise.all(
-        chunk.map(testCase => executeTestCase(testCase, options))
+        chunk.map((testCase) => executeTestCase(testCase, options))
       );
       results.push(...chunkResults);
     }
@@ -217,18 +237,18 @@ async function executeTestSuite(suite: TestSuite, options: TestExecutionRequest[
       results.push(result);
     }
   }
-  
+
   const duration = Date.now() - startTime;
-  
+
   // Calculate suite summary
   const summary = {
     total: results.length,
-    passed: results.filter(r => r.status === 'passed').length,
-    failed: results.filter(r => r.status === 'failed').length,
-    skipped: results.filter(r => r.status === 'skipped').length,
+    passed: results.filter((r) => r.status === 'passed').length,
+    failed: results.filter((r) => r.status === 'failed').length,
+    skipped: results.filter((r) => r.status === 'skipped').length,
     duration,
   };
-  
+
   return {
     suite,
     results,
@@ -239,27 +259,30 @@ async function executeTestSuite(suite: TestSuite, options: TestExecutionRequest[
 /**
  * Execute a single test case
  */
-async function executeTestCase(testCase: TestCase, options: TestExecutionRequest['options']): Promise<TestResult> {
+async function executeTestCase(
+  testCase: TestCase,
+  options: TestExecutionRequest['options']
+): Promise<TestResult> {
   const startTime = Date.now();
-  
+
   try {
     console.log(`  🔬 Running test: ${testCase.name}`);
-    
+
     // Execute the transformation
     const actualOutput = await executeTransformation(testCase.input);
-    
+
     // Run assertions
     const assertions = await runAssertions(testCase, actualOutput);
-    
+
     const duration = Date.now() - startTime;
-    const allPassed = assertions.every(a => a.passed);
-    
+    const allPassed = assertions.every((a) => a.passed);
+
     // Collect performance metrics if enabled
     let performance;
     if (options.includePerformanceMetrics) {
       performance = await collectPerformanceMetrics(testCase, actualOutput, duration);
     }
-    
+
     return {
       testCase,
       status: allPassed ? 'passed' : 'failed',
@@ -270,7 +293,7 @@ async function executeTestCase(testCase: TestCase, options: TestExecutionRequest
     };
   } catch (error) {
     const duration = Date.now() - startTime;
-    
+
     return {
       testCase,
       status: duration > testCase.metadata.timeout ? 'timeout' : 'failed',
@@ -287,11 +310,11 @@ async function executeTestCase(testCase: TestCase, options: TestExecutionRequest
 async function executeTransformation(input: TestCase['input']) {
   // For testing purposes, we'll simulate the transformation results
   // In a real implementation, this would integrate with the actual pipeline
-  
+
   try {
     // Simulate processing time
-    await new Promise(resolve => setTimeout(resolve, 10));
-    
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
     // Return a mock transformation result that matches expected structure
     return {
       content: input.code, // For now, return the input code (simulating no transformation)
@@ -315,7 +338,7 @@ async function executeTransformation(input: TestCase['input']) {
 async function runAssertions(testCase: TestCase, actualOutput: any) {
   const assertions = testCase.expected.assertions || [];
   const results = [];
-  
+
   for (const assertion of assertions) {
     try {
       const result = await runSingleAssertion(assertion, actualOutput, testCase);
@@ -330,7 +353,7 @@ async function runAssertions(testCase: TestCase, actualOutput: any) {
       });
     }
   }
-  
+
   return results;
 }
 
@@ -339,7 +362,7 @@ async function runAssertions(testCase: TestCase, actualOutput: any) {
  */
 async function runSingleAssertion(assertion: any, actualOutput: any, testCase: TestCase) {
   switch (assertion.type) {
-    case 'contains':
+    case 'contains': {
       const contains = actualOutput?.content?.includes(assertion.value) || false;
       return {
         type: assertion.type,
@@ -348,8 +371,9 @@ async function runSingleAssertion(assertion: any, actualOutput: any, testCase: T
         actual: actualOutput?.content,
         expected: assertion.value,
       };
-      
-    case 'not_contains':
+    }
+
+    case 'not_contains': {
       const notContains = !actualOutput?.content?.includes(assertion.value);
       return {
         type: assertion.type,
@@ -358,8 +382,9 @@ async function runSingleAssertion(assertion: any, actualOutput: any, testCase: T
         actual: actualOutput?.content,
         expected: assertion.value,
       };
-      
-    case 'matches_regex':
+    }
+
+    case 'matches_regex': {
       const regex = new RegExp(assertion.value);
       const matches = regex.test(actualOutput?.content || '');
       return {
@@ -369,8 +394,9 @@ async function runSingleAssertion(assertion: any, actualOutput: any, testCase: T
         actual: actualOutput?.content,
         expected: assertion.value,
       };
-      
-    case 'syntax_valid':
+    }
+
+    case 'syntax_valid': {
       const isValid = await validateSyntax(actualOutput?.content, testCase.input.language);
       return {
         type: assertion.type,
@@ -379,8 +405,9 @@ async function runSingleAssertion(assertion: any, actualOutput: any, testCase: T
         actual: actualOutput?.content,
         expected: 'valid syntax',
       };
-      
-    case 'performance_under':
+    }
+
+    case 'performance_under': {
       const duration = actualOutput?.performance?.duration || 0;
       const underLimit = duration < assertion.value;
       return {
@@ -390,8 +417,9 @@ async function runSingleAssertion(assertion: any, actualOutput: any, testCase: T
         actual: duration,
         expected: assertion.value,
       };
-      
-    case 'complexity_reduced':
+    }
+
+    case 'complexity_reduced': {
       const complexityReduced = await checkComplexityReduction(
         testCase.input.code,
         actualOutput?.content
@@ -403,8 +431,9 @@ async function runSingleAssertion(assertion: any, actualOutput: any, testCase: T
         actual: actualOutput?.complexity,
         expected: 'reduced complexity',
       };
-      
-    case 'type_safe':
+    }
+
+    case 'type_safe': {
       const typeSafe = await checkTypesSafety(actualOutput?.content, testCase.input.language);
       return {
         type: assertion.type,
@@ -413,7 +442,8 @@ async function runSingleAssertion(assertion: any, actualOutput: any, testCase: T
         actual: actualOutput?.content,
         expected: 'type-safe code',
       };
-      
+    }
+
     default:
       throw new Error(`Unknown assertion type: ${assertion.type}`);
   }
@@ -427,38 +457,36 @@ async function validateSyntax(code: string, language: string): Promise<boolean> 
     if (language === 'typescript') {
       // Use TypeScript compiler API to validate syntax
       const ts = await import('typescript');
-      const sourceFile = ts.createSourceFile(
-        'test.ts',
-        code,
-        ts.ScriptTarget.Latest,
-        true
-      );
-      
+      const sourceFile = ts.createSourceFile('test.ts', code, ts.ScriptTarget.Latest, true);
+
       // Check for syntax errors
       const diagnostics = ts.getPreEmitDiagnostics(
-        ts.createProgram(['test.ts'], {}, {
-          getSourceFile: (fileName) => fileName === 'test.ts' ? sourceFile : undefined,
-          writeFile: () => {},
-          getCurrentDirectory: () => '',
-          getDirectories: () => [],
-          fileExists: () => true,
-          readFile: () => '',
-          getCanonicalFileName: (fileName) => fileName,
-          useCaseSensitiveFileNames: () => true,
-          getNewLine: () => '\n',
-          getDefaultLibFileName: () => 'lib.d.ts',
-        })
+        ts.createProgram(
+          ['test.ts'],
+          {},
+          {
+            getSourceFile: (fileName) => (fileName === 'test.ts' ? sourceFile : undefined),
+            writeFile: () => {},
+            getCurrentDirectory: () => '',
+            getDirectories: () => [],
+            fileExists: () => true,
+            readFile: () => '',
+            getCanonicalFileName: (fileName) => fileName,
+            useCaseSensitiveFileNames: () => true,
+            getNewLine: () => '\n',
+            getDefaultLibFileName: () => 'lib.d.ts',
+          }
+        )
       );
-      
+
       return diagnostics.length === 0;
-    } else {
-      // For JavaScript, use a simple parse check
-      try {
-        new Function(code);
-        return true;
-      } catch {
-        return false;
-      }
+    }
+    // For JavaScript, use a simple parse check
+    try {
+      new Function(code);
+      return true;
+    } catch {
+      return false;
     }
   } catch {
     return false;
@@ -468,32 +496,35 @@ async function validateSyntax(code: string, language: string): Promise<boolean> 
 /**
  * Check if complexity was reduced
  */
-async function checkComplexityReduction(_originalCode: string, _transformedCode: string): Promise<boolean> {
+async function checkComplexityReduction(
+  _originalCode: string,
+  _transformedCode: string
+): Promise<boolean> {
   try {
     const { complexityActor } = await import('./complexity');
     const { createActor } = await import('xstate');
-    
+
     // Calculate complexity for both versions
-    const originalComplexity = await new Promise((resolve) => {
+    const originalComplexity = (await new Promise((resolve) => {
       const actor = createActor(complexityActor, {
-        input: { files: ['original.ts'] }
+        input: { files: ['original.ts'] },
       });
       actor.start();
       actor.subscribe({
-        complete: () => resolve(actor.getSnapshot().output)
+        complete: () => resolve(actor.getSnapshot().output),
       });
-    }) as any;
-    
-    const transformedComplexity = await new Promise((resolve) => {
+    })) as any;
+
+    const transformedComplexity = (await new Promise((resolve) => {
       const actor = createActor(complexityActor, {
-        input: { files: ['transformed.ts'] }
+        input: { files: ['transformed.ts'] },
       });
       actor.start();
       actor.subscribe({
-        complete: () => resolve(actor.getSnapshot().output)
+        complete: () => resolve(actor.getSnapshot().output),
       });
-    }) as any;
-    
+    })) as any;
+
     return transformedComplexity.cyclomatic < originalComplexity.cyclomatic;
   } catch {
     return false; // Assume no reduction if we can't measure
@@ -505,24 +536,24 @@ async function checkComplexityReduction(_originalCode: string, _transformedCode:
  */
 async function checkTypesSafety(_code: string, language: string): Promise<boolean> {
   if (language !== 'typescript') return true; // Skip for JavaScript
-  
+
   try {
     const { validationActor } = await import('./validation');
     const { createActor } = await import('xstate');
-    
-    const result = await new Promise((resolve) => {
+
+    const result = (await new Promise((resolve) => {
       const actor = createActor(validationActor, {
         input: {
           type: 'types' as const,
-          files: ['test.ts']
-        }
+          files: ['test.ts'],
+        },
       });
       actor.start();
       actor.subscribe({
-        complete: () => resolve(actor.getSnapshot().output)
+        complete: () => resolve(actor.getSnapshot().output),
       });
-    }) as any;
-    
+    })) as any;
+
     return result.errors.length === 0;
   } catch {
     return false; // Assume not type-safe if we can't validate
@@ -547,17 +578,17 @@ async function collectPerformanceMetrics(testCase: TestCase, actualOutput: any, 
  */
 async function generateTestReport(executionResult: any, options: TestExecutionRequest['options']) {
   const reportPath = join(options.outputDir, `test-report-${Date.now()}.json`);
-  
+
   // Generate JSON report
   await writeFile(reportPath, JSON.stringify(executionResult, null, 2), 'utf-8');
-  
+
   // Generate HTML report if requested
   if (options.generateReport) {
     const htmlReportPath = join(options.outputDir, `test-report-${Date.now()}.html`);
     const htmlContent = generateHtmlReport(executionResult);
     await writeFile(htmlReportPath, htmlContent, 'utf-8');
   }
-  
+
   console.log(`📊 Test report generated: ${reportPath}`);
 }
 
@@ -566,7 +597,7 @@ async function generateTestReport(executionResult: any, options: TestExecutionRe
  */
 function generateHtmlReport(executionResult: any): string {
   const { summary, suiteResults } = executionResult;
-  
+
   return `
 <!DOCTYPE html>
 <html>
@@ -598,33 +629,49 @@ function generateHtmlReport(executionResult: any): string {
         <p><strong>Success Rate:</strong> ${((summary.passed / summary.total) * 100).toFixed(1)}%</p>
     </div>
     
-    ${suiteResults.map((suite: any) => `
+    ${suiteResults
+      .map(
+        (suite: any) => `
         <div class="suite">
             <div class="suite-header">
                 ${suite.suite.name} (${suite.summary.passed}/${suite.summary.total} passed)
             </div>
-            ${suite.results.map((result: any) => `
+            ${suite.results
+              .map(
+                (result: any) => `
                 <div class="test-case">
                     <h4 class="${result.status}">${result.testCase.name} - ${result.status.toUpperCase()}</h4>
                     <p>${result.testCase.description}</p>
                     ${result.error ? `<p class="failed">Error: ${result.error}</p>` : ''}
-                    ${result.assertions.map((assertion: any) => `
+                    ${result.assertions
+                      .map(
+                        (assertion: any) => `
                         <div class="assertion ${assertion.passed ? 'passed' : 'failed'}">
                             ${assertion.type}: ${assertion.message} ${assertion.passed ? '✓' : '✗'}
                         </div>
-                    `).join('')}
-                    ${result.performance ? `
+                    `
+                      )
+                      .join('')}
+                    ${
+                      result.performance
+                        ? `
                         <div class="performance">
                             <strong>Performance:</strong>
                             Execution: ${result.performance.executionTime}ms,
                             Memory: ${Math.round(result.performance.memoryUsage / 1024 / 1024)}MB,
                             Speed: ${result.performance.transformationSpeed.toFixed(2)} chars/ms
                         </div>
-                    ` : ''}
+                    `
+                        : ''
+                    }
                 </div>
-            `).join('')}
+            `
+              )
+              .join('')}
         </div>
-    `).join('')}
+    `
+      )
+      .join('')}
     
     <footer>
         <p>Generated on ${new Date(executionResult.timestamp).toLocaleString()}</p>
@@ -732,7 +779,7 @@ export const BUILTIN_TEST_SUITES: TestSuite[] = [
       },
     ],
   },
-  
+
   {
     id: 'performance-tests',
     name: 'Performance Tests',
@@ -776,7 +823,7 @@ export const BUILTIN_TEST_SUITES: TestSuite[] = [
       },
     ],
   },
-  
+
   {
     id: 'error-handling',
     name: 'Error Handling Tests',

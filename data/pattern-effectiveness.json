@@ -1,0 +1,122 @@
+{
+  "smart-var-to-const-let": {
+    "patternId": "smart-var-to-const-let",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1752544839738,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "strict-equality": {
+    "patternId": "strict-equality",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1752544839739,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "strict-inequality": {
+    "patternId": "strict-inequality",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1752544839739,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "console-log-to-console-error": {
+    "patternId": "console-log-to-console-error",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1752544839739,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "promise-to-async-await": {
+    "patternId": "promise-to-async-await",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1752544839739,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "object-property-shorthand": {
+    "patternId": "object-property-shorthand",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1752544839739,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "array-includes-instead-of-indexof": {
+    "patternId": "array-includes-instead-of-indexof",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1752544839739,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "const-loop-variable-fix": {
+    "patternId": "const-loop-variable-fix",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1752544839739,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "template-literal-conversion": {
+    "patternId": "template-literal-conversion",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1752544839739,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "remove-unnecessary-returns": {
+    "patternId": "remove-unnecessary-returns",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1752544839739,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  }
+}

@@ -1,6 +1,6 @@
-import { z } from 'zod';
 import { readFile, writeFile } from 'node:fs/promises';
 import { fromPromise } from 'xstate';
+import { z } from 'zod';
 
 /**
  * Enhanced Template Engine for Ultra-Fast Code Transformations
@@ -502,7 +502,7 @@ function templateToRegex(template: string): { regex: RegExp; variableNames: stri
 
       default:
         // Enhanced generic capture with better boundary detection
-        return '([\\w\\s\\.\\[\\]\\(\\)\\-\\+\\*/=<>!&|:;,{}]+?)';
+        return '([\\w\\s.\\[\\]()\\+\\*/-=<>!&|:;,{}]+?)';
     }
   });
 
@@ -527,8 +527,10 @@ function findAdvancedTemplateMatches(content: string, pattern: TemplatePattern):
   matches.push(...semanticMatches);
 
   // Remove duplicates based on position
-  const uniqueMatches = matches.filter((match, index, array) =>
-    array.findIndex(m => m.startIndex === match.startIndex && m.endIndex === match.endIndex) === index
+  const uniqueMatches = matches.filter(
+    (match, index, array) =>
+      array.findIndex((m) => m.startIndex === match.startIndex && m.endIndex === match.endIndex) ===
+      index
   );
 
   return uniqueMatches;
@@ -545,19 +547,19 @@ function findSemanticPatterns(content: string, pattern: TemplatePattern): Templa
     case 'var-to-const-let':
       matches.push(...findVarDeclarationPatterns(content, pattern));
       break;
-    
+
     case 'callback-to-promise':
       matches.push(...findCallbackPatterns(content, pattern));
       break;
-    
+
     case 'function-modernization':
       matches.push(...findFunctionModernizationPatterns(content, pattern));
       break;
-    
+
     case 'object-destructuring':
       matches.push(...findDestructuringOpportunities(content, pattern));
       break;
-    
+
     case 'template-literal-conversion':
       matches.push(...findStringConcatenationPatterns(content, pattern));
       break;
@@ -576,20 +578,20 @@ function findVarDeclarationPatterns(content: string, pattern: TemplatePattern): 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     if (!line) continue;
-    
+
     const varMatch = line.match(/^(\s*)var\s+(\w+)\s*=\s*(.+);?\s*$/);
-    
+
     if (varMatch && varMatch.length >= 4) {
       const [fullMatch, indent = '', varName, value] = varMatch;
       if (!varName || !value) continue;
-      
+
       const startIndex = content.indexOf(fullMatch);
-      
+
       if (startIndex !== -1) {
         // Analyze if variable is reassigned
         const isReassigned = analyzeVariableReassignment(content, varName, startIndex);
         const recommendedKeyword = isReassigned ? 'let' : 'const';
-        
+
         matches.push({
           pattern,
           match: fullMatch,
@@ -604,7 +606,10 @@ function findVarDeclarationPatterns(content: string, pattern: TemplatePattern): 
           lineNumber: i + 1,
           context: {
             precedingCode: content.substring(Math.max(0, startIndex - 50), startIndex),
-            followingCode: content.substring(startIndex + fullMatch.length, Math.min(content.length, startIndex + fullMatch.length + 50)),
+            followingCode: content.substring(
+              startIndex + fullMatch.length,
+              Math.min(content.length, startIndex + fullMatch.length + 50)
+            ),
             indentation: indent,
           },
         });
@@ -618,7 +623,11 @@ function findVarDeclarationPatterns(content: string, pattern: TemplatePattern): 
 /**
  * Analyze if a variable is reassigned after declaration
  */
-function analyzeVariableReassignment(content: string, varName: string, declarationIndex: number): boolean {
+function analyzeVariableReassignment(
+  content: string,
+  varName: string,
+  declarationIndex: number
+): boolean {
   const afterDeclaration = content.substring(declarationIndex);
   const reassignmentPattern = new RegExp(`\\b${varName}\\s*=\\s*[^=]`, 'g');
   const matches = afterDeclaration.match(reassignmentPattern);
@@ -630,15 +639,15 @@ function analyzeVariableReassignment(content: string, varName: string, declarati
  */
 function findCallbackPatterns(content: string, pattern: TemplatePattern): TemplateMatch[] {
   const matches: TemplateMatch[] = [];
-  
+
   // Pattern: function(callback) or method(params, callback)
   const callbackRegex = /(\w+)\s*\(\s*([^)]*?),?\s*function\s*\([^)]*\)\s*\{[^}]*\}\s*\)/g;
-  
+
   let match;
   while ((match = callbackRegex.exec(content)) !== null) {
     const [fullMatch, functionName, params] = match;
     if (!functionName || !params) continue;
-    
+
     matches.push({
       pattern,
       match: fullMatch,
@@ -651,7 +660,10 @@ function findCallbackPatterns(content: string, pattern: TemplatePattern): Templa
       lineNumber: content.substring(0, match.index).split('\n').length,
       context: {
         precedingCode: content.substring(Math.max(0, match.index - 50), match.index),
-        followingCode: content.substring(match.index + fullMatch.length, Math.min(content.length, match.index + fullMatch.length + 50)),
+        followingCode: content.substring(
+          match.index + fullMatch.length,
+          Math.min(content.length, match.index + fullMatch.length + 50)
+        ),
         indentation: extractIndentation(content, match.index),
       },
     });
@@ -663,17 +675,20 @@ function findCallbackPatterns(content: string, pattern: TemplatePattern): Templa
 /**
  * Find function declarations that can be modernized
  */
-function findFunctionModernizationPatterns(content: string, pattern: TemplatePattern): TemplateMatch[] {
+function findFunctionModernizationPatterns(
+  content: string,
+  pattern: TemplatePattern
+): TemplateMatch[] {
   const matches: TemplateMatch[] = [];
-  
+
   // Pattern: function name() { return expression; }
   const simpleFunctionRegex = /function\s+(\w+)\s*\(([^)]*)\)\s*\{\s*return\s+([^;]+);\s*\}/g;
-  
+
   let match;
   while ((match = simpleFunctionRegex.exec(content)) !== null) {
     const [fullMatch, functionName, params, returnExpr] = match;
     if (!functionName || !params || !returnExpr) continue;
-    
+
     matches.push({
       pattern,
       match: fullMatch,
@@ -687,7 +702,10 @@ function findFunctionModernizationPatterns(content: string, pattern: TemplatePat
       lineNumber: content.substring(0, match.index).split('\n').length,
       context: {
         precedingCode: content.substring(Math.max(0, match.index - 50), match.index),
-        followingCode: content.substring(match.index + fullMatch.length, Math.min(content.length, match.index + fullMatch.length + 50)),
+        followingCode: content.substring(
+          match.index + fullMatch.length,
+          Math.min(content.length, match.index + fullMatch.length + 50)
+        ),
         indentation: extractIndentation(content, match.index),
       },
     });
@@ -699,13 +717,21 @@ function findFunctionModernizationPatterns(content: string, pattern: TemplatePat
 /**
  * Find opportunities for object destructuring
  */
-function findDestructuringOpportunities(content: string, pattern: TemplatePattern): TemplateMatch[] {
+function findDestructuringOpportunities(
+  content: string,
+  pattern: TemplatePattern
+): TemplateMatch[] {
   const matches: TemplateMatch[] = [];
-  
+
   // Pattern: const x = obj.x; const y = obj.y;
   const propertyAccessRegex = /const\s+(\w+)\s*=\s*(\w+)\.(\w+);/g;
-  const propertyAccesses: Array<{ varName: string; objName: string; propName: string; match: RegExpExecArray }> = [];
-  
+  const propertyAccesses: Array<{
+    varName: string;
+    objName: string;
+    propName: string;
+    match: RegExpExecArray;
+  }> = [];
+
   let match;
   while ((match = propertyAccessRegex.exec(content)) !== null) {
     const [, varName, objName, propName] = match;
@@ -714,30 +740,43 @@ function findDestructuringOpportunities(content: string, pattern: TemplatePatter
   }
 
   // Group by object name
-  const groupedByObject = propertyAccesses.reduce((acc, access) => {
-    if (!acc[access.objName]) acc[access.objName] = [];
-    acc[access.objName]!.push(access);
-    return acc;
-  }, {} as Record<string, typeof propertyAccesses>);
+  const groupedByObject = propertyAccesses.reduce(
+    (acc, access) => {
+      if (!acc[access.objName]) acc[access.objName] = [];
+      acc[access.objName]!.push(access);
+      return acc;
+    },
+    {} as Record<string, typeof propertyAccesses>
+  );
 
   // Find objects with multiple property accesses
   for (const [objName, accesses] of Object.entries(groupedByObject)) {
     if (accesses && accesses.length >= 2) {
       const firstAccess = accesses[0];
       const lastAccess = accesses[accesses.length - 1];
-      
-      if (!firstAccess || !lastAccess || firstAccess.match.index === undefined || lastAccess.match.index === undefined) continue;
-      
+
+      if (
+        !firstAccess ||
+        !lastAccess ||
+        firstAccess.match.index === undefined ||
+        lastAccess.match.index === undefined
+      )
+        continue;
+
       const startIndex = firstAccess.match.index;
       const endIndex = lastAccess.match.index + lastAccess.match[0].length;
       const fullMatch = content.substring(startIndex, endIndex);
-      
+
       matches.push({
         pattern,
         match: fullMatch,
         variables: [
           { name: 'OBJECT_NAME', value: objName, type: 'identifier' },
-          { name: 'PROPERTIES', value: accesses.map(a => a.propName).join(', '), type: 'expression' },
+          {
+            name: 'PROPERTIES',
+            value: accesses.map((a) => a.propName).join(', '),
+            type: 'expression',
+          },
         ],
         startIndex,
         endIndex,
@@ -757,17 +796,20 @@ function findDestructuringOpportunities(content: string, pattern: TemplatePatter
 /**
  * Find string concatenation patterns that can use template literals
  */
-function findStringConcatenationPatterns(content: string, pattern: TemplatePattern): TemplateMatch[] {
+function findStringConcatenationPatterns(
+  content: string,
+  pattern: TemplatePattern
+): TemplateMatch[] {
   const matches: TemplateMatch[] = [];
-  
+
   // Pattern: 'string' + variable + 'string'
   const concatenationRegex = /(['"`])([^'"`]*?)\1\s*\+\s*(\w+)\s*\+\s*(['"`])([^'"`]*?)\4/g;
-  
+
   let match;
   while ((match = concatenationRegex.exec(content)) !== null) {
     const [fullMatch, , prefix, variable, , suffix] = match;
     if (!prefix || !variable || !suffix) continue;
-    
+
     matches.push({
       pattern,
       match: fullMatch,
@@ -781,7 +823,10 @@ function findStringConcatenationPatterns(content: string, pattern: TemplatePatte
       lineNumber: content.substring(0, match.index).split('\n').length,
       context: {
         precedingCode: content.substring(Math.max(0, match.index - 50), match.index),
-        followingCode: content.substring(match.index + fullMatch.length, Math.min(content.length, match.index + fullMatch.length + 50)),
+        followingCode: content.substring(
+          match.index + fullMatch.length,
+          Math.min(content.length, match.index + fullMatch.length + 50)
+        ),
         indentation: extractIndentation(content, match.index),
       },
     });
@@ -860,11 +905,12 @@ function matchesContext(
         case 'comment':
           if (precedingCode.includes('//') || precedingCode.includes('/*')) return false;
           break;
-        case 'string':
+        case 'string': {
           const quotes = ['"', "'", '`'];
           if (quotes.some((q) => precedingCode.lastIndexOf(q) > precedingCode.lastIndexOf(q + q)))
             return false;
           break;
+        }
       }
     }
   }

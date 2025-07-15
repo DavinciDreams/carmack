@@ -1,22 +1,28 @@
-import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
-import { createActor } from 'xstate';
-import { productionPipelineActor, defaultProductionConfig } from '../../src/pipeline/production-pipeline';
-import type { PipelineRequest, ProductionConfig } from '../../src/pipeline/production-pipeline';
-import { writeFileSync, unlinkSync, existsSync } from 'fs';
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
+import { existsSync, unlinkSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import { createActor } from 'xstate';
+import type { PipelineRequest, ProductionConfig } from '../../src/pipeline/production-pipeline';
+import {
+  defaultProductionConfig,
+  productionPipelineActor,
+} from '../../src/pipeline/production-pipeline';
 
 describe('Production Pipeline', () => {
   const testFile = join(process.cwd(), 'test-file.ts');
-  
+
   beforeEach(() => {
     // Create test file
-    writeFileSync(testFile, `
+    writeFileSync(
+      testFile,
+      `
 function add(a, b) {
   return a + b;
 }
 
 export { add };
-    `.trim());
+    `.trim()
+    );
   });
 
   afterEach(() => {
@@ -53,7 +59,7 @@ export { add };
   const invokePipeline = async (request: PipelineRequest): Promise<any> => {
     const actor = createActor(productionPipelineActor, { input: request });
     actor.start();
-    
+
     return new Promise((resolve) => {
       actor.subscribe((state) => {
         if (state.status === 'done') {
@@ -71,7 +77,7 @@ export { add };
     it('should execute pipeline successfully with valid input', async () => {
       const request = createTestRequest();
       const result = await invokePipeline(request);
-      
+
       expect(result).toBeDefined();
       if (result) {
         expect(result.transformationId).toMatch(/^transform_\d+_[a-z0-9]+$/);
@@ -90,9 +96,9 @@ export { add };
           dryRun: true,
         },
       });
-      
+
       const result = await invokePipeline(request);
-      
+
       expect(result).toBeDefined();
       if (result) {
         expect(result.success).toBe(false);
@@ -113,13 +119,13 @@ export { add };
           dryRun: true,
         },
       });
-      
+
       const result = await invokePipeline(request);
-      
+
       expect(result).toBeDefined();
       if (result) {
         expect(result.success).toBe(false);
-        expect(result.errors?.some(e => e.stage === 'preprocessing')).toBe(true);
+        expect(result.errors?.some((e) => e.stage === 'preprocessing')).toBe(true);
       }
     });
   });
@@ -135,9 +141,9 @@ export { add };
           dryRun: false,
         },
       });
-      
+
       const result = await invokePipeline(request);
-      
+
       expect(result).toBeDefined();
       if (result) {
         expect(result.performance.stageTimings.preprocessing).toBeDefined();
@@ -155,9 +161,9 @@ export { add };
           dryRun: true,
         },
       });
-      
+
       const result = await invokePipeline(request);
-      
+
       expect(result).toBeDefined();
       if (result) {
         expect(result.performance.stageTimings['pattern-discovery']).toBeDefined();
@@ -182,9 +188,9 @@ export { add };
           },
         },
       });
-      
+
       const result = await invokePipeline(request);
-      
+
       expect(result).toBeDefined();
       if (result) {
         expect(result.performance.stageTimings['pattern-discovery']).toBeDefined();
@@ -203,9 +209,9 @@ export { add };
           dryRun: true,
         },
       });
-      
+
       const result = await invokePipeline(request);
-      
+
       expect(result).toBeDefined();
       if (result) {
         expect(result.performance.stageTimings.transformation).toBeDefined();
@@ -225,9 +231,9 @@ export { add };
           dryRun: true,
         },
       });
-      
+
       const result = await invokePipeline(request);
-      
+
       expect(result).toBeDefined();
       if (result) {
         expect(result.performance.stageTimings.transformation).toBeDefined();
@@ -246,9 +252,9 @@ export { add };
           dryRun: true,
         },
       });
-      
+
       const result = await invokePipeline(request);
-      
+
       expect(result).toBeDefined();
       if (result) {
         expect(result.performance.stageTimings.transformation).toBeDefined();
@@ -267,9 +273,9 @@ export { add };
           dryRun: true,
         },
       });
-      
+
       const result = await invokePipeline(request);
-      
+
       expect(result).toBeDefined();
       if (result) {
         expect(result.performance.stageTimings.transformation).toBeDefined();
@@ -296,9 +302,9 @@ export { add };
           },
         },
       });
-      
+
       const result = await invokePipeline(request);
-      
+
       expect(result).toBeDefined();
       if (result) {
         expect(result.performance.stageTimings.transformation).toBeDefined();
@@ -317,9 +323,9 @@ export { add };
           dryRun: true,
         },
       });
-      
+
       const result = await invokePipeline(request);
-      
+
       expect(result).toBeDefined();
       if (result) {
         expect(result.performance.stageTimings.validation).toBeDefined();
@@ -338,9 +344,9 @@ export { add };
           dryRun: true,
         },
       });
-      
+
       const result = await invokePipeline(request);
-      
+
       expect(result).toBeDefined();
       if (result) {
         expect(result.performance.stageTimings.validation).toBeDefined();
@@ -359,9 +365,9 @@ export { add };
           dryRun: true,
         },
       });
-      
+
       const result = await invokePipeline(request);
-      
+
       expect(result).toBeDefined();
       if (result) {
         expect(result.performance.stageTimings.testing).toBeDefined();
@@ -381,9 +387,9 @@ export { add };
           dryRun: true,
         },
       });
-      
+
       const result = await invokePipeline(request);
-      
+
       expect(result).toBeDefined();
       if (result) {
         expect(result.performance.stageTimings.testing).toBeDefined();
@@ -402,9 +408,9 @@ export { add };
           dryRun: true,
         },
       });
-      
+
       const result = await invokePipeline(request);
-      
+
       expect(result).toBeDefined();
       if (result) {
         expect(result.performance.stageTimings.feedback).toBeDefined();
@@ -431,9 +437,9 @@ export { add };
           },
         },
       });
-      
+
       const result = await invokePipeline(request);
-      
+
       expect(result).toBeDefined();
       if (result) {
         expect(result.performance.stageTimings.feedback).toBeDefined();
@@ -452,9 +458,9 @@ export { add };
           dryRun: true,
         },
       });
-      
+
       const result = await invokePipeline(request);
-      
+
       expect(result).toBeDefined();
       if (result) {
         expect(result.performance.stageTimings.postprocessing).toBeDefined();
@@ -474,9 +480,9 @@ export { add };
           dryRun: true,
         },
       });
-      
+
       const result = await invokePipeline(request);
-      
+
       expect(result).toBeDefined();
       if (result) {
         expect(result.success).toBe(true);
@@ -526,9 +532,9 @@ export { add };
           ...defaultProductionConfig,
         },
       });
-      
+
       const result = await invokePipeline(request);
-      
+
       expect(result).toBeDefined();
       if (result) {
         expect(result.success).toBe(true);
@@ -563,9 +569,9 @@ export { add };
           },
         },
       });
-      
+
       const result = await invokePipeline(request);
-      
+
       expect(result).toBeDefined();
       if (result) {
         expect(result.transformationId).toBeDefined();
@@ -573,7 +579,7 @@ export { add };
 
         // Should handle timeout gracefully
         if (result.errors && result.errors.length > 0) {
-          const criticalErrors = result.errors.filter(e => e.severity === 'critical');
+          const criticalErrors = result.errors.filter((e) => e.severity === 'critical');
           expect(criticalErrors.length).toBeLessThanOrEqual(1);
         }
       }
@@ -589,9 +595,9 @@ export { add };
           dryRun: true,
         },
       });
-      
+
       const result = await invokePipeline(request);
-      
+
       expect(result).toBeDefined();
       if (result) {
         expect(result.success).toBe(false);
@@ -617,16 +623,24 @@ export { add };
           dryRun: true,
         },
       });
-      
+
       const result = await invokePipeline(request);
-      
+
       expect(result).toBeDefined();
       if (result) {
         expect(result.performance.totalExecutionTime).toBeGreaterThan(0);
         expect(result.performance.stageTimings).toBeDefined();
 
         // Verify all stage timings are recorded
-        const expectedStages = ['preprocessing', 'pattern-discovery', 'transformation', 'validation', 'testing', 'feedback', 'postprocessing'];
+        const expectedStages = [
+          'preprocessing',
+          'pattern-discovery',
+          'transformation',
+          'validation',
+          'testing',
+          'feedback',
+          'postprocessing',
+        ];
         for (const stage of expectedStages) {
           expect(result.performance.stageTimings[stage]).toBeDefined();
           expect(result.performance.stageTimings[stage]).toBeGreaterThanOrEqual(0);

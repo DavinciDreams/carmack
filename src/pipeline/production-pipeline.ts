@@ -1,30 +1,71 @@
-import { fromPromise, createActor } from 'xstate';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+import { createActor, fromPromise } from 'xstate';
 import { z } from 'zod';
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
-import { join, dirname } from 'node:path';
-
-// Import all our transformation systems
-import { templateEngineActor } from '../actors/template-engine.js';
 import { astGrepTransformationActor } from '../actors/ast-grep-transformation.js';
-import { llmTransformationActor } from '../actors/llm-transformation.js';
-import { patternLearningActor } from '../actors/pattern-learning.js';
-import { patternDiscoveryActor } from '../actors/pattern-discovery.js';
 import { feedbackLoopActor } from '../actors/feedback-loop.js';
-import { validationActor } from '../actors/validation.js';
 // import { complexityActor } from '../actors/complexity.js';
 import { llmTestingFrameworkActor } from '../actors/llm-testing-framework.js';
+import { llmTransformationActor } from '../actors/llm-transformation.js';
+import { patternDiscoveryActor } from '../actors/pattern-discovery.js';
+import { patternLearningActor } from '../actors/pattern-learning.js';
+// Import all our transformation systems
+import { templateEngineActor } from '../actors/template-engine.js';
+import { validationActor } from '../actors/validation.js';
 
-// Helper function to invoke actors
+// Import standardized result types
+import type {
+  AstGrepResult,
+  FeedbackLoopResult,
+  LLMTestingResult,
+  LLMTransformationResult,
+  PatternDiscoveryResult,
+  PatternLearningResult,
+  TemplateEngineResult,
+  ValidationActorResult,
+} from '../types.js';
+
+// Helper function to invoke actors with proper async handling
 async function invokeActor<T>(actorLogic: any, input: any): Promise<T> {
   const actor = createActor(actorLogic, { input });
   actor.start();
-  const snapshot = actor.getSnapshot();
-  return snapshot.output as T;
+
+  return new Promise<T>((resolve, reject) => {
+    let isResolved = false;
+
+    const subscription = actor.subscribe((state) => {
+      if (isResolved) return;
+
+      if (state.status === 'done') {
+        isResolved = true;
+        subscription.unsubscribe();
+        actor.stop();
+        clearTimeout(timeout);
+        resolve(state.output as T);
+      } else if (state.status === 'error') {
+        isResolved = true;
+        subscription.unsubscribe();
+        actor.stop();
+        clearTimeout(timeout);
+        reject(state.error || new Error('Actor execution failed'));
+      }
+    });
+
+    // Add timeout to prevent hanging
+    const timeout = setTimeout(() => {
+      if (!isResolved) {
+        isResolved = true;
+        subscription.unsubscribe();
+        actor.stop();
+        reject(new Error('Actor execution timeout'));
+      }
+    }, 30000); // 30 second timeout
+  });
 }
 
 /**
  * Production-Ready LLM Transformation Pipeline
- * 
+ *
  * This pipeline orchestrates all transformation systems in a production environment:
  * 1. Input validation and preprocessing
  * 2. Pattern discovery and learning
@@ -47,15 +88,17 @@ const ProductionConfigSchema = z.object({
     timeout: z.number().default(30000), // 30 seconds
     retries: z.number().default(3),
   }),
-  
+
   // Transformation Strategy
   strategy: z.object({
-    preferredOrder: z.array(z.enum(['template', 'ast-grep', 'llm'])).default(['template', 'ast-grep', 'llm']),
+    preferredOrder: z
+      .array(z.enum(['template', 'ast-grep', 'llm']))
+      .default(['template', 'ast-grep', 'llm']),
     fallbackEnabled: z.boolean().default(true),
     parallelProcessing: z.boolean().default(false),
     maxConcurrency: z.number().default(3),
   }),
-  
+
   // Quality Assurance
   quality: z.object({
     enableValidation: z.boolean().default(true),
@@ -65,7 +108,7 @@ const ProductionConfigSchema = z.object({
     requireTypeCheck: z.boolean().default(true),
     enableFormatCheck: z.boolean().default(true),
   }),
-  
+
   // Pattern Learning & Discovery
   patterns: z.object({
     enableLearning: z.boolean().default(true),
@@ -74,7 +117,7 @@ const ProductionConfigSchema = z.object({
     maxPatterns: z.number().default(100),
     learningRate: z.number().default(0.1),
   }),
-  
+
   // Feedback & Monitoring
   feedback: z.object({
     enableCollection: z.boolean().default(true),
@@ -82,7 +125,7 @@ const ProductionConfigSchema = z.object({
     reportingInterval: z.number().default(3600000), // 1 hour
     metricsRetention: z.number().default(2592000000), // 30 days
   }),
-  
+
   // Production Settings
   production: z.object({
     enableLogging: z.boolean().default(true),
@@ -107,10 +150,10 @@ const PipelineRequestSchema = z.object({
     maxComplexity: z.number().default(15),
     dryRun: z.boolean().default(false),
   }),
-  
+
   // Pipeline configuration
   config: ProductionConfigSchema,
-  
+
   // Context and metadata
   context: z.object({
     projectType: z.string().default('typescript'),
@@ -180,32 +223,44 @@ export const productionPipelineActor = fromPromise(
   async ({ input }: { input: PipelineRequest }): Promise<PipelineResult> => {
     const startTime = Date.now();
     const transformationId = `transform_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     console.log(`🚀 Starting production pipeline: ${transformationId}`);
-    
+
     try {
       // Validate input
       const validatedInput = PipelineRequestSchema.parse(input);
-      
+
       // Initialize pipeline state
       const pipelineState = {
         transformationId,
         startTime,
         stageTimings: {} as Record<string, number>,
-        errors: [] as Array<{ stage: string; error: string; message: string; severity: 'warning' | 'error' | 'critical'; recoverable: boolean }>,
-        transformationsApplied: [] as Array<{ type: 'template' | 'ast-grep' | 'llm'; patternsUsed: string[]; executionTime: number; success: boolean; confidence: number }>,
+        errors: [] as Array<{
+          stage: string;
+          error: string;
+          message: string;
+          severity: 'warning' | 'error' | 'critical';
+          recoverable: boolean;
+        }>,
+        transformationsApplied: [] as Array<{
+          type: 'template' | 'ast-grep' | 'llm';
+          patternsUsed: string[];
+          executionTime: number;
+          success: boolean;
+          confidence: number;
+        }>,
         filesModified: [] as string[],
       };
-      
+
       // Execute pipeline stages
       const result = await executePipelineStages(validatedInput, pipelineState);
-      
+
       console.log(`✅ Pipeline completed: ${transformationId} in ${Date.now() - startTime}ms`);
-      
+
       return result;
     } catch (error) {
       console.error(`❌ Pipeline failed: ${transformationId}`, error);
-      
+
       return {
         success: false,
         transformationId,
@@ -227,13 +282,15 @@ export const productionPipelineActor = fromPromise(
           automaticScore: 0,
           recommendations: ['Pipeline execution failed - check logs for details'],
         },
-        errors: [{
-          stage: 'initialization',
-          error: error instanceof Error ? error.message : String(error),
-          message: error instanceof Error ? error.message : String(error),
-          severity: 'critical',
-          recoverable: false,
-        }],
+        errors: [
+          {
+            stage: 'initialization',
+            error: error instanceof Error ? error.message : String(error),
+            message: error instanceof Error ? error.message : String(error),
+            severity: 'critical',
+            recoverable: false,
+          },
+        ],
         metadata: {
           timestamp: new Date().toISOString(),
           version: '1.0.0',
@@ -247,10 +304,7 @@ export const productionPipelineActor = fromPromise(
 /**
  * Execute all pipeline stages in sequence
  */
-async function executePipelineStages(
-  input: PipelineRequest,
-  state: any
-): Promise<PipelineResult> {
+async function executePipelineStages(input: PipelineRequest, state: any): Promise<PipelineResult> {
   const stages = [
     { name: 'preprocessing', fn: preprocessingStage },
     { name: 'pattern-discovery', fn: patternDiscoveryStage },
@@ -260,14 +314,14 @@ async function executePipelineStages(
     { name: 'feedback', fn: feedbackStage },
     { name: 'postprocessing', fn: postprocessingStage },
   ];
-  
+
   for (const stage of stages) {
     const stageStart = Date.now();
-    
+
     try {
       console.log(`📋 Executing stage: ${stage.name}`);
       await stage.fn(input, state);
-      
+
       state.stageTimings[stage.name] = Date.now() - stageStart;
       console.log(`✅ Stage completed: ${stage.name} (${state.stageTimings[stage.name]}ms)`);
     } catch (error) {
@@ -278,17 +332,17 @@ async function executePipelineStages(
         severity: 'error' as const,
         recoverable: stage.name !== 'transformation', // Only transformation failures are non-recoverable
       };
-      
+
       state.errors.push(errorInfo);
       console.warn(`⚠️ Stage failed: ${stage.name}`, error);
-      
+
       // Stop pipeline if critical error
       if (!errorInfo.recoverable) {
         break;
       }
     }
   }
-  
+
   // Build final result
   return buildPipelineResult(input, state);
 }
@@ -305,12 +359,12 @@ async function preprocessingStage(input: PipelineRequest, state: any): Promise<v
       throw new Error(`Cannot read file: ${filePath}`);
     }
   }
-  
+
   // Create backup if enabled
   if (input.config.production.backupEnabled && !input.transformationRequest.dryRun) {
     await createBackup(input.files, state.transformationId);
   }
-  
+
   // Initialize metrics collection
   if (input.config.production.enableMetrics) {
     await initializeMetrics(state);
@@ -322,10 +376,10 @@ async function preprocessingStage(input: PipelineRequest, state: any): Promise<v
  */
 async function patternDiscoveryStage(input: PipelineRequest, state: any): Promise<void> {
   if (!input.config.patterns.enableDiscovery) return;
-  
+
   // Discover patterns from current files
   try {
-    const discoveryResult = await invokeActor(patternDiscoveryActor, {
+    const discoveryResult = await invokeActor<PatternDiscoveryResult>(patternDiscoveryActor, {
       operation: 'discover',
       sources: {
         codeFiles: input.files,
@@ -336,24 +390,60 @@ async function patternDiscoveryStage(input: PipelineRequest, state: any): Promis
         maxPatterns: input.config.patterns.maxPatterns,
       },
     });
-    
-    state.discoveredPatterns = (discoveryResult as any)?.patterns || [];
+
+    state.discoveredPatterns = discoveryResult.patterns || [];
+    state.patternDiscoverySummary = discoveryResult.summary;
   } catch (error) {
     console.warn('Pattern discovery failed:', error);
     state.discoveredPatterns = [];
+    state.patternDiscoverySummary = {
+      totalAnalyzed: 0,
+      patternsDiscovered: 0,
+      averageConfidence: 0,
+      categories: [],
+    };
   }
-  
+
   // Update pattern learning if enabled
   if (input.config.patterns.enableLearning) {
-    await invokeActor(patternLearningActor, {
-      operation: 'learn',
-      patterns: state.discoveredPatterns,
-      transformationHistory: [],
-      config: {
-        learningRate: input.config.patterns.learningRate,
-        confidenceThreshold: input.config.patterns.confidenceThreshold,
-      },
-    });
+    try {
+      const learningResult = await invokeActor<PatternLearningResult>(patternLearningActor, {
+        operation: 'learn',
+        patterns: state.discoveredPatterns,
+        transformation: {
+          id: state.transformationId,
+          type: 'discovery',
+          files: input.files,
+          success: true,
+          executionTime: Date.now() - state.startTime,
+          patterns: state.discoveredPatterns,
+        },
+        context: {
+          codebase: {
+            language: input.context.projectType,
+            complexity: 5,
+            size: input.files.length * 100, // Rough estimate
+          },
+        },
+      });
+
+      state.patternLearningResult = learningResult;
+    } catch (error) {
+      console.warn('Pattern learning failed:', error);
+      state.patternLearningResult = {
+        newPatterns: [],
+        optimizedPatterns: [],
+        deprecatedPatterns: [],
+        insights: [],
+        recommendations: [],
+        metrics: {
+          patternsDiscovered: 0,
+          patternsOptimized: 0,
+          averageConfidence: 0,
+          learningTime: 0,
+        },
+      };
+    }
   }
 }
 
@@ -363,36 +453,37 @@ async function patternDiscoveryStage(input: PipelineRequest, state: any): Promis
 async function transformationStage(input: PipelineRequest, state: any): Promise<void> {
   const { strategy } = input.config;
   const { transformationRequest } = input;
-  
+
   // Determine transformation order
-  const transformationOrder = transformationRequest.transformationType === 'auto' 
-    ? strategy.preferredOrder 
-    : [transformationRequest.transformationType as 'template' | 'ast-grep' | 'llm'];
-  
+  const transformationOrder =
+    transformationRequest.transformationType === 'auto'
+      ? strategy.preferredOrder
+      : [transformationRequest.transformationType as 'template' | 'ast-grep' | 'llm'];
+
   let transformationSuccessful = false;
-  
+
   for (const transformationType of transformationOrder) {
     if (transformationSuccessful && !strategy.fallbackEnabled) break;
-    
+
     try {
       const result = await executeTransformation(transformationType, input, state);
-      
+
       if (result.success) {
         state.transformationsApplied.push(result);
         state.filesModified.push(...result.filesModified);
         transformationSuccessful = true;
-        
+
         if (!strategy.fallbackEnabled) break; // Stop after first success if fallback disabled
       }
     } catch (error) {
       console.warn(`Transformation ${transformationType} failed:`, error);
-      
+
       if (!strategy.fallbackEnabled) {
         throw error; // Re-throw if fallback disabled
       }
     }
   }
-  
+
   if (!transformationSuccessful) {
     throw new Error('All transformation methods failed');
   }
@@ -405,58 +496,77 @@ async function executeTransformation(
   type: 'template' | 'ast-grep' | 'llm',
   input: PipelineRequest,
   state: any
-): Promise<any> {
+): Promise<{
+  type: 'template' | 'ast-grep' | 'llm';
+  success: boolean;
+  filesModified: string[];
+  patternsUsed: string[];
+  executionTime: number;
+  confidence: number;
+}> {
   const startTime = Date.now();
-  
+
   switch (type) {
-    case 'template':
-      const templateResult = await invokeActor(templateEngineActor, {
-        operation: 'transform',
-        files: input.files,
+    case 'template': {
+      const templateResult = await invokeActor<TemplateEngineResult>(templateEngineActor, {
+        targetFiles: input.files,
         patterns: state.discoveredPatterns || [],
-        config: {
-          enableSemanticAnalysis: true,
-          enableVariableCapture: true,
-          maxPatternComplexity: 10,
+        options: {
+          dryRun: input.transformationRequest.dryRun,
+          maxComplexity: input.transformationRequest.maxComplexity,
+          enableBatching: true,
+          skipConflicts: true,
+          preserveFormatting: true,
         },
       });
-      
+
       return {
         type: 'template',
-        success: (templateResult as any)?.transformationsApplied > 0 || false,
-        filesModified: (templateResult as any)?.filesModified || [],
-        patternsUsed: (templateResult as any)?.patternsApplied || [],
+        success: templateResult.transformationsApplied > 0,
+        filesModified: templateResult.filesModified,
+        patternsUsed: templateResult.appliedPatterns.map((p) => p.pattern),
         executionTime: Date.now() - startTime,
-        confidence: (templateResult as any)?.averageConfidence || 0.5,
+        confidence: 0.8, // Template transformations are generally reliable
       };
-      
-    case 'ast-grep':
-      const astResult = await invokeActor(astGrepTransformationActor, {
-        operation: 'transform',
-        files: input.files,
+    }
+
+    case 'ast-grep': {
+      const astResult = await invokeActor<AstGrepResult>(astGrepTransformationActor, {
+        targetFiles: input.files,
         patterns: state.discoveredPatterns || [],
-        config: {
-          language: 'typescript',
-          enableVariableExtraction: true,
-          maxMatches: 100,
+        options: {
+          dryRun: input.transformationRequest.dryRun,
+          maxComplexity: input.transformationRequest.maxComplexity,
+          enableBatching: true,
+          skipConflicts: true,
+          preserveFormatting: true,
+          maxMatchesPerPattern: 1000,
         },
       });
-      
+
       return {
         type: 'ast-grep',
-        success: (astResult as any)?.transformationsApplied > 0 || false,
-        filesModified: (astResult as any)?.filesModified || [],
-        patternsUsed: (astResult as any)?.patternsApplied || [],
+        success: astResult.transformationsApplied > 0,
+        filesModified: astResult.filesModified,
+        patternsUsed: astResult.appliedPatterns.map((p) => p.pattern),
         executionTime: Date.now() - startTime,
-        confidence: (astResult as any)?.averageConfidence || 0.5,
+        confidence: 0.9, // AST-based transformations are very reliable
       };
-      
-    case 'llm':
-      const llmResult = await invokeActor(llmTransformationActor, {
+    }
+
+    case 'llm': {
+      const llmResult = await invokeActor<LLMTransformationResult>(llmTransformationActor, {
         files: input.files,
         request: input.transformationRequest,
         context: {
-          complexity: { cyclomaticComplexity: 5, cognitiveComplexity: 3, linesOfCode: 100, nestingDepth: 2, functionCount: 5, classCount: 1 },
+          complexity: {
+            cyclomaticComplexity: 5,
+            cognitiveComplexity: 3,
+            linesOfCode: 100,
+            nestingDepth: 2,
+            functionCount: 5,
+            classCount: 1,
+          },
           patterns: state.discoveredPatterns || [],
           projectType: input.context.projectType,
           framework: input.context.framework,
@@ -470,16 +580,17 @@ async function executeTransformation(
           retries: input.config.llm.retries,
         },
       });
-      
+
       return {
         type: 'llm',
-        success: (llmResult as any)?.filesModified?.length > 0 || false,
-        filesModified: (llmResult as any)?.filesModified || [],
-        patternsUsed: (llmResult as any)?.patternsUsed || [],
+        success: llmResult.filesModified.length > 0,
+        filesModified: llmResult.filesModified,
+        patternsUsed: [], // LLM doesn't use specific patterns
         executionTime: Date.now() - startTime,
-        confidence: (llmResult as any)?.confidence || 0.8,
+        confidence: llmResult.averageConfidence || 0.7,
       };
-      
+    }
+
     default:
       throw new Error(`Unknown transformation type: ${type}`);
   }
@@ -490,44 +601,54 @@ async function executeTransformation(
  */
 async function validationStage(input: PipelineRequest, state: any): Promise<void> {
   if (!input.config.quality.enableValidation) return;
-  
-  const validationTasks = [];
-  
+
+  const validationTasks: Promise<ValidationActorResult>[] = [];
+
   // Type checking
   if (input.config.quality.requireTypeCheck) {
     validationTasks.push(
-      invokeActor(validationActor, {
+      invokeActor<ValidationActorResult>(validationActor, {
         type: 'types',
         files: state.filesModified,
       })
     );
   }
-  
+
   // Format checking
   if (input.config.quality.enableFormatCheck) {
     validationTasks.push(
-      invokeActor(validationActor, {
+      invokeActor<ValidationActorResult>(validationActor, {
         type: 'format',
         files: state.filesModified,
       })
     );
   }
-  
+
   // Quality checking
   validationTasks.push(
-    invokeActor(validationActor, {
+    invokeActor<ValidationActorResult>(validationActor, {
       type: 'quality',
       files: state.filesModified,
     })
   );
-  
+
   const validationResults = await Promise.all(validationTasks);
-  
+
   // Aggregate validation results
   state.validationResults = {
-    typeErrors: validationResults.reduce((sum: number, r: any) => sum + (r.errors?.length || 0), 0),
-    formatIssues: validationResults.reduce((sum: number, r: any) => sum + (r.warnings?.length || 0), 0),
-    qualityIssues: validationResults.reduce((sum: number, r: any) => sum + (r.errors?.length || 0) + (r.warnings?.length || 0), 0),
+    typeErrors: validationResults.reduce(
+      (sum: number, r: ValidationActorResult) => sum + (r.errors?.length || 0),
+      0
+    ),
+    formatIssues: validationResults.reduce(
+      (sum: number, r: ValidationActorResult) => sum + (r.warnings?.length || 0),
+      0
+    ),
+    qualityIssues: validationResults.reduce(
+      (sum: number, r: ValidationActorResult) =>
+        sum + (r.errors?.length || 0) + (r.warnings?.length || 0),
+      0
+    ),
   };
 }
 
@@ -536,42 +657,51 @@ async function validationStage(input: PipelineRequest, state: any): Promise<void
  */
 async function testingStage(input: PipelineRequest, state: any): Promise<void> {
   if (!input.config.quality.enableTesting) return;
-  
-  const testResult = await invokeActor(llmTestingFrameworkActor, {
-    operation: 'execute',
-    files: state.filesModified,
-    tests: [
-      {
-        type: 'syntax',
-        description: 'Verify syntax correctness',
-        assertion: 'no_syntax_errors',
-        expectedValue: true,
+
+  try {
+    const testResult = await invokeActor<LLMTestingResult>(llmTestingFrameworkActor, {
+      operation: 'execute',
+      files: state.filesModified,
+      tests: [
+        {
+          type: 'syntax',
+          description: 'Verify syntax correctness',
+          assertion: 'no_syntax_errors',
+          expectedValue: true,
+        },
+        {
+          type: 'functionality',
+          description: 'Verify functionality preservation',
+          assertion: 'functionality_preserved',
+          expectedValue: true,
+        },
+        {
+          type: 'performance',
+          description: 'Verify performance impact',
+          assertion: 'performance_acceptable',
+          expectedValue: true,
+        },
+      ],
+      config: {
+        timeout: 30000,
+        retries: 2,
+        parallel: false,
       },
-      {
-        type: 'functionality',
-        description: 'Verify functionality preservation',
-        assertion: 'functionality_preserved',
-        expectedValue: true,
-      },
-      {
-        type: 'performance',
-        description: 'Verify performance impact',
-        assertion: 'performance_acceptable',
-        expectedValue: true,
-      },
-    ],
-    config: {
-      timeout: 30000,
-      retries: 2,
-      parallel: false,
-    },
-  });
-  
-  state.testResults = {
-    passed: (testResult as any).suiteResults?.filter((r: any) => r.passed).length || 0,
-    failed: (testResult as any).suiteResults?.filter((r: any) => !r.passed).length || 0,
-    coverage: (testResult as any).summary?.coverage || 0,
-  };
+    });
+
+    state.testResults = {
+      passed: testResult.suiteResults?.filter((r) => r.passed).length || 0,
+      failed: testResult.suiteResults?.filter((r) => !r.passed).length || 0,
+      coverage: testResult.summary?.coverage || 0,
+    };
+  } catch (error) {
+    console.warn('Testing stage failed:', error);
+    state.testResults = {
+      passed: 0,
+      failed: 1,
+      coverage: 0,
+    };
+  }
 }
 
 /**
@@ -579,10 +709,10 @@ async function testingStage(input: PipelineRequest, state: any): Promise<void> {
  */
 async function feedbackStage(input: PipelineRequest, state: any): Promise<void> {
   if (!input.config.feedback.enableCollection) return;
-  
+
   // Calculate automatic feedback score
   const automaticScore = calculateAutomaticScore(state);
-  
+
   // Collect feedback data
   const feedbackData = {
     patternId: state.transformationsApplied[0]?.patternsUsed[0] || 'unknown',
@@ -598,26 +728,38 @@ async function feedbackStage(input: PipelineRequest, state: any): Promise<void> 
     },
     timestamp: new Date().toISOString(),
   };
-  
+
   // Submit feedback to feedback loop
-  await invokeActor(feedbackLoopActor, {
-    operation: 'collect',
-    feedbackData: [feedbackData],
-    analysisConfig: {
-      timeWindow: 7,
-      minSampleSize: 10,
-      confidenceThreshold: 0.7,
-      performanceThreshold: 0.8,
-    },
-    optimizationConfig: {
-      learningRate: input.config.patterns.learningRate,
-      decayFactor: 0.95,
-      adaptationSpeed: 'medium',
-      enableAutoRemoval: true,
-    },
-  });
-  
-  state.feedbackScore = automaticScore;
+  try {
+    const feedbackResult = await invokeActor<FeedbackLoopResult>(feedbackLoopActor, {
+      operation: 'collect',
+      feedbackData: [feedbackData],
+      analysisConfig: {
+        timeWindow: 7,
+        minSampleSize: 10,
+        confidenceThreshold: 0.7,
+        performanceThreshold: 0.8,
+      },
+      optimizationConfig: {
+        learningRate: input.config.patterns.learningRate,
+        decayFactor: 0.95,
+        adaptationSpeed: 'medium',
+        enableAutoRemoval: true,
+      },
+    });
+
+    state.feedbackResult = feedbackResult;
+    state.feedbackScore = automaticScore;
+  } catch (error) {
+    console.warn('Feedback collection failed:', error);
+    state.feedbackScore = automaticScore;
+    state.feedbackResult = {
+      operation: 'collect' as const,
+      feedbackProcessed: 0,
+      insights: [],
+      recommendations: [],
+    };
+  }
 }
 
 /**
@@ -626,17 +768,21 @@ async function feedbackStage(input: PipelineRequest, state: any): Promise<void> 
 async function postprocessingStage(input: PipelineRequest, state: any): Promise<void> {
   // Apply final formatting if needed
   if (input.config.quality.enableFormatCheck && !input.transformationRequest.dryRun) {
-    await invokeActor(validationActor, {
-      type: 'formatFix',
-      files: state.filesModified,
-    });
+    try {
+      await invokeActor<ValidationActorResult>(validationActor, {
+        type: 'formatFix',
+        files: state.filesModified,
+      });
+    } catch (error) {
+      console.warn('Format fixing failed:', error);
+    }
   }
-  
+
   // Generate documentation if needed
   if (input.config.production.enableLogging) {
     await generateTransformationReport(input, state);
   }
-  
+
   // Cleanup temporary files
   await cleanupTemporaryFiles(state);
 }
@@ -648,7 +794,7 @@ async function postprocessingStage(input: PipelineRequest, state: any): Promise<
 async function createBackup(files: string[], transformationId: string): Promise<void> {
   const backupDir = join(process.cwd(), '.carmack-backups', transformationId);
   await mkdir(backupDir, { recursive: true });
-  
+
   for (const filePath of files) {
     const content = await readFile(filePath, 'utf-8');
     const backupPath = join(backupDir, filePath.replace(/[/\\]/g, '_'));
@@ -665,17 +811,17 @@ async function initializeMetrics(state: any): Promise<void> {
 
 function calculateAutomaticScore(state: any): number {
   let score = 0.5; // Base score
-  
+
   // Success bonus
   if (state.transformationsApplied.some((t: any) => t.success)) score += 0.3;
-  
+
   // Quality bonus
   if (state.validationResults?.typeErrors === 0) score += 0.1;
   if (state.validationResults?.formatIssues === 0) score += 0.05;
-  
+
   // Test bonus
   if (state.testResults?.failed === 0) score += 0.05;
-  
+
   return Math.min(1.0, score);
 }
 
@@ -683,7 +829,7 @@ function calculateQualityImprovement(state: any): number {
   // Simplified quality improvement calculation
   const errorReduction = (state.validationResults?.typeErrors || 0) === 0 ? 0.2 : -0.1;
   const testSuccess = (state.testResults?.passed || 0) > 0 ? 0.1 : -0.1;
-  
+
   return Math.max(-1, Math.min(1, errorReduction + testSuccess));
 }
 
@@ -705,7 +851,7 @@ async function generateTransformationReport(input: PipelineRequest, state: any):
     testing: state.testResults,
     errors: state.errors,
   };
-  
+
   const reportPath = join(process.cwd(), '.carmack-reports', `${state.transformationId}.json`);
   await mkdir(dirname(reportPath), { recursive: true });
   await writeFile(reportPath, JSON.stringify(report, null, 2));
@@ -718,7 +864,9 @@ async function cleanupTemporaryFiles(_state: any): Promise<void> {
 
 function buildPipelineResult(_input: PipelineRequest, state: any): PipelineResult {
   return {
-    success: state.transformationsApplied.some((t: any) => t.success) && state.errors.filter((e: any) => e.severity === 'critical').length === 0,
+    success:
+      state.transformationsApplied.some((t: any) => t.success) &&
+      state.errors.filter((e: any) => e.severity === 'critical').length === 0,
     transformationId: state.transformationId,
     filesModified: state.filesModified,
     transformationsApplied: state.transformationsApplied,
@@ -752,19 +900,21 @@ function buildPipelineResult(_input: PipelineRequest, state: any): PipelineResul
 
 function generateRecommendations(state: any): string[] {
   const recommendations: string[] = [];
-  
+
   if (state.validationResults?.typeErrors > 0) {
     recommendations.push('Consider fixing remaining type errors for better code quality');
   }
-  
+
   if (state.testResults?.failed > 0) {
     recommendations.push('Some tests failed - review transformation results');
   }
-  
+
   if (state.transformationsApplied.length === 0) {
-    recommendations.push('No transformations were applied - consider adjusting patterns or prompts');
+    recommendations.push(
+      'No transformations were applied - consider adjusting patterns or prompts'
+    );
   }
-  
+
   return recommendations;
 }
 

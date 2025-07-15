@@ -3,18 +3,13 @@ import { z } from 'zod';
 // Documentation generation types and schemas
 export const DocumentationTypeSchema = z.enum([
   'api',
-  'architecture', 
+  'architecture',
   'patterns',
   'usage',
-  'changelog'
+  'changelog',
 ]);
 
-export const DocumentationFormatSchema = z.enum([
-  'markdown',
-  'html',
-  'json',
-  'yaml'
-]);
+export const DocumentationFormatSchema = z.enum(['markdown', 'html', 'json', 'yaml']);
 
 // AST node information - using simpler recursive approach
 export const ASTNodeSchema = z.object({
@@ -33,12 +28,14 @@ export const FunctionDocSchema = z.object({
   name: z.string(),
   signature: z.string(),
   description: z.string().optional(),
-  parameters: z.array(z.object({
-    name: z.string(),
-    type: z.string(),
-    description: z.string().optional(),
-    optional: z.boolean().default(false),
-  })),
+  parameters: z.array(
+    z.object({
+      name: z.string(),
+      type: z.string(),
+      description: z.string().optional(),
+      optional: z.boolean().default(false),
+    })
+  ),
   returnType: z.string().optional(),
   returnDescription: z.string().optional(),
   examples: z.array(z.string()).optional(),
@@ -54,13 +51,15 @@ export const ClassDocSchema = z.object({
   name: z.string(),
   description: z.string().optional(),
   type: z.enum(['class', 'interface', 'type']),
-  properties: z.array(z.object({
-    name: z.string(),
-    type: z.string(),
-    description: z.string().optional(),
-    optional: z.boolean().default(false),
-    readonly: z.boolean().default(false),
-  })),
+  properties: z.array(
+    z.object({
+      name: z.string(),
+      type: z.string(),
+      description: z.string().optional(),
+      optional: z.boolean().default(false),
+      readonly: z.boolean().default(false),
+    })
+  ),
   methods: z.array(FunctionDocSchema),
   extends: z.string().optional(),
   implements: z.array(z.string()).optional(),
@@ -78,18 +77,22 @@ export const ModuleDocSchema = z.object({
     functions: z.array(FunctionDocSchema),
     classes: z.array(ClassDocSchema),
     types: z.array(z.string()),
-    constants: z.array(z.object({
-      name: z.string(),
-      type: z.string(),
-      value: z.string().optional(),
-      description: z.string().optional(),
-    })),
+    constants: z.array(
+      z.object({
+        name: z.string(),
+        type: z.string(),
+        value: z.string().optional(),
+        description: z.string().optional(),
+      })
+    ),
   }),
-  imports: z.array(z.object({
-    module: z.string(),
-    imports: z.array(z.string()),
-    isTypeOnly: z.boolean().default(false),
-  })),
+  imports: z.array(
+    z.object({
+      module: z.string(),
+      imports: z.array(z.string()),
+      isTypeOnly: z.boolean().default(false),
+    })
+  ),
   dependencies: z.array(z.string()),
 });
 
@@ -103,40 +106,50 @@ export const PatternDocSchema = z.object({
   riskLevel: z.enum(['low', 'medium', 'high']),
   pattern: z.string(),
   replacement: z.string(),
-  examples: z.array(z.object({
-    before: z.string(),
-    after: z.string(),
-    description: z.string(),
-  })),
+  examples: z.array(
+    z.object({
+      before: z.string(),
+      after: z.string(),
+      description: z.string(),
+    })
+  ),
   relatedPatterns: z.array(z.string()).optional(),
-  performance: z.object({
-    priority: z.number(),
-    batchable: z.boolean(),
-  }).optional(),
+  performance: z
+    .object({
+      priority: z.number(),
+      batchable: z.boolean(),
+    })
+    .optional(),
 });
 
 // Architecture documentation
 export const ArchitectureDocSchema = z.object({
-  components: z.array(z.object({
-    name: z.string(),
-    type: z.enum(['actor', 'utility', 'type', 'pattern', 'config']),
-    description: z.string(),
-    filePath: z.string(),
-    dependencies: z.array(z.string()),
-    dependents: z.array(z.string()),
-    complexity: z.number().optional(),
-  })),
-  dataFlow: z.array(z.object({
-    from: z.string(),
-    to: z.string(),
-    type: z.enum(['function_call', 'event', 'data_flow', 'inheritance']),
-    description: z.string().optional(),
-  })),
-  layers: z.array(z.object({
-    name: z.string(),
-    components: z.array(z.string()),
-    description: z.string(),
-  })),
+  components: z.array(
+    z.object({
+      name: z.string(),
+      type: z.enum(['actor', 'utility', 'type', 'pattern', 'config']),
+      description: z.string(),
+      filePath: z.string(),
+      dependencies: z.array(z.string()),
+      dependents: z.array(z.string()),
+      complexity: z.number().optional(),
+    })
+  ),
+  dataFlow: z.array(
+    z.object({
+      from: z.string(),
+      to: z.string(),
+      type: z.enum(['function_call', 'event', 'data_flow', 'inheritance']),
+      description: z.string().optional(),
+    })
+  ),
+  layers: z.array(
+    z.object({
+      name: z.string(),
+      components: z.array(z.string()),
+      description: z.string(),
+    })
+  ),
 });
 
 // Documentation generation request

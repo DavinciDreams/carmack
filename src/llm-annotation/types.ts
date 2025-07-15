@@ -35,11 +35,13 @@ export const ArchitecturalAnnotationSchema = z.object({
   type: z.enum(['module', 'class', 'function', 'interface', 'service', 'utility']),
   role: z.string(),
   responsibilities: z.array(z.string()),
-  relationships: z.array(z.object({
-    target: z.string(),
-    type: z.enum(['depends-on', 'implements', 'extends', 'uses', 'provides']),
-    strength: z.enum(['weak', 'medium', 'strong']),
-  })),
+  relationships: z.array(
+    z.object({
+      target: z.string(),
+      type: z.enum(['depends-on', 'implements', 'extends', 'uses', 'provides']),
+      strength: z.enum(['weak', 'medium', 'strong']),
+    })
+  ),
   qualityMetrics: z.object({
     cohesion: z.number().min(0).max(1),
     coupling: z.number().min(0).max(1),
@@ -65,11 +67,13 @@ export const TransformationOpportunitySchema = z.object({
   risk: z.enum(['low', 'medium', 'high']),
   benefits: z.array(z.string()),
   prerequisites: z.array(z.string()).optional(),
-  steps: z.array(z.object({
-    description: z.string(),
-    automated: z.boolean(),
-    validation: z.string(),
-  })),
+  steps: z.array(
+    z.object({
+      description: z.string(),
+      automated: z.boolean(),
+      validation: z.string(),
+    })
+  ),
   estimatedImpact: z.object({
     performance: z.number().optional(),
     maintainability: z.number().optional(),
@@ -123,7 +127,9 @@ export const AnnotationRequestSchema = z.object({
   includePatterns: z.array(z.string()).default(['**/*.ts', '**/*.js']),
   excludePatterns: z.array(z.string()).default(['node_modules/**', '**/*.test.*']),
   analysisDepth: z.enum(['surface', 'detailed', 'comprehensive']).default('detailed'),
-  focusAreas: z.array(z.enum(['patterns', 'architecture', 'performance', 'security', 'maintainability'])).optional(),
+  focusAreas: z
+    .array(z.enum(['patterns', 'architecture', 'performance', 'security', 'maintainability']))
+    .optional(),
   outputFormat: z.enum(['json', 'markdown', 'yaml']).default('json'),
   includePrompts: z.boolean().default(true),
 });

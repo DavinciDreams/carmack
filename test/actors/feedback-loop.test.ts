@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach } from 'bun:test';
+import { beforeEach, describe, expect, it } from 'bun:test';
 import { createActor } from 'xstate';
+import type { FeedbackData, FeedbackLoopRequest } from '../../src/actors/feedback-loop';
 import { feedbackLoopActor } from '../../src/actors/feedback-loop';
-import type { FeedbackLoopRequest, FeedbackData } from '../../src/actors/feedback-loop';
 
 // Helper function to create sample feedback data
 function createSampleFeedback(overrides: Partial<FeedbackData> = {}): FeedbackData {
@@ -43,12 +43,14 @@ function createDefaultConfigs() {
 }
 
 // Helper function to invoke feedback loop actor
-async function invokeFeedbackLoop(request: Partial<FeedbackLoopRequest> & { operation: FeedbackLoopRequest['operation'] }) {
+async function invokeFeedbackLoop(
+  request: Partial<FeedbackLoopRequest> & { operation: FeedbackLoopRequest['operation'] }
+) {
   const fullRequest: FeedbackLoopRequest = {
     ...createDefaultConfigs(),
     ...request,
   };
-  
+
   const actor = createActor(feedbackLoopActor, { input: fullRequest });
   actor.start();
   const snapshot = actor.getSnapshot();
@@ -127,7 +129,7 @@ describe('Feedback Loop Actor', () => {
   describe('Feedback Analysis', () => {
     it('should analyze pattern performance', async () => {
       // First collect some feedback
-      const feedbackData = Array.from({ length: 15 }, (_, i) => 
+      const feedbackData = Array.from({ length: 15 }, (_, i) =>
         createSampleFeedback({
           patternId: 'pattern-1',
           success: i < 12, // 80% success rate
@@ -200,10 +202,14 @@ describe('Feedback Loop Actor', () => {
       if (result && result.operation === 'analyze') {
         expect(result.analysis.highPerformers.length).toBeGreaterThan(0);
         expect(result.analysis.underperformers.length).toBeGreaterThan(0);
-        
-        const highPerformer = result.analysis.highPerformers.find(p => p.patternId === 'high-performer');
-        const underperformer = result.analysis.underperformers.find(p => p.patternId === 'underperformer');
-        
+
+        const highPerformer = result.analysis.highPerformers.find(
+          (p) => p.patternId === 'high-performer'
+        );
+        const underperformer = result.analysis.underperformers.find(
+          (p) => p.patternId === 'underperformer'
+        );
+
         expect(highPerformer).toBeDefined();
         expect(underperformer).toBeDefined();
       }
@@ -235,7 +241,9 @@ describe('Feedback Loop Actor', () => {
       });
 
       if (result && result.operation === 'analyze') {
-        const improvingPattern = result.patternMetrics.find(p => p.patternId === 'improving-pattern');
+        const improvingPattern = result.patternMetrics.find(
+          (p) => p.patternId === 'improving-pattern'
+        );
         expect(improvingPattern?.trendDirection).toBe('improving');
       }
     });
@@ -320,21 +328,42 @@ describe('Feedback Loop Actor', () => {
     it('should generate comprehensive performance report', async () => {
       // Create diverse feedback data
       const feedbackData = [
-        ...Array.from({ length: 10 }, () => createSampleFeedback({
-          patternId: 'ts-pattern',
-          success: true,
-          context: { fileType: 'typescript', codeSize: 1000, complexity: 3, language: 'typescript' },
-        })),
-        ...Array.from({ length: 8 }, () => createSampleFeedback({
-          patternId: 'js-pattern',
-          success: true,
-          context: { fileType: 'javascript', codeSize: 500, complexity: 2, language: 'javascript' },
-        })),
-        ...Array.from({ length: 5 }, () => createSampleFeedback({
-          patternId: 'failing-pattern',
-          success: false,
-          context: { fileType: 'typescript', codeSize: 2000, complexity: 5, language: 'typescript' },
-        })),
+        ...Array.from({ length: 10 }, () =>
+          createSampleFeedback({
+            patternId: 'ts-pattern',
+            success: true,
+            context: {
+              fileType: 'typescript',
+              codeSize: 1000,
+              complexity: 3,
+              language: 'typescript',
+            },
+          })
+        ),
+        ...Array.from({ length: 8 }, () =>
+          createSampleFeedback({
+            patternId: 'js-pattern',
+            success: true,
+            context: {
+              fileType: 'javascript',
+              codeSize: 500,
+              complexity: 2,
+              language: 'javascript',
+            },
+          })
+        ),
+        ...Array.from({ length: 5 }, () =>
+          createSampleFeedback({
+            patternId: 'failing-pattern',
+            success: false,
+            context: {
+              fileType: 'typescript',
+              codeSize: 2000,
+              complexity: 5,
+              language: 'typescript',
+            },
+          })
+        ),
       ];
 
       await invokeFeedbackLoop({
@@ -351,7 +380,7 @@ describe('Feedback Loop Actor', () => {
         expect(result.status).toBe('success');
         expect(result.overallMetrics).toBeDefined();
         expect(result.overallMetrics.totalTransformations).toBe(23);
-        expect(result.overallMetrics.overallSuccessRate).toBeCloseTo(18/23);
+        expect(result.overallMetrics.overallSuccessRate).toBeCloseTo(18 / 23);
         expect(result.performanceBreakdown.byLanguage).toBeDefined();
         expect(result.performanceBreakdown.byFileType).toBeDefined();
         expect(result.trendAnalysis).toBeDefined();
@@ -365,7 +394,12 @@ describe('Feedback Loop Actor', () => {
       const feedbackData = [
         createSampleFeedback({
           success: true,
-          context: { fileType: 'typescript', codeSize: 1000, complexity: 3, language: 'typescript' },
+          context: {
+            fileType: 'typescript',
+            codeSize: 1000,
+            complexity: 3,
+            language: 'typescript',
+          },
         }),
         createSampleFeedback({
           success: false,

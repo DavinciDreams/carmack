@@ -2,7 +2,7 @@
 
 import { createActor } from 'xstate';
 import { carmackCoderMachine } from './src/machine.js';
-import type { TransformationRequest, TransformationMode } from './src/types.js';
+import type { TransformationMode, TransformationRequest } from './src/types.js';
 import { loadPatterns } from './src/utils/index.js';
 
 /**
@@ -46,11 +46,11 @@ function parseCliArgs(): CliOptions {
 
     switch (arg) {
       case '--mode':
-      case '-m':
+      case '-m': {
         i++;
         const modeArg = args[i];
         if (!modeArg) {
-          console.error(`❌ Mode option requires a value`);
+          console.error('❌ Mode option requires a value');
           process.exit(1);
         }
         const mode = modeArg as TransformationMode;
@@ -61,22 +61,24 @@ function parseCliArgs(): CliOptions {
           process.exit(1);
         }
         break;
+      }
 
       case '--complexity':
-      case '-c':
+      case '-c': {
         i++;
         const complexityArg = args[i];
         if (!complexityArg) {
-          console.error(`❌ Complexity option requires a value`);
+          console.error('❌ Complexity option requires a value');
           process.exit(1);
         }
-        const complexity = parseInt(complexityArg, 10);
+        const complexity = Number.parseInt(complexityArg, 10);
         if (isNaN(complexity) || complexity < 1) {
           console.error(`❌ Invalid complexity: ${complexityArg}. Must be a positive number.`);
           process.exit(1);
         }
         options.maxComplexity = complexity;
         break;
+      }
 
       case '--dry-run':
       case '-d':

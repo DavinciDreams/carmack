@@ -3,11 +3,11 @@
  * Validates telemetry system performance, accuracy, and reliability across multiple scenarios
  */
 
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
-import { TelemetryCollector, initializeTelemetry } from '../src/telemetry/collector.js';
-import { createTransformationTelemetry } from '../src/telemetry/integration.js';
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { randomUUID } from 'crypto';
 import { performance } from 'perf_hooks';
+import { initializeTelemetry, type TelemetryCollector } from '../src/telemetry/collector.js';
+import { createTransformationTelemetry } from '../src/telemetry/integration.js';
 
 /**
  * Test helper for generating realistic code samples
@@ -35,7 +35,7 @@ console.log('Result:', result);
    * Generate medium file sample (100-1000 lines)
    */
   static generateMediumFile(): string {
-    const baseCode = this.generateSmallFile();
+    const baseCode = CodeSampleGenerator.generateSmallFile();
     const functionTemplate = `
 function processData${Math.floor(Math.random() * 1000)}(input: any[]): any[] {
   const result = [];
@@ -65,7 +65,7 @@ function processData${Math.floor(Math.random() * 1000)}(input: any[]): any[] {
    * Generate large file sample (>1000 lines)
    */
   static generateLargeFile(): string {
-    const mediumCode = this.generateMediumFile();
+    const mediumCode = CodeSampleGenerator.generateMediumFile();
     const classTemplate = `
 class DataProcessor${Math.floor(Math.random() * 1000)} {
   private data: any[] = [];

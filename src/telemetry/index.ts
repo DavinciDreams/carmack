@@ -4,36 +4,36 @@
  */
 
 // Core telemetry system
-export { TelemetryCollector, getTelemetryCollector, initializeTelemetry } from './collector.js';
+export { getTelemetryCollector, initializeTelemetry, TelemetryCollector } from './collector.js';
 
 // Integration helpers
 export {
-  createTransformationTelemetry,
-  PerformanceTimer,
-  MemoryTracker,
   CacheMonitor,
+  createTransformationTelemetry,
+  MemoryTracker,
+  PerformanceTimer,
   QualityAnalyzer,
   TransformationTelemetry,
 } from './integration.js';
 
 // Type definitions
 export type {
-  TelemetryMetric,
-  TelemetryConfig,
-  PatternSuccessMetric,
-  SemanticCorrectnessMetric,
+  CacheEfficiencyMetric,
   CodeQualityDelta,
+  ErrorRecoveryMetric,
   LatencyMetric,
   MemoryProfileMetric,
-  CacheEfficiencyMetric,
   ModeSelectionMetric,
-  ErrorRecoveryMetric,
-  ProductivityMetric,
   PatternAdoptionMetric,
-  TransformationMode,
+  PatternSuccessMetric,
   PipelineStages,
+  ProductivityMetric,
   QualityMetrics,
+  SemanticCorrectnessMetric,
+  TelemetryConfig,
   TelemetryEventBase,
+  TelemetryMetric,
+  TransformationMode,
 } from './types.js';
 
 /**

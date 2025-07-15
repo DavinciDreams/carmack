@@ -1,20 +1,20 @@
 /**
  * Comprehensive tests for the Analysis Actor
- * 
+ *
  * Tests complexity analysis, mode recommendation, learning capabilities,
  * and summarization functionality of the analysis actor.
  */
 
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
-import { analysisActor } from '../../src/actors/analysis.js';
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import type { AnalysisResult } from '../../src/actors/analysis.js';
+import { analysisActor } from '../../src/actors/analysis.js';
 import {
-  MockDataGenerator,
-  CodeSampleGenerator,
-  TestAssertions,
-  FileTestUtils,
-  PerformanceTestUtils,
   ActorTestUtils,
+  CodeSampleGenerator,
+  FileTestUtils,
+  MockDataGenerator,
+  PerformanceTestUtils,
+  TestAssertions,
 } from '../test-helpers.js';
 
 describe('Analysis Actor', () => {
@@ -40,10 +40,10 @@ describe('Analysis Actor', () => {
         request: MockDataGenerator.createTransformationRequest(),
       };
 
-      const result = await ActorTestUtils.testActorWithTimeout(
+      const result = (await ActorTestUtils.testActorWithTimeout(
         analysisActor,
         input
-      ) as AnalysisResult;
+      )) as AnalysisResult;
 
       // Validate result structure
       expect(result).toBeDefined();
@@ -79,10 +79,10 @@ describe('Analysis Actor', () => {
         request: MockDataGenerator.createTransformationRequest(),
       };
 
-      const result = await ActorTestUtils.testActorWithTimeout(
+      const result = (await ActorTestUtils.testActorWithTimeout(
         analysisActor,
         input
-      ) as AnalysisResult;
+      )) as AnalysisResult;
 
       expect(result.complexity).toBeDefined();
       if (result.complexity) {
@@ -201,10 +201,10 @@ const arrow = () => 4;
       const input = {
         files: [tempFile],
         patterns: [
-          MockDataGenerator.createAstPattern({ 
-            complexity: 1, 
+          MockDataGenerator.createAstPattern({
+            complexity: 1,
             riskLevel: 'low',
-            mode: 'template' 
+            mode: 'template',
           }),
         ],
         request: MockDataGenerator.createTransformationRequest(),
@@ -227,10 +227,10 @@ const arrow = () => 4;
       const input = {
         files: [tempFile],
         patterns: [
-          MockDataGenerator.createAstPattern({ 
-            complexity: 3, 
+          MockDataGenerator.createAstPattern({
+            complexity: 3,
             riskLevel: 'medium',
-            mode: 'ast' 
+            mode: 'ast',
           }),
         ],
         request: MockDataGenerator.createTransformationRequest(),
@@ -381,10 +381,7 @@ const arrow = () => 4;
 
       const input = {
         files,
-        patterns: [
-          MockDataGenerator.createAstPattern(),
-          MockDataGenerator.createAstPattern(),
-        ],
+        patterns: [MockDataGenerator.createAstPattern(), MockDataGenerator.createAstPattern()],
         request: MockDataGenerator.createTransformationRequest(),
       };
 
@@ -443,16 +440,13 @@ const arrow = () => 4;
       };
 
       // Test with very short timeout to ensure timeout mechanism works
-      const error = await ActorTestUtils.testActorError(
-        async (input) => {
-          return await ActorTestUtils.testActorWithTimeout(
-            analysisActor,
-            input,
-            1 // 1ms timeout - should definitely timeout
-          );
-        },
-        ActorTestUtils.createActorInput(input)
-      );
+      const error = await ActorTestUtils.testActorError(async (input) => {
+        return await ActorTestUtils.testActorWithTimeout(
+          analysisActor,
+          input,
+          1 // 1ms timeout - should definitely timeout
+        );
+      }, ActorTestUtils.createActorInput(input));
 
       expect(error).toBeDefined();
       expect(error?.message).toContain('timeout');

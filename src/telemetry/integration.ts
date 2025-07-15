@@ -3,13 +3,13 @@
  * Provides comprehensive observability without impacting transformation performance
  */
 
-import { performance } from 'perf_hooks';
 import { createHash } from 'crypto';
+import { performance } from 'perf_hooks';
 import { getTelemetryCollector } from './collector.js';
 import type {
-  TransformationMode,
   PipelineStages,
   QualityMetrics,
+  TransformationMode,
   // CodeQualityDelta,
 
 } from './types.js';
@@ -81,7 +81,7 @@ export class MemoryTracker {
    * Start memory tracking with periodic sampling
    * @param intervalMs - Sampling interval in milliseconds
    */
-  start(intervalMs: number = 100): void {
+  start(intervalMs = 100): void {
     if (this.isTracking) return;
 
     this.isTracking = true;
@@ -534,7 +534,7 @@ export class TransformationTelemetry {
   async completeTransformation(
     transformedCode: string,
     patternsApplied: number,
-    cacheHit: boolean = false
+    cacheHit = false
   ): Promise<void> {
     /** Complete final timing */
     this.timer.end('serialization');

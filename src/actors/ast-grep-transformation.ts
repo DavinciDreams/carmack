@@ -1,14 +1,14 @@
+import { readFile, writeFile } from 'node:fs/promises';
+import { js, type SgNode, type SgRoot, ts } from '@ast-grep/napi';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
-import { js, ts, type SgNode, type SgRoot } from '@ast-grep/napi';
-import { readFile, writeFile } from 'node:fs/promises';
 
 /**
  * Enhanced AST-grep Transformation Engine
- * 
+ *
  * This engine provides the second tier in our speed hierarchy:
  * Template → **AST** → LLM
- * 
+ *
  * Features:
  * - True syntax tree-based pattern matching using AST-grep
  * - Semantic-aware transformations that understand code structure
@@ -22,7 +22,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 const AstGrepPatternSchema = z.object({
   id: z.string(),
   language: z.enum(['typescript', 'javascript']),
-  
+
   // AST-grep pattern configuration
   pattern: z.object({
     // AST-grep pattern syntax
@@ -30,82 +30,117 @@ const AstGrepPatternSchema = z.object({
       pattern: z.string().optional(),
       kind: z.string().optional(),
       regex: z.string().optional(),
-      inside: z.object({
-        pattern: z.string().optional(),
-        kind: z.string().optional(),
-      }).optional(),
-      has: z.object({
-        pattern: z.string().optional(),
-        kind: z.string().optional(),
-      }).optional(),
-      follows: z.object({
-        pattern: z.string().optional(),
-        kind: z.string().optional(),
-      }).optional(),
-      precedes: z.object({
-        pattern: z.string().optional(),
-        kind: z.string().optional(),
-      }).optional(),
+      inside: z
+        .object({
+          pattern: z.string().optional(),
+          kind: z.string().optional(),
+        })
+        .optional(),
+      has: z
+        .object({
+          pattern: z.string().optional(),
+          kind: z.string().optional(),
+        })
+        .optional(),
+      follows: z
+        .object({
+          pattern: z.string().optional(),
+          kind: z.string().optional(),
+        })
+        .optional(),
+      precedes: z
+        .object({
+          pattern: z.string().optional(),
+          kind: z.string().optional(),
+        })
+        .optional(),
       all: z.array(z.any()).optional(),
       any: z.array(z.any()).optional(),
       not: z.any().optional(),
     }),
     // Variable constraints
-    constraints: z.record(z.object({
-      regex: z.string().optional(),
-      kind: z.string().optional(),
-    })).optional(),
+    constraints: z
+      .record(
+        z.object({
+          regex: z.string().optional(),
+          kind: z.string().optional(),
+        })
+      )
+      .optional(),
   }),
-  
+
   // Transformation specification
   replacement: z.object({
     // Replacement template with AST-grep variables
     template: z.string(),
     // Post-processing transformations
-    transformers: z.record(z.enum([
-      'camelCase', 'pascalCase', 'kebabCase', 'snakeCase',
-      'uppercase', 'lowercase', 'trim', 'escape'
-    ])).optional(),
+    transformers: z
+      .record(
+        z.enum([
+          'camelCase',
+          'pascalCase',
+          'kebabCase',
+          'snakeCase',
+          'uppercase',
+          'lowercase',
+          'trim',
+          'escape',
+        ])
+      )
+      .optional(),
     // Conditional replacements
-    conditions: z.array(z.object({
-      when: z.string(), // AST-grep condition
-      then: z.string(), // Replacement template
-    })).optional(),
+    conditions: z
+      .array(
+        z.object({
+          when: z.string(), // AST-grep condition
+          then: z.string(), // Replacement template
+        })
+      )
+      .optional(),
   }),
-  
+
   // Metadata
   description: z.string(),
   complexity: z.number().min(1).max(10),
   riskLevel: z.enum(['low', 'medium', 'high']),
   category: z.string(),
-  
+
   // Performance configuration
-  performance: z.object({
-    priority: z.number().min(1).max(10).default(5),
-    batchable: z.boolean().default(true),
-    conflicts: z.array(z.string()).optional(),
-    maxMatches: z.number().optional(),
-  }).optional(),
-  
+  performance: z
+    .object({
+      priority: z.number().min(1).max(10).default(5),
+      batchable: z.boolean().default(true),
+      conflicts: z.array(z.string()).optional(),
+      maxMatches: z.number().optional(),
+    })
+    .optional(),
+
   // Test cases for validation
-  testCases: z.array(z.object({
-    input: z.string(),
-    expected: z.string(),
-    description: z.string(),
-  })).optional(),
+  testCases: z
+    .array(
+      z.object({
+        input: z.string(),
+        expected: z.string(),
+        description: z.string(),
+      })
+    )
+    .optional(),
 });
 
 const AstGrepTransformationRequestSchema = z.object({
   targetFiles: z.array(z.string()),
   patterns: z.array(AstGrepPatternSchema),
-  options: z.object({
-    dryRun: z.boolean().default(false),
-    maxComplexity: z.number().default(7),
-    enableBatching: z.boolean().default(true),
-    skipConflicts: z.boolean().default(true),
-    preserveFormatting: z.boolean().default(true),
-    maxMatchesPerPattern: z.number().default(1000),
-  }).optional().default({}),
+  options: z
+    .object({
+      dryRun: z.boolean().default(false),
+      maxComplexity: z.number().default(7),
+      enableBatching: z.boolean().default(true),
+      skipConflicts: z.boolean().default(true),
+      preserveFormatting: z.boolean().default(true),
+      maxMatchesPerPattern: z.number().default(1000),
+    })
+    .optional()
+    .default({}),
 });
 
 export type AstGrepPattern = z.infer<typeof AstGrepPatternSchema>;
@@ -134,17 +169,17 @@ interface AstMatch {
 export const astGrepTransformationActor = fromPromise(
   async ({ input }: { input: AstGrepTransformationRequest }) => {
     const validatedInput = AstGrepTransformationRequestSchema.parse(input);
-    
+
     console.log(
       `🌳 Starting AST-grep transformations on ${validatedInput.targetFiles.length} files with ${validatedInput.patterns.length} patterns`
     );
-    
+
     const results = await applyAstGrepTransformations(validatedInput);
-    
+
     console.log(
       `✨ AST-grep engine completed: ${results.transformationsApplied} transformations across ${results.filesModified.length} files`
     );
-    
+
     return results;
   }
 );
@@ -156,26 +191,26 @@ async function applyAstGrepTransformations(request: AstGrepTransformationRequest
   const filesModified: string[] = [];
   const appliedPatterns: Array<{ file: string; pattern: string; count: number }> = [];
   let totalTransformations = 0;
-  
+
   // Filter and sort patterns for optimal processing
   const activePatterns = prepareAstPatterns(request.patterns, request.options.maxComplexity);
-  
+
   for (const filePath of request.targetFiles) {
     try {
       const content = await readFile(filePath, 'utf-8');
-      
+
       const transformResult = await transformFileWithAstGrep(
         content,
         filePath,
         activePatterns,
         request.options
       );
-      
+
       if (transformResult.modified && !request.options.dryRun) {
         await writeFile(filePath, transformResult.content, 'utf-8');
         filesModified.push(filePath);
       }
-      
+
       if (transformResult.transformations.length > 0) {
         for (const transformation of transformResult.transformations) {
           appliedPatterns.push({
@@ -185,7 +220,7 @@ async function applyAstGrepTransformations(request: AstGrepTransformationRequest
           });
           totalTransformations += transformation.count;
         }
-        
+
         console.log(
           `🌳 AST-transformed ${filePath}: ${transformResult.transformations.length} patterns applied`
         );
@@ -194,7 +229,7 @@ async function applyAstGrepTransformations(request: AstGrepTransformationRequest
       console.error(`❌ Error transforming ${filePath}:`, error);
     }
   }
-  
+
   return {
     filesModified,
     transformationsApplied: totalTransformations,
@@ -213,11 +248,11 @@ function prepareAstPatterns(patterns: AstGrepPattern[], maxComplexity: number): 
       // Sort by priority first, then by complexity
       const aPriority = a.performance?.priority ?? 5;
       const bPriority = b.performance?.priority ?? 5;
-      
+
       if (aPriority !== bPriority) {
         return bPriority - aPriority; // Higher priority first
       }
-      
+
       return a.complexity - b.complexity; // Lower complexity first
     });
 }
@@ -238,11 +273,11 @@ async function transformFileWithAstGrep(
   let modifiedContent = content;
   const transformations: Array<{ patternId: string; count: number }> = [];
   let totalModified = false;
-  
+
   // Determine language based on file extension
   const isTypeScript = filePath.endsWith('.ts') || filePath.endsWith('.tsx');
   const lang = isTypeScript ? ts : js;
-  
+
   // Parse the source code into AST
   let root: SgRoot;
   try {
@@ -251,10 +286,10 @@ async function transformFileWithAstGrep(
     console.error(`Failed to parse ${filePath}:`, error);
     return { content, modified: false, transformations: [] };
   }
-  
+
   // Track applied patterns to avoid conflicts
   const appliedPatterns = new Set<string>();
-  
+
   for (const pattern of patterns) {
     // Skip conflicting patterns if option is enabled
     if (options.skipConflicts && pattern.performance?.conflicts) {
@@ -264,21 +299,21 @@ async function transformFileWithAstGrep(
         continue;
       }
     }
-    
+
     const patternResult = await applyAstGrepPattern(root, modifiedContent, pattern, lang, options);
-    
+
     if (patternResult.modified) {
       modifiedContent = patternResult.content;
       totalModified = true;
       appliedPatterns.add(pattern.id);
-      
+
       transformations.push({
         patternId: pattern.id,
         count: patternResult.matchCount,
       });
-      
+
       console.log(`🎯 Applied AST pattern ${pattern.id}: ${patternResult.matchCount} matches`);
-      
+
       // Re-parse for subsequent patterns
       try {
         root = lang.parse(modifiedContent);
@@ -288,7 +323,7 @@ async function transformFileWithAstGrep(
       }
     }
   }
-  
+
   return {
     content: modifiedContent,
     modified: totalModified,
@@ -309,26 +344,26 @@ async function applyAstGrepPattern(
   try {
     // Find all matches using AST-grep
     const matches = findAstGrepMatches(root, pattern);
-    
+
     if (matches.length === 0) {
       return { content, modified: false, matchCount: 0 };
     }
-    
+
     // Limit matches if specified
     const maxMatches = pattern.performance?.maxMatches || options.maxMatchesPerPattern || 1000;
     const limitedMatches = matches.slice(0, maxMatches);
-    
+
     // Apply transformations in reverse order to maintain indices
     let modifiedContent = content;
     const sortedMatches = limitedMatches.sort((a, b) => b.range.start - a.range.start);
-    
+
     for (const match of sortedMatches) {
       const replacement = generateAstReplacement(match, pattern);
-      
+
       // Apply the replacement
       const before = modifiedContent.substring(0, match.range.start);
       const after = modifiedContent.substring(match.range.end);
-      
+
       if (options.preserveFormatting) {
         // Preserve indentation and formatting
         const preservedReplacement = preserveAstFormatting(replacement, match, modifiedContent);
@@ -337,7 +372,7 @@ async function applyAstGrepPattern(
         modifiedContent = before + replacement + after;
       }
     }
-    
+
     return {
       content: modifiedContent,
       modified: true,
@@ -354,21 +389,21 @@ async function applyAstGrepPattern(
  */
 function findAstGrepMatches(root: SgRoot, pattern: AstGrepPattern): AstMatch[] {
   const matches: AstMatch[] = [];
-  
+
   try {
     // Build AST-grep query from pattern
     const query = buildAstGrepQuery(pattern);
-    
+
     // Find all nodes matching the pattern using the correct API
     const nodes = root.root().findAll(query);
-    
+
     for (const node of nodes) {
       // Extract variables from the match
       const variables = extractVariables(node, pattern);
-      
+
       // Get context information
       const context = analyzeNodeContext(node);
-      
+
       // Create match object
       const nodeRange = node.range();
       const match: AstMatch = {
@@ -377,18 +412,18 @@ function findAstGrepMatches(root: SgRoot, pattern: AstGrepPattern): AstMatch[] {
         text: node.text(),
         range: {
           start: nodeRange.start.index,
-          end: nodeRange.end.index
+          end: nodeRange.end.index,
         },
         variables,
         context,
       };
-      
+
       matches.push(match);
     }
   } catch (error) {
     console.error(`Error finding matches for pattern ${pattern.id}:`, error);
   }
-  
+
   return matches;
 }
 
@@ -397,21 +432,21 @@ function findAstGrepMatches(root: SgRoot, pattern: AstGrepPattern): AstMatch[] {
  */
 function buildAstGrepQuery(pattern: AstGrepPattern): string {
   const rule = pattern.pattern.rule;
-  
+
   // For simple pattern strings, return the string directly
   if (rule.pattern) {
     return rule.pattern;
   }
-  
+
   // If we have a kind, use it as a pattern
   if (rule.kind) {
     return rule.kind;
   }
-  
+
   if (rule.regex) {
     return rule.regex;
   }
-  
+
   // Fallback to a generic pattern
   return '$_';
 }
@@ -421,15 +456,15 @@ function buildAstGrepQuery(pattern: AstGrepPattern): string {
  */
 function extractVariables(node: SgNode, pattern: AstGrepPattern): Record<string, string> {
   const variables: Record<string, string> = {};
-  
+
   try {
     // Get the pattern text and node text for manual extraction
     const patternText = pattern.pattern.rule.pattern || '';
     const nodeText = node.text();
-    
+
     // Extract variable names from the pattern
     const variableNames = extractVariableNames(patternText);
-    
+
     for (const varName of variableNames) {
       try {
         // Use the correct AST-grep NAPI method: getMatch()
@@ -451,16 +486,16 @@ function extractVariables(node: SgNode, pattern: AstGrepPattern): Record<string,
         }
       }
     }
-    
+
     // If no variables were extracted, try pattern-based extraction as final fallback
     if (Object.keys(variables).length === 0) {
       const variableMatches = extractVariablesFromPattern(nodeText, patternText);
       Object.assign(variables, variableMatches);
     }
   } catch (error) {
-    console.warn(`Error extracting variables from node:`, error);
+    console.warn('Error extracting variables from node:', error);
   }
-  
+
   return variables;
 }
 
@@ -468,20 +503,31 @@ function extractVariables(node: SgNode, pattern: AstGrepPattern): Record<string,
  * Extract variable names from pattern text
  */
 function extractVariableNames(patternText: string): string[] {
-  const matches = patternText.match(/\$(\w+)/g) || [];
-  return matches.map(match => match.substring(1)); // Remove $ prefix
+  // Match both single $ and triple $$$ variables
+  const matches = patternText.match(/\$\$\$(\w+)|\$(\w+)/g) || [];
+  return matches.map((match) => {
+    // Remove $ or $$$ prefix
+    if (match.startsWith('$$$')) {
+      return match.substring(3);
+    }
+    return match.substring(1);
+  });
 }
 
 /**
  * Extract a specific variable from text using pattern matching
  */
-function extractVariableFromText(nodeText: string, patternText: string, varName: string): string | null {
+function extractVariableFromText(
+  nodeText: string,
+  patternText: string,
+  varName: string
+): string | null {
   try {
     // Convert AST-grep pattern to regex for fallback extraction
-    let regexPattern = patternText
+    const regexPattern = patternText
       .replace(/\$\w+/g, '(.+?)') // Replace variables with capture groups
       .replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // Escape regex special chars
-    
+
     const match = nodeText.match(new RegExp(regexPattern));
     if (match) {
       const variableNames = extractVariableNames(patternText);
@@ -494,40 +540,43 @@ function extractVariableFromText(nodeText: string, patternText: string, varName:
   } catch {
     // Ignore regex errors
   }
-  
+
   return null;
 }
 
 /**
  * Extract variables using pattern matching fallback
  */
-function extractVariablesFromPattern(nodeText: string, _patternText: string): Record<string, string> {
+function extractVariablesFromPattern(
+  nodeText: string,
+  _patternText: string
+): Record<string, string> {
   const variables: Record<string, string> = {};
-  
+
   // Common patterns for variable extraction
   const patterns = [
     // Variable assignment: var/let/const NAME = VALUE
     {
       pattern: /(?:var|let|const)\s+(\w+)\s*=\s*(.+)/,
-      vars: ['VAR', 'VALUE']
+      vars: ['VAR', 'VALUE'],
     },
     // Function declaration: function NAME(PARAMS) { BODY }
     {
       pattern: /function\s+(\w+)\s*\(([^)]*)\)\s*\{([\s\S]*)\}/,
-      vars: ['NAME', 'PARAMS', 'BODY']
+      vars: ['NAME', 'PARAMS', 'BODY'],
     },
     // Object property: { KEY: VALUE }
     {
       pattern: /\{\s*(\w+)\s*:\s*([^}]+)\s*\}/,
-      vars: ['KEY', 'VALUE']
+      vars: ['KEY', 'VALUE'],
     },
     // Method call: OBJECT.METHOD(ARGS)
     {
       pattern: /(\w+)\.(\w+)\(([^)]*)\)/,
-      vars: ['OBJECT', 'METHOD', 'ARGS']
-    }
+      vars: ['OBJECT', 'METHOD', 'ARGS'],
+    },
   ];
-  
+
   for (const { pattern: regex, vars } of patterns) {
     const match = nodeText.match(regex);
     if (match) {
@@ -540,7 +589,7 @@ function extractVariablesFromPattern(nodeText: string, _patternText: string): Re
       break; // Use first matching pattern
     }
   }
-  
+
   return variables;
 }
 
@@ -550,32 +599,38 @@ function extractVariablesFromPattern(nodeText: string, _patternText: string): Re
 function analyzeNodeContext(node: SgNode): AstMatch['context'] {
   const ancestors: SgNode[] = [];
   let current = node.parent();
-  
+
   while (current) {
     ancestors.push(current);
     current = current.parent();
   }
-  
+
   // Determine scope
   let scope: 'global' | 'function' | 'block' | 'class' = 'global';
   for (const ancestor of ancestors) {
     const kind = ancestor.kind();
-    if (kind === 'function_declaration' || kind === 'arrow_function' || kind === 'method_definition') {
+    if (
+      kind === 'function_declaration' ||
+      kind === 'arrow_function' ||
+      kind === 'method_definition'
+    ) {
       scope = 'function';
       break;
-    } else if (kind === 'class_declaration') {
+    }
+    if (kind === 'class_declaration') {
       scope = 'class';
       break;
-    } else if (kind === 'block_statement') {
+    }
+    if (kind === 'block_statement') {
       scope = 'block';
       break;
     }
   }
-  
+
   // Get siblings
   const parent = node.parent();
   const siblings = parent ? parent.children() : [];
-  
+
   return {
     parent,
     ancestors,
@@ -589,7 +644,7 @@ function analyzeNodeContext(node: SgNode): AstMatch['context'] {
  */
 function generateAstReplacement(match: AstMatch, pattern: AstGrepPattern): string {
   let replacement = pattern.replacement.template;
-  
+
   // Handle conditional replacements
   if (pattern.replacement.conditions) {
     for (const condition of pattern.replacement.conditions) {
@@ -599,21 +654,22 @@ function generateAstReplacement(match: AstMatch, pattern: AstGrepPattern): strin
       }
     }
   }
-  
+
   // Replace variables in the replacement template
   for (const [varName, value] of Object.entries(match.variables)) {
     let transformedValue = value;
-    
+
     // Apply transformers if specified
     const transformer = pattern.replacement.transformers?.[varName];
     if (transformer) {
       transformedValue = applyAstTransformer(value, transformer);
     }
-    
-    // Replace all occurrences of the variable
+
+    // Replace all occurrences of the variable (both $ and $$$ forms)
+    replacement = replacement.replace(new RegExp(`\\$\\$\\$${varName}`, 'g'), transformedValue);
     replacement = replacement.replace(new RegExp(`\\$${varName}`, 'g'), transformedValue);
   }
-  
+
   return replacement;
 }
 
@@ -624,22 +680,22 @@ function evaluateAstCondition(condition: string, match: AstMatch): boolean {
   try {
     // Simple condition evaluation based on node properties
     // This could be enhanced with a proper AST condition evaluator
-    
+
     if (condition.includes('kind')) {
       const expectedKind = condition.match(/kind\s*==\s*['"]([^'"]+)['"]/)?.[1];
       return expectedKind ? match.node.kind() === expectedKind : false;
     }
-    
+
     if (condition.includes('scope')) {
       const expectedScope = condition.match(/scope\s*==\s*['"]([^'"]+)['"]/)?.[1];
       return expectedScope ? match.context.scope === expectedScope : false;
     }
-    
+
     if (condition.includes('text')) {
       const expectedText = condition.match(/text\s*includes\s*['"]([^'"]+)['"]/)?.[1];
       return expectedText ? match.text.includes(expectedText) : false;
     }
-    
+
     return false;
   } catch {
     return false;
@@ -680,16 +736,16 @@ function preserveAstFormatting(replacement: string, match: AstMatch, content: st
   const lines = content.substring(0, match.range.start).split('\n');
   const lastLine = lines[lines.length - 1] || '';
   const indentation = lastLine.match(/^\s*/)?.[0] || '';
-  
+
   if (!indentation) return replacement;
-  
+
   // Split replacement into lines and apply indentation
   const replacementLines = replacement.split('\n');
   const indentedLines = replacementLines.map((line, index) => {
     if (index === 0) return line; // First line keeps original position
     return line.trim() ? indentation + line : line; // Subsequent lines get indented
   });
-  
+
   return indentedLines.join('\n');
 }
 
@@ -702,19 +758,19 @@ export const BUILTIN_AST_PATTERNS: AstGrepPattern[] = [
     language: 'typescript',
     pattern: {
       rule: {
-        pattern: 'var $VAR = $VALUE',
+        pattern: 'var $NAME = $VALUE',
       },
     },
     replacement: {
-      template: '$KEYWORD $VAR = $VALUE',
+      template: 'let $NAME = $VALUE',
       conditions: [
         {
           when: 'scope == "function"',
-          then: 'let $VAR = $VALUE',
+          then: 'let $NAME = $VALUE',
         },
         {
           when: 'scope == "global"',
-          then: 'const $VAR = $VALUE',
+          then: 'const $NAME = $VALUE',
         },
       ],
     },
@@ -727,21 +783,17 @@ export const BUILTIN_AST_PATTERNS: AstGrepPattern[] = [
       batchable: true,
     },
   },
-  
-  // NOTE: Temporarily disabled due to AST-grep NAPI pattern matching issues
-  // These patterns need research into correct AST-grep syntax for complex patterns
-  // See: docs/REMAINING-ISSUES-TODO.md - AST-grep Pattern Matching Refinement
-  /*
+
   {
     id: 'function-to-arrow-ast',
     language: 'typescript',
     pattern: {
       rule: {
-        pattern: 'function $NAME($PARAMS) { return $EXPR }',
+        pattern: 'function $NAME($$$PARAMS) { return $$$BODY }',
       },
     },
     replacement: {
-      template: 'const $NAME = ($PARAMS) => $EXPR',
+      template: 'const $NAME = ($$$PARAMS) => $$$BODY',
     },
     description: 'Convert simple functions to arrow functions',
     complexity: 4,
@@ -752,8 +804,7 @@ export const BUILTIN_AST_PATTERNS: AstGrepPattern[] = [
       batchable: true,
     },
   },
-  */
-  
+
   {
     id: 'promise-then-to-await-ast',
     language: 'typescript',
@@ -777,25 +828,18 @@ export const BUILTIN_AST_PATTERNS: AstGrepPattern[] = [
       batchable: false,
     },
   },
-  
-  // NOTE: Temporarily disabled due to AST-grep NAPI pattern matching issues
-  /*
+
   {
     id: 'object-property-shorthand-ast',
     language: 'typescript',
     pattern: {
       rule: {
-        pattern: '$KEY: $VALUE',
+        kind: 'pair',
+        pattern: '$PROP: $PROP',
       },
     },
     replacement: {
-      template: '$KEY',
-      conditions: [
-        {
-          when: '$KEY == $VALUE',
-          then: '$KEY'
-        }
-      ]
+      template: '$PROP',
     },
     description: 'Use object property shorthand syntax',
     complexity: 2,
@@ -806,18 +850,17 @@ export const BUILTIN_AST_PATTERNS: AstGrepPattern[] = [
       batchable: true,
     },
   },
-  */
-  
+
   {
     id: 'array-includes-ast',
     language: 'typescript',
     pattern: {
       rule: {
-        pattern: '$ARRAY.indexOf($ITEM) !== -1',
+        pattern: '$ARR.indexOf($ITEM) !== -1',
       },
     },
     replacement: {
-      template: '$ARRAY.includes($ITEM)',
+      template: '$ARR.includes($ITEM)',
     },
     description: 'Use Array.includes() instead of indexOf',
     complexity: 2,

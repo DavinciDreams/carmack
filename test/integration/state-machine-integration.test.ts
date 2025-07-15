@@ -1,9 +1,9 @@
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
-import { createActor, waitFor } from 'xstate';
-import { writeFile, mkdir, rm } from 'fs/promises';
-import { join } from 'path';
-import { tmpdir } from 'os';
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { execSync } from 'child_process';
+import { mkdir, rm, writeFile } from 'fs/promises';
+import { tmpdir } from 'os';
+import { join } from 'path';
+import { createActor, waitFor } from 'xstate';
 
 // Import the main state machine (we'll need to check if it exists)
 // import { transformationMachine } from '../../src/machine.js';
@@ -17,7 +17,7 @@ describe('State Machine Integration Tests', () => {
     testDir = join(tmpdir(), `state-machine-test-${Date.now()}`);
     await mkdir(testDir, { recursive: true });
     process.chdir(testDir);
-    
+
     // Setup git for integration tests
     try {
       execSync('git init', { cwd: testDir, stdio: 'pipe' });
@@ -46,7 +46,9 @@ describe('State Machine Integration Tests', () => {
   describe('State Machine Actor Coordination', () => {
     test('should coordinate actors through state transitions', async () => {
       // Create test files
-      await createTestFile('state-test.ts', `
+      await createTestFile(
+        'state-test.ts',
+        `
         function testFunction(data: any[]): any {
           var result = [];
           for (var i = 0; i < data.length; i++) {
@@ -56,11 +58,12 @@ describe('State Machine Integration Tests', () => {
           }
           return result;
         }
-      `);
+      `
+      );
 
       // This test demonstrates the expected state machine flow
       // In a real implementation, we would use the actual state machine
-      
+
       // Simulate state machine coordination
       const stateTransitions = [
         'idle',
@@ -70,53 +73,50 @@ describe('State Machine Integration Tests', () => {
         'validating',
         'verifying',
         'committing',
-        'completed'
+        'completed',
       ];
 
       let currentState = 'idle';
-      
+
       // Simulate state transitions
       for (let i = 0; i < stateTransitions.length - 1; i++) {
         currentState = stateTransitions[i + 1];
         expect(currentState).toBeDefined();
-        
+
         // Add small delay to simulate processing
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await new Promise((resolve) => setTimeout(resolve, 10));
       }
 
       expect(currentState).toBe('completed');
     });
 
     test('should handle error states and recovery', async () => {
-      await createTestFile('error-test.ts', `
+      await createTestFile(
+        'error-test.ts',
+        `
         function problematicFunction(): any {
           // This might cause transformation issues
           var x = undefined;
           return x.toString();
         }
-      `);
+      `
+      );
 
       // Simulate error handling in state machine
-      const errorStates = [
-        'idle',
-        'analyzing',
-        'error_occurred',
-        'rolling_back',
-        'recovered'
-      ];
+      const errorStates = ['idle', 'analyzing', 'error_occurred', 'rolling_back', 'recovered'];
 
       let currentState = 'idle';
       let errorEncountered = false;
 
       for (let i = 0; i < errorStates.length - 1; i++) {
         currentState = errorStates[i + 1];
-        
+
         if (currentState === 'error_occurred') {
           errorEncountered = true;
         }
-        
+
         expect(currentState).toBeDefined();
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await new Promise((resolve) => setTimeout(resolve, 10));
       }
 
       expect(errorEncountered).toBe(true);
@@ -126,14 +126,17 @@ describe('State Machine Integration Tests', () => {
     test('should handle concurrent state machine instances', async () => {
       // Create multiple test files
       const files = ['concurrent1.ts', 'concurrent2.ts', 'concurrent3.ts'];
-      
+
       for (let i = 0; i < files.length; i++) {
-        await createTestFile(files[i], `
+        await createTestFile(
+          files[i],
+          `
           function process${i}(data: any): any {
             var result = data;
             return result;
           }
-        `);
+        `
+        );
       }
 
       // Simulate multiple state machine instances
@@ -141,18 +144,18 @@ describe('State Machine Integration Tests', () => {
         id: `instance-${index}`,
         file,
         state: 'idle',
-        completed: false
+        completed: false,
       }));
 
       // Process all instances concurrently
       const promises = instances.map(async (instance) => {
         const states = ['idle', 'analyzing', 'transforming', 'completed'];
-        
+
         for (let i = 0; i < states.length - 1; i++) {
           instance.state = states[i + 1];
-          await new Promise(resolve => setTimeout(resolve, Math.random() * 50));
+          await new Promise((resolve) => setTimeout(resolve, Math.random() * 50));
         }
-        
+
         instance.completed = true;
         return instance;
       });
@@ -171,12 +174,15 @@ describe('State Machine Integration Tests', () => {
 
   describe('Actor Communication Patterns', () => {
     test('should pass data between actors correctly', async () => {
-      await createTestFile('communication-test.ts', `
+      await createTestFile(
+        'communication-test.ts',
+        `
         function communicationTest(input: string): string {
           var output = input.toUpperCase();
           return output;
         }
-      `);
+      `
+      );
 
       // Simulate data flow between actors
       interface ActorMessage {
@@ -191,32 +197,32 @@ describe('State Machine Integration Tests', () => {
       const analysisOutput = {
         complexity: { cyclomaticComplexity: 3 },
         recommendedMode: 'template',
-        analysisTimestamp: Date.now()
+        analysisTimestamp: Date.now(),
       };
 
       messages.push({
         type: 'ANALYSIS_COMPLETE',
         data: analysisOutput,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       // Simulate transformation actor input/output
       const transformationInput = {
         mode: analysisOutput.recommendedMode,
         files: ['communication-test.ts'],
-        patterns: []
+        patterns: [],
       };
 
       const transformationOutput = {
         filesModified: ['communication-test.ts'],
         transformationsApplied: 2,
-        mode: 'template'
+        mode: 'template',
       };
 
       messages.push({
         type: 'TRANSFORMATION_APPLIED',
         data: transformationOutput,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       // Simulate validation actor input/output
@@ -224,13 +230,13 @@ describe('State Machine Integration Tests', () => {
         isValid: true,
         errors: [],
         warnings: [],
-        fixableIssues: 0
+        fixableIssues: 0,
       };
 
       messages.push({
         type: 'VALIDATION_COMPLETE',
         data: validationOutput,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       // Verify message flow
@@ -260,73 +266,70 @@ describe('State Machine Integration Tests', () => {
 
       // Simulate analysis actor with timeout
       const simulateActorExecution = async (
-        actorName: string, 
-        maxAttempts: number = 3,
-        timeoutMs: number = 1000
+        actorName: string,
+        maxAttempts = 3,
+        timeoutMs = 1000
       ): Promise<boolean> => {
         for (let attempt = 1; attempt <= maxAttempts; attempt++) {
           const startTime = Date.now();
-          
+
           try {
             // Simulate random success/failure
             const shouldSucceed = Math.random() > 0.3; // 70% success rate
             const duration = Math.random() * 1500; // Random duration up to 1.5s
-            
-            await new Promise(resolve => setTimeout(resolve, Math.min(duration, timeoutMs)));
-            
+
+            await new Promise((resolve) => setTimeout(resolve, Math.min(duration, timeoutMs)));
+
             const execution: ActorExecution = {
               actorName,
               attempt,
               success: shouldSucceed && duration < timeoutMs,
-              duration: Date.now() - startTime
+              duration: Date.now() - startTime,
             };
-            
+
             executions.push(execution);
-            
+
             if (execution.success) {
               return true;
             }
-            
+
             if (attempt === maxAttempts) {
               return false;
             }
-            
+
             // Wait before retry
-            await new Promise(resolve => setTimeout(resolve, 100 * attempt));
-            
+            await new Promise((resolve) => setTimeout(resolve, 100 * attempt));
           } catch (error) {
             executions.push({
               actorName,
               attempt,
               success: false,
-              duration: Date.now() - startTime
+              duration: Date.now() - startTime,
             });
           }
         }
-        
+
         return false;
       };
 
       // Test multiple actors with retry logic
       const actors = ['analysis', 'transformation', 'validation'];
-      const results = await Promise.all(
-        actors.map(actor => simulateActorExecution(actor))
-      );
+      const results = await Promise.all(actors.map((actor) => simulateActorExecution(actor)));
 
       // Verify executions were recorded
       expect(executions.length).toBeGreaterThan(0);
-      
+
       // Verify retry logic worked
-      const analysisExecutions = executions.filter(e => e.actorName === 'analysis');
+      const analysisExecutions = executions.filter((e) => e.actorName === 'analysis');
       expect(analysisExecutions.length).toBeGreaterThan(0);
-      
+
       // At least one actor should have succeeded or exhausted retries
-      const finalResults = actors.map(actor => {
-        const actorExecutions = executions.filter(e => e.actorName === actor);
-        return actorExecutions.some(e => e.success) || actorExecutions.length >= 3;
+      const finalResults = actors.map((actor) => {
+        const actorExecutions = executions.filter((e) => e.actorName === actor);
+        return actorExecutions.some((e) => e.success) || actorExecutions.length >= 3;
       });
-      
-      expect(finalResults.every(result => result)).toBe(true);
+
+      expect(finalResults.every((result) => result)).toBe(true);
     });
   });
 
@@ -351,23 +354,19 @@ describe('State Machine Integration Tests', () => {
         context: {
           files: ['persistence-test.ts'],
           checkpoints: [],
-          startTime: Date.now()
+          startTime: Date.now(),
         },
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
 
       // Simulate state transitions with persistence
-      const stateTransitions = [
-        'analyzing',
-        'creating_checkpoint',
-        'applying_transformation'
-      ];
+      const stateTransitions = ['analyzing', 'creating_checkpoint', 'applying_transformation'];
 
       for (const state of stateTransitions) {
         persistedState = {
           ...persistedState,
           currentState: state,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         };
 
         // Simulate checkpoint creation
@@ -376,7 +375,7 @@ describe('State Machine Integration Tests', () => {
             hash: 'abc123',
             branch: 'main',
             timestamp: Date.now(),
-            description: 'Before transformation'
+            description: 'Before transformation',
           });
         }
 
@@ -385,14 +384,14 @@ describe('State Machine Integration Tests', () => {
           persistedState.context.currentTransformation = {
             id: 'transform-1',
             mode: 'template',
-            patterns: []
+            patterns: [],
           };
         }
 
         // Verify state can be serialized/deserialized
         const serialized = JSON.stringify(persistedState);
         const deserialized = JSON.parse(serialized);
-        
+
         expect(deserialized.currentState).toBe(state);
         expect(deserialized.context.files).toEqual(['persistence-test.ts']);
       }
@@ -411,24 +410,28 @@ describe('State Machine Integration Tests', () => {
         currentState: 'applying_transformation',
         context: {
           files: ['recovery-test.ts'],
-          checkpoints: [{
-            hash: 'def456',
-            branch: 'main',
-            timestamp: Date.now() - 1000,
-            description: 'Recovery checkpoint'
-          }],
+          checkpoints: [
+            {
+              hash: 'def456',
+              branch: 'main',
+              timestamp: Date.now() - 1000,
+              description: 'Recovery checkpoint',
+            },
+          ],
           currentTransformation: {
             id: 'interrupted-transform',
             mode: 'template',
-            patterns: [{
-              id: 'var-to-const',
-              pattern: 'var\\s+(\\w+)\\s*=',
-              replacement: 'const $1 ='
-            }]
+            patterns: [
+              {
+                id: 'var-to-const',
+                pattern: 'var\\s+(\\w+)\\s*=',
+                replacement: 'const $1 =',
+              },
+            ],
           },
-          startTime: Date.now() - 5000
+          startTime: Date.now() - 5000,
         },
-        timestamp: Date.now() - 1000
+        timestamp: Date.now() - 1000,
       };
 
       // Simulate recovery process
@@ -437,7 +440,7 @@ describe('State Machine Integration Tests', () => {
         'loading_state',
         'validating_context',
         'resuming_transformation',
-        'completed'
+        'completed',
       ];
 
       let currentStep = 'detecting_interruption';
@@ -464,19 +467,20 @@ describe('State Machine Integration Tests', () => {
             expect(interruptedState.context.checkpoints[0].hash).toBe('def456');
             break;
 
-          case 'resuming_transformation':
+          case 'resuming_transformation': {
             // Simulate resuming from where we left off
             const transformation = interruptedState.context.currentTransformation;
             expect(transformation.mode).toBe('template');
             expect(transformation.patterns).toHaveLength(1);
             break;
+          }
 
           case 'completed':
             recoverySuccessful = true;
             break;
         }
 
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await new Promise((resolve) => setTimeout(resolve, 10));
       }
 
       expect(recoverySuccessful).toBe(true);
@@ -492,7 +496,9 @@ describe('State Machine Integration Tests', () => {
 
       for (let i = 0; i < fileCount; i++) {
         const fileName = `scale-test-${i}.ts`;
-        await createTestFile(fileName, `
+        await createTestFile(
+          fileName,
+          `
           function process${i}(data: any): any {
             var result = data;
             for (var j = 0; j < 10; j++) {
@@ -500,17 +506,18 @@ describe('State Machine Integration Tests', () => {
             }
             return result;
           }
-        `);
+        `
+        );
         files.push(fileName);
       }
 
       // Simulate processing large file sets
       const startTime = Date.now();
-      
+
       // Batch processing simulation
       const batchSize = 5;
       const batches: string[][] = [];
-      
+
       for (let i = 0; i < files.length; i += batchSize) {
         batches.push(files.slice(i, i + batchSize));
       }
@@ -522,13 +529,13 @@ describe('State Machine Integration Tests', () => {
         batches.map(async (batch, index) => {
           // Simulate batch processing time
           const processingTime = Math.random() * 100 + 50;
-          await new Promise(resolve => setTimeout(resolve, processingTime));
-          
+          await new Promise((resolve) => setTimeout(resolve, processingTime));
+
           return {
             batchIndex: index,
             files: batch,
             processed: batch.length,
-            processingTime
+            processingTime,
           };
         })
       );
@@ -537,7 +544,7 @@ describe('State Machine Integration Tests', () => {
 
       // Verify batch processing
       expect(batchResults).toHaveLength(batches.length);
-      
+
       const totalProcessed = batchResults.reduce((sum, result) => sum + result.processed, 0);
       expect(totalProcessed).toBe(fileCount);
 
@@ -558,27 +565,27 @@ describe('State Machine Integration Tests', () => {
 
       // Simulate concurrent state machine instances
       const startTime = Date.now();
-      
+
       const concurrentPromises = files.map(async (file, index) => {
         const instanceStartTime = Date.now();
-        
+
         // Simulate state machine execution
         const states = ['idle', 'analyzing', 'transforming', 'validating', 'completed'];
         let currentState = 'idle';
-        
+
         for (let i = 0; i < states.length - 1; i++) {
           currentState = states[i + 1];
-          
+
           // Simulate processing time with some randomness
           const processingTime = Math.random() * 50 + 10;
-          await new Promise(resolve => setTimeout(resolve, processingTime));
+          await new Promise((resolve) => setTimeout(resolve, processingTime));
         }
-        
+
         return {
           file,
           index,
           finalState: currentState,
-          duration: Date.now() - instanceStartTime
+          duration: Date.now() - instanceStartTime,
         };
       });
 
@@ -611,7 +618,7 @@ describe('State Machine Integration Tests', () => {
           enableDafnyVerification: false,
           enableLearning: false,
           gitIntegration: true,
-          timeoutMs: 30000
+          timeoutMs: 30000,
         },
         {
           name: 'safe',
@@ -619,7 +626,7 @@ describe('State Machine Integration Tests', () => {
           enableDafnyVerification: true,
           enableLearning: true,
           gitIntegration: true,
-          timeoutMs: 300000
+          timeoutMs: 300000,
         },
         {
           name: 'minimal',
@@ -627,8 +634,8 @@ describe('State Machine Integration Tests', () => {
           enableDafnyVerification: false,
           enableLearning: false,
           gitIntegration: false,
-          timeoutMs: 10000
-        }
+          timeoutMs: 10000,
+        },
       ];
 
       for (const config of configurations) {
@@ -636,28 +643,28 @@ describe('State Machine Integration Tests', () => {
         const simulatedExecution = {
           config,
           steps: [] as string[],
-          duration: 0
+          duration: 0,
         };
 
         const startTime = Date.now();
 
         // Simulate execution based on configuration
         simulatedExecution.steps.push('analyzing');
-        
+
         if (config.gitIntegration) {
           simulatedExecution.steps.push('creating_checkpoint');
         }
-        
+
         simulatedExecution.steps.push('transforming');
-        
+
         if (config.enableDafnyVerification) {
           simulatedExecution.steps.push('verifying');
         }
-        
+
         if (config.gitIntegration) {
           simulatedExecution.steps.push('committing');
         }
-        
+
         simulatedExecution.steps.push('completed');
         simulatedExecution.duration = Date.now() - startTime;
 
@@ -682,12 +689,15 @@ describe('State Machine Integration Tests', () => {
     });
 
     test('should handle custom transformation patterns', async () => {
-      await createTestFile('custom-pattern-test.ts', `
+      await createTestFile(
+        'custom-pattern-test.ts',
+        `
         function customTest() {
           var oldStyle = "legacy";
           console.log(oldStyle);
         }
-      `);
+      `
+      );
 
       // Simulate custom pattern configuration
       const customPatterns = [
@@ -699,7 +709,7 @@ describe('State Machine Integration Tests', () => {
           description: 'Convert var string declarations to typed const',
           complexity: 3,
           riskLevel: 'low',
-          mode: 'template'
+          mode: 'template',
         },
         {
           id: 'custom-console-upgrade',
@@ -709,12 +719,12 @@ describe('State Machine Integration Tests', () => {
           description: 'Upgrade console.log to console.info',
           complexity: 1,
           riskLevel: 'low',
-          mode: 'template'
-        }
+          mode: 'template',
+        },
       ];
 
       // Simulate pattern application
-      const patternResults = customPatterns.map(pattern => {
+      const patternResults = customPatterns.map((pattern) => {
         const testContent = `
           function customTest() {
             var oldStyle = "legacy";
@@ -730,24 +740,24 @@ describe('State Machine Integration Tests', () => {
           patternId: pattern.id,
           matches: matches ? matches.length : 0,
           complexity: pattern.complexity,
-          riskLevel: pattern.riskLevel
+          riskLevel: pattern.riskLevel,
         };
       });
 
       // Verify custom patterns were processed
       expect(patternResults).toHaveLength(2);
-      
-      const varPattern = patternResults.find(r => r.patternId === 'custom-var-to-const');
-      const consolePattern = patternResults.find(r => r.patternId === 'custom-console-upgrade');
-      
+
+      const varPattern = patternResults.find((r) => r.patternId === 'custom-var-to-const');
+      const consolePattern = patternResults.find((r) => r.patternId === 'custom-console-upgrade');
+
       expect(varPattern).toBeDefined();
       expect(consolePattern).toBeDefined();
-      
+
       if (varPattern) {
         expect(varPattern.matches).toBeGreaterThan(0);
         expect(varPattern.riskLevel).toBe('low');
       }
-      
+
       if (consolePattern) {
         expect(consolePattern.matches).toBeGreaterThan(0);
         expect(consolePattern.complexity).toBe(1);
