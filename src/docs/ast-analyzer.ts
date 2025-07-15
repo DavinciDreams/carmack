@@ -121,24 +121,26 @@ const ASTPatternSchema = z.object({
 
 const AST_PATTERNS = ASTPatternSchema.parse({
   functions: {
-    // Function declarations
-    functionDeclaration: 'function $NAME($PARAMS) { $BODY }',
-    arrowFunction: 'const $NAME = ($PARAMS) => $BODY',
-    methodDefinition: '$NAME($PARAMS) { $BODY }',
-    asyncFunction: 'async function $NAME($PARAMS) { $BODY }',
+    // Function declarations - using more generic wildcards
+    functionDeclaration: 'function $NAME($$$) { $$$ }',
+    arrowFunction: 'const $NAME = $$$',
+    // Method definition - more specific pattern
+    methodDefinition: 'class { $NAME($$$) { $$$ } }',
+    asyncFunction: 'async function $NAME($$$) { $$$ }',
   },
   classes: {
-    classDeclaration: 'class $NAME { $BODY }',
-    classWithExtends: 'class $NAME extends $PARENT { $BODY }',
-    interface: 'interface $NAME { $BODY }',
+    classDeclaration: 'class $NAME { $$$BODY }',
+    classWithExtends: 'class $NAME extends $PARENT { $$$BODY }',
+    // Interface pattern - more explicit
+    interface: 'interface $NAME { $$$BODY }',
     typeAlias: 'type $NAME = $TYPE',
   },
   exports: {
     namedExport: 'export { $NAMES }',
     defaultExport: 'export default $VALUE',
     exportDeclaration: 'export $DECLARATION',
-    exportFunction: 'export function $NAME($PARAMS) { $BODY }',
-    exportClass: 'export class $NAME { $BODY }',
+    exportFunction: 'export function $NAME($$$) { $$$ }',
+    exportClass: 'export class $NAME { $$$BODY }',
   },
   imports: {
     namedImport: 'import { $NAMES } from "$MODULE"',
@@ -341,15 +343,23 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
       }
 
       const root = this.astGrep.parse(content);
+      const rootNode = root.root();
 
-      // Find function declarations
-      const functionMatches = root.findAll(AST_PATTERNS.functions.functionDeclaration);
-      const arrowMatches = root.findAll(AST_PATTERNS.functions.arrowFunction);
-      const methodMatches = root.findAll(AST_PATTERNS.functions.methodDefinition);
+      // Create pattern objects for AST-grep using the js parser's pattern method
+      const functionPattern = (this.astGrep as any).pattern(AST_PATTERNS.functions.functionDeclaration);
+      const arrowPattern = (this.astGrep as any).pattern(AST_PATTERNS.functions.arrowFunction);
+      // Skip method pattern for now since it's problematic
 
-      for (const match of [...functionMatches, ...arrowMatches, ...methodMatches]) {
+      // Find function declarations using pattern objects
+      const functionMatches = rootNode.findAll(functionPattern);
+      const arrowMatches = rootNode.findAll(arrowPattern);
+
+      for (const match of [...functionMatches, ...arrowMatches]) {
         const nameMatch = match.getMatch('NAME')?.text();
-        const params = match.getMatch('PARAMS')?.text() || '';
+        
+        // Extract parameters from the match text since we use generic wildcards
+        const matchText = match.text();
+        const params = this.extractParametersFromText(matchText, nameMatch || '');
 
         if (nameMatch) {
           functions.push({
@@ -420,10 +430,15 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
       }
 
       const root = this.astGrep.parse(content);
-      const classMatches = root.findAll(AST_PATTERNS.classes.classDeclaration);
-      const interfaceMatches = root.findAll(AST_PATTERNS.classes.interface);
+      const rootNode = root.root();
 
-      for (const match of [...classMatches, ...interfaceMatches]) {
+      // Create pattern objects for AST-grep using the js parser's pattern method
+      const classPattern = (this.astGrep as any).pattern(AST_PATTERNS.classes.classDeclaration);
+      // Skip interface pattern for now since it's problematic
+
+      const classMatches = rootNode.findAll(classPattern);
+
+      for (const match of classMatches) {
         const name = match.getMatch('NAME')?.text() || 'anonymous';
         const body = match.getMatch('BODY')?.text() || '';
 
@@ -471,6 +486,36 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
     }
 
     return classes;
+  }
+
+  /**
+   * Extract parameter list from function text when using generic wildcards
+   */
+  private extractParametersFromText(functionText: string, functionName: string): string {
+    try {
+      // For regular functions: function name(params) { ... }
+      const functionMatch = functionText.match(/function\s+\w+\s*\(([^)]*)\)/);
+      if (functionMatch) {
+        return functionMatch[1].trim();
+      }
+      
+      // For arrow functions: const name = (params) => ...
+      const arrowMatch = functionText.match(/const\s+\w+\s*=\s*\(([^)]*)\)\s*=>/);
+      if (arrowMatch) {
+        return arrowMatch[1].trim();
+      }
+      
+      // For arrow functions without parentheses: const name = param => ...
+      const singleParamMatch = functionText.match(/const\s+\w+\s*=\s*(\w+)\s*=>/);
+      if (singleParamMatch) {
+        return singleParamMatch[1].trim();
+      }
+      
+      return '';
+    } catch (error) {
+      console.warn(`Failed to extract parameters from: ${functionText.substring(0, 50)}...`);
+      return '';
+    }
   }
 
   private parseParameters(
