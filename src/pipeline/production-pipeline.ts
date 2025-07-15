@@ -410,6 +410,14 @@ async function patternDiscoveryStage(input: PipelineRequest, state: any): Promis
       const learningResult = await invokeActor<PatternLearningResult>(patternLearningActor, {
         operation: 'learn',
         patterns: state.discoveredPatterns,
+        transformation: {
+          id: state.transformationId,
+          type: 'discovery',
+          files: input.files,
+          success: true,
+          executionTime: Date.now() - state.startTime,
+          patterns: state.discoveredPatterns,
+        },
         context: {
           codebase: {
             language: input.context.projectType,
