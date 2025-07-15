@@ -78,6 +78,7 @@ coverage/
 
 # Carmack Coder system artifacts
 .carmack-backups/
+.carmack-reports/
 test-temp/
 *.backup
 *.bak
