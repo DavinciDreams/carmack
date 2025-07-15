@@ -2,6 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
+import type { ComplexityMetrics, ValidationActorResult } from '../types.ts';
 
 /**
  * Comprehensive LLM Testing Framework
@@ -332,7 +333,7 @@ async function executeTestCase(
     const allPassed = assertions.every((a) => a.passed);
 
     // Collect performance metrics if enabled
-    let performance;
+    let performance: PerformanceMetrics | undefined;
     if (options.includePerformanceMetrics) {
       performance = await collectPerformanceMetrics(testCase, actualOutput, duration);
     }
@@ -588,27 +589,27 @@ async function checkComplexityReduction(
     const { createActor } = await import('xstate');
 
     // Calculate complexity for both versions
-    const originalComplexity = (await new Promise((resolve) => {
+    const originalComplexity = await new Promise<ComplexityMetrics>((resolve) => {
       const actor = createActor(complexityActor, {
         input: { files: ['original.ts'] },
       });
       actor.start();
       actor.subscribe({
-        complete: () => resolve(actor.getSnapshot().output),
+        complete: () => resolve(actor.getSnapshot().output as ComplexityMetrics),
       });
-    })) as any;
+    });
 
-    const transformedComplexity = (await new Promise((resolve) => {
+    const transformedComplexity = await new Promise<ComplexityMetrics>((resolve) => {
       const actor = createActor(complexityActor, {
         input: { files: ['transformed.ts'] },
       });
       actor.start();
       actor.subscribe({
-        complete: () => resolve(actor.getSnapshot().output),
+        complete: () => resolve(actor.getSnapshot().output as ComplexityMetrics),
       });
-    })) as any;
+    });
 
-    return transformedComplexity.cyclomatic < originalComplexity.cyclomatic;
+    return transformedComplexity.cyclomaticComplexity < originalComplexity.cyclomaticComplexity;
   } catch {
     return false; // Assume no reduction if we can't measure
   }
@@ -624,7 +625,7 @@ async function checkTypesSafety(_code: string, language: string): Promise<boolea
     const { validationActor } = await import('./validation');
     const { createActor } = await import('xstate');
 
-    const result = (await new Promise((resolve) => {
+    const result = await new Promise<ValidationActorResult>((resolve) => {
       const actor = createActor(validationActor, {
         input: {
           type: 'types' as const,
@@ -633,11 +634,15 @@ async function checkTypesSafety(_code: string, language: string): Promise<boolea
       });
       actor.start();
       actor.subscribe({
-        complete: () => resolve(actor.getSnapshot().output),
+        complete: () => {
+          const output = actor.getSnapshot().output;
+          // Map or cast output to ValidationActorResult as needed
+          resolve(output as unknown as ValidationActorResult);
+        },
       });
-    })) as any;
+    });
 
-    return result.errors.length === 0;
+    return result.errors?.length === 0;
   } catch {
     return false; // Assume not type-safe if we can't validate
   }
@@ -645,21 +650,24 @@ async function checkTypesSafety(_code: string, language: string): Promise<boolea
 
 /**
  * Collect performance metrics
- */
-async function collectPerformanceMetrics(testCase: TestCase, actualOutput: any, duration: number) {
-  return {
-    executionTime: duration,
-    memoryUsage: process.memoryUsage().heapUsed,
-    transformationSpeed: testCase.input.code.length / duration, // chars per ms
-    mode: actualOutput?.mode || 'unknown',
-    transformationsApplied: actualOutput?.transformationsApplied || 0,
-  };
+ async function collectPerformanceMetrics(testCase: TestCase, actualOutput: TransformationOutput, duration: number): Promise<PerformanceMetrics> {
+   return {
+     executionTime: duration,
+     memoryUsage: process.memoryUsage().heapUsed,
+     transformationSpeed: testCase.input.code.length / duration, // chars per ms
+     mode: actualOutput?.mode || 'unknown',
+     transformationsApplied: actualOutput?.transformationsApplied || 0,
+   };
+ }
 }
 
 /**
  * Generate test report
  */
-async function generateTestReport(executionResult: any, options: TestExecutionRequest['options']) {
+async function generateTestReport(
+  executionResult: ExecutionResult,
+  options: TestExecutionRequest['options']
+) {
   const reportPath = join(options.outputDir, `test-report-${Date.now()}.json`);
 
   // Generate JSON report
@@ -678,7 +686,7 @@ async function generateTestReport(executionResult: any, options: TestExecutionRe
 /**
  * Generate HTML test report
  */
-function generateHtmlReport(executionResult: any): string {
+function generateHtmlReport(executionResult: ExecutionResult): string {
   const { summary, suiteResults } = executionResult;
 
   return `
@@ -714,21 +722,21 @@ function generateHtmlReport(executionResult: any): string {
     
     ${suiteResults
       .map(
-        (suite: any) => `
+        (suite: SuiteResult) => `
         <div class="suite">
             <div class="suite-header">
                 ${suite.suite.name} (${suite.summary.passed}/${suite.summary.total} passed)
             </div>
             ${suite.results
               .map(
-                (result: any) => `
+                (result: TestResult) => `
                 <div class="test-case">
                     <h4 class="${result.status}">${result.testCase.name} - ${result.status.toUpperCase()}</h4>
                     <p>${result.testCase.description}</p>
                     ${result.error ? `<p class="failed">Error: ${result.error}</p>` : ''}
                     ${result.assertions
                       .map(
-                        (assertion: any) => `
+                        (assertion: AssertionResult) => `
                         <div class="assertion ${assertion.passed ? 'passed' : 'failed'}">
                             ${assertion.type}: ${assertion.message} ${assertion.passed ? '✓' : '✗'}
                         </div>
@@ -980,3 +988,30 @@ export function generateTestCasesFromPatterns(patterns: any[]): TestCase[] {
     },
   }));
 }
+async function collectPerformanceMetrics(
+  testCase: TestCase,
+  actualOutput: TransformationOutput,
+  duration: number
+): Promise<PerformanceMetrics> {
+  // Use process.memoryUsage() if available (Bun/Node), fallback to 0 if not
+  let memoryUsage = 0;
+  try {
+    // @ts-ignore
+    memoryUsage = typeof process !== 'undefined' && process.memoryUsage ? process.memoryUsage().heapUsed : 0;
+  } catch {
+    memoryUsage = 0;
+  }
+
+  // Calculate transformation speed (chars/ms)
+  const codeLength = testCase.input.code.length || 1;
+  const transformationSpeed = duration > 0 ? codeLength / duration : 0;
+
+  return {
+    executionTime: duration,
+    memoryUsage,
+    transformationSpeed,
+    mode: actualOutput?.mode,
+    transformationsApplied: actualOutput?.transformationsApplied,
+  };
+}
+
