@@ -2,7 +2,7 @@
  * CLI interface for the Documentation Generator
  */
 
-import { DocumentationGenerator, type DocConfig } from './generator.js';
+import { DocumentationGenerator } from './generator.js';
 import { parseArgs } from 'node:util';
 import { existsSync } from 'node:fs';
 import chokidar from 'chokidar';
@@ -26,23 +26,21 @@ export class DocumentationCLI {
         return;
       }
 
-      const config: Partial<DocConfig> = {
-        sourceDir: parsed.sourceDir || './src',
-        outputDir: parsed.outputDir || './docs',
-        formats: (parsed.formats as any) || ['markdown'],
-      };
+      const sourceDir = parsed.sourceDir || './src';
+      const outputDir = parsed.outputDir || './docs';
+      const formats = (parsed.formats as any) || ['markdown'];
 
       // Validate source directory exists
-      if (!existsSync(config.sourceDir!)) {
-        throw new Error(`Source directory does not exist: ${config.sourceDir}`);
+      if (!existsSync(sourceDir)) {
+        throw new Error(`Source directory does not exist: ${sourceDir}`);
       }
 
-      const generator = new DocumentationGenerator(config);
+      const generator = new DocumentationGenerator();
 
       if (parsed.watch) {
-        await this.watchMode(generator, config);
+        await this.watchMode(generator, { sourceDir, outputDir, formats });
       } else {
-        await this.generateOnce(generator);
+        await this.generateOnce(generator, { sourceDir, outputDir, formats });
       }
     } catch (error) {
       console.error('❌ Documentation generation failed:', error);
@@ -74,57 +72,43 @@ export class DocumentationCLI {
     };
   }
 
-  private async generateOnce(generator: DocumentationGenerator): Promise<void> {
+  private async generateOnce(generator: DocumentationGenerator, config: { sourceDir: string; outputDir: string; formats: string[] }): Promise<void> {
     console.log('🚀 Starting documentation generation...');
     const startTime = Date.now();
 
-    const result = await generator.generateDocumentation();
+    const request = {
+      type: 'api' as const,
+      format: 'markdown' as const,
+      sourceFiles: undefined,
+      outputPath: config.outputDir,
+      includePrivate: false,
+      includeTests: false,
+      includeExamples: true,
+    };
+
+    const result = await generator.generateDocumentation(request);
 
     const duration = Date.now() - startTime;
     console.log(`✅ Documentation generated successfully in ${duration}ms`);
-    console.log(`   📊 ${result.stats.totalItems} items from ${result.stats.totalFiles} files`);
+    console.log(`   📊 ${result.metadata.totalFunctions + result.metadata.totalClasses} items from ${result.metadata.totalModules} files`);
 
     // Show breakdown by type
-    for (const [type, count] of Object.entries(result.stats.byType)) {
-      const pluralType = this.pluralizeType(type, count);
-      console.log(`   📝 ${count} ${pluralType}`);
-    }
+    console.log(`   📝 ${result.metadata.totalFunctions} functions`);
+    console.log(`   📝 ${result.metadata.totalClasses} classes`);
+    console.log(`   📝 ${result.metadata.totalModules} modules`);
   }
 
-  private pluralizeType(type: string, count: number): string {
-    if (count === 1) {
-      return type;
-    }
-
-    // Handle special cases for proper pluralization
-    switch (type) {
-      case 'class':
-        return 'classes';
-      case 'interface':
-        return 'interfaces';
-      case 'function':
-        return 'functions';
-      case 'pattern':
-        return 'patterns';
-      case 'config':
-        return 'configs';
-      case 'state':
-        return 'states';
-      default:
-        return `${type}s`;
-    }
-  }
 
   private async watchMode(
     generator: DocumentationGenerator,
-    config: Partial<DocConfig>
+    config: { sourceDir: string; outputDir: string; formats: string[] }
   ): Promise<void> {
     console.log('👀 Starting watch mode...');
     console.log(`   📁 Watching: ${config.sourceDir}`);
     console.log(`   📝 Output: ${config.outputDir}`);
 
     // Initial generation
-    await this.generateOnce(generator);
+    await this.generateOnce(generator, config);
 
     // Set up file watcher
     const watcher = chokidar.watch(config.sourceDir!, {
@@ -143,7 +127,7 @@ export class DocumentationCLI {
       timeout = setTimeout(async () => {
         console.log('\n🔄 Files changed, regenerating documentation...');
         try {
-          await this.generateOnce(generator);
+          await this.generateOnce(generator, config);
           console.log('✅ Documentation updated');
         } catch (error) {
           console.error('❌ Failed to regenerate documentation:', error);
