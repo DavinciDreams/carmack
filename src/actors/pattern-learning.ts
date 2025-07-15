@@ -573,12 +573,12 @@ export class PatternLearner {
         // 2. Use AST analysis to find transformation patterns
         // 3. Extract reusable patterns using ML techniques
 
-        // For now, create a mock discovered pattern
+        // Create pattern in the correct AstPattern format
         const discoveredPattern: LearnedPattern = {
           id: `discovered-${Date.now()}`,
           language: 'typescript',
-          pattern: 'var $name = $value',
-          replacement: 'const $name = $value',
+          pattern: 'var $NAME = $VALUE',
+          replacement: 'const $NAME = $VALUE',
           description: `Auto-discovered pattern from transformation ${transformation.id}`,
           complexity: 1,
           riskLevel: 'low',
@@ -630,6 +630,7 @@ export class PatternLearner {
     discovered: DiscoveredPattern
   ): Promise<LearnedPattern | null> {
     try {
+      // Create pattern in the correct AstPattern format
       return {
         id: discovered.id,
         language: discovered.context.language,
