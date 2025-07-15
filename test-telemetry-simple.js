@@ -27,15 +27,10 @@ try {
   // Test 2: Collector instantiation
   console.log('✅ Test 2: Collector instantiation');
   const collector = new TelemetryCollector(config);
-  
+
   // Test 3: Basic event recording
   console.log('✅ Test 3: Pattern success recording');
-  collector.recordPatternSuccess(
-    'test-pattern',
-    true,
-    'ast',
-    '/test/file.ts'
-  );
+  collector.recordPatternSuccess('test-pattern', true, 'ast', '/test/file.ts');
 
   // Test 4: Performance recording
   console.log('✅ Test 4: Performance recording');
@@ -67,8 +62,7 @@ try {
 
   console.log('🎉 All telemetry tests passed!');
   console.log('📊 Telemetry system is working correctly');
-
-} catch (error: any) {
+} catch (error) {
   console.error('❌ Telemetry test failed:', error.message);
   process.exit(1);
 }
