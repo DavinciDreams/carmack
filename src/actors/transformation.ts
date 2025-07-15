@@ -4,6 +4,7 @@ import { js, ts } from '@ast-grep/napi';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
 import type { AstPattern, TransformationRequest } from '../types.js';
+import { LLMTransformer, type LLMTransformationInput } from './llm-transformation.js';
 
 // Transformation input schema
 const TransformationInputSchema = z.object({
@@ -159,7 +160,7 @@ async function applyTemplateTransformation(files: string[], patterns: AstPattern
             // Enhanced Promise.then() to async/await conversion
             modifiedContent = modifiedContent.replace(
               /([a-zA-Z_$][\w.]*|\))\.then\(\s*\(\s*([a-zA-Z_$]\w*)\s*\)\s*=>\s*{\s*([^}]+)\s*}\s*\)/g,
-              (match, promise, param, body) => {
+              (_match, promise, param, body) => {
                 return `const ${param} = await ${promise};\n${body.trim()}`;
               }
             );
@@ -204,10 +205,10 @@ async function applyTemplateTransformation(files: string[], patterns: AstPattern
 /**
  * Enhanced template transformation with smart heuristics
  */
-function enhancedTemplateTransformation(content: string): string {
-  // Apply multiple transformation passes
-  return content; // Placeholder implementation
-}
+// function _enhancedTemplateTransformation(_content: string): string {
+//   // Apply multiple transformation passes
+//   return _content; // Placeholder implementation
+// }
 
 /**
  * Enhanced var transformation that properly handles async
@@ -388,7 +389,7 @@ async function smartVarToConstLetAST(_root: any, content: string, _lang: any): P
     // Enhanced var to const/let conversion with better pattern matching
     const varRegex = /^(\s*)var\s+(\w+)\s*=\s*([^;]+);?\s*$/gm;
 
-    modifiedContent = modifiedContent.replace(varRegex, (match, indent, varName, value) => {
+    modifiedContent = modifiedContent.replace(varRegex, (_match, indent, varName, value) => {
       console.log(`🔄 Found var declaration: ${varName} = ${value.trim()}`);
 
       // Analyze the value to decide between const and let
@@ -442,7 +443,7 @@ async function promiseToAsyncAwaitAST(_root: any, content: string, _lang: any): 
     // Enhanced Promise to async/await transformation using regex
     const thenRegex = /(\w+)\.then\(\s*\((\w+)\)\s*=>\s*\{([^}]+)\}\s*\)/g;
 
-    modifiedContent = modifiedContent.replace(thenRegex, (match, promise, param, body) => {
+    modifiedContent = modifiedContent.replace(thenRegex, (_match, promise, param, body) => {
       console.log(`🔄 Found Promise chain: ${promise}.then((${param}) => ...)`);
       console.log(`✅ Converting to: const ${param} = await ${promise};`);
       return `const ${param} = await ${promise};\n${body.trim()}`;
@@ -481,7 +482,7 @@ async function enhanceObjectDestructuring(
 /**
  * Remove unnecessary return statements
  */
-async function removeUnnecessaryReturns(_root: any, content: string, _lang: any): Promise<string> {
+async function removeUnnecessaryReturnsAST(_root: any, content: string, _lang: any): Promise<string> {
   try {
     // Remove unnecessary return statements from arrow functions
     let modifiedContent = content;
@@ -658,62 +659,119 @@ async function applyLlmTransformation(files: string[], request?: TransformationR
   console.log('Applying LLM transformations...');
 
   try {
-    // Check if we have a specific LLM transformation pattern
-    const prompt = request?.prompt || generateDefaultPrompt(files);
+    // Use the new comprehensive LLM transformation system
+    const llmInput: LLMTransformationInput = {
+      files,
+      request,
+      config: {
+        provider: (process.env.LLM_PROVIDER as any) || 'mock',
+        apiKey: process.env.LLM_API_KEY,
+        model: process.env.LLM_MODEL || 'gpt-4',
+        baseURL: process.env.LLM_BASE_URL,
+        maxTokens: 4000,
+        temperature: 0.1, // Low temperature for deterministic code transformations
+        timeout: 30000,
+        retries: 3,
+      },
+      context: {
+        projectType: 'typescript',
+        framework: detectProjectFramework(files),
+      },
+    };
 
-    // For now, implement a basic rule-based transformation that mimics LLM behavior
-    // This can be replaced with actual LLM API calls (OpenAI, Anthropic, etc.)
-
-    const transformedFiles: string[] = [];
-
-    for (const filePath of files) {
-      const content = await readFile(filePath, 'utf-8');
-
-      // Apply intelligent transformations based on content analysis
-      let transformedContent = content;
-
-      // Advanced var-to-const/let with usage analysis
-      transformedContent = await smartVarTransformation(transformedContent);
-
-      // Complex callback-to-promise-to-async transformations
-      transformedContent = await advancedCallbackToAsync(transformedContent);
-
-      // Smart class modernization
-      transformedContent = await modernizeClasses(transformedContent);
-
-      // Only write if content changed
-      if (transformedContent !== content) {
-        await writeFile(filePath, transformedContent, 'utf-8');
-        transformedFiles.push(filePath);
-      }
-    }
+    // Call the new LLM transformation system
+    const transformer = new LLMTransformer(llmInput.config);
+    const result = await transformer.transformFiles(llmInput);
 
     return {
-      filesModified: transformedFiles,
-      transformationsApplied: transformedFiles.length,
+      filesModified: result.filesModified,
+      transformationsApplied: result.transformationsApplied,
       mode: 'llm' as const,
-      prompt,
+      prompt: request?.prompt || 'LLM-based code transformation',
+      totalTokensUsed: result.totalTokensUsed,
+      averageConfidence: result.averageConfidence,
+      errors: result.errors,
+      warnings: result.warnings,
     };
   } catch (error) {
     console.error('LLM transformation failed:', error);
-    // Graceful fallback
-    return {
-      filesModified: [],
-      transformationsApplied: 0,
-      mode: 'llm' as const,
-      prompt: request?.prompt || 'Default transformation prompt',
-    };
+    // Graceful fallback to the old rule-based system
+    return await applyFallbackLlmTransformation(files, request);
   }
 }
 
-function generateDefaultPrompt(files: string[]): string {
-  return `Transform the following ${files.length} TypeScript file(s) to use modern patterns:
-- Convert var to const/let based on usage
-- Transform callbacks to async/await
-- Use modern class syntax
-- Apply destructuring where appropriate
-- Use template literals for string concatenation`;
+/**
+ * Fallback LLM transformation using rule-based approach
+ */
+async function applyFallbackLlmTransformation(files: string[], request?: TransformationRequest) {
+  console.log('Using fallback rule-based LLM transformation...');
+  
+  const transformedFiles: string[] = [];
+
+  for (const filePath of files) {
+    const content = await readFile(filePath, 'utf-8');
+
+    // Apply intelligent transformations based on content analysis
+    let transformedContent = content;
+
+    // Advanced var-to-const/let with usage analysis
+    transformedContent = await smartVarTransformation(transformedContent);
+
+    // Complex callback-to-promise-to-async transformations
+    transformedContent = await advancedCallbackToAsync(transformedContent);
+
+    // Smart class modernization
+    transformedContent = await modernizeClasses(transformedContent);
+
+    // Only write if content changed
+    if (transformedContent !== content) {
+      await writeFile(filePath, transformedContent, 'utf-8');
+      transformedFiles.push(filePath);
+    }
+  }
+
+  return {
+    filesModified: transformedFiles,
+    transformationsApplied: transformedFiles.length,
+    mode: 'llm' as const,
+    prompt: request?.prompt || 'Fallback rule-based transformation',
+  };
 }
+
+/**
+ * Detect project framework from file analysis
+ */
+function detectProjectFramework(files: string[]): string | undefined {
+  // Simple framework detection based on file names and common patterns
+  const fileNames = files.join(' ').toLowerCase();
+  
+  if (fileNames.includes('react') || fileNames.includes('.jsx') || fileNames.includes('.tsx')) {
+    return 'React';
+  }
+  if (fileNames.includes('vue')) {
+    return 'Vue';
+  }
+  if (fileNames.includes('angular')) {
+    return 'Angular';
+  }
+  if (fileNames.includes('express') || fileNames.includes('server')) {
+    return 'Express';
+  }
+  if (fileNames.includes('xstate') || fileNames.includes('machine')) {
+    return 'XState';
+  }
+  
+  return undefined;
+}
+
+// function _generateDefaultPrompt(_files: string[]): string {
+//   return `Transform the following ${_files.length} TypeScript file(s) to use modern patterns:
+// - Convert var to const/let based on usage
+// - Transform callbacks to async/await
+// - Use modern class syntax
+// - Apply destructuring where appropriate
+// - Use template literals for string concatenation`;
+// }
 
 async function smartVarTransformation(content: string): Promise<string> {
   // Advanced var analysis with scope tracking
@@ -725,7 +783,7 @@ async function smartVarTransformation(content: string): Promise<string> {
   for (const declaration of varDeclarations) {
     const varMatch = declaration.match(/var\s+(\w+)\s*=\s*(.+);/);
     if (varMatch) {
-      const [fullDecl, varName, value] = varMatch;
+      const [fullDecl, varName] = varMatch;
 
       // Check if variable is reassigned
       const reassignPattern = new RegExp(`\\b${varName}\\s*=\\s*[^=]`, 'g');
@@ -773,7 +831,7 @@ async function modernizeClasses(content: string): Promise<string> {
   // Pattern: function Constructor() { this.prop = value; }
   const constructorPattern = /function\s+(\w+)\s*\([^)]*\)\s*\{([^}]*this\.[^}]+)\}/g;
 
-  transformed = transformed.replace(constructorPattern, (match, className, body) => {
+  transformed = transformed.replace(constructorPattern, (_match, className, body) => {
     const properties = body.match(/this\.(\w+)\s*=\s*([^;]+);/g) || [];
     const constructorBody: string = (properties as string[])
       .map((prop: string) => prop.replace('this.', '    this.'))
@@ -860,35 +918,6 @@ async function arrayIncludesAST(_root: any, content: string, _lang: any): Promis
     return modifiedContent;
   } catch (error) {
     console.error('Error in arrayIncludesAST:', error);
-    return content;
-  }
-}
-
-/**
- * AST-based removal of unnecessary return statements
- */
-async function removeUnnecessaryReturnsAST(
-  _root: any,
-  content: string,
-  _lang: any
-): Promise<string> {
-  try {
-    console.log('🔄 Processing unnecessary return removal...');
-    let modifiedContent = content;
-
-    // Convert (params) => { return expr; } to (params) => expr
-    modifiedContent = modifiedContent.replace(
-      /\(([^)]*)\)\s*=>\s*\{\s*return\s+([^;]+);\s*\}/g,
-      '($1) => $2'
-    );
-
-    if (modifiedContent !== content) {
-      console.log('✅ Unnecessary return transformations applied');
-    }
-
-    return modifiedContent;
-  } catch (error) {
-    console.error('Error in removeUnnecessaryReturnsAST:', error);
     return content;
   }
 }

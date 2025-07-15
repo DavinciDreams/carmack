@@ -18,8 +18,8 @@ import {
 import { createActor } from 'xstate';
 import { carmackCoderMachine } from './src/machine.ts';
 import { z } from 'zod';
-import { carmackConfig } from './carmack.config.ts';
-import { loadPatterns } from './src/utils/index.js';
+//import { ProductionConfigSchema } from './production.config.ts';
+
 
 // CLI Schema
 const CLIArgsSchema = z
@@ -80,9 +80,9 @@ SAFETY FEATURES:
   - Complexity analysis and quality gates
   - Comprehensive validation pipeline
   - Telemetry and performance monitoring
+  - Customizable workspace directory
+  - Supports multiple repository types (GitHub, GitLab, etc.)`;
 
-For more information, visit: ${carmackConfig.project.repository.url}
-`;
 
 class ProductionError extends Error {
   constructor(
@@ -395,7 +395,9 @@ async function main(): Promise<void> {
 
     // Override config with environment variables first, then CLI arguments
     if (process.env.CARMACK_REPOSITORY_URL || process.env.REPOSITORY_URL) {
-      config.repository.url = process.env.CARMACK_REPOSITORY_URL || process.env.REPOSITORY_URL || config.repository.url;
+      config.repository.url =
+        process.env.CARMACK_REPOSITORY_URL || process.env.REPOSITORY_URL || config.repository.url;
+
     }
     if (args.repository) {
       config.repository.url = args.repository;

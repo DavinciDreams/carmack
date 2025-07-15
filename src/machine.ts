@@ -6,9 +6,41 @@ import { complexityActor } from './actors/complexity.ts';
 import { dafnyActor } from './actors/dafny.ts';
 import { gitActor } from './actors/git.ts';
 import { transformationActor } from './actors/transformation.ts';
+import { templateEngineActor, type TemplatePattern } from './actors/template-engine.ts';
 import { validationActor } from './actors/validation.ts';
-import type { MachineContext, MachineEvent } from './types.ts';
-import { MachineContextSchema, type TransformationMode } from './types.ts';
+import { patternLearningActor } from './actors/pattern-learning.ts';
+import type { MachineContext, MachineEvent, AstPattern } from './types.ts';
+import { MachineContextSchema } from './types.ts';
+
+/**
+ * Convert AstPattern to TemplatePattern for template engine compatibility
+ */
+function convertAstPatternToTemplatePattern(astPattern: AstPattern): TemplatePattern {
+  return {
+    id: astPattern.id,
+    language: astPattern.language as 'typescript' | 'javascript',
+    pattern: {
+      template: astPattern.pattern,
+      flags: 'g',
+      context: undefined, // Could be enhanced to parse context from pattern
+    },
+    replacement: {
+      template: astPattern.replacement,
+      transformers: undefined,
+      conditionals: undefined,
+    },
+    description: astPattern.description,
+    complexity: astPattern.complexity,
+    riskLevel: astPattern.riskLevel,
+    category: 'modernization', // Default category
+    performance: {
+      priority: astPattern.complexity <= 3 ? 8 : 5, // Higher priority for simpler patterns
+      batchable: true,
+      conflicts: undefined,
+    },
+    testCases: undefined,
+  };
+}
 
 /**
  * Carmack Coder State Machine
@@ -32,10 +64,12 @@ const _carmackCoderMachine = setup({
   actors: {
     analysisActor,
     transformationActor,
+    templateEngineActor,
     validationActor,
     gitActor,
     complexityActor,
     dafnyActor,
+    patternLearningActor,
   },
   guards: {
     hasMaxRetriesExceeded: ({ context }) => {
@@ -319,11 +353,74 @@ const _carmackCoderMachine = setup({
     },
 
     applyingTransformation: {
+      always: [
+        {
+          target: 'applyingTemplateTransformation',
+          guard: ({ context }) => {
+            const mode = context.currentTransformation?.mode;
+            return mode === 'template' || !mode; // Default to template
+          },
+        },
+        {
+          target: 'applyingAdvancedTransformation',
+          guard: ({ context }) => {
+            const mode = context.currentTransformation?.mode;
+            return mode === 'ast' || mode === 'llm';
+          },
+        },
+      ],
+    },
+
+    applyingTemplateTransformation: {
       invoke: {
-        id: 'transformation',
+        id: 'template-transformation',
+        src: 'templateEngineActor',
+        input: ({ context }: { context: MachineContext }) => ({
+          targetFiles: context.activeFiles,
+          patterns: context.patterns
+            .filter(p =>
+              (p.mode === 'template' || !p.mode) &&
+              p.complexity <= (context.currentTransformation?.request?.maxComplexity || 5)
+            )
+            .map(convertAstPatternToTemplatePattern),
+          options: {
+            dryRun: false,
+            maxComplexity: context.currentTransformation?.request?.maxComplexity || 5,
+            enableBatching: true,
+            skipConflicts: true,
+            preserveFormatting: true,
+          },
+        }),
+        onDone: {
+          target: 'validatingFormat',
+          actions: assign(({ context, event }) => {
+            if (!context.currentTransformation) return context;
+
+            const transformationResult = event.output as any;
+
+            return {
+              ...context,
+              currentTransformation: {
+                ...context.currentTransformation,
+                filesModified: transformationResult.filesModified || [],
+                status: 'applying' as const,
+              },
+            };
+          }),
+        },
+        onError: {
+          target: 'retrying',
+          actions: ['addError', 'incrementRetries'],
+        },
+      },
+    },
+
+    applyingAdvancedTransformation: {
+      invoke: {
+        id: 'advanced-transformation',
         src: 'transformationActor',
         input: ({ context }: { context: MachineContext }) => ({
-          mode: context.currentTransformation?.mode || 'template',
+          mode: context.currentTransformation?.mode || 'ast',
           files: context.activeFiles,
           patterns: context.patterns,
           request: context.currentTransformation?.request,
@@ -554,12 +651,36 @@ const _carmackCoderMachine = setup({
 
     learningFromFeedback: {
       invoke: {
-        id: 'learning',
-        src: 'analysisActor',
+        id: 'pattern-learning',
+        src: 'patternLearningActor',
         input: ({ context }: { context: MachineContext }) => ({
-          operation: 'learn',
-          transformation: context.currentTransformation,
+          operation: 'learn' as const,
+          transformation: context.currentTransformation ? {
+            id: context.currentTransformation.id,
+            mode: context.currentTransformation.mode,
+            filesModified: context.currentTransformation.filesModified,
+            startTime: context.currentTransformation.startTime,
+            endTime: context.currentTransformation.endTime,
+            errors: context.currentTransformation.errors.map(e => e.message),
+            summary: context.currentTransformation.summary,
+            complexity: context.currentTransformation.complexity,
+            validation: context.currentTransformation.validation,
+          } : undefined,
           patterns: context.patterns,
+          context: {
+            codebase: {
+              language: 'typescript',
+              complexity: context.currentTransformation?.complexity?.cyclomaticComplexity || 5,
+              size: context.activeFiles.length * 100, // Rough estimate
+            },
+            environment: {
+              success: context.currentTransformation?.errors.length === 0,
+              performance: {
+                transformationTime: context.currentTransformation?.endTime && context.currentTransformation?.startTime ?
+                  context.currentTransformation.endTime - context.currentTransformation.startTime : 0,
+              },
+            },
+          },
         }),
         onDone: {
           target: 'generatingSummary',

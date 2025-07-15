@@ -7,7 +7,7 @@ export const defaultProductionConfig: ProductionConfig = {
     branch: process.env.CARMACK_BRANCH || process.env.BRANCH || 'main',
     workingDirectory: process.env.CARMACK_WORKSPACE || process.env.WORKSPACE_DIR || '/tmp/carmack-workspace', environments
  */
-
+// Imports must come first
 import { z } from 'zod';
 import { CARMACK_REPOSITORY_URL } from './carmack.config.ts';
 
@@ -42,7 +42,8 @@ export const ProductionConfigSchema = z
         .default(['.ts', '.tsx', '.js', '.jsx', '.mts', '.cts']),
       riskLevelFilter: z.enum(['low', 'medium', 'high']).default('medium'),
       enableBackups: z.boolean().default(true),
-      dryRunFirst: z.boolean().default(false),
+      dryRunFirst: z.boolean().default(true),
+
     }),
 
     // CI/CD Integration
@@ -115,7 +116,7 @@ export const defaultProductionConfig: ProductionConfig = {
     allowedFileExtensions: ['.ts', '.tsx', '.js', '.jsx', '.mts', '.cts'],
     riskLevelFilter: 'medium',
     enableBackups: true,
-    dryRunFirst: false,
+    dryRunFirst: true,
   },
   cicd: {
     platform: 'github',
