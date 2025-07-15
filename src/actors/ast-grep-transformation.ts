@@ -503,8 +503,15 @@ function extractVariables(node: SgNode, pattern: AstGrepPattern): Record<string,
  * Extract variable names from pattern text
  */
 function extractVariableNames(patternText: string): string[] {
-  const matches = patternText.match(/\$(\w+)/g) || [];
-  return matches.map((match) => match.substring(1)); // Remove $ prefix
+  // Match both single $ and triple $$$ variables
+  const matches = patternText.match(/\$\$\$(\w+)|\$(\w+)/g) || [];
+  return matches.map((match) => {
+    // Remove $ or $$$ prefix
+    if (match.startsWith('$$$')) {
+      return match.substring(3);
+    }
+    return match.substring(1);
+  });
 }
 
 /**
@@ -658,7 +665,8 @@ function generateAstReplacement(match: AstMatch, pattern: AstGrepPattern): strin
       transformedValue = applyAstTransformer(value, transformer);
     }
 
-    // Replace all occurrences of the variable
+    // Replace all occurrences of the variable (both $ and $$$ forms)
+    replacement = replacement.replace(new RegExp(`\\$\\$\\$${varName}`, 'g'), transformedValue);
     replacement = replacement.replace(new RegExp(`\\$${varName}`, 'g'), transformedValue);
   }
 
@@ -781,11 +789,11 @@ export const BUILTIN_AST_PATTERNS: AstGrepPattern[] = [
     language: 'typescript',
     pattern: {
       rule: {
-        pattern: 'function $NAME($PARAMS) { return $EXPR; }',
+        pattern: 'function $NAME($$$PARAMS) { return $$$BODY }',
       },
     },
     replacement: {
-      template: 'const $NAME = ($PARAMS) => $EXPR;',
+      template: 'const $NAME = ($$$PARAMS) => $$$BODY',
     },
     description: 'Convert simple functions to arrow functions',
     complexity: 4,
@@ -826,11 +834,12 @@ export const BUILTIN_AST_PATTERNS: AstGrepPattern[] = [
     language: 'typescript',
     pattern: {
       rule: {
-        pattern: '$NAME: $NAME',
+        kind: 'pair',
+        pattern: '$PROP: $PROP',
       },
     },
     replacement: {
-      template: '$NAME',
+      template: '$PROP',
     },
     description: 'Use object property shorthand syntax',
     complexity: 2,
