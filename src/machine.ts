@@ -424,6 +424,7 @@ const _carmackCoderMachine = setup({
           files: context.activeFiles,
           patterns: context.patterns,
           request: context.currentTransformation?.request,
+          dryRun: context.currentTransformation?.request?.dryRun || false,
         }),
         onDone: {
           target: 'validatingFormat',

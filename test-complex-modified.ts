@@ -14,7 +14,7 @@ function processComplexData(input: any[]): Promise<any> {
     const errors: string[] = [];
 
     for (var i = 0; i < input.length; i++) {
-      const item = input[i];;
+      const item = input[i];
 
       if (item === null) {
         errors.push('Null item at index ' + i);
@@ -22,14 +22,14 @@ function processComplexData(input: any[]): Promise<any> {
       }
 
       if (item.type === 'special') {
-        const processed = processSpecialItem(item);;
-        if (processed != null) {
+        const processed = processSpecialItem(item);
+        if (processed !== null) {
           results.push(processed);
         } else {
           errors.push('Failed to process special item');
         }
       } else if (item.type === 'normal') {
-        const processed = processNormalItem(item);;
+        const processed = processNormalItem(item);
         results.push(processed);
       } else {
         errors.push('Unknown item type: ' + item.type);
@@ -37,7 +37,7 @@ function processComplexData(input: any[]): Promise<any> {
     }
 
     if (errors.length > 0) {
-      console.error('Error: Processing completed with errors:', errors);
+      console.error(' Processing completed with errors:', errors);
       resolve({ results, errors });
     } else {
       resolve({ results });
@@ -46,14 +46,14 @@ function processComplexData(input: any[]): Promise<any> {
 }
 
 function processSpecialItem(item: any): any {
-  const config = getConfig();;
-  const validator = getValidator();;
+  const config = getConfig();
+  const validator = getValidator();
 
   if (validator.validate(item) === false) {
     return null;
   }
 
-  const transformed = {;
+  const transformed = {
     id: item.id,
     value: item.value * config.multiplier,
     timestamp: Date.now(),
@@ -63,7 +63,7 @@ function processSpecialItem(item: any): any {
 }
 
 function processNormalItem(item: any): any {
-  const result = {;
+  const result = {
     id: item.id,
     value: item.value,
     processed: true,
@@ -104,7 +104,7 @@ function fetchUserData(userId: number, callback: (err: Error | null, data?: any)
 // Using the callback
 fetchUserData(123, (err, data) => {
   if (err) {
-    console.error('Error: ' + err.message);
+    console.error(' ' + err.message);
   } else {
     console.log('Data:', data);
   }

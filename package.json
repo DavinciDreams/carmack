@@ -70,6 +70,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.0.6",
     "@types/bun": "^1.2.18",
+    "@types/chokidar": "^2.1.7",
     "@types/eslint": "^9.6.1",
     "@typescript-eslint/eslint-plugin": "^8.35.1",
     "@typescript-eslint/parser": "^8.35.1",
@@ -82,6 +83,7 @@
   "dependencies": {
     "@ast-grep/napi": "^0.38.6",
     "@types/node": "^24.0.10",
+    "chokidar": "^4.0.3",
     "simple-git": "^3.28.0",
     "xstate": "^5.20.1",
     "zod": "^3.25.74"
