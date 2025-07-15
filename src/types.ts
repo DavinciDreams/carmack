@@ -148,8 +148,8 @@ export const ActorResultBaseSchema = z.object({
   success: z.boolean(),
   mode: z.enum(['template', 'ast-grep', 'llm']),
   executionTime: z.number().optional(),
-  errors: z.array(z.string()).optional(),
-  warnings: z.array(z.string()).optional(),
+  errors: z.array(z.string()).default([]),
+  warnings: z.array(z.string()).default([]),
 });
 
 // Template Engine Actor Result
