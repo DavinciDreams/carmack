@@ -366,6 +366,7 @@ function applySmartVarTransformation(content: string): { content: string; count:
   const varRegex = /\bvar\s+(\w+)\s*=\s*([^;]+);/g;
 
   modifiedContent = modifiedContent.replace(varRegex, (_match, varName, value) => {
+
     count++;
 
     // Analyze the value to determine if it should be const or let

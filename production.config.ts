@@ -1,9 +1,15 @@
 /**
  * Production Configuration for Carmack Coder
- * Designed for deployment in real codebase environments
+ * Designed for deployment in real co// Default production configuration with environment variable support
+export const defaultProductionConfig: ProductionConfig = {
+  repository: {
+    url: process.env.CARMACK_REPOSITORY_URL || process.env.REPOSITORY_URL || CARMACK_REPOSITORY_URL,
+    branch: process.env.CARMACK_BRANCH || process.env.BRANCH || 'main',
+    workingDirectory: process.env.CARMACK_WORKSPACE || process.env.WORKSPACE_DIR || '/tmp/carmack-workspace', environments
  */
 // Imports must come first
 import { z } from 'zod';
+import { CARMACK_REPOSITORY_URL } from './carmack.config.ts';
 
 export const ProductionConfigSchema = z
   .object({
@@ -37,6 +43,7 @@ export const ProductionConfigSchema = z
       riskLevelFilter: z.enum(['low', 'medium', 'high']).default('medium'),
       enableBackups: z.boolean().default(true),
       dryRunFirst: z.boolean().default(true),
+
     }),
 
     // CI/CD Integration
