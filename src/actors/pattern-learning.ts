@@ -155,8 +155,10 @@ export class PatternLearner {
     operation: string;
     results: any;
   }> = [];
+  private dataPath: string;
 
-  constructor() {
+  constructor(dataPath: string = './data') {
+    this.dataPath = dataPath;
     this.loadExistingData();
   }
 
@@ -689,7 +691,7 @@ export class PatternLearner {
   private async loadExistingData(): Promise<void> {
     try {
       // Load effectiveness data
-      const effectivenessData = await readFile('./data/pattern-effectiveness.json', 'utf-8');
+      const effectivenessData = await readFile(`${this.dataPath}/pattern-effectiveness.json`, 'utf-8');
       const effectiveness = JSON.parse(effectivenessData);
       for (const [key, value] of Object.entries(effectiveness)) {
         this.effectivenessCache.set(key, value as PatternEffectiveness);
@@ -700,7 +702,7 @@ export class PatternLearner {
 
     try {
       // Load discovered patterns
-      const discoveredData = await readFile('./data/discovered-patterns.json', 'utf-8');
+      const discoveredData = await readFile(`${this.dataPath}/discovered-patterns.json`, 'utf-8');
       const discovered = JSON.parse(discoveredData);
       for (const [key, value] of Object.entries(discovered)) {
         this.discoveredPatterns.set(key, value as DiscoveredPattern);
@@ -716,18 +718,18 @@ export class PatternLearner {
   private async persistLearningData(): Promise<void> {
     try {
       // Ensure data directory exists
-      await writeFile('./data/.gitkeep', '');
+      await writeFile(`${this.dataPath}/.gitkeep`, '');
 
       // Save effectiveness data
       const effectivenessObj = Object.fromEntries(this.effectivenessCache);
       await writeFile(
-        './data/pattern-effectiveness.json',
+        `${this.dataPath}/pattern-effectiveness.json`,
         JSON.stringify(effectivenessObj, null, 2)
       );
 
       // Save discovered patterns
       const discoveredObj = Object.fromEntries(this.discoveredPatterns);
-      await writeFile('./data/discovered-patterns.json', JSON.stringify(discoveredObj, null, 2));
+      await writeFile(`${this.dataPath}/discovered-patterns.json`, JSON.stringify(discoveredObj, null, 2));
 
       console.log('💾 Pattern learning data persisted');
     } catch (error) {
