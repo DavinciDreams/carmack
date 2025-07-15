@@ -9,12 +9,12 @@ class TestClass {
   constructor(name) {
     this.name = name;
   }
-  
+
   method(value) {
     return this.name + value;
   }
 }
 
 export function exportedFunction() {
-  return "exported";
+  return 'exported';
 }
