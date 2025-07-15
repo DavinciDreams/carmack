@@ -162,9 +162,9 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
 
   private async initializeASTGrep() {
     try {
-      // Import AST-grep NAPI bindings
+      // Import AST-grep NAPI bindings - correct destructuring
       const { js } = await import('@ast-grep/napi');
-      // Use type assertion since ast-grep API may not match our Zod schema exactly
+      // Store the js language object directly
       this.astGrep = js as unknown as ASTGrepInstance;
     } catch (error) {
       console.warn('AST-grep not available, falling back to regex parsing:', error);
@@ -342,17 +342,13 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
         throw new Error('AST-grep not available');
       }
 
-      const root = this.astGrep.parse(content);
+      // Parse the source content - correct API usage based on documentation
+      const root = (this.astGrep as any).parse(content);
       const rootNode = root.root();
 
-      // Create pattern objects for AST-grep using the js parser's pattern method
-      const functionPattern = (this.astGrep as any).pattern(AST_PATTERNS.functions.functionDeclaration);
-      const arrowPattern = (this.astGrep as any).pattern(AST_PATTERNS.functions.arrowFunction);
-      // Skip method pattern for now since it's problematic
-
-      // Find function declarations using pattern objects
-      const functionMatches = rootNode.findAll(functionPattern);
-      const arrowMatches = rootNode.findAll(arrowPattern);
+      // Find function declarations using string patterns (not pattern objects)
+      const functionMatches = rootNode.findAll(AST_PATTERNS.functions.functionDeclaration);
+      const arrowMatches = rootNode.findAll(AST_PATTERNS.functions.arrowFunction);
 
       for (const match of [...functionMatches, ...arrowMatches]) {
         const nameMatch = match.getMatch('NAME')?.text();
@@ -429,14 +425,12 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
         throw new Error('AST-grep not available');
       }
 
-      const root = this.astGrep.parse(content);
+      // Parse the source content - correct API usage
+      const root = (this.astGrep as any).parse(content);
       const rootNode = root.root();
 
-      // Create pattern objects for AST-grep using the js parser's pattern method
-      const classPattern = (this.astGrep as any).pattern(AST_PATTERNS.classes.classDeclaration);
-      // Skip interface pattern for now since it's problematic
-
-      const classMatches = rootNode.findAll(classPattern);
+      // Find class declarations using string patterns
+      const classMatches = rootNode.findAll(AST_PATTERNS.classes.classDeclaration);
 
       for (const match of classMatches) {
         const name = match.getMatch('NAME')?.text() || 'anonymous';
@@ -491,23 +485,23 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
   /**
    * Extract parameter list from function text when using generic wildcards
    */
-  private extractParametersFromText(functionText: string, functionName: string): string {
+  private extractParametersFromText(functionText: string, _functionName: string): string {
     try {
       // For regular functions: function name(params) { ... }
       const functionMatch = functionText.match(/function\s+\w+\s*\(([^)]*)\)/);
-      if (functionMatch) {
+      if (functionMatch?.[1] !== undefined) {
         return functionMatch[1].trim();
       }
       
       // For arrow functions: const name = (params) => ...
       const arrowMatch = functionText.match(/const\s+\w+\s*=\s*\(([^)]*)\)\s*=>/);
-      if (arrowMatch) {
+      if (arrowMatch?.[1] !== undefined) {
         return arrowMatch[1].trim();
       }
       
       // For arrow functions without parentheses: const name = param => ...
       const singleParamMatch = functionText.match(/const\s+\w+\s*=\s*(\w+)\s*=>/);
-      if (singleParamMatch) {
+      if (singleParamMatch?.[1] !== undefined) {
         return singleParamMatch[1].trim();
       }
       
