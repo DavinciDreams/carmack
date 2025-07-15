@@ -607,16 +607,16 @@ export { add };
       if (result) {
         // When LLM transformation fails, the pipeline should fail
         expect(result.success).toBe(false);
-        
+
         // Should have no transformations applied since LLM failed and it's the only method
         expect(result.transformationsApplied.length).toBe(0);
-        
+
         // Should have errors recorded
         expect(result.errors).toBeDefined();
         expect(result.errors?.length).toBeGreaterThan(0);
-        
+
         // The error should be from the transformation stage
-        const transformationError = result.errors?.find(e => e.stage === 'transformation');
+        const transformationError = result.errors?.find((e) => e.stage === 'transformation');
         expect(transformationError).toBeDefined();
         expect(transformationError?.severity).toBe('error');
       }
