@@ -135,23 +135,13 @@
       "remove-unnecessary-returns",
       "template-literal-conversion"
     ],
-    "safety": [
-      "array-includes-instead-of-indexof",
-      "const-loop-variable-fix"
-    ],
-    "logging": [
-      "console-log-to-console-error"
-    ],
-    "syntax-fixes": [
-      "fix-double-semicolons",
-      "fix-malformed-object-literal"
-    ]
+    "safety": ["array-includes-instead-of-indexof", "const-loop-variable-fix"],
+    "logging": ["console-log-to-console-error"],
+    "syntax-fixes": ["fix-double-semicolons", "fix-malformed-object-literal"]
   },
   "metadata": {
     "consolidated": "2025-07-11T01:14:30.772Z",
-    "sources": [
-      "patterns-consolidated.json"
-    ],
+    "sources": ["patterns-consolidated.json"],
     "author": "Carmack Coder",
     "license": "MIT",
     "totalPatterns": 12,
