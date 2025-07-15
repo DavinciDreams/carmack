@@ -320,7 +320,7 @@ async function extractPatternsFromCode(
  * Detect variable declaration patterns (var → const/let)
  */
 function detectVarDeclarationPatterns(
-  _sourceFile: any,
+  _sourceFile: unknown,
   content: string,
   source: string,
   config: PatternDiscoveryRequest['config']
@@ -399,7 +399,7 @@ function convertFunctionToArrow(functionStr: string): string {
  * Detect function patterns (function → arrow function)
  */
 function detectFunctionPatterns(
-  _sourceFile: any,
+  _sourceFile: unknown,
   content: string,
   source: string,
   config: PatternDiscoveryRequest['config']
@@ -469,7 +469,7 @@ function detectFunctionPatterns(
  * Detect object patterns (property shorthand, destructuring)
  */
 function detectObjectPatterns(
-  _sourceFile: any,
+  _sourceFile: unknown,
   content: string,
   source: string,
   config: PatternDiscoveryRequest['config']
@@ -531,7 +531,7 @@ function detectObjectPatterns(
  * Detect array patterns (indexOf → includes)
  */
 function detectArrayPatterns(
-  _sourceFile: any,
+  _sourceFile: unknown,
   content: string,
   source: string,
   config: PatternDiscoveryRequest['config']
@@ -593,7 +593,7 @@ function detectArrayPatterns(
  * Detect Promise patterns (then/catch → async/await)
  */
 function detectPromisePatterns(
-  _sourceFile: any,
+  _sourceFile: unknown,
   content: string,
   source: string,
   config: PatternDiscoveryRequest['config']
@@ -655,7 +655,7 @@ function detectPromisePatterns(
  * Detect import patterns
  */
 function detectImportPatterns(
-  _sourceFile: any,
+  _sourceFile: unknown,
   content: string,
   source: string,
   config: PatternDiscoveryRequest['config']
@@ -720,7 +720,7 @@ function detectImportPatterns(
  * Detect class patterns
  */
 function detectClassPatterns(
-  _sourceFile: any,
+  _sourceFile: unknown,
   content: string,
   source: string,
   config: PatternDiscoveryRequest['config']
