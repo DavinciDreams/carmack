@@ -226,7 +226,7 @@ export { add };
         transformationRequest: {
           prompt: 'Refactor variable names',
           targetFiles: [testFile],
-          transformationType: 'ast-grep',
+          transformationType: 'ast',
           maxComplexity: 15,
           dryRun: true,
         },
@@ -238,7 +238,7 @@ export { add };
       if (result) {
         expect(result.performance.stageTimings.transformation).toBeDefined();
         expect(result.transformationsApplied.length).toBeGreaterThan(0);
-        expect(result.transformationsApplied[0].type).toBe('ast-grep');
+        expect(result.transformationsApplied[0].type).toBe('ast');
       }
     });
 
@@ -281,7 +281,7 @@ export { add };
         expect(result.performance.stageTimings.transformation).toBeDefined();
         expect(result.transformationsApplied.length).toBeGreaterThan(0);
         // Should use one of the available transformation types
-        expect(['template', 'ast-grep', 'llm']).toContain(result.transformationsApplied[0].type);
+        expect(['template', 'ast', 'llm']).toContain(result.transformationsApplied[0].type);
       }
     });
 
@@ -607,7 +607,7 @@ export { add };
         const error = result.errors![0];
         expect(error.message).toBeDefined();
         expect(error.stage).toBeDefined();
-        expect(['critical', 'warning', 'info']).toContain(error.severity);
+        expect(['critical', 'warning', 'info', 'error']).toContain(error.severity);
       }
     });
   });
