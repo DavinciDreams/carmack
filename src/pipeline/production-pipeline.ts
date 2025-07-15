@@ -2,16 +2,16 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { createActor, fromPromise } from 'xstate';
 import { z } from 'zod';
-import { astGrepTransformationActor } from '../actors/ast-grep-transformation.js';
-import { feedbackLoopActor } from '../actors/feedback-loop.js';
-// import { complexityActor } from '../actors/complexity.js';
-import { llmTestingFrameworkActor } from '../actors/llm-testing-framework.js';
-import { llmTransformationActor } from '../actors/llm-transformation.js';
-import { patternDiscoveryActor } from '../actors/pattern-discovery.js';
-import { patternLearningActor } from '../actors/pattern-learning.js';
+import { astGrepTransformationActor } from '../actors/ast-grep-transformation.ts';
+import { feedbackLoopActor } from '../actors/feedback-loop.ts';
+// import { complexityActor } from '../actors/complexity.ts';
+import { llmTestingFrameworkActor } from '../actors/llm-testing-framework.ts';
+import { llmTransformationActor } from '../actors/llm-transformation.ts';
+import { patternDiscoveryActor } from '../actors/pattern-discovery.ts';
+import { patternLearningActor } from '../actors/pattern-learning.ts';
 // Import all our transformation systems
-import { templateEngineActor } from '../actors/template-engine.js';
-import { validationActor } from '../actors/validation.js';
+import { templateEngineActor } from '../actors/template-engine.ts';
+import { validationActor } from '../actors/validation.ts';
 
 // Import standardized result types
 import type {
@@ -23,7 +23,7 @@ import type {
   PatternLearningResult,
   TemplateEngineResult,
   ValidationActorResult,
-} from '../types.js';
+} from '../types.ts';
 
 // Helper function to invoke actors with proper async handling
 async function invokeActor<T>(actorLogic: any, input: any): Promise<T> {
@@ -454,6 +454,10 @@ async function patternDiscoveryStage(input: PipelineRequest, state: any): Promis
           startTime: state.startTime,
           endTime: Date.now(),
           errors: [],
+          success: true,
+          executionTime: Date.now() - state.startTime,
+          confidence: 0.8,
+          appliedPatterns: [],
         },
         context: {
           codebase: {
