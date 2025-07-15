@@ -2,21 +2,20 @@
 
 /**
  * Test Infrastructure Validation Suite
- * 
+ *
  * Validates that all test infrastructure improvements work together properly
  * and provides a comprehensive health check of the testing system.
  */
 
-import { performance } from 'node:perf_hooks';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-
-// Import all infrastructure components
-import { UnifiedTestRunner, type TestSuite } from './test-runner.js';
-import { TestFixtures, TestEnvironmentManager } from './test-fixtures.js';
-import { MockSetupUtility, ActorMockFactory } from './mock-factories.js';
+import { performance } from 'node:perf_hooks';
 import { IntegrationTestSuite, PerformanceRegressionSuite } from './integration-suite.js';
-import { testHealthMonitor, testDebugger, testProfiler } from './test-debugging.js';
+import { ActorMockFactory, MockSetupUtility } from './mock-factories.js';
+import { testDebugger, testHealthMonitor, testProfiler } from './test-debugging.js';
+import { TestEnvironmentManager, TestFixtures } from './test-fixtures.js';
+// Import all infrastructure components
+import { type TestSuite, UnifiedTestRunner } from './test-runner.js';
 
 interface ValidationResult {
   component: string;
@@ -31,7 +30,7 @@ interface ValidationResult {
  */
 class TestInfrastructureValidator {
   private results: ValidationResult[] = [];
-  private startTime: number = 0;
+  private startTime = 0;
 
   /**
    * Run all validation tests
@@ -85,7 +84,7 @@ class TestInfrastructureValidator {
 
       // Test runner instantiation
       const runner = new UnifiedTestRunner(2);
-      
+
       // Create mock test suites
       const mockSuites: TestSuite[] = [
         {
@@ -122,7 +121,6 @@ class TestInfrastructureValidator {
           instantiation: 'passed',
         },
       });
-
     } catch (error) {
       this.results.push({
         component: 'Unified Test Runner',
@@ -160,7 +158,7 @@ class TestInfrastructureValidator {
       // Test environment manager
       const envManager = new TestEnvironmentManager();
       const testDir = await envManager.createEnvironment('validation-test');
-      
+
       if (!existsSync(testDir)) {
         throw new Error('Test environment creation failed');
       }
@@ -186,7 +184,6 @@ class TestInfrastructureValidator {
           environmentManager: 'passed',
         },
       });
-
     } catch (error) {
       this.results.push({
         component: 'Test Fixtures',
@@ -233,7 +230,6 @@ class TestInfrastructureValidator {
           mockCleanup: 'passed',
         },
       });
-
     } catch (error) {
       this.results.push({
         component: 'Mock Factories',
@@ -276,7 +272,6 @@ class TestInfrastructureValidator {
           performanceSuite: 'passed',
         },
       });
-
     } catch (error) {
       this.results.push({
         component: 'Integration Suite',
@@ -314,9 +309,9 @@ class TestInfrastructureValidator {
 
       // Test profiler
       testProfiler.start('validation-profile');
-      await new Promise(resolve => setTimeout(resolve, 10)); // Small delay
+      await new Promise((resolve) => setTimeout(resolve, 10)); // Small delay
       const profile = testProfiler.end('validation-profile');
-      
+
       if (!profile || typeof profile.duration !== 'number') {
         throw new Error('Profiler not working properly');
       }
@@ -334,7 +329,6 @@ class TestInfrastructureValidator {
           profiler: 'passed',
         },
       });
-
     } catch (error) {
       this.results.push({
         component: 'Debugging Tools',
@@ -374,7 +368,7 @@ class TestInfrastructureValidator {
         'test:debug',
       ];
 
-      const missingScripts = requiredScripts.filter(script => !scripts[script]);
+      const missingScripts = requiredScripts.filter((script) => !scripts[script]);
       if (missingScripts.length > 0) {
         throw new Error(`Missing required scripts: ${missingScripts.join(', ')}`);
       }
@@ -397,10 +391,9 @@ class TestInfrastructureValidator {
         duration,
         details: {
           requiredScripts: requiredScripts.length,
-          foundScripts: Object.keys(scripts).filter(s => s.startsWith('test')).length,
+          foundScripts: Object.keys(scripts).filter((s) => s.startsWith('test')).length,
         },
       });
-
     } catch (error) {
       this.results.push({
         component: 'Package Scripts',
@@ -433,7 +426,7 @@ class TestInfrastructureValidator {
         'test-debugging.ts',
       ];
 
-      const missingFiles = requiredFiles.filter(file => !existsSync(join(__dirname, file)));
+      const missingFiles = requiredFiles.filter((file) => !existsSync(join(__dirname, file)));
       if (missingFiles.length > 0) {
         throw new Error(`Missing infrastructure files: ${missingFiles.join(', ')}`);
       }
@@ -450,7 +443,6 @@ class TestInfrastructureValidator {
           infrastructureFiles: requiredFiles.length,
         },
       });
-
     } catch (error) {
       this.results.push({
         component: 'Documentation',
@@ -488,7 +480,7 @@ class TestInfrastructureValidator {
       testHealthMonitor.mark('e2e-validation', 'setup-complete');
 
       // Simulate test execution
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
       testHealthMonitor.mark('e2e-validation', 'execution-complete');
       testHealthMonitor.endTest('e2e-validation', 'passed');
@@ -511,7 +503,6 @@ class TestInfrastructureValidator {
           cleanup: 'passed',
         },
       });
-
     } catch (error) {
       this.results.push({
         component: 'End-to-End Flow',
@@ -526,9 +517,9 @@ class TestInfrastructureValidator {
    */
   private generateSummary(duration: number) {
     const total = this.results.length;
-    const passed = this.results.filter(r => r.status === 'passed').length;
-    const failed = this.results.filter(r => r.status === 'failed').length;
-    const warnings = this.results.filter(r => r.status === 'warning').length;
+    const passed = this.results.filter((r) => r.status === 'passed').length;
+    const failed = this.results.filter((r) => r.status === 'failed').length;
+    const warnings = this.results.filter((r) => r.status === 'warning').length;
 
     return { total, passed, failed, warnings, duration };
   }
@@ -536,16 +527,22 @@ class TestInfrastructureValidator {
   /**
    * Display validation results
    */
-  private displayResults(summary: { total: number; passed: number; failed: number; warnings: number; duration: number }): void {
+  private displayResults(summary: {
+    total: number;
+    passed: number;
+    failed: number;
+    warnings: number;
+    duration: number;
+  }): void {
     console.log('\n📊 Test Infrastructure Validation Results');
     console.log('==========================================');
 
     // Display individual results
-    this.results.forEach(result => {
+    this.results.forEach((result) => {
       const icon = result.status === 'passed' ? '✅' : result.status === 'failed' ? '❌' : '⚠️';
       const duration = result.duration ? ` (${Math.round(result.duration)}ms)` : '';
       console.log(`${icon} ${result.component}: ${result.message}${duration}`);
-      
+
       if (result.details) {
         Object.entries(result.details).forEach(([key, value]) => {
           const detailIcon = value === 'passed' ? '  ✓' : '  ✗';
@@ -584,7 +581,7 @@ class TestInfrastructureValidator {
  */
 async function main() {
   const validator = new TestInfrastructureValidator();
-  
+
   try {
     const result = await validator.validate();
     process.exit(result.success ? 0 : 1);

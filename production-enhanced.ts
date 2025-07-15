@@ -5,17 +5,24 @@
  * Implements Carmack's systematic approach with full pipeline validation
  */
 
-import { parseArgs } from 'node:util';
-import { join } from 'node:path';
 import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { parseArgs } from 'node:util';
 import { createActor } from 'xstate';
 import { z } from 'zod';
-
-import { RepositoryManager, defaultRepositoryConfig, type RepositoryState } from './src/repository-manager.ts';
-import { carmackCoderMachine } from './src/machine.ts';
+import {
+  CARMACK_REPOSITORY_URL,
+  carmackConfig,
+  getCarmackRepositoryUrl,
+} from './carmack.config.ts';
+import { defaultProductionConfig, ProductionConfigSchema } from './production.config.ts';
 import { DocumentationGenerator } from './src/docs/generator.ts';
-import { ProductionConfigSchema, defaultProductionConfig } from './production.config.ts';
-import { carmackConfig, CARMACK_REPOSITORY_URL, getCarmackRepositoryUrl } from './carmack.config.ts';
+import { carmackCoderMachine } from './src/machine.ts';
+import {
+  defaultRepositoryConfig,
+  RepositoryManager,
+  type RepositoryState,
+} from './src/repository-manager.ts';
 
 // ===== ENHANCED CLI SCHEMA =====
 
@@ -25,24 +32,24 @@ const EnhancedCLIArgsSchema = z.object({
   branch: z.string().default(carmackConfig.project.repository.branch),
   workspace: z.string().optional(),
   'cleanup-after': z.boolean().default(true),
-  
+
   // Transformation Control
   'dry-run': z.boolean().default(false),
   'max-files': z.number().min(1).max(1000).optional(),
   'risk-level': z.enum(['low', 'medium', 'high']).default('low'),
   'pattern-file': z.string().optional(),
-  
+
   // Pipeline Stages
   'skip-tests': z.boolean().default(false),
   'skip-verification': z.boolean().default(false),
   'skip-documentation': z.boolean().default(false),
   'force-docs-update': z.boolean().default(false),
-  
+
   // Learning & Adaptation
   'enable-learning': z.boolean().default(true),
   'learn-patterns': z.boolean().default(true),
   'adaptation-threshold': z.number().min(0).max(1).default(0.8),
-  
+
   // Output Control
   verbose: z.boolean().default(false),
   'auto-commit': z.boolean().default(false),
@@ -57,7 +64,7 @@ type EnhancedCLIArgs = z.infer<typeof EnhancedCLIArgsSchema>;
 export class CarmackPipelineOrchestrator {
   private repoManager: RepositoryManager;
   private docGenerator: DocumentationGenerator;
-  
+
   constructor() {
     this.repoManager = new RepositoryManager(defaultRepositoryConfig);
     this.docGenerator = new DocumentationGenerator();
@@ -68,41 +75,40 @@ export class CarmackPipelineOrchestrator {
    */
   async executeFullPipeline(args: EnhancedCLIArgs): Promise<void> {
     console.log('🚀 Starting Carmack Coder Full Pipeline');
-    
+
     // STAGE 1: Repository Acquisition
     const repoState = await this.acquireRepository(args);
-    
+
     try {
       // STAGE 2: Pattern Learning & Consolidation (learn BEFORE transforming)
       if (args['enable-learning']) {
         await this.executePatternLearning(null, args);
       }
       await this.consolidatePatterns(args);
-      
+
       // STAGE 3: Pre-transformation Documentation
       if (!args['skip-documentation']) {
         await this.generatePreTransformationDocs(repoState.localPath, args);
       }
-      
+
       // STAGE 4: Code Transformation (using latest learned patterns)
       const transformationResult = await this.executeTransformation(repoState, args);
-      
+
       // STAGE 5: Validation Pipeline
       await this.executeValidationPipeline(repoState, transformationResult, args);
-      
+
       // STAGE 6: Post-transformation Documentation
       if (!args['skip-documentation']) {
         await this.generatePostTransformationDocs(repoState.localPath, args);
       }
-      
+
       // STAGE 6.5: Post-transformation Learning (analyze what worked)
       if (args['enable-learning'] && transformationResult) {
         await this.executePatternLearning(transformationResult, args);
       }
-      
+
       // STAGE 7: Results Summary
       await this.generateResultsSummary(repoState, transformationResult, args);
-      
     } finally {
       // STAGE 8: Cleanup (if requested)
       if (args['cleanup-after']) {
@@ -137,11 +143,11 @@ export class CarmackPipelineOrchestrator {
 
     console.log('📥 STAGE 1: Repository Acquisition');
     const repoState = await this.repoManager.acquireRepository(args.repository, args.branch);
-    
+
     // Verify repository is suitable for transformation
     const stats = await this.analyzeRepositoryReadiness(repoState.localPath);
     console.log(`   📊 Repository Stats: ${stats.fileCount} files, ${stats.complexity} complexity`);
-    
+
     return repoState;
   }
 
@@ -150,7 +156,7 @@ export class CarmackPipelineOrchestrator {
    */
   private async consolidatePatterns(args: EnhancedCLIArgs): Promise<void> {
     console.log('🔧 STAGE 2: Pattern Consolidation');
-    
+
     // Use custom pattern file if specified
     if (args['pattern-file']) {
       console.log(`   Using custom pattern file: ${args['pattern-file']}`);
@@ -159,33 +165,36 @@ export class CarmackPipelineOrchestrator {
       // Use repository manager's consolidation
       await this.repoManager.consolidatePatterns();
     }
-    
+
     // Validate consolidated patterns
     const patternPath = this.repoManager['config'].patterns.consolidated;
     if (!existsSync(patternPath)) {
       throw new Error('Pattern consolidation failed - no consolidated patterns found');
     }
-    
+
     console.log('   ✅ Patterns consolidated and validated');
   }
 
   /**
    * STAGE 3: Pre-transformation Documentation
    */
-  private async generatePreTransformationDocs(repoPath: string, args: EnhancedCLIArgs): Promise<void> {
+  private async generatePreTransformationDocs(
+    repoPath: string,
+    args: EnhancedCLIArgs
+  ): Promise<void> {
     console.log('📝 STAGE 3: Pre-transformation Documentation');
-    
+
     // Configure the doc generator for this repository
     this.docGenerator = new DocumentationGenerator({
       sourceDir: repoPath,
       outputDir: join(repoPath, 'docs'),
       formats: ['html', 'markdown', 'json'],
     });
-    
+
     const startTime = Date.now();
     const result = await this.docGenerator.generateDocumentation();
     const duration = Date.now() - startTime;
-    
+
     console.log(`   📊 Documented ${result.stats.totalItems} items in ${duration}ms`);
     console.log(`   📂 Pre-transformation docs: ${join(repoPath, 'docs')}`);
   }
@@ -196,29 +205,34 @@ export class CarmackPipelineOrchestrator {
    */
   private async executeTransformation(repoState: any, args: EnhancedCLIArgs): Promise<any> {
     console.log('⚡ STAGE 4: Code Transformation');
-    
+
     const targetFiles = await this.discoverEligibleFiles(repoState.localPath, args);
-    
+
     // Load consolidated patterns for transformation
     const patterns = await this.loadConsolidatedPatterns();
     console.log(`   🎯 Loaded ${patterns.length} transformation patterns`);
-    
+
     // Run all three modes in Carmack hierarchy: Template → AST → LLM
     let totalFilesModified = 0;
-    let allResults: any[] = [];
-    
+    const allResults: any[] = [];
+
     // PHASE 1: Template transformations (fastest, safest)
     console.log('   🚀 Phase 1: Template Transformations');
-    const templateResult = await this.runTransformationMode('template', targetFiles, patterns, args);
+    const templateResult = await this.runTransformationMode(
+      'template',
+      targetFiles,
+      patterns,
+      args
+    );
     totalFilesModified += templateResult.filesModified?.length || 0;
     allResults.push(templateResult);
-    
+
     // PHASE 2: AST transformations (more sophisticated)
     console.log('   🌳 Phase 2: AST Transformations');
     const astResult = await this.runTransformationMode('ast', targetFiles, patterns, args);
     totalFilesModified += astResult.filesModified?.length || 0;
     allResults.push(astResult);
-    
+
     // PHASE 3: LLM transformations (fallback for complex cases)
     if (args['risk-level'] !== 'low') {
       console.log('   🧠 Phase 3: LLM Transformations');
@@ -226,9 +240,9 @@ export class CarmackPipelineOrchestrator {
       totalFilesModified += llmResult.filesModified?.length || 0;
       allResults.push(llmResult);
     }
-    
+
     console.log(`   ✅ Total files modified across all modes: ${totalFilesModified}`);
-    
+
     return {
       phases: allResults,
       totalFilesModified,
@@ -250,9 +264,9 @@ export class CarmackPipelineOrchestrator {
       transformationType: mode,
       maxComplexity: mode === 'template' ? 3 : mode === 'ast' ? 10 : 15, // Progressive complexity
       dryRun: args['dry-run'],
-      patterns: patterns.filter(p => p.mode === mode || (!p.mode && mode === 'template')), // Filter patterns by mode
+      patterns: patterns.filter((p) => p.mode === mode || (!p.mode && mode === 'template')), // Filter patterns by mode
     };
-    
+
     // Create XState actor with proper input (like the working production.ts)
     const actor = createActor(carmackCoderMachine, {
       input: transformationRequest, // This was the missing piece!
@@ -261,7 +275,9 @@ export class CarmackPipelineOrchestrator {
     return new Promise((resolve, reject) => {
       actor.subscribe((state) => {
         if (args.verbose) {
-          console.log(`     🔄 ${mode.toUpperCase()} State: ${state.value} | Status: ${state.context.currentTransformation?.status || 'pending'}`);
+          console.log(
+            `     🔄 ${mode.toUpperCase()} State: ${state.value} | Status: ${state.context.currentTransformation?.status || 'pending'}`
+          );
         }
 
         // Log significant events
@@ -270,7 +286,9 @@ export class CarmackPipelineOrchestrator {
           const transformation = state.context.currentTransformation;
           if (transformation) {
             console.log(`     📊 Files modified: ${transformation.filesModified.length}`);
-            console.log(`     ⏱️  Duration: ${transformation.endTime! - transformation.startTime}ms`);
+            console.log(
+              `     ⏱️  Duration: ${transformation.endTime! - transformation.startTime}ms`
+            );
           }
           resolve(state.context);
         } else if (state.matches('failed')) {
@@ -284,7 +302,7 @@ export class CarmackPipelineOrchestrator {
 
       // Start the actor first
       actor.start();
-      
+
       // Then send the transformation event
       actor.send({
         type: 'START_TRANSFORMATION',
@@ -296,9 +314,13 @@ export class CarmackPipelineOrchestrator {
   /**
    * STAGE 5: Full Validation Pipeline
    */
-  private async executeValidationPipeline(repoState: any, transformationResult: any, args: EnhancedCLIArgs): Promise<void> {
+  private async executeValidationPipeline(
+    repoState: any,
+    transformationResult: any,
+    args: EnhancedCLIArgs
+  ): Promise<void> {
     console.log('🔍 STAGE 5: Validation Pipeline');
-    
+
     const validations = [
       { name: 'Type Checking', skip: false },
       { name: 'Linting', skip: false },
@@ -317,7 +339,7 @@ export class CarmackPipelineOrchestrator {
       const startTime = Date.now();
       await this.executeValidationStep(validation.name, repoState.localPath);
       const duration = Date.now() - startTime;
-      
+
       console.log(`   ✅ ${validation.name}: Passed (${duration}ms)`);
     }
   }
@@ -325,22 +347,25 @@ export class CarmackPipelineOrchestrator {
   /**
    * STAGE 6: Post-transformation Documentation
    */
-  private async generatePostTransformationDocs(repoPath: string, args: EnhancedCLIArgs): Promise<void> {
+  private async generatePostTransformationDocs(
+    repoPath: string,
+    args: EnhancedCLIArgs
+  ): Promise<void> {
     console.log('📝 STAGE 6: Post-transformation Documentation');
-    
+
     // Generate updated documentation
     this.docGenerator = new DocumentationGenerator({
       sourceDir: repoPath,
       outputDir: join(repoPath, 'docs-post'),
       formats: ['html', 'markdown', 'json'],
     });
-    
+
     const startTime = Date.now();
     const result = await this.docGenerator.generateDocumentation();
     const duration = Date.now() - startTime;
-    
+
     console.log(`   📊 Updated docs: ${result.stats.totalItems} items in ${duration}ms`);
-    
+
     // Compare with pre-transformation docs
     await this.compareDocumentationChanges(repoPath);
   }
@@ -348,9 +373,12 @@ export class CarmackPipelineOrchestrator {
   /**
    * STAGE 2: Pattern Learning and Consolidation (learn BEFORE transforming)
    */
-  private async executePatternLearning(transformationResult: any, args: EnhancedCLIArgs): Promise<void> {
+  private async executePatternLearning(
+    transformationResult: any,
+    args: EnhancedCLIArgs
+  ): Promise<void> {
     console.log('🧠 STAGE 2: Pattern Learning & Consolidation');
-    
+
     if (!args['learn-patterns']) {
       console.log('   ⏭️ Pattern learning disabled');
       return;
@@ -361,7 +389,7 @@ export class CarmackPipelineOrchestrator {
       console.log('   📚 Loading previously learned patterns...');
       const learnedPatterns = await this.loadPreviouslyLearnedPatterns();
       console.log(`   🎯 Loaded ${learnedPatterns.length} learned patterns`);
-      
+
       if (learnedPatterns.length > 0) {
         await this.integrateLearnedPatterns(learnedPatterns);
       }
@@ -369,12 +397,12 @@ export class CarmackPipelineOrchestrator {
       // Post-transformation: Analyze effectiveness and learn new patterns
       console.log('   🔍 Analyzing transformation effectiveness...');
       const effectiveness = await this.analyzeTransformationEffectiveness(transformationResult);
-      
+
       // Learn new patterns if threshold is met
       if (effectiveness > args['adaptation-threshold']) {
         const newPatterns = await this.extractNewPatterns(transformationResult);
         console.log(`   🎯 Learned ${newPatterns.length} new patterns`);
-        
+
         // Update consolidated patterns
         await this.updateConsolidatedPatterns(newPatterns);
       }
@@ -384,14 +412,18 @@ export class CarmackPipelineOrchestrator {
   /**
    * STAGE 7: Comprehensive Results Summary
    */
-  private async generateResultsSummary(repoState: any, transformationResult: any, args: EnhancedCLIArgs): Promise<void> {
+  private async generateResultsSummary(
+    repoState: any,
+    transformationResult: any,
+    args: EnhancedCLIArgs
+  ): Promise<void> {
     console.log('📊 STAGE 7: Results Summary');
-    
+
     // Extract actual transformation data from the multi-phase result
     let totalFilesProcessed = 0;
     let totalPatternsApplied = 0;
     let totalDuration = 0;
-    
+
     if (transformationResult?.phases) {
       for (const phase of transformationResult.phases) {
         if (phase.currentTransformation) {
@@ -404,7 +436,7 @@ export class CarmackPipelineOrchestrator {
         }
       }
     }
-    
+
     const summary = {
       repository: {
         url: repoState.url,
@@ -436,7 +468,9 @@ export class CarmackPipelineOrchestrator {
     console.log('\n🎉 TRANSFORMATION COMPLETE');
     console.log('═'.repeat(60));
     console.log(`📂 Repository: ${summary.repository.url}#${summary.repository.branch}`);
-    console.log(`📄 Files Processed: ${summary.transformation.filesProcessed}/${summary.repository.fileCount}`);
+    console.log(
+      `📄 Files Processed: ${summary.transformation.filesProcessed}/${summary.repository.fileCount}`
+    );
     console.log(`⚡ Patterns Applied: ${summary.transformation.patternsApplied}`);
     console.log(`⏱️ Duration: ${summary.transformation.duration}ms`);
     console.log(`📊 Quality Score: ${summary.quality.maintainabilityScore}/100`);
@@ -445,7 +479,9 @@ export class CarmackPipelineOrchestrator {
 
   // ===== HELPER METHODS =====
 
-  private async analyzeRepositoryReadiness(repoPath: string): Promise<{ fileCount: number; complexity: string }> {
+  private async analyzeRepositoryReadiness(
+    repoPath: string
+  ): Promise<{ fileCount: number; complexity: string }> {
     // Placeholder for repository analysis
     return { fileCount: 42, complexity: 'medium' };
   }
@@ -454,7 +490,7 @@ export class CarmackPipelineOrchestrator {
     // Use existing file discovery logic from production.ts
     const { readdir, stat } = await import('node:fs/promises');
     const { join } = await import('node:path');
-    
+
     const files: string[] = [];
     const allowedExtensions = ['.ts', '.tsx', '.js', '.jsx'];
     const excludePatterns = [
@@ -474,21 +510,19 @@ export class CarmackPipelineOrchestrator {
         for (const entry of entries) {
           const fullPath = join(dirPath, entry);
           const stats = await stat(fullPath);
-          
+
           // Check if path should be excluded
-          const shouldExclude = excludePatterns.some(pattern => 
-            fullPath.includes(pattern) || entry.includes(pattern)
+          const shouldExclude = excludePatterns.some(
+            (pattern) => fullPath.includes(pattern) || entry.includes(pattern)
           );
-          
+
           if (shouldExclude) continue;
 
           if (stats.isDirectory()) {
             await walkDirectory(fullPath);
           } else if (stats.isFile()) {
-            const hasAllowedExtension = allowedExtensions.some(ext => 
-              entry.endsWith(ext)
-            );
-            
+            const hasAllowedExtension = allowedExtensions.some((ext) => entry.endsWith(ext));
+
             if (hasAllowedExtension) {
               files.push(fullPath);
             }
@@ -500,13 +534,15 @@ export class CarmackPipelineOrchestrator {
     }
 
     await walkDirectory(repoPath);
-    
+
     // Limit files for testing
     const maxFiles = args['max-files'];
     const selectedFiles = files.slice(0, maxFiles);
-    
-    console.log(`   📁 Discovered ${files.length} eligible files, selected ${selectedFiles.length} for processing`);
-    
+
+    console.log(
+      `   📁 Discovered ${files.length} eligible files, selected ${selectedFiles.length} for processing`
+    );
+
     return selectedFiles;
   }
 
@@ -544,13 +580,13 @@ export class CarmackPipelineOrchestrator {
     const { readFile } = await import('node:fs/promises');
     const { existsSync } = await import('node:fs');
     const { resolve } = await import('node:path');
-    
+
     const consolidatedPath = resolve('patterns-consolidated.json');
     if (!existsSync(consolidatedPath)) {
       console.log('   ⚠️ No consolidated patterns found, using empty array');
       return [];
     }
-    
+
     try {
       const content = await readFile(consolidatedPath, 'utf-8');
       const data = JSON.parse(content);
@@ -566,12 +602,12 @@ export class CarmackPipelineOrchestrator {
     const { readFile } = await import('node:fs/promises');
     const { existsSync } = await import('node:fs');
     const { resolve } = await import('node:path');
-    
+
     const learnedPatternsPath = resolve('learned-patterns.json');
     if (!existsSync(learnedPatternsPath)) {
       return [];
     }
-    
+
     try {
       const content = await readFile(learnedPatternsPath, 'utf-8');
       const data = JSON.parse(content);
@@ -585,19 +621,19 @@ export class CarmackPipelineOrchestrator {
   private async integrateLearnedPatterns(learnedPatterns: any[]): Promise<void> {
     // Integrate learned patterns into consolidated patterns
     if (learnedPatterns.length === 0) return;
-    
+
     const { readFile, writeFile } = await import('node:fs/promises');
     const { resolve } = await import('node:path');
     const consolidatedPath = resolve('patterns-consolidated.json');
-    
+
     try {
       const content = await readFile(consolidatedPath, 'utf-8');
       const consolidated = JSON.parse(content);
-      
+
       // Add learned patterns that aren't already present
       const existingIds = new Set(consolidated.patterns.map((p: any) => p.id));
       const newPatterns = learnedPatterns.filter((p: any) => !existingIds.has(p.id));
-      
+
       if (newPatterns.length > 0) {
         consolidated.patterns.push(...newPatterns);
         Object.assign(consolidated.metadata, {
@@ -605,7 +641,7 @@ export class CarmackPipelineOrchestrator {
           lastUpdated: new Date().toISOString(),
           learnedPatternsIntegrated: newPatterns.length,
         });
-        
+
         await writeFile(consolidatedPath, JSON.stringify(consolidated, null, 2));
         console.log(`   ✅ Integrated ${newPatterns.length} learned patterns`);
       }
@@ -652,8 +688,10 @@ async function main(): Promise<void> {
     // Parse and validate arguments
     const parsedArgs = EnhancedCLIArgsSchema.parse({
       ...args,
-      'max-files': args['max-files'] ? parseInt(args['max-files']) : undefined,
-      'adaptation-threshold': args['adaptation-threshold'] ? parseFloat(args['adaptation-threshold']) : undefined,
+      'max-files': args['max-files'] ? Number.parseInt(args['max-files']) : undefined,
+      'adaptation-threshold': args['adaptation-threshold']
+        ? Number.parseFloat(args['adaptation-threshold'])
+        : undefined,
     });
 
     if (parsedArgs.help) {
@@ -708,7 +746,7 @@ EXAMPLES:
     }
 
     const orchestrator = new CarmackPipelineOrchestrator();
-    
+
     // Handle graceful shutdown
     process.on('SIGINT', async () => {
       console.log('\n🛑 Graceful shutdown initiated...');
@@ -718,7 +756,6 @@ EXAMPLES:
 
     await orchestrator.executeFullPipeline(parsedArgs);
     await orchestrator.shutdown();
-    
   } catch (error) {
     console.error('❌ Pipeline execution failed:', error);
     process.exit(1);

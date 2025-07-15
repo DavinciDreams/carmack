@@ -157,7 +157,7 @@ export class PatternLearner {
   }> = [];
   private dataPath: string;
 
-  constructor(dataPath: string = './data') {
+  constructor(dataPath = './data') {
     this.dataPath = dataPath;
     this.loadExistingData();
   }
@@ -169,7 +169,10 @@ export class PatternLearner {
     const startTime = Date.now();
 
     // Skip expensive operations in test environment
-    const isTestEnvironment = process.env.NODE_ENV === 'test' || process.env.BUN_TEST === 'true' || process.env.JEST_WORKER_ID;
+    const isTestEnvironment =
+      process.env.NODE_ENV === 'test' ||
+      process.env.BUN_TEST === 'true' ||
+      process.env.JEST_WORKER_ID;
 
     try {
       let result: LearningResult;
@@ -752,7 +755,10 @@ export class PatternLearner {
   private async loadExistingData(): Promise<void> {
     try {
       // Load effectiveness data
-      const effectivenessData = await readFile(`${this.dataPath}/pattern-effectiveness.json`, 'utf-8');
+      const effectivenessData = await readFile(
+        `${this.dataPath}/pattern-effectiveness.json`,
+        'utf-8'
+      );
       const effectiveness = JSON.parse(effectivenessData);
       for (const [key, value] of Object.entries(effectiveness)) {
         this.effectivenessCache.set(key, value as PatternEffectiveness);
@@ -790,7 +796,10 @@ export class PatternLearner {
 
       // Save discovered patterns
       const discoveredObj = Object.fromEntries(this.discoveredPatterns);
-      await writeFile(`${this.dataPath}/discovered-patterns.json`, JSON.stringify(discoveredObj, null, 2));
+      await writeFile(
+        `${this.dataPath}/discovered-patterns.json`,
+        JSON.stringify(discoveredObj, null, 2)
+      );
 
       console.log('💾 Pattern learning data persisted');
     } catch (error) {

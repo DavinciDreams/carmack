@@ -43,7 +43,6 @@ export const ProductionConfigSchema = z
       riskLevelFilter: z.enum(['low', 'medium', 'high']).default('medium'),
       enableBackups: z.boolean().default(true),
       dryRunFirst: z.boolean().default(true),
-
     }),
 
     // CI/CD Integration

@@ -1,5 +1,4 @@
 import { execSync } from 'node:child_process';
-import { join } from 'node:path';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
 import type { ErrorInfo, ValidationResult } from '../types.js';
@@ -16,23 +15,19 @@ function getBunExecutable(): string {
     execSync('bunx --version', {
       stdio: 'pipe',
       timeout: 1000, // 1 second timeout
-      encoding: 'utf8'
+      encoding: 'utf8',
     });
     return 'bunx';
   } catch {
     // Fall back to direct bun path or full path on Windows
-    const possiblePaths = [
-      'bun x',
-      'bun',
-      'C:\\Users\\lmwat\\.bun\\bin\\bun.exe',
-    ];
+    const possiblePaths = ['bun x', 'bun', 'C:\\Users\\lmwat\\.bun\\bin\\bun.exe'];
 
     for (const path of possiblePaths) {
       try {
         execSync(`${path} --version`, {
           stdio: 'pipe',
           timeout: 1000, // 1 second timeout
-          encoding: 'utf8'
+          encoding: 'utf8',
         });
         return path === 'bun' ? 'bun x' : path;
       } catch {
@@ -107,7 +102,11 @@ async function validateFormat(files: string[]): Promise<ValidationResult> {
   console.log('Validating code formatting...');
 
   // Skip format validation in test environment to prevent timeouts
-  if (process.env.NODE_ENV === 'test' || process.env.BUN_TEST === 'true' || process.env.JEST_WORKER_ID) {
+  if (
+    process.env.NODE_ENV === 'test' ||
+    process.env.BUN_TEST === 'true' ||
+    process.env.JEST_WORKER_ID
+  ) {
     console.log('Skipping format validation in test environment');
     return {
       isValid: true,
@@ -195,7 +194,11 @@ async function fixFormat(files: string[]): Promise<ValidationResult> {
   console.log('Fixing code formatting...');
 
   // Skip format fixing in test environment to prevent timeouts
-  if (process.env.NODE_ENV === 'test' || process.env.BUN_TEST === 'true' || process.env.JEST_WORKER_ID) {
+  if (
+    process.env.NODE_ENV === 'test' ||
+    process.env.BUN_TEST === 'true' ||
+    process.env.JEST_WORKER_ID
+  ) {
     console.log('Skipping format fixing in test environment');
     return {
       isValid: true,
@@ -268,7 +271,11 @@ async function validateTypes(files: string[]): Promise<ValidationResult> {
   console.log(`Validating TypeScript types for ${files.length} files...`);
 
   // Skip type validation in test environment to prevent timeouts
-  if (process.env.NODE_ENV === 'test' || process.env.BUN_TEST === 'true' || process.env.JEST_WORKER_ID) {
+  if (
+    process.env.NODE_ENV === 'test' ||
+    process.env.BUN_TEST === 'true' ||
+    process.env.JEST_WORKER_ID
+  ) {
     console.log('Skipping type validation in test environment');
     return {
       isValid: true,
@@ -292,11 +299,13 @@ async function validateTypes(files: string[]): Promise<ValidationResult> {
       if (error instanceof Error && error.name === 'AbortError') {
         return {
           isValid: false,
-          errors: [{
-            code: 'TS_TIMEOUT',
-            message: 'TypeScript validation timed out - using fallback validation',
-            severity: 'error' as const,
-          }],
+          errors: [
+            {
+              code: 'TS_TIMEOUT',
+              message: 'TypeScript validation timed out - using fallback validation',
+              severity: 'error' as const,
+            },
+          ],
           warnings: [],
           fixableIssues: 0,
         };
@@ -309,9 +318,12 @@ async function validateTypes(files: string[]): Promise<ValidationResult> {
   }
 }
 
-async function validateTypesWithExec(_files: string[], signal: AbortSignal): Promise<ValidationResult> {
+async function validateTypesWithExec(
+  _files: string[],
+  signal: AbortSignal
+): Promise<ValidationResult> {
   const { execSync } = await import('child_process');
-  
+
   try {
     const bunCmd = getBunExecutable();
     execSync(`${bunCmd} tsc --noEmit --pretty false --skipLibCheck`, {
@@ -372,72 +384,11 @@ async function validateTypesWithExec(_files: string[], signal: AbortSignal): Pro
 }
 
 /**
- * Mock type validation for test environments
- */
-async function mockTypeValidation(files: string[]): Promise<ValidationResult> {
-  const errors: Array<{
-    code: string;
-    message: string;
-    severity: 'error' | 'warning' | 'info';
-    file?: string;
-    line?: number;
-    column?: number;
-  }> = [];
-
-  // Check each file for basic type issues
-  for (const filePath of files) {
-    try {
-      const { readFile } = await import('node:fs/promises');
-      const content = await readFile(filePath, 'utf-8');
-
-      // Simulate type checking by looking for obvious type errors
-      if (content.includes('id: 123') && content.includes('id: string')) {
-        errors.push({
-          code: 'TS2322',
-          message: 'Type number is not assignable to type string',
-          file: filePath,
-          line: 8,
-          column: 5,
-          severity: 'error' as const,
-        });
-      }
-
-      // Check for other common type issues
-      if (content.includes(': any')) {
-        errors.push({
-          code: 'TS7006',
-          message: 'Parameter implicitly has an any type',
-          file: filePath,
-          line: 10,
-          column: 15,
-          severity: 'error' as const,
-        });
-      }
-    } catch (fileError) {
-      // File doesn't exist or can't be read - this is a type error
-      errors.push({
-        code: 'TS6053',
-        message: `File '${filePath}' not found`,
-        file: filePath,
-        severity: 'error' as const,
-      });
-    }
-  }
-
-  return {
-    isValid: errors.length === 0,
-    errors,
-    warnings: [],
-    fixableIssues: errors.length,
-  };
-}
-
-/**
  * Fallback type validation using basic syntax checking
  */
 async function fallbackTypeValidation(files: string[]): Promise<ValidationResult> {
   console.log('Using fallback type validation...');
-  
+
   const errors: Array<{
     code: string;
     message: string;
@@ -760,7 +711,11 @@ async function validateQuality(files: string[]): Promise<ValidationResult> {
   console.log(`Analyzing code quality for ${files.length} files using ESLint...`);
 
   // Skip quality validation in test environment to prevent timeouts
-  if (process.env.NODE_ENV === 'test' || process.env.BUN_TEST === 'true' || process.env.JEST_WORKER_ID) {
+  if (
+    process.env.NODE_ENV === 'test' ||
+    process.env.BUN_TEST === 'true' ||
+    process.env.JEST_WORKER_ID
+  ) {
     console.log('Skipping quality validation in test environment');
     return {
       isValid: true,

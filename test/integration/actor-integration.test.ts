@@ -218,6 +218,7 @@ describe('Actor Integration Tests', () => {
         mode: 'template' as const,
         files: ['transform-target.ts'],
         patterns,
+        dryRun: false,
       };
 
       const transformationActorInstance = createActor(transformationActor, {

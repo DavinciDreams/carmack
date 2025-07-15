@@ -167,7 +167,7 @@ async function main() {
     const duration = Date.now() - startTime;
 
     console.log(`\n✅ Documentation generated successfully in ${duration}ms`);
-    console.log(`📊 Statistics:`);
+    console.log('📊 Statistics:');
     console.log(`   📁 Files scanned: ${result.stats.totalFiles}`);
     console.log(`   📝 Items documented: ${result.stats.totalItems}`);
     console.log(`   🏗️  Functions: ${result.stats.byType.function || 0}`);
@@ -176,14 +176,14 @@ async function main() {
     console.log(`   🔄 Patterns: ${result.stats.byType.pattern || 0}`);
     console.log(`   ⚙️  Configs: ${result.stats.byType.config || 0}`);
 
-    console.log(`\n📂 Output files:`);
-    console.log(`   📄 ./docs/README.md - Main documentation`);
-    console.log(`   📄 ./docs/api.md - API reference`);
-    console.log(`   📄 ./docs/patterns.md - Transformation patterns`);
-    console.log(`   📄 ./docs/configs.md - Configuration options`);
-    console.log(`   📄 ./docs/documentation.json - Raw data`);
+    console.log('\n📂 Output files:');
+    console.log('   📄 ./docs/README.md - Main documentation');
+    console.log('   📄 ./docs/api.md - API reference');
+    console.log('   📄 ./docs/patterns.md - Transformation patterns');
+    console.log('   📄 ./docs/configs.md - Configuration options');
+    console.log('   📄 ./docs/documentation.json - Raw data');
 
-    console.log(`\n🎉 Documentation is now up to date!`);
+    console.log('\n🎉 Documentation is now up to date!');
   } catch (error) {
     console.error('❌ Failed to generate documentation:');
     process.exit(1);

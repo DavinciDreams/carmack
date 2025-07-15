@@ -21,7 +21,6 @@ import { carmackCoderMachine } from './src/machine.ts';
 
 //import { ProductionConfigSchema } from './production.config.ts';
 
-
 // CLI Schema
 const CLIArgsSchema = z
   .object({
@@ -83,7 +82,6 @@ SAFETY FEATURES:
   - Telemetry and performance monitoring
   - Customizable workspace directory
   - Supports multiple repository types (GitHub, GitLab, etc.)`;
-
 
 class ProductionError extends Error {
   constructor(
@@ -324,8 +322,8 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
 
   // Wait for completion
   return new Promise(async (resolve, reject) => {
-  // Load transformation patterns
-  const patterns = await loadPatterns('./patterns-consolidated.json');
+    // Load transformation patterns
+    const patterns = await loadPatterns('./patterns-consolidated.json');
     console.log(`📋 Loaded ${patterns.length} transformation patterns for production`);
 
     transformationActor.subscribe((state) => {
@@ -398,7 +396,6 @@ async function main(): Promise<void> {
     if (process.env.CARMACK_REPOSITORY_URL || process.env.REPOSITORY_URL) {
       config.repository.url =
         process.env.CARMACK_REPOSITORY_URL || process.env.REPOSITORY_URL || config.repository.url;
-
     }
     if (args.repository) {
       config.repository.url = args.repository;

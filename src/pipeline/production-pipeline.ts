@@ -91,9 +91,7 @@ const ProductionConfigSchema = z.object({
 
   // Transformation Strategy
   strategy: z.object({
-    preferredOrder: z
-      .array(z.enum(['template', 'ast', 'llm']))
-      .default(['template', 'ast', 'llm']),
+    preferredOrder: z.array(z.enum(['template', 'ast', 'llm'])).default(['template', 'ast', 'llm']),
     fallbackEnabled: z.boolean().default(true),
     parallelProcessing: z.boolean().default(false),
     maxConcurrency: z.number().default(3),
@@ -347,7 +345,7 @@ async function executePipelineStages(input: PipelineRequest, state: any): Promis
       // Always record timing even for failed stages, with minimum 1ms
       const elapsed = Date.now() - stageStart;
       state.stageTimings[stage.name] = Math.max(elapsed, 1); // Minimum 1ms
-      
+
       const errorInfo = {
         stage: stage.name,
         error: error instanceof Error ? error.message : String(error),
@@ -560,9 +558,10 @@ async function executeTransformation(
 
     case 'ast': {
       // Provide default patterns if none discovered
-      const patterns = state.discoveredPatterns && state.discoveredPatterns.length > 0
-        ? state.discoveredPatterns
-        : getDefaultASTPatterns();
+      const patterns =
+        state.discoveredPatterns && state.discoveredPatterns.length > 0
+          ? state.discoveredPatterns
+          : getDefaultASTPatterns();
 
       const astResult = await invokeActor<AstGrepResult>(astGrepTransformationActor, {
         targetFiles: input.files,
@@ -860,7 +859,7 @@ async function postprocessingStage(input: PipelineRequest, state: any): Promise<
   // Ensure minimum processing time has elapsed
   const elapsed = Date.now() - stageStart;
   if (elapsed < minProcessingTime) {
-    await new Promise(resolve => setTimeout(resolve, minProcessingTime - elapsed));
+    await new Promise((resolve) => setTimeout(resolve, minProcessingTime - elapsed));
   }
 }
 

@@ -2,10 +2,10 @@
  * CLI interface for the Documentation Generator
  */
 
-import { DocumentationGenerator } from './generator.js';
-import { parseArgs } from 'node:util';
 import { existsSync } from 'node:fs';
+import { parseArgs } from 'node:util';
 import chokidar from 'chokidar';
+import { DocumentationGenerator } from './generator.js';
 
 export interface DocCLIOptions {
   sourceDir?: string | undefined;
@@ -72,7 +72,10 @@ export class DocumentationCLI {
     };
   }
 
-  private async generateOnce(generator: DocumentationGenerator, config: { sourceDir: string; outputDir: string; formats: string[] }): Promise<void> {
+  private async generateOnce(
+    generator: DocumentationGenerator,
+    config: { sourceDir: string; outputDir: string; formats: string[] }
+  ): Promise<void> {
     console.log('🚀 Starting documentation generation...');
     const startTime = Date.now();
 
@@ -90,14 +93,15 @@ export class DocumentationCLI {
 
     const duration = Date.now() - startTime;
     console.log(`✅ Documentation generated successfully in ${duration}ms`);
-    console.log(`   📊 ${result.metadata.totalFunctions + result.metadata.totalClasses} items from ${result.metadata.totalModules} files`);
+    console.log(
+      `   📊 ${result.metadata.totalFunctions + result.metadata.totalClasses} items from ${result.metadata.totalModules} files`
+    );
 
     // Show breakdown by type
     console.log(`   📝 ${result.metadata.totalFunctions} functions`);
     console.log(`   📝 ${result.metadata.totalClasses} classes`);
     console.log(`   📝 ${result.metadata.totalModules} modules`);
   }
-
 
   private async watchMode(
     generator: DocumentationGenerator,

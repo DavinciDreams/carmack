@@ -41,7 +41,9 @@ export const transformationActor = fromPromise(
     const validatedInput = TransformationInputSchema.parse(input);
     const { mode, files, patterns, request, dryRun } = validatedInput;
 
-    console.log(`Applying ${mode} transformation to ${files.length} files${dryRun ? ' (DRY RUN)' : ''}`);
+    console.log(
+      `Applying ${mode} transformation to ${files.length} files${dryRun ? ' (DRY RUN)' : ''}`
+    );
 
     switch (mode) {
       case 'template':
@@ -56,7 +58,11 @@ export const transformationActor = fromPromise(
   }
 );
 
-async function applyTemplateTransformation(files: string[], patterns: AstPattern[], dryRun: boolean = false) {
+async function applyTemplateTransformation(
+  files: string[],
+  patterns: AstPattern[],
+  dryRun = false
+) {
   console.log(`Applying template transformations...${dryRun ? ' (DRY RUN)' : ''}`);
 
   const filesModified: string[] = [];
