@@ -11,8 +11,8 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   getEnvironmentConfig,
-  validateLLMConfig,
   getLLMConfig,
+  validateLLMConfig,
 } from '../src/config/environment.js';
 
 interface ValidationResult {

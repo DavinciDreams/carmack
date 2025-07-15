@@ -254,23 +254,25 @@ export class LLMAnnotationAnalyzer {
           }
           const matches = await this.astAnalyzer?.findPatternUsage(patternDef.astPattern, filePath);
 
-          for (const match of matches) {
-            patterns.push({
-              id: `${patternDef.id}-${patterns.length}`,
-              type: patternDef.type,
-              name: patternDef.name,
-              description: `${patternDef.name} detected in ${filePath}`,
-              location: {
-                file: filePath,
-                startLine: match.startLine,
-                endLine: match.endLine,
-                context: match.content || '',
-              },
-              confidence: 0.8, // Base confidence
-              impact: 'medium',
-              category: patternDef.category,
-              tags: [patternDef.category, patternDef.type],
-            });
+          if (matches) {
+            for (const match of matches) {
+              patterns.push({
+                id: `${patternDef.id}-${patterns.length}`,
+                type: patternDef.type,
+                name: patternDef.name,
+                description: `${patternDef.name} detected in ${filePath}`,
+                location: {
+                  file: filePath,
+                  startLine: match.startLine,
+                  endLine: match.endLine,
+                  context: match.content || '',
+                },
+                confidence: 0.8, // Base confidence
+                impact: 'medium',
+                category: patternDef.category,
+                tags: [patternDef.category, patternDef.type],
+              });
+            }
           }
         } catch (error) {
           console.warn(`Failed to detect pattern ${patternDef.id} in ${filePath}:`, error);
@@ -298,7 +300,10 @@ export class LLMAnnotationAnalyzer {
         const moduleDoc = await this.astAnalyzer?.analyzeFile(filePath);
 
         // Create architectural annotation for each significant component
-        if (moduleDoc.exports.functions.length > 0 || moduleDoc.exports.classes.length > 0) {
+        if (
+          moduleDoc &&
+          (moduleDoc.exports.functions.length > 0 || moduleDoc.exports.classes.length > 0)
+        ) {
           const componentType =
             moduleDoc.exports.classes.length > 0
               ? 'class'

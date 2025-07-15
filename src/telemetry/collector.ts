@@ -336,10 +336,15 @@ export class TelemetryCollector extends EventEmitter {
       const memoryGrowthRate =
         memoryTimeline.length > 1
           ? (() => {
-              const timeDiff =
-                memoryTimeline[memoryTimeline.length - 1]?.timestamp - memoryTimeline[0]?.timestamp;
-              const memoryDiff =
-                memoryTimeline[memoryTimeline.length - 1]?.rss - memoryTimeline[0]?.rss;
+              const lastEntry = memoryTimeline[memoryTimeline.length - 1];
+              const firstEntry = memoryTimeline[0];
+
+              if (!lastEntry || !firstEntry) {
+                return 0;
+              }
+
+              const timeDiff = lastEntry.timestamp - firstEntry.timestamp;
+              const memoryDiff = lastEntry.rss - firstEntry.rss;
 
               // Prevent division by zero and ensure valid number
               if (timeDiff <= 0 || !Number.isFinite(timeDiff) || !Number.isFinite(memoryDiff)) {

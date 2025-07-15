@@ -4,15 +4,15 @@
  * Tests for the environment configuration loading and validation system.
  */
 
-import { describe, expect, it, beforeEach, afterEach } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import {
-  loadEnvironmentConfig,
-  validateLLMConfig,
   getLLMConfig,
+  getLogLevel,
   isDevelopment,
   isProduction,
-  getLogLevel,
   isTelemetryEnabled,
+  loadEnvironmentConfig,
+  validateLLMConfig,
 } from '../../src/config/environment.js';
 
 describe('Environment Configuration', () => {
