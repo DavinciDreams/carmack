@@ -21,6 +21,7 @@ import { carmackCoderMachine } from './src/machine.ts';
 
 //import { ProductionConfigSchema } from './production.config.ts';
 
+
 // CLI Schema
 const CLIArgsSchema = z
   .object({
@@ -80,9 +81,9 @@ SAFETY FEATURES:
   - Complexity analysis and quality gates
   - Comprehensive validation pipeline
   - Telemetry and performance monitoring
-
   - Customizable workspace directory
   - Supports multiple repository types (GitHub, GitLab, etc.)`;
+
 
 class ProductionError extends Error {
   constructor(
@@ -322,7 +323,11 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
   transformationActor.start();
 
   // Wait for completion
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
+  // Load transformation patterns
+  const patterns = await loadPatterns('./patterns-consolidated.json');
+    console.log(`📋 Loaded ${patterns.length} transformation patterns for production`);
+
     transformationActor.subscribe((state) => {
       if (state.matches('succeeded')) {
         resolve();
@@ -343,7 +348,7 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
       request: {
         targetFiles: eligibleFiles, // Use discovered files
         transformationType: 'ast' as const,
-        patterns: [], // Will be loaded from patterns
+        patterns: patterns, // Use loaded patterns
         maxComplexity: config.transformation.maxComplexityThreshold,
         dryRun: args['dry-run'] || config.transformation.dryRunFirst,
       },
@@ -393,6 +398,7 @@ async function main(): Promise<void> {
     if (process.env.CARMACK_REPOSITORY_URL || process.env.REPOSITORY_URL) {
       config.repository.url =
         process.env.CARMACK_REPOSITORY_URL || process.env.REPOSITORY_URL || config.repository.url;
+
     }
     if (args.repository) {
       config.repository.url = args.repository;

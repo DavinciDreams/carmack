@@ -420,6 +420,7 @@ function templateToRegex(template: string): { regex: RegExp; variableNames: stri
     variableNames.push(varName);
 
     // Enhanced smart capture groups with better pattern recognition
+
     switch (varName) {
       case 'IDENTIFIER':
       case 'NAME':
