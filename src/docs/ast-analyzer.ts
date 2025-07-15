@@ -1,5 +1,84 @@
 import { fromPromise } from 'xstate';
+import { z } from 'zod';
 import type { ASTNode, ClassDoc, FunctionDoc, ModuleDoc } from './types.js';
+
+// AST-grep Zod schemas for type safety
+export const ASTGrepMatchSchema = z.object({
+  text: z.function().returns(z.string()),
+  range: z.function().returns(
+    z.object({
+      start: z.object({
+        index: z.number(),
+        line: z.number(),
+        column: z.number(),
+      }),
+      end: z.object({
+        index: z.number(),
+        line: z.number(),
+        column: z.number(),
+      }),
+    })
+  ),
+  getNode: z.function().returns(z.any()).optional(),
+  getMultipleMatches: z.function().returns(z.array(z.any())).optional(),
+});
+
+export const ASTGrepLanguageSchema = z.object({
+  parseString: z.function().args(z.string()).returns(z.any()),
+  kind: z.string(),
+  name: z.string(),
+});
+
+export const ASTGrepRuleSchema = z.object({
+  pattern: z.string(),
+  kind: z.string().optional(),
+  inside: z.string().optional(),
+  has: z.string().optional(),
+  not: z.string().optional(),
+  any: z.array(z.any()).optional(),
+  all: z.array(z.any()).optional(),
+});
+
+export const ASTGrepConfigSchema = z.object({
+  rule: ASTGrepRuleSchema,
+  constraints: z.record(z.string()).optional(),
+  language: z.union([z.string(), ASTGrepLanguageSchema]).optional(),
+  utils: z.record(z.any()).optional(),
+});
+
+export const ASTGrepInstanceSchema = z.object({
+  findAll: z
+    .function()
+    .args(ASTGrepConfigSchema, z.string())
+    .returns(z.promise(z.array(ASTGrepMatchSchema))),
+  findFirst: z
+    .function()
+    .args(ASTGrepConfigSchema, z.string())
+    .returns(z.promise(ASTGrepMatchSchema.optional())),
+  parseString: z.function().args(z.string(), z.string().optional()).returns(z.any()),
+  parse: z.function().args(z.string()).returns(z.any()),
+  lang: z.function().args(z.string()).returns(ASTGrepLanguageSchema),
+});
+
+// Type exports for AST-grep
+export type ASTGrepMatch = z.infer<typeof ASTGrepMatchSchema>;
+export type ASTGrepLanguage = z.infer<typeof ASTGrepLanguageSchema>;
+export type ASTGrepRule = z.infer<typeof ASTGrepRuleSchema>;
+export type ASTGrepConfig = z.infer<typeof ASTGrepConfigSchema>;
+export type ASTGrepInstance = z.infer<typeof ASTGrepInstanceSchema>;
+
+// Validation helpers for AST-grep types
+export const validateASTGrepMatch = (data: unknown): ASTGrepMatch => {
+  return ASTGrepMatchSchema.parse(data);
+};
+
+export const validateASTGrepConfig = (data: unknown): ASTGrepConfig => {
+  return ASTGrepConfigSchema.parse(data);
+};
+
+export const validateASTGrepInstance = (data: unknown): ASTGrepInstance => {
+  return ASTGrepInstanceSchema.parse(data);
+};
 
 // AST-grep integration for code analysis
 export interface ASTAnalyzer {
@@ -11,8 +90,36 @@ export interface ASTAnalyzer {
   findPatternUsage(pattern: string, filePath: string): Promise<ASTNode[]>;
 }
 
-// AST-grep patterns for TypeScript/JavaScript analysis
-const AST_PATTERNS = {
+// AST-grep patterns for TypeScript/JavaScript analysis with Zod validation
+const ASTPatternSchema = z.object({
+  functions: z.object({
+    functionDeclaration: z.string(),
+    arrowFunction: z.string(),
+    methodDefinition: z.string(),
+    asyncFunction: z.string(),
+  }),
+  classes: z.object({
+    classDeclaration: z.string(),
+    classWithExtends: z.string(),
+    interface: z.string(),
+    typeAlias: z.string(),
+  }),
+  exports: z.object({
+    namedExport: z.string(),
+    defaultExport: z.string(),
+    exportDeclaration: z.string(),
+    exportFunction: z.string(),
+    exportClass: z.string(),
+  }),
+  imports: z.object({
+    namedImport: z.string(),
+    defaultImport: z.string(),
+    namespaceImport: z.string(),
+    typeImport: z.string(),
+  }),
+});
+
+const AST_PATTERNS = ASTPatternSchema.parse({
   functions: {
     // Function declarations
     functionDeclaration: 'function $NAME($PARAMS) { $BODY }',
@@ -39,13 +146,13 @@ const AST_PATTERNS = {
     namespaceImport: 'import * as $NAME from "$MODULE"',
     typeImport: 'import type { $NAMES } from "$MODULE"',
   },
-};
+});
 
 /**
  * AST Analyzer implementation using AST-grep
  */
 export class ASTGrepAnalyzer implements ASTAnalyzer {
-  private astGrep: any;
+  private astGrep: ASTGrepInstance | null = null;
 
   constructor() {
     this.initializeASTGrep();
@@ -55,7 +162,8 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
     try {
       // Import AST-grep NAPI bindings
       const { js } = await import('@ast-grep/napi');
-      this.astGrep = js;
+      // Use type assertion since ast-grep API may not match our Zod schema exactly
+      this.astGrep = js as unknown as ASTGrepInstance;
     } catch (error) {
       console.warn('AST-grep not available, falling back to regex parsing:', error);
       this.astGrep = null;
@@ -132,7 +240,8 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
     ];
 
     for (const pattern of exportPatterns) {
-      let match;
+      let match: RegExpExecArray | null;
+      // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex exec pattern
       while ((match = pattern.exec(content)) !== null) {
         const exportName = match[1];
         if (exportName) {
@@ -157,7 +266,8 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
     const importPattern =
       /import\s+(?:(?:\{([^}]+)\})|(?:(\w+))|(?:\*\s+as\s+(\w+)))\s+from\s+['"]([^'"]+)['"]/g;
 
-    let match;
+    let match: RegExpExecArray | null;
+    // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex exec pattern
     while ((match = importPattern.exec(content)) !== null) {
       const [, namedImports, defaultImport, namespaceImport, module] = match;
       const importNames: string[] = [];
@@ -226,6 +336,10 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
     const functions: FunctionDoc[] = [];
 
     try {
+      if (!this.astGrep) {
+        throw new Error('AST-grep not available');
+      }
+
       const root = this.astGrep.parse(content);
 
       // Find function declarations
@@ -274,7 +388,8 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
     ];
 
     for (const pattern of patterns) {
-      let match;
+      let match: RegExpExecArray | null;
+      // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex exec pattern
       while ((match = pattern.exec(content)) !== null) {
         const [fullMatch, name, params] = match;
         if (!name) continue;
@@ -300,6 +415,10 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
     const classes: ClassDoc[] = [];
 
     try {
+      if (!this.astGrep) {
+        throw new Error('AST-grep not available');
+      }
+
       const root = this.astGrep.parse(content);
       const classMatches = root.findAll(AST_PATTERNS.classes.classDeclaration);
       const interfaceMatches = root.findAll(AST_PATTERNS.classes.interface);
@@ -331,8 +450,9 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
 
     const classPattern =
       /(?:export\s+)?(?:class|interface)\s+(\w+)(?:\s+extends\s+(\w+))?\s*\{([^}]+)\}/g;
-    let match;
+    let match: RegExpExecArray | null;
 
+    // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex exec pattern
     while ((match = classPattern.exec(content)) !== null) {
       const [fullMatch, name, parent, body] = match;
       const lineNumber = content.substring(0, match.index).split('\n').length;
@@ -378,7 +498,8 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
       [];
     const propertyPattern = /(readonly\s+)?(\w+)(\?)?\s*:\s*([^;,\n]+)/g;
 
-    let match;
+    let match: RegExpExecArray | null;
+    // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex exec pattern
     while ((match = propertyPattern.exec(body)) !== null) {
       const [, readonly, name, optional, type] = match;
       if (name && type) {
@@ -398,7 +519,8 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
     const methods: FunctionDoc[] = [];
     const methodPattern = /(\w+)\s*\(([^)]*)\)\s*(?::\s*([^{]+))?\s*\{/g;
 
-    let match;
+    let match: RegExpExecArray | null;
+    // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex exec pattern
     while ((match = methodPattern.exec(body)) !== null) {
       const [, name, params, returnType] = match;
       if (name) {
@@ -502,8 +624,9 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
     const types: string[] = [];
 
     const typePattern = /(?:export\s+)?type\s+(\w+)/g;
-    let match;
+    let match: RegExpExecArray | null;
 
+    // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex exec pattern
     while ((match = typePattern.exec(content)) !== null) {
       if (match[1]) {
         types.push(match[1]);
@@ -520,8 +643,9 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
     const constants: Array<{ name: string; type: string; value?: string }> = [];
 
     const constPattern = /(?:export\s+)?const\s+(\w+)(?:\s*:\s*([^=]+))?\s*=\s*([^;,\n]+)/g;
-    let match;
+    let match: RegExpExecArray | null;
 
+    // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex exec pattern
     while ((match = constPattern.exec(content)) !== null) {
       const [, name, type, value] = match;
       if (name) {

@@ -1,17 +1,39 @@
 import { fromPromise } from 'xstate';
+import { z } from 'zod';
 import { ASTGrepAnalyzer } from './ast-analyzer.js';
-// import { z } from 'zod';
 import type {
   ArchitectureDoc,
   ClassDoc,
   DocumentationRequest,
   DocumentationResult,
   FunctionDoc,
-  // DocumentationType,
-  // DocumentationFormat,
   ModuleDoc,
   PatternDoc,
 } from './types.js';
+import { validateDocumentationRequest, validateDocumentationResult } from './types.js';
+
+// Additional Zod schemas for generator-specific types
+export const GeneratorMetadataSchema = z.object({
+  generatedAt: z.string(),
+  sourceFiles: z.array(z.string()),
+  totalFunctions: z.number(),
+  totalClasses: z.number(),
+  totalModules: z.number(),
+  totalPatterns: z.number(),
+  generationTime: z.number(),
+});
+
+export const GeneratorOptionsSchema = z.object({
+  includePrivate: z.boolean().default(false),
+  includeTests: z.boolean().default(false),
+  includeExamples: z.boolean().default(true),
+  maxDepth: z.number().default(10),
+  templatePath: z.string().optional(),
+  customPatterns: z.array(z.string()).optional(),
+});
+
+export type GeneratorMetadata = z.infer<typeof GeneratorMetadataSchema>;
+export type GeneratorOptions = z.infer<typeof GeneratorOptionsSchema>;
 
 /**
  * Documentation Generator
@@ -30,15 +52,19 @@ export class DocumentationGenerator {
    * Generate documentation based on request
    */
   async generateDocumentation(request: DocumentationRequest): Promise<DocumentationResult> {
+    // Validate input using Zod schema
+    const validatedRequest = validateDocumentationRequest(request);
+
     const startTime = Date.now();
 
     try {
       // Discover source files if not provided
-      const sourceFiles = request.sourceFiles || (await this.discoverSourceFiles());
+      const sourceFiles = validatedRequest.sourceFiles || (await this.discoverSourceFiles());
 
       // Generate documentation based on type
       let content: string;
-      const metadata: any = {
+      // Validate metadata using Zod schema
+      const metadata = GeneratorMetadataSchema.parse({
         generatedAt: new Date().toISOString(),
         sourceFiles,
         totalFunctions: 0,
@@ -46,39 +72,42 @@ export class DocumentationGenerator {
         totalModules: sourceFiles.length,
         totalPatterns: 0,
         generationTime: 0,
-      };
+      });
 
-      switch (request.type) {
+      switch (validatedRequest.type) {
         case 'api':
-          content = await this.generateAPIDocumentation(sourceFiles, request);
+          content = await this.generateAPIDocumentation(sourceFiles, validatedRequest);
           break;
         case 'architecture':
-          content = await this.generateArchitectureDocumentation(sourceFiles, request);
+          content = await this.generateArchitectureDocumentation(sourceFiles, validatedRequest);
           break;
         case 'patterns':
-          content = await this.generatePatternDocumentation(request);
+          content = await this.generatePatternDocumentation(validatedRequest);
           break;
         case 'usage':
-          content = await this.generateUsageDocumentation(sourceFiles, request);
+          content = await this.generateUsageDocumentation(sourceFiles, validatedRequest);
           break;
         case 'changelog':
-          content = await this.generateChangelogDocumentation(sourceFiles, request);
+          content = await this.generateChangelogDocumentation(sourceFiles, validatedRequest);
           break;
         default:
-          throw new Error(`Unsupported documentation type: ${request.type}`);
+          throw new Error(`Unsupported documentation type: ${validatedRequest.type}`);
       }
 
       metadata.generationTime = Date.now() - startTime;
 
-      return {
-        type: request.type,
-        format: request.format,
+      const result: DocumentationResult = {
+        type: validatedRequest.type,
+        format: validatedRequest.format,
         content,
         metadata,
-        outputPath: request.outputPath,
+        outputPath: validatedRequest.outputPath,
         warnings: [],
         errors: [],
       };
+
+      // Validate result before returning
+      return validateDocumentationResult(result);
     } catch (error) {
       return {
         type: request.type,
@@ -565,6 +594,7 @@ export class DocumentationGenerator {
       const content = await readFile('./src/patterns/enhanced-templates.json', 'utf-8');
       const data = JSON.parse(content);
 
+      // biome-ignore lint/suspicious/noExplicitAny: Dynamic JSON pattern structure
       return data.patterns.map((pattern: any) => ({
         id: pattern.id,
         name: pattern.id.replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
@@ -575,6 +605,7 @@ export class DocumentationGenerator {
         pattern: pattern.pattern.template || pattern.pattern,
         replacement: pattern.replacement.template || pattern.replacement,
         examples:
+          // biome-ignore lint/suspicious/noExplicitAny: Dynamic test case structure
           pattern.testCases?.map((test: any) => ({
             before: test.input,
             after: test.expected,
@@ -654,26 +685,32 @@ export class DocumentationGenerator {
     return '<html><body><h1>Pattern Documentation</h1><p>HTML format not yet implemented</p></body></html>';
   }
 
+  // biome-ignore lint/suspicious/noExplicitAny: Placeholder return type for future implementation
   private async extractUsageExamples(_sourceFiles: string[]): Promise<any[]> {
     return []; // Placeholder
   }
 
+  // biome-ignore lint/suspicious/noExplicitAny: Placeholder parameter type for future implementation
   private async generateUsageMarkdown(_examples: any[]): Promise<string> {
     return '# Usage Documentation\n\nUsage documentation not yet implemented.';
   }
 
+  // biome-ignore lint/suspicious/noExplicitAny: Placeholder parameter type for future implementation
   private async generateUsageHTML(_examples: any[]): Promise<string> {
     return '<html><body><h1>Usage Documentation</h1><p>HTML format not yet implemented</p></body></html>';
   }
 
+  // biome-ignore lint/suspicious/noExplicitAny: Placeholder return type for future implementation
   private async analyzeChanges(_sourceFiles: string[]): Promise<any[]> {
     return []; // Placeholder
   }
 
+  // biome-ignore lint/suspicious/noExplicitAny: Placeholder parameter type for future implementation
   private async generateChangelogMarkdown(_changes: any[]): Promise<string> {
     return '# Changelog\n\nChangelog generation not yet implemented.';
   }
 
+  // biome-ignore lint/suspicious/noExplicitAny: Placeholder parameter type for future implementation
   private async generateChangelogHTML(_changes: any[]): Promise<string> {
     return '<html><body><h1>Changelog</h1><p>HTML format not yet implemented</p></body></html>';
   }
