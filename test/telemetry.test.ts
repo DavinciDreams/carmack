@@ -8,6 +8,7 @@ import { randomUUID } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
 import { initializeTelemetry, type TelemetryCollector } from '../src/telemetry/collector.js';
 import { createTransformationTelemetry } from '../src/telemetry/integration.js';
+import type { TelemetryMetric } from '../src/telemetry/types.js';
 
 /**
  * Test helper for generating realistic code samples
@@ -667,7 +668,7 @@ describe('Telemetry Integration', () => {
         retentionDays: 30,
       },
     });
-    const capturedEvents: any[] = [];
+    const capturedEvents: TelemetryMetric[] = [];
 
     collector.on('batchFlush', (events) => {
       capturedEvents.push(...events);
@@ -719,10 +720,14 @@ describe('Telemetry Integration', () => {
     // Validate pipeline timing integrity
     const latencyEvent = latencyEvents.find((e) => e.transformationId === transformationId);
     expect(latencyEvent).toBeDefined();
-    expect(latencyEvent.pipelineStages.parsing).toBeGreaterThan(0);
-    expect(latencyEvent.pipelineStages.patternMatching).toBeGreaterThan(0);
-    expect(latencyEvent.pipelineStages.transformation).toBeGreaterThan(0);
-    expect(latencyEvent.pipelineStages.validation).toBeGreaterThan(0);
-    expect(latencyEvent.totalLatency).toBeGreaterThan(0);
+
+    // TypeScript doesn't understand that toBeDefined() ensures the value exists
+    if (latencyEvent) {
+      expect(latencyEvent.pipelineStages.parsing).toBeGreaterThan(0);
+      expect(latencyEvent.pipelineStages.patternMatching).toBeGreaterThan(0);
+      expect(latencyEvent.pipelineStages.transformation).toBeGreaterThan(0);
+      expect(latencyEvent.pipelineStages.validation).toBeGreaterThan(0);
+      expect(latencyEvent.totalLatency).toBeGreaterThan(0);
+    }
   });
 });
