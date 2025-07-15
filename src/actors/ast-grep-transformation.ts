@@ -115,6 +115,7 @@ const AstGrepPatternSchema = z.object({
       .array(
         z.object({
           when: z.string(), // AST-grep condition
+          // biome-ignore lint/suspicious/noThenProperty: AST-grep uses 'then' for replacement templates
           then: z.string(), // Replacement template
         })
       )
@@ -790,10 +791,12 @@ export const BUILTIN_AST_PATTERNS: AstGrepPattern[] = [
       conditions: [
         {
           when: 'scope == "function"',
+          // biome-ignore lint/suspicious/noThenProperty: AST-grep uses 'then' for replacement templates
           then: 'let $NAME = $VALUE',
         },
         {
           when: 'scope == "global"',
+          // biome-ignore lint/suspicious/noThenProperty: AST-grep uses 'then' for replacement templates
           then: 'const $NAME = $VALUE',
         },
       ],
