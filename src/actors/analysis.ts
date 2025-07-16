@@ -235,16 +235,79 @@ async function determineTransformationMode(
   return 'llm';
 }
 
-async function handleLearning(_input: {
+async function handleLearning(input: {
   operation: 'learn';
   transformation?: unknown;
   patterns: unknown[];
 }): Promise<AnalysisResult> {
-  // TODO: Implement learning from transformation results
   // Extract patterns from successful transformations
+  const transformation = input.transformation as
+    | {
+        id?: string;
+        mode?: TransformationMode;
+        filesModified?: string[];
+        success?: boolean;
+        executionTime?: number;
+        confidence?: number;
+        appliedPatterns?: Array<{ pattern: string; count: number }>;
+      }
+    | undefined;
+
+  const newPatterns: AstPattern[] = [];
+  const insights: string[] = [];
+
+  if (transformation?.success && transformation.appliedPatterns) {
+    // Learn from successful pattern applications
+    for (const appliedPattern of transformation.appliedPatterns) {
+      if (appliedPattern.count > 0) {
+        // Create a new pattern based on successful application
+        const learnedPattern: AstPattern = {
+          id: `learned_${appliedPattern.pattern}_${Date.now()}`,
+          language: 'typescript',
+          pattern: appliedPattern.pattern,
+          replacement: appliedPattern.pattern, // Simplified - would need actual replacement logic
+          description: `Learned pattern from successful transformation ${transformation.id}`,
+          complexity: Math.min(10, Math.max(1, Math.floor(appliedPattern.count / 2))),
+          riskLevel:
+            transformation.confidence && transformation.confidence > 0.8 ? 'low' : 'medium',
+          mode: transformation.mode ?? 'template',
+        };
+
+        newPatterns.push(learnedPattern);
+        insights.push(
+          `Pattern "${appliedPattern.pattern}" was successfully applied ${appliedPattern.count} times`
+        );
+      }
+    }
+
+    // Generate insights based on transformation characteristics
+    if (transformation.mode) {
+      insights.push(
+        `${transformation.mode} transformation mode was effective for this type of change`
+      );
+    }
+
+    if (transformation.executionTime && transformation.executionTime < 1000) {
+      insights.push('Fast execution time suggests this pattern is suitable for template mode');
+    } else if (transformation.executionTime && transformation.executionTime > 5000) {
+      insights.push('Slow execution time suggests complex transformation requiring LLM mode');
+    }
+
+    if (transformation.confidence && transformation.confidence > 0.9) {
+      insights.push('High confidence transformation - pattern can be reused reliably');
+    }
+
+    if (transformation.filesModified && transformation.filesModified.length > 1) {
+      insights.push('Multi-file transformation - consider batch processing optimizations');
+    }
+  } else {
+    insights.push('Transformation was not successful - no patterns learned');
+  }
+
   return {
-    newPatterns: [],
-    insights: [],
+    newPatterns,
+    insights,
+    analysisTimestamp: Date.now(),
   };
 }
 

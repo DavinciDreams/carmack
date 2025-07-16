@@ -1,9 +1,15 @@
+#!/usr/bin/env bun
+
+/**
+ * Carmack Coder Documentation Generator CLI Entry Point
+ *
+ * Provides a simple entry point for the documentation generation system
+ * using the enhanced CLI implementation with watch mode support.
+ */
+
 import { runDocsCLI } from './src/docs/cli.js';
 
-console.log('🔥 Carmack Docs CLI Wrapper');
-console.log('Process argv:', process.argv);
-
 runDocsCLI().catch((error) => {
-  console.error('Fatal error:', error);
+  console.error('Documentation generation failed:', error);
   process.exit(1);
 });

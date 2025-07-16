@@ -5,16 +5,29 @@
 import { existsSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 import chokidar from 'chokidar';
+import { z } from 'zod';
 import { DocumentationGenerator } from './generator.js';
+import { DocumentationFormatSchema, DocumentationTypeSchema } from './types.js';
 
-export interface DocCLIOptions {
-  sourceDir?: string | undefined;
-  outputDir?: string | undefined;
-  formats?: string[] | undefined;
-  watch?: boolean | undefined;
-  verbose?: boolean | undefined;
-  help?: boolean | undefined;
-}
+// Zod schema for CLI options
+export const DocCLIOptionsSchema = z.object({
+  sourceDir: z.string().optional(),
+  outputDir: z.string().optional(),
+  formats: z.array(DocumentationFormatSchema).optional(),
+  types: z.array(DocumentationTypeSchema).optional(),
+  watch: z.boolean().optional(),
+  verbose: z.boolean().optional(),
+  help: z.boolean().optional(),
+  includePrivate: z.boolean().optional(),
+  includeTests: z.boolean().optional(),
+});
+
+export type DocCLIOptions = z.infer<typeof DocCLIOptionsSchema>;
+
+// Validation helper
+export const validateCLIOptions = (data: unknown): DocCLIOptions => {
+  return DocCLIOptionsSchema.parse(data);
+};
 
 export class DocumentationCLI {
   async run(args: string[] = process.argv.slice(2)): Promise<void> {
@@ -28,7 +41,7 @@ export class DocumentationCLI {
 
       const sourceDir = parsed.sourceDir || './src';
       const outputDir = parsed.outputDir || './docs';
-      const formats = (parsed.formats as any) || ['markdown'];
+      const formats = (parsed.formats as string[]) || ['markdown'];
 
       // Validate source directory exists
       if (!existsSync(sourceDir)) {
@@ -58,18 +71,34 @@ export class DocumentationCLI {
         watch: { type: 'boolean', short: 'w' },
         verbose: { type: 'boolean', short: 'v' },
         help: { type: 'boolean', short: 'h' },
+        'include-private': { type: 'boolean' },
+        'include-tests': { type: 'boolean' },
       },
       allowPositionals: true, // Allow positional arguments for formats
     });
 
-    return {
+    // Parse and validate formats
+    const parsedFormats = values.formats?.map((format) => {
+      const result = DocumentationFormatSchema.safeParse(format);
+      if (!result.success) {
+        throw new Error(`Invalid format: ${format}. Must be one of: markdown, html, json, yaml`);
+      }
+      return result.data;
+    });
+
+    const cliOptions = {
       sourceDir: values['source-dir'],
       outputDir: values['output-dir'],
-      formats: values.formats,
+      formats: parsedFormats,
       watch: values.watch,
       verbose: values.verbose,
       help: values.help,
+      includePrivate: values['include-private'],
+      includeTests: values['include-tests'],
     };
+
+    // Validate the entire options object
+    return validateCLIOptions(cliOptions);
   }
 
   private async generateOnce(
@@ -115,7 +144,7 @@ export class DocumentationCLI {
     await this.generateOnce(generator, config);
 
     // Set up file watcher
-    const watcher = chokidar.watch(config.sourceDir!, {
+    const watcher = chokidar.watch(config.sourceDir, {
       ignored: /(^|[\\/\\])\../, // ignore dotfiles
       persistent: true,
       ignoreInitial: true,

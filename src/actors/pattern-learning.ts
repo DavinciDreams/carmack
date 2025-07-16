@@ -31,15 +31,62 @@ const PatternLearningInputSchema = z.object({
       id: z.string(),
       mode: z.enum(['template', 'ast', 'llm']),
       filesModified: z.array(z.string()),
-      complexity: z.any().optional(), // ComplexityMetrics
-      validation: z.any().optional(),
+      complexity: z
+        .object({
+          cyclomaticComplexity: z.number().int().min(0),
+          cognitiveComplexity: z.number().int().min(0),
+          linesOfCode: z.number().int().min(0),
+          nestingDepth: z.number().int().min(0),
+          functionCount: z.number().int().min(0),
+          classCount: z.number().int().min(0),
+        })
+        .optional(),
+      validation: z
+        .object({
+          isValid: z.boolean(),
+          errors: z.array(
+            z.object({
+              code: z.string(),
+              message: z.string(),
+              file: z.string().optional(),
+              line: z.number().int().positive().optional(),
+              column: z.number().int().positive().optional(),
+              severity: z.enum(['error', 'warning', 'info']),
+            })
+          ),
+          warnings: z.array(
+            z.object({
+              code: z.string(),
+              message: z.string(),
+              file: z.string().optional(),
+              line: z.number().int().positive().optional(),
+              column: z.number().int().positive().optional(),
+              severity: z.enum(['error', 'warning', 'info']),
+            })
+          ),
+          fixableIssues: z.number().int().min(0),
+        })
+        .optional(),
       startTime: z.number(),
       endTime: z.number().optional(),
       errors: z.array(z.string()),
       summary: z.string().optional(),
     })
     .optional(),
-  patterns: z.array(z.any()).optional(), // AstPattern array
+  patterns: z
+    .array(
+      z.object({
+        id: z.string(),
+        language: z.string(),
+        pattern: z.string(),
+        replacement: z.string(),
+        description: z.string(),
+        complexity: z.number().int().min(1).max(10),
+        riskLevel: z.enum(['low', 'medium', 'high']),
+        mode: z.enum(['template', 'ast', 'llm']).optional().default('template'),
+      })
+    )
+    .optional(),
   context: z
     .object({
       codebase: z
@@ -112,8 +159,32 @@ const DiscoveredPatternSchema = z.object({
 
 // Learning Result Schema
 const LearningResultSchema = z.object({
-  newPatterns: z.array(z.any()), // LearnedPattern array
-  optimizedPatterns: z.array(z.any()), // LearnedPattern array
+  newPatterns: z.array(
+    z.object({
+      id: z.string(),
+      language: z.string(),
+      pattern: z.string(),
+      replacement: z.string(),
+      description: z.string(),
+      complexity: z.number().int().min(1).max(10),
+      riskLevel: z.enum(['low', 'medium', 'high']),
+      mode: z.enum(['template', 'ast', 'llm']).optional().default('template'),
+      confidence: z.number().min(0).max(1).optional(),
+    })
+  ),
+  optimizedPatterns: z.array(
+    z.object({
+      id: z.string(),
+      language: z.string(),
+      pattern: z.string(),
+      replacement: z.string(),
+      description: z.string(),
+      complexity: z.number().int().min(1).max(10),
+      riskLevel: z.enum(['low', 'medium', 'high']),
+      mode: z.enum(['template', 'ast', 'llm']).optional().default('template'),
+      confidence: z.number().min(0).max(1).optional(),
+    })
+  ),
   deprecatedPatterns: z.array(z.string()), // pattern IDs
   insights: z.array(z.string()),
   recommendations: z.array(z.string()),
@@ -153,7 +224,7 @@ export class PatternLearner {
   private learningHistory: Array<{
     timestamp: number;
     operation: string;
-    results: any;
+    results: LearningResult;
   }> = [];
   private dataPath: string;
 
@@ -317,7 +388,7 @@ export class PatternLearner {
           await this.updatePatternEffectiveness(pattern.id, {
             success: true,
             performanceTime: transformationTime / patterns.length,
-            complexity: transformation.complexity,
+            ...(transformation.complexity && { complexity: transformation.complexity }),
           });
         }
       }
@@ -463,9 +534,11 @@ export class PatternLearner {
         );
       } else if (effectiveness.successRate > 0.8 && effectiveness.lifecycle === 'experimental') {
         // Promote successful experimental pattern to stable
-        const optimized = { ...pattern };
-        optimized.riskLevel = 'low';
-        optimized.confidence = Math.min(0.95, effectiveness.successRate);
+        const optimized: LearnedPattern = {
+          ...pattern,
+          riskLevel: 'low',
+          confidence: Math.min(0.95, effectiveness.successRate),
+        };
         optimizedPatterns.push(optimized);
 
         // Update lifecycle
@@ -621,7 +694,11 @@ export class PatternLearner {
   /**
    * Analyze transformation for new patterns
    */
-  private async analyzeTransformationForPatterns(transformation: any): Promise<LearnedPattern[]> {
+  private async analyzeTransformationForPatterns(transformation: {
+    id: string;
+    mode: 'template' | 'ast' | 'llm';
+    filesModified: string[];
+  }): Promise<LearnedPattern[]> {
     const patterns: LearnedPattern[] = [];
 
     // This is a simplified pattern discovery - in a real implementation,
@@ -714,7 +791,12 @@ export class PatternLearner {
   /**
    * Analyze codebase context for insights
    */
-  private analyzeCodebaseContext(codebase: any): string[] {
+  private analyzeCodebaseContext(codebase: {
+    language: string;
+    framework?: string | undefined;
+    complexity: number;
+    size: number;
+  }): string[] {
     const insights: string[] = [];
 
     if (codebase.complexity > 8) {

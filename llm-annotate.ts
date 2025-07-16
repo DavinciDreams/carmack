@@ -7,24 +7,36 @@
  * that help language models understand code structure and patterns.
  */
 
+import { z } from 'zod';
 import { LLMAnnotationSystem } from './src/llm-annotation/index.js';
 import type { AnnotationRequest } from './src/llm-annotation/types.js';
+import { validateAnnotationRequest } from './src/llm-annotation/types.js';
 
-interface CLIOptions {
-  directory?: string;
-  output?: string;
-  format?: 'json' | 'markdown' | 'yaml';
-  depth?: 'surface' | 'detailed' | 'comprehensive';
-  focus?: string[];
-  include?: string[];
-  exclude?: string[];
-  help?: boolean;
-  verbose?: boolean;
-  'no-prompts'?: boolean;
-}
+// Zod schema for CLI options
+const CLIOptionsSchema = z.object({
+  directory: z.string().optional(),
+  output: z.string().optional(),
+  format: z.enum(['json', 'markdown', 'yaml']).optional(),
+  depth: z.enum(['surface', 'detailed', 'comprehensive']).optional(),
+  focus: z
+    .array(z.enum(['patterns', 'architecture', 'performance', 'security', 'maintainability']))
+    .optional(),
+  include: z.array(z.string()).optional(),
+  exclude: z.array(z.string()).optional(),
+  help: z.boolean().optional(),
+  verbose: z.boolean().optional(),
+  'no-prompts': z.boolean().optional(),
+});
+
+type CLIOptions = z.infer<typeof CLIOptionsSchema>;
+
+// Validation helper
+const validateCLIOptions = (data: unknown): CLIOptions => {
+  return CLIOptionsSchema.parse(data);
+};
 
 function parseArgs(args: string[]): CLIOptions {
-  const options: CLIOptions = {};
+  const options: Partial<CLIOptions> = {};
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -43,15 +55,44 @@ function parseArgs(args: string[]): CLIOptions {
         options.output = args[++i];
         break;
       case '--format':
-      case '-f':
-        options.format = args[++i] as 'json' | 'markdown' | 'yaml';
+      case '-f': {
+        const format = args[++i];
+        const formatResult = z.enum(['json', 'markdown', 'yaml']).safeParse(format);
+        if (formatResult.success) {
+          options.format = formatResult.data;
+        } else {
+          throw new Error(`Invalid format: ${format}. Must be one of: json, markdown, yaml`);
+        }
         break;
-      case '--depth':
-        options.depth = args[++i] as 'surface' | 'detailed' | 'comprehensive';
+      }
+      case '--depth': {
+        const depth = args[++i];
+        const depthResult = z.enum(['surface', 'detailed', 'comprehensive']).safeParse(depth);
+        if (depthResult.success) {
+          options.depth = depthResult.data;
+        } else {
+          throw new Error(
+            `Invalid depth: ${depth}. Must be one of: surface, detailed, comprehensive`
+          );
+        }
         break;
-      case '--focus':
-        options.focus = args[++i]?.split(',') || [];
+      }
+      case '--focus': {
+        const focusAreas = args[++i]?.split(',') || [];
+        const validatedFocus = focusAreas.map((area) => {
+          const result = z
+            .enum(['patterns', 'architecture', 'performance', 'security', 'maintainability'])
+            .safeParse(area.trim());
+          if (!result.success) {
+            throw new Error(
+              `Invalid focus area: ${area}. Must be one of: patterns, architecture, performance, security, maintainability`
+            );
+          }
+          return result.data;
+        });
+        options.focus = validatedFocus;
         break;
+      }
       case '--include':
         options.include = args[++i]?.split(',') || [];
         break;
@@ -73,7 +114,8 @@ function parseArgs(args: string[]): CLIOptions {
     }
   }
 
-  return options;
+  // Validate the entire options object
+  return validateCLIOptions(options);
 }
 
 function showHelp(): void {
@@ -179,22 +221,25 @@ async function main(): Promise<void> {
         '**/coverage/**',
       ],
       analysisDepth: depth,
-      focusAreas: options.focus as ('patterns' | 'architecture' | 'performance' | 'security' | 'maintainability')[],
+      focusAreas: options.focus,
       outputFormat: format,
       includePrompts,
     };
 
+    // Validate the request before processing
+    const validatedRequest = validateAnnotationRequest(request);
+
     if (options.verbose) {
       console.log('📋 Configuration:');
-      console.log(`   Include patterns: ${request.includePatterns.join(', ')}`);
-      console.log(`   Exclude patterns: ${request.excludePatterns.join(', ')}`);
-      console.log(`   Analysis depth: ${request.analysisDepth}`);
-      console.log(`   Include prompts: ${request.includePrompts}`);
+      console.log(`   Include patterns: ${validatedRequest.includePatterns.join(', ')}`);
+      console.log(`   Exclude patterns: ${validatedRequest.excludePatterns.join(', ')}`);
+      console.log(`   Analysis depth: ${validatedRequest.analysisDepth}`);
+      console.log(`   Include prompts: ${validatedRequest.includePrompts}`);
       console.log('');
     }
 
     const startTime = Date.now();
-    const result = await system.annotateDirectory(directory, request);
+    const result = await system.annotateDirectory(directory, validatedRequest);
     const endTime = Date.now();
 
     console.log('✅ Analysis completed successfully!');

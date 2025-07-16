@@ -1,14 +1,10 @@
 /**
  * Production Configuration for Carmack Coder
- * Designed for deployment in real co// Default production configuration with environment variable support
-export const defaultProductionConfig: ProductionConfig = {
-  repository: {
-    url: process.env.CARMACK_REPOSITORY_URL || process.env.REPOSITORY_URL || CARMACK_REPOSITORY_URL,
-    branch: process.env.CARMACK_BRANCH || process.env.BRANCH || 'main',
-    workingDirectory: process.env.CARMACK_WORKSPACE || process.env.WORKSPACE_DIR || '/tmp/carmack-workspace', environments
+ * Designed for deployment in real environments
  */
-// Imports must come first
+
 import { z } from 'zod';
+import { CARMACK_REPOSITORY_URL } from './carmack.config.ts';
 
 export const ProductionConfigSchema = z
   .object({
@@ -90,12 +86,13 @@ export const ProductionConfigSchema = z
 
 export type ProductionConfig = z.infer<typeof ProductionConfigSchema>;
 
-// Default production configuration
+// Default production configuration with environment variable support
 export const defaultProductionConfig: ProductionConfig = {
   repository: {
-    url: 'https://github.com/DavinciDreams/carmack.git',
-    branch: 'main',
-    workingDirectory: '/tmp/carmack-workspace',
+    url: process.env.CARMACK_REPOSITORY_URL || process.env.REPOSITORY_URL || CARMACK_REPOSITORY_URL,
+    branch: process.env.CARMACK_BRANCH || process.env.BRANCH || 'main',
+    workingDirectory:
+      process.env.CARMACK_WORKSPACE || process.env.WORKSPACE_DIR || '/tmp/carmack-workspace',
     excludePatterns: [
       'node_modules/**',
       'dist/**',
@@ -109,41 +106,72 @@ export const defaultProductionConfig: ProductionConfig = {
     ],
   },
   transformation: {
-    maxFilesPerBatch: 10,
-    maxComplexityThreshold: 15,
+    maxFilesPerBatch: Number.parseInt(process.env.MAX_FILES_PER_BATCH || '10', 10),
+    maxComplexityThreshold: Number.parseInt(process.env.MAX_COMPLEXITY_THRESHOLD || '15', 10),
     allowedFileExtensions: ['.ts', '.tsx', '.js', '.jsx', '.mts', '.cts'],
-    riskLevelFilter: 'medium',
-    enableBackups: true,
-    dryRunFirst: true,
+    riskLevelFilter: (process.env.RISK_LEVEL_FILTER as 'low' | 'medium' | 'high') || 'medium',
+    enableBackups: process.env.ENABLE_BACKUPS !== 'false',
+    dryRunFirst: process.env.DRY_RUN_FIRST !== 'false',
   },
   cicd: {
-    platform: 'github',
-    triggerOnPush: false,
-    triggerOnPR: true,
-    autoMerge: false,
+    platform:
+      (process.env.CICD_PLATFORM as 'github' | 'gitlab' | 'azure' | 'jenkins' | 'custom') ||
+      'github',
+    webhookUrl: process.env.CICD_WEBHOOK_URL,
+    secretToken: process.env.CICD_SECRET_TOKEN,
+    triggerOnPush: process.env.TRIGGER_ON_PUSH === 'true',
+    triggerOnPR: process.env.TRIGGER_ON_PR !== 'false',
+    autoMerge: process.env.AUTO_MERGE === 'true',
   },
   qualityGates: {
-    requireTypeCheck: true,
-    requireLinting: true,
-    requireTests: true,
-    requireDafnyVerification: false,
-    maxComplexityIncrease: 5,
-    minTestCoverage: 80,
+    requireTypeCheck: process.env.REQUIRE_TYPE_CHECK !== 'false',
+    requireLinting: process.env.REQUIRE_LINTING !== 'false',
+    requireTests: process.env.REQUIRE_TESTS !== 'false',
+    requireDafnyVerification: process.env.REQUIRE_DAFNY_VERIFICATION === 'true',
+    maxComplexityIncrease: Number.parseInt(process.env.MAX_COMPLEXITY_INCREASE || '5', 10),
+    minTestCoverage: Number.parseInt(process.env.MIN_TEST_COVERAGE || '80', 10),
   },
   monitoring: {
-    enableTelemetry: true,
-    logLevel: 'info',
+    enableTelemetry: process.env.CARMACK_TELEMETRY_ENABLED !== 'false',
+    logLevel: (process.env.CARMACK_LOG_LEVEL as 'debug' | 'info' | 'warn' | 'error') || 'info',
+    metricsEndpoint: process.env.METRICS_ENDPOINT,
+    alertingWebhook: process.env.ALERTING_WEBHOOK_URL,
     performanceThresholds: {
-      maxTransformationTime: 300000,
-      maxMemoryUsage: 1024,
-      maxCpuUsage: 80,
+      maxTransformationTime: Number.parseInt(process.env.MAX_TRANSFORMATION_TIME || '300000', 10),
+      maxMemoryUsage: Number.parseInt(process.env.MAX_MEMORY_USAGE || '1024', 10),
+      maxCpuUsage: Number.parseInt(process.env.MAX_CPU_USAGE || '80', 10),
     },
   },
   rollback: {
-    enableAutoRollback: true,
-    rollbackOnTestFailure: true,
-    rollbackOnComplexityIncrease: true,
-    maxRollbackAttempts: 3,
-    rollbackTimeoutMs: 60000,
+    enableAutoRollback: process.env.ENABLE_AUTO_ROLLBACK !== 'false',
+    rollbackOnTestFailure: process.env.ROLLBACK_ON_TEST_FAILURE !== 'false',
+    rollbackOnComplexityIncrease: process.env.ROLLBACK_ON_COMPLEXITY_INCREASE !== 'false',
+    maxRollbackAttempts: Number.parseInt(process.env.MAX_ROLLBACK_ATTEMPTS || '3', 10),
+    rollbackTimeoutMs: Number.parseInt(process.env.ROLLBACK_TIMEOUT || '60000', 10),
   },
 };
+
+/**
+ * Validate production configuration
+ */
+export function validateProductionConfig(data: unknown): ProductionConfig {
+  return ProductionConfigSchema.parse(data);
+}
+
+/**
+ * Load production configuration from file or use defaults
+ */
+export function loadProductionConfig(configPath?: string): ProductionConfig {
+  if (configPath) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const configModule = require(configPath);
+      const config = configModule.default || configModule;
+      return validateProductionConfig(config);
+    } catch (error) {
+      console.warn(`Failed to load config from ${configPath}, using defaults:`, error);
+    }
+  }
+
+  return validateProductionConfig(defaultProductionConfig);
+}

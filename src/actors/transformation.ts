@@ -6,6 +6,9 @@ import { z } from 'zod';
 import type { AstPattern, TransformationRequest } from '../types.js';
 import { type LLMTransformationInput, LLMTransformer } from './llm-transformation.js';
 
+// AST-grep language interface
+// (Removed unused AstGrepLanguage interface)
+
 // Transformation input schema
 const TransformationInputSchema = z.object({
   mode: z.enum(['template', 'ast', 'llm']),
@@ -22,7 +25,29 @@ const TransformationInputSchema = z.object({
       mode: z.enum(['template', 'ast', 'llm']).optional().default('template'),
     })
   ),
-  request: z.any().optional(), // TransformationRequest schema
+  request: z
+    .object({
+      targetFiles: z.array(z.string()),
+      transformationType: z.enum(['template', 'ast', 'llm']),
+      patterns: z
+        .array(
+          z.object({
+            id: z.string(),
+            language: z.string(),
+            pattern: z.string(),
+            replacement: z.string(),
+            description: z.string(),
+            complexity: z.number(),
+            riskLevel: z.enum(['low', 'medium', 'high']),
+            mode: z.enum(['template', 'ast', 'llm']).optional().default('template'),
+          })
+        )
+        .optional(),
+      prompt: z.string().optional(),
+      maxComplexity: z.number().int().min(1).default(10),
+      dryRun: z.boolean().default(false),
+    })
+    .optional(),
   dryRun: z.boolean().optional().default(false), // Add dry-run support
 });
 
@@ -387,7 +412,11 @@ async function applyAstTransformation(files: string[], patterns: AstPattern[]) {
 /**
  * AST-based smart var to const/let transformation
  */
-async function smartVarToConstLetAST(_root: any, content: string, _lang: any): Promise<string> {
+async function smartVarToConstLetAST(
+  _root: unknown,
+  content: string,
+  _lang: unknown
+): Promise<string> {
   try {
     console.log('🔄 Processing var declarations for AST transformation...');
     let modifiedContent = content;
@@ -440,7 +469,11 @@ function isLiteralValue(value: string): boolean {
 /**
  * Convert Promise chains to async/await
  */
-async function promiseToAsyncAwaitAST(_root: any, content: string, _lang: any): Promise<string> {
+async function promiseToAsyncAwaitAST(
+  _root: unknown,
+  content: string,
+  _lang: unknown
+): Promise<string> {
   try {
     console.log('🔄 Processing Promise chains for AST transformation...');
     let modifiedContent = content;
@@ -471,9 +504,9 @@ async function promiseToAsyncAwaitAST(_root: any, content: string, _lang: any): 
  * Enhance object destructuring
  */
 async function enhanceObjectDestructuring(
-  _root: any,
+  _root: unknown,
   content: string,
-  _lang: any
+  _lang: unknown
 ): Promise<string> {
   try {
     // Simplified implementation - return content as-is for now
@@ -573,7 +606,7 @@ async function combineVariableDeclarations(
 /**
  * Convert callback patterns to Promises
  */
-async function callbackToPromise(_root: any, content: string, _lang: any): Promise<string> {
+async function callbackToPromise(_root: unknown, content: string, _lang: unknown): Promise<string> {
   try {
     // Find callback patterns and suggest Promise conversions
     // This is a complex transformation, so we'll do basic pattern matching
@@ -591,7 +624,7 @@ async function callbackToPromise(_root: any, content: string, _lang: any): Promi
         if (args.length === 2) {
           // Assume error-first callback pattern
           const [error, result] = args;
-          return `function ${funcName}(): Promise<any> {${beforeCallback}return new Promise((resolve, reject) => {
+          return `function ${funcName}(): Promise<unknown> {${beforeCallback}return new Promise((resolve, reject) => {
           if (${error}) reject(${error});
           else resolve(${result});
         });${afterCallback}}`;
@@ -673,7 +706,7 @@ async function applyLlmTransformation(files: string[], request?: TransformationR
       files,
       request,
       config: {
-        provider: (process.env.LLM_PROVIDER as any) || 'mock',
+        provider: (process.env.LLM_PROVIDER as 'mock' | 'openai' | 'anthropic') || 'mock',
         apiKey: process.env.LLM_API_KEY,
         model: process.env.LLM_MODEL || 'gpt-4',
         baseURL: process.env.LLM_BASE_URL,
@@ -859,7 +892,7 @@ ${constructorBody}
 /**
  * AST-based strict equality conversion (== to ===)
  */
-async function strictEqualityAST(_root: any, content: string, _lang: any): Promise<string> {
+async function strictEqualityAST(_root: unknown, content: string, _lang: unknown): Promise<string> {
   try {
     console.log('🔄 Processing strict equality conversions...');
     console.log('📝 Content length:', content.length);
@@ -887,7 +920,11 @@ async function strictEqualityAST(_root: any, content: string, _lang: any): Promi
 /**
  * AST-based strict inequality conversion (!= to !==)
  */
-async function strictInequalityAST(_root: any, content: string, _lang: any): Promise<string> {
+async function strictInequalityAST(
+  _root: unknown,
+  content: string,
+  _lang: unknown
+): Promise<string> {
   try {
     console.log('🔄 Processing strict inequality conversions...');
     let modifiedContent = content;
@@ -909,7 +946,7 @@ async function strictInequalityAST(_root: any, content: string, _lang: any): Pro
 /**
  * AST-based array includes conversion (indexOf !== -1 to includes)
  */
-async function arrayIncludesAST(_root: any, content: string, _lang: any): Promise<string> {
+async function arrayIncludesAST(_root: unknown, content: string, _lang: unknown): Promise<string> {
   try {
     console.log('🔄 Processing array includes conversions...');
     let modifiedContent = content;
@@ -994,7 +1031,11 @@ async function templateLiteralConversionAST(
 /**
  * AST-based const loop variable fix
  */
-async function constLoopVariableFixAST(_root: any, content: string, _lang: any): Promise<string> {
+async function constLoopVariableFixAST(
+  _root: unknown,
+  content: string,
+  _lang: unknown
+): Promise<string> {
   try {
     console.log('🔄 Processing const loop variable fixes...');
     let modifiedContent = content;

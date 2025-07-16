@@ -54,9 +54,31 @@ const AstGrepPatternSchema = z.object({
           kind: z.string().optional(),
         })
         .optional(),
-      all: z.array(z.any()).optional(),
-      any: z.array(z.any()).optional(),
-      not: z.any().optional(),
+      all: z
+        .array(
+          z.object({
+            pattern: z.string().optional(),
+            kind: z.string().optional(),
+            regex: z.string().optional(),
+          })
+        )
+        .optional(),
+      any: z
+        .array(
+          z.object({
+            pattern: z.string().optional(),
+            kind: z.string().optional(),
+            regex: z.string().optional(),
+          })
+        )
+        .optional(),
+      not: z
+        .object({
+          pattern: z.string().optional(),
+          kind: z.string().optional(),
+          regex: z.string().optional(),
+        })
+        .optional(),
     }),
     // Variable constraints
     constraints: z
@@ -93,6 +115,7 @@ const AstGrepPatternSchema = z.object({
       .array(
         z.object({
           when: z.string(), // AST-grep condition
+          // biome-ignore lint/suspicious/noThenProperty: AST-grep uses 'then' for replacement templates
           then: z.string(), // Replacement template
         })
       )
@@ -468,7 +491,9 @@ function extractVariables(node: SgNode, pattern: AstGrepPattern): Record<string,
     for (const varName of variableNames) {
       try {
         // Use the correct AST-grep NAPI method: getMatch()
-        const matchResult = (node as any).getMatch?.(varName);
+        const matchResult = (
+          node as unknown as { getMatch?: (name: string) => { text(): string } | null }
+        ).getMatch?.(varName);
         if (matchResult && typeof matchResult.text === 'function') {
           variables[varName] = matchResult.text();
         } else {
@@ -766,10 +791,12 @@ export const BUILTIN_AST_PATTERNS: AstGrepPattern[] = [
       conditions: [
         {
           when: 'scope == "function"',
+          // biome-ignore lint/suspicious/noThenProperty: AST-grep uses 'then' for replacement templates
           then: 'let $NAME = $VALUE',
         },
         {
           when: 'scope == "global"',
+          // biome-ignore lint/suspicious/noThenProperty: AST-grep uses 'then' for replacement templates
           then: 'const $NAME = $VALUE',
         },
       ],
@@ -856,7 +883,7 @@ export const BUILTIN_AST_PATTERNS: AstGrepPattern[] = [
     language: 'typescript',
     pattern: {
       rule: {
-        pattern: '$ARR.indexOf($ITEM) !== -1',
+        pattern: '$ARR.includes($ITEM)',
       },
     },
     replacement: {

@@ -92,6 +92,16 @@ interface PatternMetrics {
 }
 
 /**
+ * Optimization parameters for different actions
+ */
+interface OptimizationParameters {
+  factor?: number;
+  reason?: string;
+  threshold?: number;
+  [key: string]: string | number | boolean | undefined;
+}
+
+/**
  * Improvement recommendations
  */
 interface ImprovementRecommendation {
@@ -102,9 +112,40 @@ interface ImprovementRecommendation {
   expectedImpact: number; // 0-1 scale
   implementation: {
     action: string;
-    parameters: Record<string, any>;
+    parameters: OptimizationParameters;
   };
   reasoning: string;
+}
+
+/**
+ * Applied optimization result
+ */
+interface AppliedOptimization {
+  patternId: string;
+  action: string;
+  oldValue: string | number;
+  newValue: string | number;
+  expectedImpact: number;
+}
+
+/**
+ * Analysis configuration with defaults
+ */
+interface AnalysisConfig {
+  timeWindow: number;
+  minSampleSize: number;
+  confidenceThreshold: number;
+  performanceThreshold: number;
+}
+
+/**
+ * Optimization configuration with defaults
+ */
+interface OptimizationConfig {
+  learningRate: number;
+  decayFactor: number;
+  adaptationSpeed: 'slow' | 'medium' | 'fast';
+  enableAutoRemoval: boolean;
 }
 
 /**
@@ -236,13 +277,7 @@ async function optimizePatterns(request: FeedbackLoopRequest) {
   });
 
   const recommendations = analysisResult.recommendations;
-  const appliedOptimizations: Array<{
-    patternId: string;
-    action: string;
-    oldValue: any;
-    newValue: any;
-    expectedImpact: number;
-  }> = [];
+  const appliedOptimizations: AppliedOptimization[] = [];
 
   // Apply optimizations based on recommendations
   for (const recommendation of recommendations) {
@@ -440,7 +475,7 @@ function calculateConfidenceScore(
 
 function generateRecommendations(
   metrics: PatternMetrics[],
-  _config: any
+  _config: AnalysisConfig
 ): ImprovementRecommendation[] {
   const recommendations: ImprovementRecommendation[] = [];
 
@@ -517,8 +552,8 @@ async function updatePatternMetrics(feedback: FeedbackData[]): Promise<PatternMe
 
 async function applyOptimization(
   recommendation: ImprovementRecommendation,
-  _config: any
-): Promise<any> {
+  _config: OptimizationConfig
+): Promise<AppliedOptimization> {
   // Simulate applying optimization (in production, this would update pattern storage)
   const { action, parameters } = recommendation.implementation;
 
@@ -537,7 +572,7 @@ async function applyOptimization(
         patternId: recommendation.patternId,
         action: 'reduce_confidence',
         oldValue: 0.8, // Simulated old confidence
-        newValue: 0.8 * parameters.factor,
+        newValue: 0.8 * (parameters.factor ?? 0.9),
         expectedImpact: recommendation.expectedImpact,
       };
 
@@ -546,7 +581,7 @@ async function applyOptimization(
         patternId: recommendation.patternId,
         action: 'increase_confidence',
         oldValue: 0.8, // Simulated old confidence
-        newValue: Math.min(1.0, 0.8 * parameters.factor),
+        newValue: Math.min(1.0, 0.8 * (parameters.factor ?? 1.1)),
         expectedImpact: recommendation.expectedImpact,
       };
 
@@ -557,7 +592,7 @@ async function applyOptimization(
 
 async function updateConfidenceScores(
   metrics: PatternMetrics[],
-  config: any
+  config: OptimizationConfig
 ): Promise<Array<{ patternId: string; oldScore: number; newScore: number }>> {
   const updates: Array<{ patternId: string; oldScore: number; newScore: number }> = [];
 

@@ -12,12 +12,17 @@ describe('Production Pipeline', () => {
   const testFile = join(process.cwd(), 'test-file.ts');
 
   beforeEach(() => {
-    // Create test file
+    // Create test file with patterns that can be transformed
     writeFileSync(
       testFile,
       `
 function add(a, b) {
-  return a + b;
+  console.log('Error: Invalid input');
+  var result = a + b;;
+  if (result == null) {
+    return result;
+  }
+  return result;
 }
 
 export { add };
@@ -89,8 +94,8 @@ export { add };
     it('should handle invalid input gracefully', async () => {
       const request = createTestRequest({
         transformationRequest: {
-          prompt: '',
-          targetFiles: [],
+          prompt: '', // This will cause validation error
+          targetFiles: [], // This will cause validation error
           transformationType: 'auto',
           maxComplexity: 15,
           dryRun: true,
@@ -590,7 +595,7 @@ export { add };
         transformationRequest: {
           prompt: 'Cause critical error',
           targetFiles: [testFile],
-          transformationType: 'auto',
+          transformationType: 'llm', // Force LLM transformation to trigger the error
           maxComplexity: 15,
           dryRun: true,
         },
@@ -600,14 +605,20 @@ export { add };
 
       expect(result).toBeDefined();
       if (result) {
+        // When LLM transformation fails, the pipeline should fail
         expect(result.success).toBe(false);
+
+        // Should have no transformations applied since LLM failed and it's the only method
+        expect(result.transformationsApplied.length).toBe(0);
+
+        // Should have errors recorded
         expect(result.errors).toBeDefined();
         expect(result.errors?.length).toBeGreaterThan(0);
 
-        const error = result.errors?.[0];
-        expect(error.message).toBeDefined();
-        expect(error.stage).toBeDefined();
-        expect(['critical', 'warning', 'info', 'error']).toContain(error.severity);
+        // The error should be from the transformation stage
+        const transformationError = result.errors?.find((e) => e.stage === 'transformation');
+        expect(transformationError).toBeDefined();
+        expect(transformationError?.severity).toBe('error');
       }
     });
   });

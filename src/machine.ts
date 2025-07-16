@@ -2,12 +2,18 @@ import { assign, setup } from 'xstate';
 import type { AnalysisResult } from './actors/analysis.ts';
 // Actor imports
 import { analysisActor } from './actors/analysis.ts';
+import { astGrepTransformationActor } from './actors/ast-grep-transformation.ts';
 import { complexityActor } from './actors/complexity.ts';
 import { dafnyActor } from './actors/dafny.ts';
+import { feedbackLoopActor } from './actors/feedback-loop.ts';
 import { gitActor } from './actors/git.ts';
+import { llmTestingFrameworkActor } from './actors/llm-testing-framework.ts';
+import { llmTransformationActor } from './actors/llm-transformation.ts';
+import { patternDiscoveryActor } from './actors/pattern-discovery.ts';
 import { patternLearningActor } from './actors/pattern-learning.ts';
 import { type TemplatePattern, templateEngineActor } from './actors/template-engine.ts';
 import { transformationActor } from './actors/transformation.ts';
+import { enhancedTransformationActor } from './actors/transformation-enhanced.ts';
 import { validationActor } from './actors/validation.ts';
 import type { AstPattern, MachineContext, MachineEvent } from './types.ts';
 import { MachineContextSchema } from './types.ts';
@@ -63,13 +69,19 @@ const _carmackCoderMachine = setup({
   },
   actors: {
     analysisActor,
-    transformationActor,
-    templateEngineActor,
-    validationActor,
-    gitActor,
+    astGrepTransformationActor,
     complexityActor,
     dafnyActor,
+    enhancedTransformationActor,
+    feedbackLoopActor,
+    gitActor,
+    llmTestingFrameworkActor,
+    llmTransformationActor,
+    patternDiscoveryActor,
     patternLearningActor,
+    templateEngineActor,
+    transformationActor,
+    validationActor,
   },
   guards: {
     hasMaxRetriesExceeded: ({ context }) => {
