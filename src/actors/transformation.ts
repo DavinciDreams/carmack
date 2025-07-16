@@ -707,9 +707,17 @@ async function applyLlmTransformation(files: string[], request?: TransformationR
       request,
       config: {
         provider: (process.env.LLM_PROVIDER as 'mock' | 'openai' | 'anthropic') || 'mock',
-        apiKey: process.env.LLM_API_KEY,
+        apiKey: process.env.LLM_PROVIDER === 'anthropic' 
+          ? process.env.ANTHROPIC_API_KEY 
+          : process.env.LLM_PROVIDER === 'openai'
+          ? process.env.OPENAI_API_KEY
+          : process.env.LLM_API_KEY,
         model: process.env.LLM_MODEL || 'gpt-4',
-        baseURL: process.env.LLM_BASE_URL,
+        baseURL: process.env.LLM_PROVIDER === 'anthropic'
+          ? process.env.ANTHROPIC_BASE_URL
+          : process.env.LLM_PROVIDER === 'openai'
+          ? process.env.OPENAI_BASE_URL
+          : process.env.LLM_BASE_URL,
         maxTokens: 4000,
         temperature: 0.1, // Low temperature for deterministic code transformations
         timeout: 30000,
