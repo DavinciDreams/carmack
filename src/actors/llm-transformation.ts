@@ -574,7 +574,7 @@ Respond in this JSON format:
         messages: [
           {
             role: 'system',
-            content: 'detailed thinking on\n\nYou are an expert code transformation assistant. Transform the provided code to improve its quality, maintainability, and follow modern best practices. Focus on: type safety, performance, readability, and modern JavaScript/TypeScript patterns.',
+            content: 'You are an expert code transformation assistant. Transform the provided code to improve its quality, maintainability, and follow modern best practices. Focus on: type safety, performance, readability, and modern JavaScript/TypeScript patterns.',
           },
           {
             role: 'user',
@@ -588,7 +588,16 @@ Respond in this JSON format:
     });
 
     if (!response.ok) {
-      throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}`);
+      let errorMessage = `OpenRouter API error: ${response.status} ${response.statusText}`;
+      try {
+        const errorData = await response.json() as any;
+        if (errorData.error) {
+          errorMessage += ` - ${errorData.error.message || JSON.stringify(errorData.error)}`;
+        }
+      } catch {
+        // If can't parse error JSON, use status text only
+      }
+      throw new Error(errorMessage);
     }
 
     const data = (await response.json()) as OpenAIResponse;
