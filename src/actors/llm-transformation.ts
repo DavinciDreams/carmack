@@ -15,7 +15,7 @@ import type { AstPattern, ComplexityMetrics, TransformationRequest } from '../ty
  */
 
 // LLM Provider configuration
-const LLMProviderSchema = z.enum(['openai', 'anthropic', 'local', 'mock']);
+const LLMProviderSchema = z.enum(['openai', 'anthropic', 'openrouter', 'local', 'mock']);
 
 // LLM Configuration schema
 const LLMConfigSchema = z
@@ -466,6 +466,8 @@ Respond in this JSON format:
         return await this.callOpenAI(prompt);
       case 'anthropic':
         return await this.callAnthropic(prompt);
+      case 'openrouter':
+        return await this.callOpenRouter(prompt);
       case 'local':
         return await this.callLocalModel(prompt);
       default:
@@ -547,6 +549,50 @@ Respond in this JSON format:
 
     const data = (await response.json()) as AnthropicResponse;
     return data.content?.[0]?.text || '';
+  }
+
+  /**
+   * Call OpenRouter API (OpenAI-compatible)
+   */
+  private async callOpenRouter(prompt: string): Promise<string> {
+    if (!this.config.apiKey) {
+      throw new Error('OpenRouter API key not provided');
+    }
+
+    const baseURL = this.config.baseURL || 'https://openrouter.ai/api/v1';
+    
+    const response = await fetch(`${baseURL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.config.apiKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://github.com/DavinciDreams/carmack', // Optional: for better rate limits
+        'X-Title': 'Carmack Coder', // Optional: for analytics
+      },
+      body: JSON.stringify({
+        model: this.config.model || 'nvidia/llama-3.1-nemotron-ultra-253b-v1:free',
+        messages: [
+          {
+            role: 'system',
+            content: 'detailed thinking on\n\nYou are an expert code transformation assistant. Transform the provided code to improve its quality, maintainability, and follow modern best practices. Focus on: type safety, performance, readability, and modern JavaScript/TypeScript patterns.',
+          },
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        max_tokens: this.config.maxTokens,
+        temperature: this.config.temperature,
+        stream: false,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = (await response.json()) as OpenAIResponse;
+    return data.choices?.[0]?.message?.content || '';
   }
 
   /**
