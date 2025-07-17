@@ -693,7 +693,21 @@ Respond in this JSON format:
   private parseAPIResponse(response: string): Record<string, unknown> {
     try {
       // Try to parse as JSON first
-      return JSON.parse(response);
+      const parsed = JSON.parse(response);
+      
+      // If transformedCode is itself a JSON string, parse it
+      if (typeof parsed.transformedCode === 'string' && parsed.transformedCode.trim().startsWith('{')) {
+        try {
+          const innerParsed = JSON.parse(parsed.transformedCode);
+          console.log(`🔧 Fixed double-nested JSON response`);
+          return innerParsed;
+        } catch {
+          // If parsing fails, use the original parsed result
+          return parsed;
+        }
+      }
+      
+      return parsed;
     } catch {
       // If not JSON, try to extract JSON from markdown code blocks
       const jsonMatch = response.match(/```json\n([\s\S]*?)\n```/);
