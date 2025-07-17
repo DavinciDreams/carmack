@@ -155,6 +155,66 @@
     "usageCount": 1,
     "lifecycle": "experimental"
   },
+  "cpp-constexpr-const": {
+    "patternId": "cpp-constexpr-const",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1752734836427,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "cpp-include-iostream": {
+    "patternId": "cpp-include-iostream",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1752734960197,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "cpp-std-namespace": {
+    "patternId": "cpp-std-namespace",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1752734960197,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "cpp-modern-cast": {
+    "patternId": "cpp-modern-cast",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1752734836427,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "cpp-double-include-fix": {
+    "patternId": "cpp-double-include-fix",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1752734960197,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
   "cpp-auto-type-deduction": {
     "patternId": "cpp-auto-type-deduction",
     "successRate": 0,
@@ -239,32 +299,8 @@
     "usageCount": 1,
     "lifecycle": "experimental"
   },
-  "cpp-constexpr-const": {
-    "patternId": "cpp-constexpr-const",
-    "successRate": 0,
-    "averagePerformance": 0,
-    "complexityReduction": 0,
-    "errorRate": 0.1,
-    "userSatisfaction": 5,
-    "applicabilityScore": 0.5,
-    "lastUpdated": 1752734836427,
-    "usageCount": 1,
-    "lifecycle": "experimental"
-  },
   "cpp-fix-include-guards": {
     "patternId": "cpp-fix-include-guards",
-    "successRate": 0,
-    "averagePerformance": 0,
-    "complexityReduction": 0,
-    "errorRate": 0.1,
-    "userSatisfaction": 5,
-    "applicabilityScore": 0.5,
-    "lastUpdated": 1752734836427,
-    "usageCount": 1,
-    "lifecycle": "experimental"
-  },
-  "cpp-modern-cast": {
-    "patternId": "cpp-modern-cast",
     "successRate": 0,
     "averagePerformance": 0,
     "complexityReduction": 0,
