@@ -705,14 +705,28 @@ Respond in this JSON format:
         // If transformedCode is itself a JSON string containing another JSON object, this is the bug
         if (typeof codeValue === 'string') {
           const trimmed = codeValue.trim();
-          if (trimmed.startsWith('{') && trimmed.includes('"transformedCode"')) {
-            console.log(`🐛 Detected double-nested JSON bug in transformedCode field`);
+          if (trimmed.startsWith('{')) {
+            console.log(`🐛 Detected JSON string in transformedCode field`);
             try {
               const innerParsed = JSON.parse(codeValue);
-              if (innerParsed.transformedCode) {
+              console.log(`🔧 Inner JSON keys: ${Object.keys(innerParsed).join(', ')}`);
+              
+              if (innerParsed.transformedCode && typeof innerParsed.transformedCode === 'string') {
                 console.log(`🔧 Extracting actual code from nested JSON`);
                 console.log(`🔧 Actual code preview: ${String(innerParsed.transformedCode).substring(0, 100)}...`);
-                return innerParsed; // Return the inner parsed object which has the actual code
+                
+                // Create a corrected response with the actual code
+                const correctedResponse = {
+                  ...parsed,
+                  transformedCode: innerParsed.transformedCode,
+                  explanation: innerParsed.explanation || parsed.explanation,
+                  confidence: innerParsed.confidence !== undefined ? innerParsed.confidence : parsed.confidence,
+                  warnings: innerParsed.warnings || parsed.warnings,
+                  appliedTransformations: innerParsed.appliedTransformations || parsed.appliedTransformations
+                };
+                
+                console.log(`✅ Fixed double-nested JSON response`);
+                return correctedResponse;
               }
             } catch (parseError) {
               console.log(`⚠️ Failed to parse nested JSON: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
