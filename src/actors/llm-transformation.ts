@@ -694,16 +694,22 @@ Respond in this JSON format:
     try {
       // Try to parse as JSON first
       const parsed = JSON.parse(response);
+      console.log(`🔍 Initial parsed response type: ${typeof parsed.transformedCode}`);
+      console.log(`🔍 First 50 chars of transformedCode: ${String(parsed.transformedCode).substring(0, 50)}...`);
       
       // If transformedCode is itself a JSON string, parse it
-      if (typeof parsed.transformedCode === 'string' && parsed.transformedCode.trim().startsWith('{')) {
-        try {
-          const innerParsed = JSON.parse(parsed.transformedCode);
-          console.log(`🔧 Fixed double-nested JSON response`);
-          return innerParsed;
-        } catch {
-          // If parsing fails, use the original parsed result
-          return parsed;
+      if (typeof parsed.transformedCode === 'string') {
+        const trimmed = parsed.transformedCode.trim();
+        if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+          try {
+            const innerParsed = JSON.parse(parsed.transformedCode);
+            console.log(`🔧 Fixed double-nested JSON response`);
+            return innerParsed;
+          } catch (parseError) {
+            console.log(`⚠️ Failed to parse inner JSON: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
+            // If parsing fails, use the original parsed result
+            return parsed;
+          }
         }
       }
       
