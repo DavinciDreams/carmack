@@ -133,91 +133,31 @@
       "mode": "template"
     },
     {
-      "id": "cpp-auto-type-deduction",
-      "language": "cpp",
-      "pattern": "$TYPE $VAR = $TYPE($ARGS)",
-      "replacement": "auto $VAR = $TYPE($ARGS)",
-      "description": "Use auto for type deduction when type is obvious",
-      "complexity": 2,
-      "riskLevel": "low",
-      "mode": "ast"
-    },
-    {
-      "id": "cpp-range-based-for",
-      "language": "cpp",
-      "pattern": "for (std::size_t $I = 0; $I < $CONTAINER.size(); ++$I)",
-      "replacement": "for (const auto& item : $CONTAINER)",
-      "description": "Convert traditional for loops to range-based for loops",
-      "complexity": 3,
-      "riskLevel": "medium",
-      "mode": "ast"
-    },
-    {
-      "id": "cpp-smart-ptr-make",
-      "language": "cpp",
-      "pattern": "std::shared_ptr<$TYPE>(new $TYPE($ARGS))",
-      "replacement": "std::make_shared<$TYPE>($ARGS)",
-      "description": "Use make_shared instead of explicit new with shared_ptr",
-      "complexity": 2,
-      "riskLevel": "low",
-      "mode": "ast"
-    },
-    {
-      "id": "cpp-unique-ptr-make",
-      "language": "cpp",
-      "pattern": "std::unique_ptr<$TYPE>(new $TYPE($ARGS))",
-      "replacement": "std::make_unique<$TYPE>($ARGS)",
-      "description": "Use make_unique instead of explicit new with unique_ptr",
-      "complexity": 2,
-      "riskLevel": "low",
-      "mode": "ast"
-    },
-    {
-      "id": "cpp-override-keyword",
-      "language": "cpp",
-      "pattern": "virtual $RETURN $FUNC($PARAMS) {",
-      "replacement": "$RETURN $FUNC($PARAMS) override {",
-      "description": "Add override keyword to virtual function overrides",
-      "complexity": 2,
-      "riskLevel": "low",
-      "mode": "ast"
-    },
-    {
-      "id": "cpp-const-reference-param",
-      "language": "cpp",
-      "pattern": "void $FUNC($TYPE $PARAM)",
-      "replacement": "void $FUNC(const $TYPE& $PARAM)",
-      "description": "Pass large objects by const reference instead of value",
-      "complexity": 3,
-      "riskLevel": "medium",
-      "mode": "ast"
-    },
-    {
-      "id": "cpp-emplace-back",
-      "language": "cpp",
-      "pattern": "$CONTAINER.push_back($TYPE($ARGS))",
-      "replacement": "$CONTAINER.emplace_back($ARGS)",
-      "description": "Use emplace_back instead of push_back for constructed objects",
-      "complexity": 2,
-      "riskLevel": "low",
-      "mode": "ast"
-    },
-    {
       "id": "cpp-constexpr-const",
-      "language": "cpp",
-      "pattern": "static const $TYPE $VAR = $VALUE;",
-      "replacement": "static constexpr $TYPE $VAR = $VALUE;",
+      "language": "cpp", 
+      "pattern": "static const ",
+      "replacement": "static constexpr ",
       "description": "Use constexpr instead of const for compile-time constants",
       "complexity": 2,
       "riskLevel": "low",
       "mode": "template"
     },
     {
-      "id": "cpp-fix-include-guards",
+      "id": "cpp-include-iostream",
       "language": "cpp",
-      "pattern": "#ifndef $GUARD\n#define $GUARD",
-      "replacement": "#pragma once",
-      "description": "Replace include guards with pragma once",
+      "pattern": "#include <iostream.h>",
+      "replacement": "#include <iostream>",
+      "description": "Replace deprecated iostream.h with modern iostream",
+      "complexity": 1,
+      "riskLevel": "low",
+      "mode": "template"
+    },
+    {
+      "id": "cpp-std-namespace",
+      "language": "cpp",
+      "pattern": "using namespace std;",
+      "replacement": "// using namespace std; // Consider using specific std:: prefixes instead",
+      "description": "Discourage using namespace std in headers",
       "complexity": 1,
       "riskLevel": "low",
       "mode": "template"
@@ -225,22 +165,22 @@
     {
       "id": "cpp-modern-cast",
       "language": "cpp",
-      "pattern": "($TYPE*)$EXPR",
+      "pattern": "\\($TYPE\\*\\)$EXPR",
       "replacement": "static_cast<$TYPE*>($EXPR)",
       "description": "Replace C-style casts with static_cast",
       "complexity": 2,
       "riskLevel": "medium",
-      "mode": "ast"
+      "mode": "template"
     },
     {
-      "id": "cpp-move-semantics",
+      "id": "cpp-double-include-fix",
       "language": "cpp",
-      "pattern": "$VAR = $OTHER_VAR;",
-      "replacement": "$VAR = std::move($OTHER_VAR);",
-      "description": "Use move semantics for expensive-to-copy objects",
-      "complexity": 4,
-      "riskLevel": "high",
-      "mode": "ast"
+      "pattern": "#include \"",
+      "replacement": "#include \"",
+      "description": "Ensure proper include formatting",
+      "complexity": 1,
+      "riskLevel": "low",
+      "mode": "template"
     }
   ],
   "categories": {
@@ -250,11 +190,9 @@
       "strict-inequality",
       "promise-to-async-await",
       "cpp-nullptr-conversion",
-      "cpp-auto-type-deduction",
-      "cpp-range-based-for",
-      "cpp-override-keyword",
       "cpp-constexpr-const",
-      "cpp-fix-include-guards"
+      "cpp-include-iostream",
+      "cpp-std-namespace"
     ],
     "optimization": [
       "object-property-shorthand",
@@ -267,7 +205,6 @@
     "safety": [
       "array-includes-instead-of-indexof",
       "const-loop-variable-fix",
-      "cpp-const-reference-param",
       "cpp-modern-cast"
     ],
     "logging": ["console-log-to-console-error"],
@@ -277,17 +214,11 @@
     ],
     "cpp-modernization": [
       "cpp-nullptr-conversion",
-      "cpp-auto-type-deduction",
-      "cpp-range-based-for",
-      "cpp-smart-ptr-make",
-      "cpp-unique-ptr-make",
-      "cpp-override-keyword",
-      "cpp-const-reference-param",
-      "cpp-emplace-back",
-      "cpp-constexpr-const",
-      "cpp-fix-include-guards",
+      "cpp-constexpr-const", 
+      "cpp-include-iostream",
+      "cpp-std-namespace",
       "cpp-modern-cast",
-      "cpp-move-semantics"
+      "cpp-double-include-fix"
     ]
   },
   "metadata": {
@@ -295,7 +226,7 @@
     "author": "Carmack Coder",
     "license": "MIT",
     "lastUpdated": "2025-07-17",
-    "totalPatterns": 24,
+    "totalPatterns": 18,
     "astGrepVersion": "0.38.6",
     "languages": ["typescript", "javascript", "cpp"],
     "features": [
