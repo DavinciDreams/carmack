@@ -534,6 +534,7 @@ Respond in this JSON format:
         model: this.config.model || 'claude-3-sonnet-20240229',
         max_tokens: this.config.maxTokens,
         temperature: this.config.temperature,
+        system: 'You are an expert code transformation assistant. Transform the provided code to improve its quality, maintainability, and follow modern best practices. Focus on: type safety, performance, readability, and modern JavaScript/TypeScript patterns.',
         messages: [
           {
             role: 'user',
@@ -544,7 +545,16 @@ Respond in this JSON format:
     });
 
     if (!response.ok) {
-      throw new Error(`Anthropic API error: ${response.status} ${response.statusText}`);
+      let errorMessage = `Anthropic API error: ${response.status} ${response.statusText}`;
+      try {
+        const errorData = await response.json() as any;
+        if (errorData.error) {
+          errorMessage += ` - ${errorData.error.message || JSON.stringify(errorData.error)}`;
+        }
+      } catch {
+        // If can't parse error JSON, use status text only
+      }
+      throw new Error(errorMessage);
     }
 
     const data = (await response.json()) as AnthropicResponse;
