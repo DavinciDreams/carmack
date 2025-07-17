@@ -531,7 +531,7 @@ Respond in this JSON format:
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: this.config.model || 'claude-3-sonnet-20240229',
+        model: this.config.model || 'claude-3-5-sonnet-20241022',
         max_tokens: this.config.maxTokens,
         temperature: this.config.temperature,
         system: 'You are an expert code transformation assistant. Transform the provided code to improve its quality, maintainability, and follow modern best practices. Focus on: type safety, performance, readability, and modern JavaScript/TypeScript patterns.',
