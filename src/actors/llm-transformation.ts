@@ -694,21 +694,29 @@ Respond in this JSON format:
     try {
       // Try to parse as JSON first
       const parsed = JSON.parse(response);
-      console.log(`🔍 Initial parsed response type: ${typeof parsed.transformedCode}`);
-      console.log(`🔍 First 50 chars of transformedCode: ${String(parsed.transformedCode).substring(0, 50)}...`);
+      console.log(`🔍 Initial parsed response keys: ${Object.keys(parsed).join(', ')}`);
       
-      // If transformedCode is itself a JSON string, parse it
-      if (typeof parsed.transformedCode === 'string') {
-        const trimmed = parsed.transformedCode.trim();
-        if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
-          try {
-            const innerParsed = JSON.parse(parsed.transformedCode);
-            console.log(`🔧 Fixed double-nested JSON response`);
-            return innerParsed;
-          } catch (parseError) {
-            console.log(`⚠️ Failed to parse inner JSON: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
-            // If parsing fails, use the original parsed result
-            return parsed;
+      // Check if transformedCode field exists and what type it is
+      if (parsed.transformedCode !== undefined) {
+        const codeValue = parsed.transformedCode;
+        console.log(`🔍 transformedCode type: ${typeof codeValue}`);
+        console.log(`🔍 First 100 chars of transformedCode: ${String(codeValue).substring(0, 100)}...`);
+        
+        // If transformedCode is itself a JSON string containing another JSON object, this is the bug
+        if (typeof codeValue === 'string') {
+          const trimmed = codeValue.trim();
+          if (trimmed.startsWith('{') && trimmed.includes('"transformedCode"')) {
+            console.log(`🐛 Detected double-nested JSON bug in transformedCode field`);
+            try {
+              const innerParsed = JSON.parse(codeValue);
+              if (innerParsed.transformedCode) {
+                console.log(`🔧 Extracting actual code from nested JSON`);
+                console.log(`🔧 Actual code preview: ${String(innerParsed.transformedCode).substring(0, 100)}...`);
+                return innerParsed; // Return the inner parsed object which has the actual code
+              }
+            } catch (parseError) {
+              console.log(`⚠️ Failed to parse nested JSON: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
+            }
           }
         }
       }
