@@ -231,6 +231,10 @@ export class LLMTransformer {
 
       // Apply the transformation if it's different
       if (originalContent !== llmResponse.transformedCode) {
+        console.log(`📝 Writing transformed code to ${filePath}`);
+        console.log(`📏 Original length: ${originalContent.length}, New length: ${llmResponse.transformedCode.length}`);
+        console.log(`🔍 First 100 chars of transformed code: ${llmResponse.transformedCode.substring(0, 100)}...`);
+        
         await writeFile(filePath, llmResponse.transformedCode, 'utf-8');
 
         return {
@@ -433,8 +437,11 @@ Respond in this JSON format:
         const response = await this.makeAPICall(prompt);
 
         // Parse and validate response
+        console.log(`🔍 Raw API response: ${response.substring(0, 200)}...`);
         const parsedResponse = this.parseAPIResponse(response);
+        console.log(`📋 Parsed response keys: ${Object.keys(parsedResponse)}`);
         const validatedResponse = LLMResponseSchema.parse(parsedResponse);
+        console.log(`✅ Validated response with transformedCode length: ${validatedResponse.transformedCode.length}`);
 
         // Update token usage
         this.tokenUsage += this.estimateTokenUsage(prompt, validatedResponse.transformedCode);
