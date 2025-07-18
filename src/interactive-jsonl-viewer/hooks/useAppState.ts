@@ -320,7 +320,16 @@ export function useAppState(
     });
   }, [filterClaudeMessages]);
 
-  // Expansion state
+  /**
+   * Toggle message expansion state
+   * 
+   * IMPORTANT for future LLMs:
+   * - This is a TOGGLE function - if expanded, it collapses; if collapsed, it expands
+   * - Uses a Set to track expanded message UUIDs
+   * - The Set is immutable (creates new Set on each change)
+   * - This is why auto-expand checks if message is already expanded first
+   * - Without that check, it would toggle on every render
+   */
   const toggleExpansion = useCallback((uuid: string) => {
     setState(prev => {
       const newExpanded = new Set(prev.expandedMessages);
@@ -617,39 +626,6 @@ export function useAppStateKeyboardHandlers(
     r: actions.resetState,
     q: () => process.exit(0)
   };
-}
-
-/**
- * Hook for auto-scroll functionality
- */
-export function useAutoScroll(
-  state: AppState,
-  actions: AppStateActions,
-  scrollCallback?: (index: number) => void
-) {
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    if (state.autoScroll && state.messages.length > 0) {
-      intervalRef.current = setInterval(() => {
-        const filteredMessages = MessageUtils.filterMessagesByType(state.messages, state.filterType);
-        if (state.selectedIndex < filteredMessages.length - 1) {
-          actions.selectNext();
-          if (scrollCallback) {
-            scrollCallback(state.selectedIndex + 1);
-          }
-        } else {
-          actions.setAutoScroll(false);
-        }
-      }, state.autoScrollDelay);
-    }
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [state.autoScroll, state.selectedIndex, state.messages.length, state.filterType, state.autoScrollDelay, actions, scrollCallback]);
 }
 
 /**

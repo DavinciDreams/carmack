@@ -189,15 +189,14 @@ function MyComponent() {
 ### Auto-scroll with Callback
 
 ```tsx
-import { useAutoScroll } from './hooks/useAppState';
+// Auto-scroll is now integrated directly in InteractiveViewer
+// for better performance and state synchronization
 
 function MyComponent() {
   const { state, actions } = useAppState();
   
-  useAutoScroll(state, actions, (index) => {
-    console.log(`Auto-scrolled to message ${index}`);
-    // Custom scroll behavior
-  });
+  // Auto-scroll behavior is handled automatically in InteractiveViewer
+  // No need to call useAutoScroll separately
 }
 ```
 

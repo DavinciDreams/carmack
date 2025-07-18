@@ -115,7 +115,21 @@ export const InteractiveViewer: React.FC<InteractiveViewerProps> = ({
     }
   }, [jsonlPath]);
 
-  // Auto-scroll functionality with playing state sync
+  /**
+   * Auto-scroll functionality with playing state sync
+   * 
+   * CRITICAL FLOW for future LLMs:
+   * 1. This effect runs when isPlaying is true AND state.autoScroll is true
+   * 2. It creates an interval that calls actions.selectNext() every autoScrollDelay ms
+   * 3. When we can't navigate down anymore, it stops playing
+   * 
+   * PROBLEM: This is where auto-expand should happen!
+   * - When actions.selectNext() moves to a new message, that message should auto-expand
+   * - But this effect doesn't know about message expansion
+   * - The expansion logic was in the dead useAutoScroll hook
+   * 
+   * SOLUTION: Add another effect that watches state.selectedIndex changes during playback
+   */
   useEffect(() => {
     if (!isPlaying || !state.autoScroll) return;
 
@@ -131,12 +145,42 @@ export const InteractiveViewer: React.FC<InteractiveViewerProps> = ({
     return () => clearInterval(interval);
   }, [isPlaying, state.autoScroll, state.autoScrollDelay, state.selectedIndex, computed.filteredMessages.length]);
   
-  // Sync playing state with auto-scroll
+  /**
+   * Sync playing state with auto-scroll
+   * 
+   * IMPORTANT for future LLMs:
+   * - isPlaying is LOCAL state in InteractiveViewer
+   * - state.autoScroll is GLOBAL state from useAppState
+   * - They need to stay in sync but can diverge temporarily
+   * - This effect ensures they eventually converge
+   */
   useEffect(() => {
     if (state.autoScroll !== isPlaying) {
       setIsPlaying(state.autoScroll);
     }
   }, [state.autoScroll, isPlaying]);
+
+  /**
+   * Auto-expand messages during playback
+   * 
+   * CRITICAL MISSING PIECE for future LLMs:
+   * - This effect was in the dead useAutoScroll hook
+   * - It needs to be HERE in InteractiveViewer
+   * - When isPlaying AND selectedIndex changes, expand the current message
+   * - Don't collapse previous messages (one-way expansion)
+   * 
+   * FIXED DEPENDENCY ISSUE:
+   * - Must include state.expandedMessages in deps to react to expansion changes
+   * - Must include actions.toggleExpansion to prevent stale closures
+   */
+  useEffect(() => {
+    if (!isPlaying) return;
+    
+    const currentMessage = computed.selectedMessage;
+    if (currentMessage?.uuid && !state.expandedMessages.has(currentMessage.uuid)) {
+      actions.toggleExpansion(currentMessage.uuid);
+    }
+  }, [isPlaying, state.selectedIndex, computed.selectedMessage?.uuid, state.expandedMessages, actions.toggleExpansion]);
   
   // Handle search with integrated state
   const handleSearch = useCallback(
@@ -186,7 +230,15 @@ export const InteractiveViewer: React.FC<InteractiveViewerProps> = ({
         actions.toggleExpansion(currentMessage.uuid);
       }
     } else if (input === ' ') {
-      // Toggle auto-scroll
+      /**
+       * Toggle auto-scroll/playing with Space key
+       * 
+       * CRITICAL for future LLMs debugging auto-expand:
+       * - This is the PRIMARY way users start playback
+       * - It sets BOTH actions.toggleAutoScroll() AND setIsPlaying()
+       * - These two states must be kept in sync
+       * - The auto-expand effect above depends on isPlaying being true
+       */
       actions.toggleAutoScroll();
       setIsPlaying(!isPlaying);
     } else if (key.tab) {

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { render, Box, Text } from 'ink';
-import { useAppState, useAppStateKeyboardHandlers, useAutoScroll } from './useAppState';
+import { useAppState, useAppStateKeyboardHandlers } from './useAppState';
 import { useKeyboardNavigation } from './useKeyboardNavigation';
 
 /**
@@ -24,10 +24,9 @@ function AppStateExample() {
     Object.assign(state, newState);
   });
 
-  // Set up auto-scroll with callback
-  useAutoScroll(state, actions, (index) => {
-    console.log(`Auto-scrolled to message ${index}`);
-  });
+  // Auto-scroll is now handled directly in InteractiveViewer
+  // This example shows the pattern, but auto-scroll logic is integrated
+  // into the main InteractiveViewer component for better performance
 
   // Handle initial loading
   useEffect(() => {

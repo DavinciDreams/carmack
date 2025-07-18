@@ -113,15 +113,13 @@ function ViewerApp() {
 
 ### Advanced Integration with Custom Actions
 ```tsx
-import { useAppState, useAutoScroll } from './hooks/useAppState';
+import { useAppState } from './hooks/useAppState';
 
 function AdvancedViewer() {
   const { state, actions, computed } = useAppState();
   
-  // Set up auto-scroll with custom callback
-  useAutoScroll(state, actions, (index) => {
-    console.log(`Auto-scrolled to message ${index}`);
-  });
+  // Auto-scroll is now handled directly in InteractiveViewer
+  // for better performance and state synchronization
 
   // Custom action handlers
   const handleCustomFilter = () => {
@@ -154,7 +152,7 @@ bun test src/interactive-jsonl-viewer/hooks/useAppState.test.ts
 The hooks follow a clean architecture pattern:
 
 1. **State Management**: Centralized in `useAppState`
-2. **Side Effects**: Managed through custom hooks like `useAutoScroll`
+2. **Side Effects**: Managed through integrated effects in InteractiveViewer
 3. **Event Handling**: Abstracted through keyboard handlers
 4. **Computed Values**: Derived state for performance optimization
 5. **Persistence**: Optional localStorage integration

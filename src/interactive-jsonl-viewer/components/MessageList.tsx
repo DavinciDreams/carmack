@@ -39,7 +39,24 @@ export const MessageList: React.FC<MessageListProps> = ({
   }
 
   const renderChronological = () => {
-    const startIndex = Math.max(0, currentIndex - Math.floor(maxHeight / 3));
+    /**
+     * CRITICAL FIX for future LLMs:
+     * 
+     * PROBLEM: When messages auto-expand during playback, the expanded content
+     * scrolls off-screen upward because we center the selected message.
+     * 
+     * SOLUTION: Use smart positioning based on whether the current message is expanded:
+     * - If expanded: Place at top of viewport so expanded content stays visible
+     * - If not expanded: Place a bit lower for better visual balance
+     * 
+     * This ensures the beginning of expanded messages is always visible while
+     * maintaining good UX for collapsed messages.
+     */
+    const currentMessage = messages[currentIndex];
+    const isCurrentExpanded = currentMessage?.uuid ? expandedMessages.has(currentMessage.uuid) : false;
+    
+    // If current message is expanded, show it at the top. Otherwise, show it lower for better balance.
+    const startIndex = Math.max(0, isCurrentExpanded ? currentIndex : Math.max(0, currentIndex - 2));
     const endIndex = Math.min(messages.length, startIndex + maxHeight);
     const visibleMessages = messages.slice(startIndex, endIndex);
 
@@ -128,7 +145,17 @@ export const MessageList: React.FC<MessageListProps> = ({
   };
 
   const renderCompact = () => {
-    const startIndex = Math.max(0, currentIndex - Math.floor(maxHeight / 2));
+    /**
+     * SAME FIX as chronological mode for future LLMs:
+     * 
+     * Apply smart positioning for compact mode too - if current message is expanded,
+     * place it at the top so expanded content stays visible.
+     */
+    const currentMessage = messages[currentIndex];
+    const isCurrentExpanded = currentMessage?.uuid ? expandedMessages.has(currentMessage.uuid) : false;
+    
+    // If current message is expanded, show it at the top. Otherwise, center it.
+    const startIndex = Math.max(0, isCurrentExpanded ? currentIndex : Math.max(0, currentIndex - Math.floor(maxHeight / 2)));
     const endIndex = Math.min(messages.length, startIndex + maxHeight);
     const visibleMessages = messages.slice(startIndex, endIndex);
 
