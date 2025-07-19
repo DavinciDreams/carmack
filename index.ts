@@ -196,7 +196,7 @@ async function main() {
   // Dynamic transformation request based on CLI args
   const transformationRequest: TransformationRequest = {
     targetFiles,
-    transformationType: options.mode || 'template', // Use specified mode or default
+    transformationType: options.mode || 'ast', // Use AST mode as default (more reliable than template)
     patterns: filteredPatterns, // Use filtered patterns
     maxComplexity: options.maxComplexity,
     dryRun: options.dryRun,
