@@ -108,7 +108,7 @@ function getRates(modelName?: string) {
     if (!modelName) return null;
     const parsedModel = ValidClaudeModel.parse(modelName);
     return PRICING_TABLE[parsedModel];
-  } catch (e) {
+  } catch (_e) {
     // Gracefully handle unknown models by returning no rates
     return null;
   }
@@ -177,7 +177,7 @@ async function parseLogFile(filePath: string, verbose = false): Promise<{ tasks:
           currentTask.operations.push(parsedOp.data);
         }
       }
-    } catch (e) {
+    } catch (_e) {
       if (verbose)
         console.error(pc.yellow(`Failed to parse line ${index + 1}: ${line.substring(0, 100)}...`));
     }
@@ -190,7 +190,7 @@ async function parseLogFile(filePath: string, verbose = false): Promise<{ tasks:
   return { tasks };
 }
 
-function normalizeEntry(entry: any): Record<string, any> {
+function normalizeEntry(entry: unknown): Record<string, unknown> {
   const usage = entry.message?.usage || {};
   const dataForCost = {
     model: entry.message?.model,
@@ -215,8 +215,8 @@ function normalizeEntry(entry: any): Record<string, any> {
       ...base,
       opType: 'tool_usage',
       tool_calls: entry.message.content
-        .filter((c: any) => c.type === 'tool_use')
-        .map((c: any) => ({ name: c.name, input: c.input })),
+        .filter((c: unknown) => c.type === 'tool_use')
+        .map((c: unknown) => ({ name: c.name, input: c.input })),
     };
   }
 

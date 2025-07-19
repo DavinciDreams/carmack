@@ -352,8 +352,13 @@ function findBasicTemplateMatches(content: string, pattern: TemplatePattern): Te
   const { regex, variableNames } = templateToRegex(pattern.pattern.template);
 
   let match: RegExpExecArray | null;
+<<<<<<< Updated upstream
   // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex iteration pattern
   while ((match = regex.exec(content)) !== null) {
+=======
+  match = regex.exec(content);
+  while (match !== null) {
+>>>>>>> Stashed changes
     // Extract line number and context
     const beforeMatch = content.substring(0, match.index);
     const lineNumber = (beforeMatch.match(/\n/g) || []).length + 1;
@@ -645,8 +650,13 @@ function findCallbackPatterns(content: string, pattern: TemplatePattern): Templa
   const callbackRegex = /(\w+)\s*\(\s*([^)]*?),?\s*function\s*\([^)]*\)\s*\{[^}]*\}\s*\)/g;
 
   let match: RegExpExecArray | null;
+<<<<<<< Updated upstream
   // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex iteration pattern
   while ((match = callbackRegex.exec(content)) !== null) {
+=======
+  match = callbackRegex.exec(content);
+  while (match !== null) {
+>>>>>>> Stashed changes
     const [fullMatch, functionName, params] = match;
     if (!functionName || !params) continue;
 
@@ -687,8 +697,13 @@ function findFunctionModernizationPatterns(
   const simpleFunctionRegex = /function\s+(\w+)\s*\(([^)]*)\)\s*\{\s*return\s+([^;]+);\s*\}/g;
 
   let match: RegExpExecArray | null;
+<<<<<<< Updated upstream
   // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex iteration pattern
   while ((match = simpleFunctionRegex.exec(content)) !== null) {
+=======
+  match = simpleFunctionRegex.exec(content);
+  while (match !== null) {
+>>>>>>> Stashed changes
     const [fullMatch, functionName, params, returnExpr] = match;
     if (!functionName || !params || !returnExpr) continue;
 
@@ -736,8 +751,13 @@ function findDestructuringOpportunities(
   }> = [];
 
   let match: RegExpExecArray | null;
+<<<<<<< Updated upstream
   // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex iteration pattern
   while ((match = propertyAccessRegex.exec(content)) !== null) {
+=======
+  match = propertyAccessRegex.exec(content);
+  while (match !== null) {
+>>>>>>> Stashed changes
     const [, varName, objName, propName] = match;
     if (!varName || !objName || !propName) continue;
     propertyAccesses.push({ varName, objName, propName, match });
@@ -810,8 +830,13 @@ function findStringConcatenationPatterns(
   const concatenationRegex = /(['"`])([^'"`]*?)\1\s*\+\s*(\w+)\s*\+\s*(['"`])([^'"`]*?)\4/g;
 
   let match: RegExpExecArray | null;
+<<<<<<< Updated upstream
   // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex iteration pattern
   while ((match = concatenationRegex.exec(content)) !== null) {
+=======
+  match = concatenationRegex.exec(content);
+  while (match !== null) {
+>>>>>>> Stashed changes
     const [fullMatch, , prefix, variable, , suffix] = match;
     if (!prefix || !variable || !suffix) continue;
 

@@ -361,7 +361,11 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
       }
 
       // Parse the source content - correct API usage based on documentation
+<<<<<<< Updated upstream
       const root = this.astGrep.parse(content);
+=======
+      const root = (this.astGrep as unknown).parse(content);
+>>>>>>> Stashed changes
       const rootNode = root.root();
 
       // Find function declarations using string patterns (not pattern objects)
@@ -444,7 +448,11 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
       }
 
       // Parse the source content - correct API usage
+<<<<<<< Updated upstream
       const root = this.astGrep.parse(content);
+=======
+      const root = (this.astGrep as unknown).parse(content);
+>>>>>>> Stashed changes
       const rootNode = root.root();
 
       // Find class declarations using string patterns

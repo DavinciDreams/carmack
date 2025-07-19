@@ -2,8 +2,12 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
+<<<<<<< Updated upstream
 import type { PatternAnnotation } from '../llm-annotation/types.js';
 import type { ComplexityMetrics, ValidationActorResult } from '../types.ts';
+=======
+import type { AstPattern, ComplexityMetrics, ValidationActorResult } from '../types.ts';
+>>>>>>> Stashed changes
 
 /**
  * Comprehensive LLM Testing Framework
@@ -961,7 +965,11 @@ export const BUILTIN_TEST_SUITES: TestSuite[] = [
 /**
  * Test case generator for pattern-based testing
  */
+<<<<<<< Updated upstream
 export function generateTestCasesFromPatterns(patterns: PatternAnnotation[]): TestCase[] {
+=======
+export function generateTestCasesFromPatterns(patterns: AstPattern[]): TestCase[] {
+>>>>>>> Stashed changes
   return patterns.map((pattern, index) => ({
     id: `generated-${pattern.id}-${index}`,
     name: `Generated test for ${pattern.id}`,
