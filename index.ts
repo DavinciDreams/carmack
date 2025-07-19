@@ -19,6 +19,21 @@ import { loadPatterns } from './src/utils/index.js';
  * provably correct outputs through formal verification.
  */
 
+// Export InteractiveViewer component for external use
+export { InteractiveViewer } from './src/interactive-jsonl-viewer/InteractiveViewer';
+export type { 
+  FilterOptions, 
+  ViewerState, 
+  ViewMode, 
+  MessageRole 
+} from './src/interactive-jsonl-viewer/types';
+
+// Export core transformation system types
+export type { 
+  TransformationMode, 
+  TransformationRequest 
+} from './src/types.js';
+
 interface CliOptions {
   mode: TransformationMode | undefined;
   dryRun: boolean;
