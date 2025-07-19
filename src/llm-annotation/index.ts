@@ -57,7 +57,42 @@ export class LLMAnnotationSystem {
             }
           } else if (stats.isFile()) {
             const ext = extname(fullPath);
-            if (['.ts', '.js', '.tsx', '.jsx', '.py', '.cpp', '.c', '.h', '.hpp', '.cu', '.cuh', '.java', '.cs', '.go', '.rs', '.rb', '.php', '.swift', '.kt', '.scala', '.clj', '.hs', '.ml', '.fs', '.vb', '.dart', '.lua', '.r', '.sql', '.sh', '.bat', '.ps1'].includes(ext)) {
+            if (
+              [
+                '.ts',
+                '.js',
+                '.tsx',
+                '.jsx',
+                '.py',
+                '.cpp',
+                '.c',
+                '.h',
+                '.hpp',
+                '.cu',
+                '.cuh',
+                '.java',
+                '.cs',
+                '.go',
+                '.rs',
+                '.rb',
+                '.php',
+                '.swift',
+                '.kt',
+                '.scala',
+                '.clj',
+                '.hs',
+                '.ml',
+                '.fs',
+                '.vb',
+                '.dart',
+                '.lua',
+                '.r',
+                '.sql',
+                '.sh',
+                '.bat',
+                '.ps1',
+              ].includes(ext)
+            ) {
               sourceFiles.push(fullPath);
             }
           }

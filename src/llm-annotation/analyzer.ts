@@ -123,7 +123,7 @@ export class LLMAnnotationAnalyzer {
    */
   private async analyzeCodeContext(request: AnnotationRequest): Promise<CodeContext> {
     const { readFile } = await import('node:fs/promises');
-    const { extname } = await import('path');
+    const { extname } = await import('node:path');
 
     // Analyze primary files to understand context
     const dependencies = new Set<string>();
@@ -145,7 +145,7 @@ export class LLMAnnotationAnalyzer {
 
         // Extract language-specific imports/dependencies and exports
         const languagePatterns = this.getLanguagePatterns(detectedLanguage);
-        
+
         // Extract imports/dependencies
         for (const importPattern of languagePatterns.imports) {
           const importMatches = content.match(new RegExp(importPattern, 'g'));
@@ -189,7 +189,11 @@ export class LLMAnnotationAnalyzer {
 
     // Determine framework and purpose
     const framework = this.detectFramework(Array.from(dependencies), detectedLanguage);
-    const purpose = this.inferPurpose(Array.from(dependencies), Array.from(exports), detectedLanguage);
+    const purpose = this.inferPurpose(
+      Array.from(dependencies),
+      Array.from(exports),
+      detectedLanguage
+    );
 
     return {
       filePath: request.sourceFiles[0] || 'unknown',
@@ -209,7 +213,9 @@ export class LLMAnnotationAnalyzer {
     const patterns: PatternAnnotation[] = [];
 
     // Get patterns based on detected language
-    const detectedLanguage = this.detectLanguageFromExtension(request.sourceFiles[0] ? require('path').extname(request.sourceFiles[0]) : '.unknown');
+    const detectedLanguage = this.detectLanguageFromExtension(
+      request.sourceFiles[0] ? require('node:path').extname(request.sourceFiles[0]) : '.unknown'
+    );
     const patternDefinitions = this.getPatternDefinitions(detectedLanguage);
 
     for (const filePath of request.sourceFiles.slice(0, 20)) {
@@ -542,85 +548,119 @@ export class LLMAnnotationAnalyzer {
     exports: string[];
     complexity: string[];
   } {
-    const patterns: Record<string, { imports: string[]; exports: string[]; complexity: string[] }> = {
-      typescript: {
-        imports: [
-          'import\\s+.*?from\\s+[\'"]([^\'"]+)[\'"]',
-          'require\\s*\\(\\s*[\'"]([^\'"]+)[\'"]\\s*\\)',
-        ],
-        exports: [
-          'export\\s+(?:function|class|interface|type|const|let|var)\\s+(\\w+)',
-          'export\\s*\\{\\s*([^}]+)\\s*\\}',
-        ],
-        complexity: ['\\bif\\b', '\\belse\\b', '\\bwhile\\b', '\\bfor\\b', '\\bswitch\\b', '\\btry\\b', '\\bcatch\\b'],
-      },
-      javascript: {
-        imports: [
-          'import\\s+.*?from\\s+[\'"]([^\'"]+)[\'"]',
-          'require\\s*\\(\\s*[\'"]([^\'"]+)[\'"]\\s*\\)',
-        ],
-        exports: [
-          'export\\s+(?:function|class|const|let|var)\\s+(\\w+)',
-          'module\\.exports\\s*=',
-        ],
-        complexity: ['\\bif\\b', '\\belse\\b', '\\bwhile\\b', '\\bfor\\b', '\\bswitch\\b', '\\btry\\b', '\\bcatch\\b'],
-      },
-      python: {
-        imports: [
-          'import\\s+(\\w+(?:\\.\\w+)*)',
-          'from\\s+(\\w+(?:\\.\\w+)*)\\s+import',
-        ],
-        exports: [
-          'def\\s+(\\w+)\\s*\\(',
-          'class\\s+(\\w+)\\s*(?:\\(|:)',
-        ],
-        complexity: ['\\bif\\b', '\\belif\\b', '\\belse\\b', '\\bwhile\\b', '\\bfor\\b', '\\btry\\b', '\\bexcept\\b'],
-      },
-      cpp: {
-        imports: [
-          '#include\\s*[<"]([^>"]+)[>"]',
-          'using\\s+namespace\\s+(\\w+)',
-        ],
-        exports: [
-          '(?:class|struct)\\s+(\\w+)',
-          '(?:public|private|protected)?\\s*:\\s*\\w+\\s+(\\w+)\\s*\\(',
-          '\\w+\\s+(\\w+)\\s*\\([^)]*\\)\\s*(?:\\{|;)',
-        ],
-        complexity: ['\\bif\\b', '\\belse\\b', '\\bwhile\\b', '\\bfor\\b', '\\bswitch\\b', '\\btry\\b', '\\bcatch\\b'],
-      },
-      c: {
-        imports: ['#include\\s*[<"]([^>"]+)[>"]'],
-        exports: [
-          '(?:struct|enum|typedef)\\s+(\\w+)',
-          '\\w+\\s+(\\w+)\\s*\\([^)]*\\)\\s*(?:\\{|;)',
-        ],
-        complexity: ['\\bif\\b', '\\belse\\b', '\\bwhile\\b', '\\bfor\\b', '\\bswitch\\b'],
-      },
-      cuda: {
-        imports: ['#include\\s*[<"]([^>"]+)[>"]'],
-        exports: [
-          '__global__\\s+\\w+\\s+(\\w+)\\s*\\(',
-          '__device__\\s+\\w+\\s+(\\w+)\\s*\\(',
-          '__host__\\s+\\w+\\s+(\\w+)\\s*\\(',
-          '(?:class|struct)\\s+(\\w+)',
-        ],
-        complexity: ['\\bif\\b', '\\belse\\b', '\\bwhile\\b', '\\bfor\\b', '\\bswitch\\b'],
-      },
-      java: {
-        imports: ['import\\s+(\\w+(?:\\.\\w+)*(?:\\.\\*)?);'],
-        exports: [
-          '(?:public|private|protected)?\\s*(?:static)?\\s*(?:class|interface|enum)\\s+(\\w+)',
-          '(?:public|private|protected)?\\s*(?:static)?\\s*\\w+\\s+(\\w+)\\s*\\(',
-        ],
-        complexity: ['\\bif\\b', '\\belse\\b', '\\bwhile\\b', '\\bfor\\b', '\\bswitch\\b', '\\btry\\b', '\\bcatch\\b'],
-      },
-    };
+    const patterns: Record<string, { imports: string[]; exports: string[]; complexity: string[] }> =
+      {
+        typescript: {
+          imports: [
+            'import\\s+.*?from\\s+[\'"]([^\'"]+)[\'"]',
+            'require\\s*\\(\\s*[\'"]([^\'"]+)[\'"]\\s*\\)',
+          ],
+          exports: [
+            'export\\s+(?:function|class|interface|type|const|let|var)\\s+(\\w+)',
+            'export\\s*\\{\\s*([^}]+)\\s*\\}',
+          ],
+          complexity: [
+            '\\bif\\b',
+            '\\belse\\b',
+            '\\bwhile\\b',
+            '\\bfor\\b',
+            '\\bswitch\\b',
+            '\\btry\\b',
+            '\\bcatch\\b',
+          ],
+        },
+        javascript: {
+          imports: [
+            'import\\s+.*?from\\s+[\'"]([^\'"]+)[\'"]',
+            'require\\s*\\(\\s*[\'"]([^\'"]+)[\'"]\\s*\\)',
+          ],
+          exports: [
+            'export\\s+(?:function|class|const|let|var)\\s+(\\w+)',
+            'module\\.exports\\s*=',
+          ],
+          complexity: [
+            '\\bif\\b',
+            '\\belse\\b',
+            '\\bwhile\\b',
+            '\\bfor\\b',
+            '\\bswitch\\b',
+            '\\btry\\b',
+            '\\bcatch\\b',
+          ],
+        },
+        python: {
+          imports: ['import\\s+(\\w+(?:\\.\\w+)*)', 'from\\s+(\\w+(?:\\.\\w+)*)\\s+import'],
+          exports: ['def\\s+(\\w+)\\s*\\(', 'class\\s+(\\w+)\\s*(?:\\(|:)'],
+          complexity: [
+            '\\bif\\b',
+            '\\belif\\b',
+            '\\belse\\b',
+            '\\bwhile\\b',
+            '\\bfor\\b',
+            '\\btry\\b',
+            '\\bexcept\\b',
+          ],
+        },
+        cpp: {
+          imports: ['#include\\s*[<"]([^>"]+)[>"]', 'using\\s+namespace\\s+(\\w+)'],
+          exports: [
+            '(?:class|struct)\\s+(\\w+)',
+            '(?:public|private|protected)?\\s*:\\s*\\w+\\s+(\\w+)\\s*\\(',
+            '\\w+\\s+(\\w+)\\s*\\([^)]*\\)\\s*(?:\\{|;)',
+          ],
+          complexity: [
+            '\\bif\\b',
+            '\\belse\\b',
+            '\\bwhile\\b',
+            '\\bfor\\b',
+            '\\bswitch\\b',
+            '\\btry\\b',
+            '\\bcatch\\b',
+          ],
+        },
+        c: {
+          imports: ['#include\\s*[<"]([^>"]+)[>"]'],
+          exports: [
+            '(?:struct|enum|typedef)\\s+(\\w+)',
+            '\\w+\\s+(\\w+)\\s*\\([^)]*\\)\\s*(?:\\{|;)',
+          ],
+          complexity: ['\\bif\\b', '\\belse\\b', '\\bwhile\\b', '\\bfor\\b', '\\bswitch\\b'],
+        },
+        cuda: {
+          imports: ['#include\\s*[<"]([^>"]+)[>"]'],
+          exports: [
+            '__global__\\s+\\w+\\s+(\\w+)\\s*\\(',
+            '__device__\\s+\\w+\\s+(\\w+)\\s*\\(',
+            '__host__\\s+\\w+\\s+(\\w+)\\s*\\(',
+            '(?:class|struct)\\s+(\\w+)',
+          ],
+          complexity: ['\\bif\\b', '\\belse\\b', '\\bwhile\\b', '\\bfor\\b', '\\bswitch\\b'],
+        },
+        java: {
+          imports: ['import\\s+(\\w+(?:\\.\\w+)*(?:\\.\\*)?);'],
+          exports: [
+            '(?:public|private|protected)?\\s*(?:static)?\\s*(?:class|interface|enum)\\s+(\\w+)',
+            '(?:public|private|protected)?\\s*(?:static)?\\s*\\w+\\s+(\\w+)\\s*\\(',
+          ],
+          complexity: [
+            '\\bif\\b',
+            '\\belse\\b',
+            '\\bwhile\\b',
+            '\\bfor\\b',
+            '\\bswitch\\b',
+            '\\btry\\b',
+            '\\bcatch\\b',
+          ],
+        },
+      };
 
-    return patterns[language] || {
-      imports: ['#include\\s*[<"]([^>"]+)[>"]', 'import\\s+.*?from\\s+[\'"]([^\'"]+)[\'"]'],
-      exports: ['(?:function|class|def|struct)\\s+(\\w+)'],
-      complexity: ['\\bif\\b', '\\belse\\b', '\\bwhile\\b', '\\bfor\\b', '\\bswitch\\b'],
-    };
+    return (
+      patterns[language] || {
+        imports: ['#include\\s*[<"]([^>"]+)[>"]', 'import\\s+.*?from\\s+[\'"]([^\'"]+)[\'"]'],
+        exports: ['(?:function|class|def|struct)\\s+(\\w+)'],
+        complexity: ['\\bif\\b', '\\belse\\b', '\\bwhile\\b', '\\bfor\\b', '\\bswitch\\b'],
+      }
+    );
   }
 
   private extractDependencyFromMatch(match: string, language: string): string | null {
@@ -675,7 +715,7 @@ export class LLMAnnotationAnalyzer {
       if (dependencies.some((dep) => dep.includes('xstate'))) return 'XState';
       if (dependencies.some((dep) => dep.includes('next'))) return 'Next.js';
     }
-    
+
     if (language === 'python') {
       if (dependencies.some((dep) => dep.includes('django'))) return 'Django';
       if (dependencies.some((dep) => dep.includes('flask'))) return 'Flask';
@@ -684,7 +724,7 @@ export class LLMAnnotationAnalyzer {
       if (dependencies.some((dep) => dep.includes('tensorflow'))) return 'TensorFlow';
       if (dependencies.some((dep) => dep.includes('numpy'))) return 'NumPy/SciPy';
     }
-    
+
     if (['cpp', 'c', 'cuda'].includes(language)) {
       if (dependencies.some((dep) => dep.includes('cuda'))) return 'CUDA';
       if (dependencies.some((dep) => dep.includes('opencv'))) return 'OpenCV';
@@ -692,22 +732,30 @@ export class LLMAnnotationAnalyzer {
       if (dependencies.some((dep) => dep.includes('qt'))) return 'Qt';
       if (dependencies.some((dep) => dep.includes('eigen'))) return 'Eigen';
     }
-    
+
     if (language === 'java') {
       if (dependencies.some((dep) => dep.includes('spring'))) return 'Spring';
       if (dependencies.some((dep) => dep.includes('android'))) return 'Android';
       if (dependencies.some((dep) => dep.includes('junit'))) return 'JUnit';
     }
-    
+
     return undefined;
   }
 
   private inferPurpose(dependencies: string[], exports: string[], language: string): string {
     // Language-specific purpose inference
-    if (dependencies.some((dep) => dep.includes('test') || dep.includes('jest') || dep.includes('unittest') || dep.includes('gtest'))) {
+    if (
+      dependencies.some(
+        (dep) =>
+          dep.includes('test') ||
+          dep.includes('jest') ||
+          dep.includes('unittest') ||
+          dep.includes('gtest')
+      )
+    ) {
       return 'Testing utilities and test suites';
     }
-    
+
     if (['cpp', 'c', 'cuda'].includes(language)) {
       if (dependencies.some((dep) => dep.includes('cuda'))) {
         return 'GPU computing and parallel processing with CUDA';
@@ -717,7 +765,7 @@ export class LLMAnnotationAnalyzer {
       }
       return 'System-level programming and performance-critical applications';
     }
-    
+
     if (language === 'python') {
       if (dependencies.some((dep) => dep.includes('django') || dep.includes('flask'))) {
         return 'Web application backend services';
@@ -729,20 +777,32 @@ export class LLMAnnotationAnalyzer {
         return 'Machine learning and artificial intelligence';
       }
     }
-    
+
     if (['typescript', 'javascript'].includes(language)) {
-      if (exports.some((exp) => exp.toLowerCase().includes('api') || exp.toLowerCase().includes('server'))) {
+      if (
+        exports.some(
+          (exp) => exp.toLowerCase().includes('api') || exp.toLowerCase().includes('server')
+        )
+      ) {
         return 'API server and backend services';
       }
-      if (exports.some((exp) => exp.toLowerCase().includes('component') || exp.toLowerCase().includes('ui'))) {
+      if (
+        exports.some(
+          (exp) => exp.toLowerCase().includes('component') || exp.toLowerCase().includes('ui')
+        )
+      ) {
         return 'User interface components and frontend logic';
       }
     }
-    
-    if (exports.some((exp) => exp.toLowerCase().includes('util') || exp.toLowerCase().includes('helper'))) {
+
+    if (
+      exports.some(
+        (exp) => exp.toLowerCase().includes('util') || exp.toLowerCase().includes('helper')
+      )
+    ) {
       return 'Utility functions and helper modules';
     }
-    
+
     return 'General application logic and business rules';
   }
 

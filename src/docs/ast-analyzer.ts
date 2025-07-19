@@ -2,7 +2,25 @@ import { fromPromise } from 'xstate';
 import { z } from 'zod';
 import type { ASTNode, ClassDoc, FunctionDoc, ModuleDoc } from './types.js';
 
-// AST-grep Zod schemas for type safety
+// Define proper AST-grep interfaces - exported for reuse
+export interface ASTGrepNode {
+  text: () => string;
+  range: () => {
+    start: { index: number; line: number; column: number };
+    end: { index: number; line: number; column: number };
+  };
+  getMatch: (name: string) => ASTGrepNode | null;
+  findAll: (pattern: string) => ASTGrepNode[];
+  root: () => ASTGrepNode;
+  getMultipleMatches?: () => Record<string, ASTGrepNode | ASTGrepNode[]>;
+}
+
+export interface ASTGrepParser {
+  parse: (content: string) => ASTGrepNode;
+  parseString?: (content: string, lang?: string) => ASTGrepNode;
+}
+
+// AST-grep Zod schemas for type safety - using proper interfaces instead of z.any()
 export const ASTGrepMatchSchema = z.object({
   text: z.function().returns(z.string()),
   range: z.function().returns(
@@ -19,12 +37,12 @@ export const ASTGrepMatchSchema = z.object({
       }),
     })
   ),
-  getNode: z.function().returns(z.any()).optional(),
-  getMultipleMatches: z.function().returns(z.array(z.any())).optional(),
+  getNode: z.function().returns(z.unknown()).optional(),
+  getMultipleMatches: z.function().returns(z.array(z.unknown())).optional(),
 });
 
 export const ASTGrepLanguageSchema = z.object({
-  parseString: z.function().args(z.string()).returns(z.any()),
+  parseString: z.function().args(z.string()).returns(z.unknown()),
   kind: z.string(),
   name: z.string(),
 });
@@ -35,15 +53,15 @@ export const ASTGrepRuleSchema = z.object({
   inside: z.string().optional(),
   has: z.string().optional(),
   not: z.string().optional(),
-  any: z.array(z.any()).optional(),
-  all: z.array(z.any()).optional(),
+  any: z.array(z.unknown()).optional(),
+  all: z.array(z.unknown()).optional(),
 });
 
 export const ASTGrepConfigSchema = z.object({
   rule: ASTGrepRuleSchema,
   constraints: z.record(z.string()).optional(),
   language: z.union([z.string(), ASTGrepLanguageSchema]).optional(),
-  utils: z.record(z.any()).optional(),
+  utils: z.record(z.unknown()).optional(),
 });
 
 export const ASTGrepInstanceSchema = z.object({
@@ -55,8 +73,8 @@ export const ASTGrepInstanceSchema = z.object({
     .function()
     .args(ASTGrepConfigSchema, z.string())
     .returns(z.promise(ASTGrepMatchSchema.optional())),
-  parseString: z.function().args(z.string(), z.string().optional()).returns(z.any()),
-  parse: z.function().args(z.string()).returns(z.any()),
+  parseString: z.function().args(z.string(), z.string().optional()).returns(z.unknown()),
+  parse: z.function().args(z.string()).returns(z.unknown()),
   lang: z.function().args(z.string()).returns(ASTGrepLanguageSchema),
 });
 
@@ -154,7 +172,7 @@ const AST_PATTERNS = ASTPatternSchema.parse({
  * AST Analyzer implementation using AST-grep
  */
 export class ASTGrepAnalyzer implements ASTAnalyzer {
-  private astGrep: ASTGrepInstance | null = null;
+  private astGrep: ASTGrepParser | null = null;
 
   constructor() {
     this.initializeASTGrep();
@@ -164,8 +182,8 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
     try {
       // Import AST-grep NAPI bindings - correct destructuring
       const { js } = await import('@ast-grep/napi');
-      // Store the js language object directly
-      this.astGrep = js as unknown as ASTGrepInstance;
+      // Store the js language object directly - typed as ASTGrepParser
+      this.astGrep = js as unknown as ASTGrepParser;
     } catch (error) {
       console.warn('AST-grep not available, falling back to regex parsing:', error);
       this.astGrep = null;
@@ -343,7 +361,7 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
       }
 
       // Parse the source content - correct API usage based on documentation
-      const root = (this.astGrep as any).parse(content);
+      const root = this.astGrep.parse(content);
       const rootNode = root.root();
 
       // Find function declarations using string patterns (not pattern objects)
@@ -426,7 +444,7 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
       }
 
       // Parse the source content - correct API usage
-      const root = (this.astGrep as any).parse(content);
+      const root = this.astGrep.parse(content);
       const rootNode = root.root();
 
       // Find class declarations using string patterns
@@ -506,7 +524,7 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
       }
 
       return '';
-    } catch (error) {
+    } catch (_error) {
       console.warn(`Failed to extract parameters from: ${functionText.substring(0, 50)}...`);
       return '';
     }
@@ -524,7 +542,7 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
 
       return {
         name: name?.replace('?', '') || 'unknown',
-        type: type || 'any',
+        type: type || 'unknown',
         optional,
       };
     });

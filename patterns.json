@@ -134,7 +134,7 @@
     },
     {
       "id": "cpp-constexpr-const",
-      "language": "cpp", 
+      "language": "cpp",
       "pattern": "static const ",
       "replacement": "static constexpr ",
       "description": "Use constexpr instead of const for compile-time constants",
@@ -212,19 +212,12 @@
       "cpp-unique-ptr-make",
       "cpp-emplace-back"
     ],
-    "safety": [
-      "array-includes-instead-of-indexof",
-      "const-loop-variable-fix",
-      "cpp-modern-cast"
-    ],
+    "safety": ["array-includes-instead-of-indexof", "const-loop-variable-fix", "cpp-modern-cast"],
     "logging": ["console-log-to-console-error"],
-    "syntax-fixes": [
-      "fix-double-semicolons",
-      "fix-malformed-object-literal"
-    ],
+    "syntax-fixes": ["fix-double-semicolons", "fix-malformed-object-literal"],
     "cpp-modernization": [
       "cpp-nullptr-conversion",
-      "cpp-constexpr-const", 
+      "cpp-constexpr-const",
       "cpp-include-iostream",
       "cpp-std-namespace",
       "cpp-modern-cast",
@@ -241,7 +234,7 @@
     "languages": ["typescript", "javascript", "cpp"],
     "features": [
       "Enhanced pattern matching",
-      "Semantic analysis", 
+      "Semantic analysis",
       "Robust transformations",
       "C++ modernization",
       "TypeScript optimization",

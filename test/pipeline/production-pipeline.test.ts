@@ -2,9 +2,11 @@ import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { existsSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createActor } from 'xstate';
+import type { z } from 'zod';
 import type { PipelineRequest } from '../../src/pipeline/production-pipeline';
 import {
   defaultProductionConfig,
+  ProductionPipelineResultSchema, // <-- Remove this line if not exported
   productionPipelineActor,
 } from '../../src/pipeline/production-pipeline';
 
@@ -61,17 +63,29 @@ export { add };
     },
   });
 
-  const invokePipeline = async (request: PipelineRequest): Promise<any> => {
+  const invokePipeline = async (
+    request: PipelineRequest
+  ): Promise<z.infer<typeof ProductionPipelineResultSchema>> => {
     const actor = createActor(productionPipelineActor, { input: request });
     actor.start();
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       actor.subscribe((state) => {
         if (state.status === 'done') {
-          resolve(state.output);
+          try {
+            const validated = ProductionPipelineResultSchema.parse(state.output);
+            resolve(validated);
+          } catch (err) {
+            reject(err);
+          }
           actor.stop();
         } else if (state.status === 'error') {
-          resolve(state.error);
+          try {
+            const validated = ProductionPipelineResultSchema.parse(state.error);
+            resolve(validated);
+          } catch (err) {
+            reject(err);
+          }
           actor.stop();
         }
       });

@@ -29,15 +29,7 @@
       "numbers",
       "cudaq/gradients.h"
     ],
-    "exports": [
-      "A",
-      "0",
-      "t",
-      "e",
-      "i",
-      "r",
-      "z"
-    ]
+    "exports": ["A", "0", "t", "e", "i", "r", "z"]
   },
   "patterns": [],
   "architecture": [],
@@ -52,9 +44,7 @@
     ],
     "recommendations": [],
     "riskAreas": [],
-    "strengths": [
-      "No anti-patterns detected"
-    ]
+    "strengths": ["No anti-patterns detected"]
   },
   "llmPrompts": {
     "codeReview": "Review this cpp codebase focusing on: . Pay attention to 0 identified improvement areas.",

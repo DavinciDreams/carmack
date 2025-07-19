@@ -409,7 +409,10 @@ const _carmackCoderMachine = setup({
           actions: assign(({ context, event }) => {
             if (!context.currentTransformation) return context;
 
-            const transformationResult = event.output as any;
+            const transformationResult = event.output as {
+              filesModified?: string[];
+              status?: string;
+            };
 
             return {
               ...context,
@@ -444,7 +447,10 @@ const _carmackCoderMachine = setup({
           actions: assign(({ context, event }) => {
             if (!context.currentTransformation) return context;
 
-            const transformationResult = event.output as any;
+            const transformationResult = event.output as {
+              filesModified?: string[];
+              status?: string;
+            };
 
             return {
               ...context,
@@ -823,7 +829,6 @@ const _carmackCoderMachine = setup({
   },
 });
 
-// Export with explicit any type to resolve XState complex type inference
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-// biome-ignore lint/suspicious/noExplicitAny: Required for XState type inference compatibility
-export const carmackCoderMachine: any = _carmackCoderMachine;
+// Export the machine with proper typing
+// Using unknown for type-safe export while avoiding complex XState generic inference issues
+export const carmackCoderMachine = _carmackCoderMachine as unknown;
