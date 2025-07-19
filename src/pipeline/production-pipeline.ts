@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
-import { createActor, fromPromise } from 'xstate';
+import { type ActorLogic, createActor, fromPromise } from 'xstate';
 import { z } from 'zod';
 import { astGrepTransformationActor } from '../actors/ast-grep-transformation.ts';
 import { feedbackLoopActor } from '../actors/feedback-loop.ts';
@@ -25,8 +25,73 @@ import type {
   ValidationActorResult,
 } from '../types.ts';
 
+// Define pipeline state interface
+interface PipelineState {
+  transformationId: string;
+  startTime: number;
+  stageTimings: Record<string, number>;
+  filesModified: string[];
+  transformationsApplied: Array<{
+    type: 'template' | 'ast' | 'llm';
+    patternsUsed: string[];
+    executionTime: number;
+    success: boolean;
+    confidence: number;
+    metadata?: Record<string, unknown>;
+  }>;
+  errors: Array<{
+    stage: string;
+    error: string;
+    message: string;
+    severity: 'warning' | 'error' | 'critical';
+    recoverable: boolean;
+  }>;
+  validationResults?: {
+    typeErrors: number;
+    formatIssues: number;
+    qualityIssues: number;
+  };
+  testResults?: {
+    passed: number;
+    failed: number;
+    coverage: number;
+  };
+  discoveredPatterns?: unknown[];
+  patternDiscoverySummary?: {
+    totalAnalyzed: number;
+    patternsDiscovered: number;
+    averageConfidence: number;
+    categories: string[];
+  };
+  patternLearningResult?: {
+    recommendations: string[];
+    newPatterns: unknown[];
+    optimizedPatterns: unknown[];
+    deprecatedPatterns?: unknown[];
+    insights?: unknown[];
+    metrics?: {
+      patternsDiscovered: number;
+      patternsOptimized: number;
+      averageConfidence: number;
+      learningTime: number;
+    };
+  };
+  feedbackResult?: FeedbackLoopResult;
+  feedbackScore?: number;
+  metrics?: {
+    [key: string]: unknown;
+  };
+  qualityScore?: number;
+  qualityImprovement?: number;
+  transformationReport?: unknown;
+}
+
 // Helper function to invoke actors with proper async handling
-async function invokeActor<T>(actorLogic: any, input: any): Promise<T> {
+async function invokeActor<T>(
+  // biome-ignore lint/suspicious/noExplicitAny: XState ActorLogic has complex generics that require any for production compatibility
+  actorLogic: ActorLogic<any, any, any, any, any>,
+  input: unknown
+): Promise<T> {
   const actor = createActor(actorLogic, { input });
   actor.start();
 
@@ -175,7 +240,7 @@ interface PipelineResult {
     executionTime: number;
     success: boolean;
     confidence: number;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   }>;
   qualityMetrics: {
     complexityBefore: number;
@@ -214,6 +279,65 @@ interface PipelineResult {
     environment: 'development' | 'staging' | 'production';
   };
 }
+
+// Zod schema for PipelineResult for runtime validation
+export const ProductionPipelineResultSchema = z.object({
+  success: z.boolean(),
+  transformationId: z.string(),
+  filesModified: z.array(z.string()),
+  transformationsApplied: z.array(
+    z.object({
+      type: z.enum(['template', 'ast', 'llm']),
+      patternsUsed: z.array(z.string()),
+      executionTime: z.number(),
+      success: z.boolean(),
+      confidence: z.number(),
+      metadata: z.record(z.any()).optional(),
+    })
+  ),
+  qualityMetrics: z.object({
+    complexityBefore: z.number(),
+    complexityAfter: z.number(),
+    typeErrors: z.number(),
+    formatIssues: z.number(),
+    testResults: z.object({
+      passed: z.number(),
+      failed: z.number(),
+      coverage: z.number(),
+    }),
+  }),
+  performance: z.object({
+    totalExecutionTime: z.number(),
+    stageTimings: z.record(z.number()),
+    resourceUsage: z.object({
+      memory: z.number(),
+      cpu: z.number(),
+    }),
+  }),
+  feedback: z.object({
+    userRating: z.number().optional(),
+    automaticScore: z.number(),
+    recommendations: z.array(z.string()),
+  }),
+  errors: z
+    .array(
+      z.object({
+        stage: z.string(),
+        error: z.string(),
+        message: z.string(),
+        severity: z.enum(['warning', 'error', 'critical']),
+        recoverable: z.boolean(),
+      })
+    )
+    .optional(),
+  metadata: z.object({
+    timestamp: z.string(),
+    version: z.string(),
+    environment: z.enum(['development', 'staging', 'production']),
+  }),
+});
+
+export type ProductionPipelineResult = z.infer<typeof ProductionPipelineResultSchema>;
 
 /**
  * Production Pipeline Actor
@@ -319,7 +443,10 @@ export const productionPipelineActor = fromPromise(
 /**
  * Execute all pipeline stages in sequence
  */
-async function executePipelineStages(input: PipelineRequest, state: any): Promise<PipelineResult> {
+async function executePipelineStages(
+  input: PipelineRequest,
+  state: PipelineState
+): Promise<PipelineResult> {
   const stages = [
     { name: 'preprocessing', fn: preprocessingStage },
     { name: 'pattern-discovery', fn: patternDiscoveryStage },
@@ -392,7 +519,7 @@ async function executePipelineStages(input: PipelineRequest, state: any): Promis
 /**
  * Stage 1: Preprocessing - Input validation and preparation
  */
-async function preprocessingStage(input: PipelineRequest, state: any): Promise<void> {
+async function preprocessingStage(input: PipelineRequest, state: PipelineState): Promise<void> {
   // Validate file existence and readability
   for (const filePath of input.files) {
     try {
@@ -416,7 +543,7 @@ async function preprocessingStage(input: PipelineRequest, state: any): Promise<v
 /**
  * Stage 2: Pattern Discovery - Discover and learn patterns
  */
-async function patternDiscoveryStage(input: PipelineRequest, state: any): Promise<void> {
+async function patternDiscoveryStage(input: PipelineRequest, state: PipelineState): Promise<void> {
   if (!input.config.patterns.enableDiscovery) return;
 
   // Discover patterns from current files
@@ -496,7 +623,7 @@ async function patternDiscoveryStage(input: PipelineRequest, state: any): Promis
 /**
  * Stage 3: Transformation - Apply transformations using preferred strategy
  */
-async function transformationStage(input: PipelineRequest, state: any): Promise<void> {
+async function transformationStage(input: PipelineRequest, state: PipelineState): Promise<void> {
   const { strategy } = input.config;
   const { transformationRequest } = input;
 
@@ -541,7 +668,7 @@ async function transformationStage(input: PipelineRequest, state: any): Promise<
 async function executeTransformation(
   type: 'template' | 'ast' | 'llm',
   input: PipelineRequest,
-  state: any
+  state: PipelineState
 ): Promise<{
   type: 'template' | 'ast' | 'llm';
   success: boolean;
@@ -549,7 +676,7 @@ async function executeTransformation(
   patternsUsed: string[];
   executionTime: number;
   confidence: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }> {
   const startTime = Date.now();
 
@@ -669,7 +796,7 @@ async function executeTransformation(
 /**
  * Stage 4: Validation - Validate transformed code
  */
-async function validationStage(input: PipelineRequest, state: any): Promise<void> {
+async function validationStage(input: PipelineRequest, state: PipelineState): Promise<void> {
   if (!input.config.quality.enableValidation) return;
 
   const validationTasks: Promise<ValidationActorResult>[] = [];
@@ -725,7 +852,7 @@ async function validationStage(input: PipelineRequest, state: any): Promise<void
 /**
  * Stage 5: Testing - Run comprehensive tests
  */
-async function testingStage(input: PipelineRequest, state: any): Promise<void> {
+async function testingStage(input: PipelineRequest, state: PipelineState): Promise<void> {
   if (!input.config.quality.enableTesting) return;
 
   try {
@@ -798,7 +925,7 @@ async function testingStage(input: PipelineRequest, state: any): Promise<void> {
 /**
  * Stage 6: Feedback - Collect feedback and update learning
  */
-async function feedbackStage(input: PipelineRequest, state: any): Promise<void> {
+async function feedbackStage(input: PipelineRequest, state: PipelineState): Promise<void> {
   if (!input.config.feedback.enableCollection) return;
 
   // Calculate automatic feedback score
@@ -808,7 +935,7 @@ async function feedbackStage(input: PipelineRequest, state: any): Promise<void> 
   const feedbackData = {
     patternId: state.transformationsApplied[0]?.patternsUsed[0] || 'unknown',
     transformationId: state.transformationId,
-    success: state.transformationsApplied.some((t: any) => t.success),
+    success: state.transformationsApplied.some((t) => t.success),
     executionTime: Date.now() - state.startTime,
     codeQualityImprovement: calculateQualityImprovement(state),
     context: {
@@ -856,7 +983,7 @@ async function feedbackStage(input: PipelineRequest, state: any): Promise<void> 
 /**
  * Stage 7: Postprocessing - Cleanup and finalization
  */
-async function postprocessingStage(input: PipelineRequest, state: any): Promise<void> {
+async function postprocessingStage(input: PipelineRequest, state: PipelineState): Promise<void> {
   // Ensure minimum processing time for test consistency
   const minProcessingTime = 2; // 2ms minimum to ensure timing is recorded
 
@@ -899,18 +1026,18 @@ async function createBackup(files: string[], transformationId: string): Promise<
   }
 }
 
-async function initializeMetrics(state: any): Promise<void> {
+async function initializeMetrics(state: PipelineState): Promise<void> {
   state.metrics = {
     startTime: Date.now(),
     memoryStart: process.memoryUsage(),
   };
 }
 
-function calculateAutomaticScore(state: any): number {
+function calculateAutomaticScore(state: PipelineState): number {
   let score = 0.5; // Base score
 
   // Success bonus
-  if (state.transformationsApplied.some((t: any) => t.success)) score += 0.3;
+  if (state.transformationsApplied.some((t) => t.success)) score += 0.3;
 
   // Quality bonus
   if (state.validationResults?.typeErrors === 0) score += 0.1;
@@ -922,7 +1049,7 @@ function calculateAutomaticScore(state: any): number {
   return Math.min(1.0, score);
 }
 
-function calculateQualityImprovement(state: any): number {
+function calculateQualityImprovement(state: PipelineState): number {
   // Simplified quality improvement calculation
   const errorReduction = (state.validationResults?.typeErrors || 0) === 0 ? 0.2 : -0.1;
   const testSuccess = (state.testResults?.passed || 0) > 0 ? 0.1 : -0.1;
@@ -930,7 +1057,10 @@ function calculateQualityImprovement(state: any): number {
   return Math.max(-1, Math.min(1, errorReduction + testSuccess));
 }
 
-async function generateTransformationReport(input: PipelineRequest, state: any): Promise<void> {
+async function generateTransformationReport(
+  input: PipelineRequest,
+  state: PipelineState
+): Promise<void> {
   const report = {
     transformationId: state.transformationId,
     timestamp: new Date().toISOString(),
@@ -939,7 +1069,7 @@ async function generateTransformationReport(input: PipelineRequest, state: any):
       transformationType: input.transformationRequest.transformationType,
     },
     results: {
-      success: state.transformationsApplied.some((t: any) => t.success),
+      success: state.transformationsApplied.some((t) => t.success),
       filesModified: state.filesModified,
       transformationsApplied: state.transformationsApplied,
       executionTime: Date.now() - state.startTime,
@@ -954,16 +1084,16 @@ async function generateTransformationReport(input: PipelineRequest, state: any):
   await writeFile(reportPath, JSON.stringify(report, null, 2));
 }
 
-async function cleanupTemporaryFiles(_state: any): Promise<void> {
+async function cleanupTemporaryFiles(_state: PipelineState): Promise<void> {
   // Cleanup any temporary files created during transformation
   // Implementation depends on specific temporary file patterns
 }
 
-function buildPipelineResult(_input: PipelineRequest, state: any): PipelineResult {
+function buildPipelineResult(_input: PipelineRequest, state: PipelineState): PipelineResult {
   return {
     success:
-      state.transformationsApplied.some((t: any) => t.success) &&
-      state.errors.filter((e: any) => e.severity === 'critical').length === 0,
+      state.transformationsApplied.some((t) => t.success) &&
+      state.errors.filter((e) => e.severity === 'critical').length === 0,
     transformationId: state.transformationId,
     filesModified: state.filesModified,
     transformationsApplied: state.transformationsApplied,
@@ -995,14 +1125,14 @@ function buildPipelineResult(_input: PipelineRequest, state: any): PipelineResul
   };
 }
 
-function generateRecommendations(state: any): string[] {
+function generateRecommendations(state: PipelineState): string[] {
   const recommendations: string[] = [];
 
-  if (state.validationResults?.typeErrors > 0) {
+  if ((state.validationResults?.typeErrors ?? 0) > 0) {
     recommendations.push('Consider fixing remaining type errors for better code quality');
   }
 
-  if (state.testResults?.failed > 0) {
+  if ((state.testResults?.failed ?? 0) > 0) {
     recommendations.push('Some tests failed - review transformation results');
   }
 
@@ -1020,7 +1150,7 @@ function generateRecommendations(state: any): string[] {
 /**
  * Get default template patterns for basic transformations
  */
-async function getDefaultTemplatePatterns(): Promise<any[]> {
+async function getDefaultTemplatePatterns(): Promise<unknown[]> {
   try {
     // Use basic patterns.json for template transformations since enhanced-templates.json
     // has a different format that causes regex parsing issues
@@ -1029,8 +1159,8 @@ async function getDefaultTemplatePatterns(): Promise<any[]> {
 
     // Filter for template patterns and convert to expected format
     return fallbackData.patterns
-      .filter((p: any) => p.mode === 'template')
-      .map((p: any) => ({
+      .filter((p: { mode: string; [key: string]: unknown }) => p.mode === 'template')
+      .map((p: { id: string; language: string; pattern: string; [key: string]: unknown }) => ({
         id: p.id,
         language: p.language,
         pattern: {
@@ -1070,15 +1200,15 @@ async function getDefaultTemplatePatterns(): Promise<any[]> {
 /**
  * Get default AST patterns for basic transformations
  */
-async function getDefaultASTPatterns(): Promise<any[]> {
+async function getDefaultASTPatterns(): Promise<unknown[]> {
   try {
     const patternsContent = await readFile(join(process.cwd(), 'patterns.json'), 'utf-8');
     const patternsData = JSON.parse(patternsContent);
 
     // Filter for AST patterns and convert to expected format
     return patternsData.patterns
-      .filter((p: any) => p.mode === 'ast')
-      .map((p: any) => ({
+      .filter((p: { mode: string; [key: string]: unknown }) => p.mode === 'ast')
+      .map((p: { id: string; language: string; pattern: string; [key: string]: unknown }) => ({
         id: p.id,
         language: p.language,
         pattern: {

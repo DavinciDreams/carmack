@@ -40,7 +40,7 @@ const RepositoryEnvironmentSchema = z.object({
  * LLM provider configuration schema
  */
 const LLMEnvironmentSchema = z.object({
-  LLM_PROVIDER: z.enum(['openai', 'anthropic', 'local', 'mock']).default('mock'),
+  LLM_PROVIDER: z.enum(['openai', 'anthropic', 'openrouter', 'local', 'mock']).default('mock'),
   LLM_MODEL: z.string().default('gpt-4'),
 
   // OpenAI
@@ -51,6 +51,10 @@ const LLMEnvironmentSchema = z.object({
   // Anthropic
   ANTHROPIC_API_KEY: z.string().optional(),
   ANTHROPIC_BASE_URL: z.string().url().default('https://api.anthropic.com'),
+
+  // OpenRouter
+  OPENROUTER_API_KEY: z.string().optional(),
+  OPENROUTER_BASE_URL: z.string().url().default('https://openrouter.ai/api/v1'),
 
   // Local LLM
   LOCAL_LLM_URL: z.string().url().default('http://localhost:11434'),
@@ -341,6 +345,14 @@ export function validateLLMConfig(env: EnvironmentConfig): void {
       if (!env.ANTHROPIC_API_KEY && env.NODE_ENV === 'production') {
         throw new Error(
           'ANTHROPIC_API_KEY is required when using Anthropic provider in production'
+        );
+      }
+      break;
+
+    case 'openrouter':
+      if (!env.OPENROUTER_API_KEY && env.NODE_ENV === 'production') {
+        throw new Error(
+          'OPENROUTER_API_KEY is required when using OpenRouter provider in production'
         );
       }
       break;
