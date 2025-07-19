@@ -699,6 +699,12 @@ async function applyGenericASTPattern(
 
 async function applyLlmTransformation(files: string[], request?: TransformationRequest) {
   console.log('Applying LLM transformations...');
+  
+  // Debug environment variables
+  console.log('🔍 Environment check:');
+  console.log('  LLM_PROVIDER:', process.env.LLM_PROVIDER);
+  console.log('  LLM_MODEL:', process.env.LLM_MODEL);
+  console.log('  OPENROUTER_API_KEY:', process.env.OPENROUTER_API_KEY ? '✅ Set' : '❌ Missing');
 
   try {
     // Use the new comprehensive LLM transformation system
@@ -706,10 +712,22 @@ async function applyLlmTransformation(files: string[], request?: TransformationR
       files,
       request,
       config: {
-        provider: (process.env.LLM_PROVIDER as 'mock' | 'openai' | 'anthropic') || 'mock',
-        apiKey: process.env.LLM_API_KEY,
+        provider: (process.env.LLM_PROVIDER as 'mock' | 'openai' | 'anthropic' | 'openrouter') || 'openrouter',
+        apiKey: process.env.LLM_PROVIDER === 'anthropic' 
+          ? process.env.ANTHROPIC_API_KEY 
+          : process.env.LLM_PROVIDER === 'openai'
+          ? process.env.OPENAI_API_KEY
+          : process.env.LLM_PROVIDER === 'openrouter'
+          ? process.env.OPENROUTER_API_KEY
+          : process.env.LLM_API_KEY,
         model: process.env.LLM_MODEL || 'gpt-4',
-        baseURL: process.env.LLM_BASE_URL,
+        baseURL: process.env.LLM_PROVIDER === 'anthropic'
+          ? process.env.ANTHROPIC_BASE_URL
+          : process.env.LLM_PROVIDER === 'openai'
+          ? process.env.OPENAI_BASE_URL
+          : process.env.LLM_PROVIDER === 'openrouter'
+          ? process.env.OPENROUTER_BASE_URL
+          : process.env.LLM_BASE_URL,
         maxTokens: 4000,
         temperature: 0.1, // Low temperature for deterministic code transformations
         timeout: 30000,
@@ -720,6 +738,13 @@ async function applyLlmTransformation(files: string[], request?: TransformationR
         framework: detectProjectFramework(files),
       },
     };
+
+    console.log('🔧 LLM Config:', {
+      provider: llmInput.config?.provider,
+      model: llmInput.config?.model,
+      hasApiKey: !!llmInput.config?.apiKey,
+      baseURL: llmInput.config?.baseURL
+    });
 
     // Call the new LLM transformation system
     const transformer = new LLMTransformer(llmInput.config);
