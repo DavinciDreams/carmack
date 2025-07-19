@@ -158,7 +158,9 @@ export const MessageListExample: React.FC = () => {
           <select
             id="view-mode"
             value={viewMode}
-            onChange={(e) => handleViewModeChange(e.target.value as AppState['viewMode'])}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+              handleViewModeChange((e.target as HTMLSelectElement).value as AppState['viewMode'])
+            }
           >
             <option value="chronological">Chronological</option>
             <option value="tree">Tree</option>
@@ -214,7 +216,7 @@ export const MessageListExample: React.FC = () => {
           onSearchChange={handleSearchChange}
           onFilterChange={handleFilterChange}
           isLoading={isLoading}
-          error={error}
+          error={error ?? ''}
           itemHeight={120}
           maxHeight={600}
           className="example-message-list"
