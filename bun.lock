@@ -19,7 +19,7 @@
         "zod": "^3.25.74",
       },
       "devDependencies": {
-        "@anthropic-ai/claude-code": "^1.0.54",
+        "@anthropic-ai/claude-code": "1.0.56",
         "@biomejs/biome": "^2.0.6",
         "@types/bun": "^1.2.18",
         "@types/chokidar": "^2.1.7",
@@ -41,7 +41,7 @@
   "packages": {
     "@alcalzone/ansi-tokenize": ["@alcalzone/ansi-tokenize@0.1.3", "", { "dependencies": { "ansi-styles": "^6.2.1", "is-fullwidth-code-point": "^4.0.0" } }, "sha512-3yWxPTq3UQ/FY9p1ErPxIyfT64elWaMvM9lIHnaqpyft63tkxodF5aUElYHrdisWve5cETkh1+KBw1yJuW0aRw=="],
 
-    "@anthropic-ai/claude-code": ["@anthropic-ai/claude-code@1.0.54", "", { "optionalDependencies": { "@img/sharp-darwin-arm64": "^0.33.5", "@img/sharp-darwin-x64": "^0.33.5", "@img/sharp-linux-arm": "^0.33.5", "@img/sharp-linux-arm64": "^0.33.5", "@img/sharp-linux-x64": "^0.33.5", "@img/sharp-win32-x64": "^0.33.5" }, "bin": { "claude": "cli.js" } }, "sha512-83K9hwLE68G+WusGctrQBBQ6WGbbj2vy0cNZtv34LRj46u54+ujkZZRVbVR6Z0HkeLftXGSEVQsy0UuRZ1y7ZQ=="],
+    "@anthropic-ai/claude-code": ["@anthropic-ai/claude-code@1.0.56", "", { "optionalDependencies": { "@img/sharp-darwin-arm64": "^0.33.5", "@img/sharp-darwin-x64": "^0.33.5", "@img/sharp-linux-arm": "^0.33.5", "@img/sharp-linux-arm64": "^0.33.5", "@img/sharp-linux-x64": "^0.33.5", "@img/sharp-win32-x64": "^0.33.5" }, "bin": { "claude": "cli.js" } }, "sha512-LYOlv9uXtLrJcJqSLvQlhy7shhC6MHEXuSGZ/+BazM4LY36ng3cmKjTCDny0kZQxa+u/+MYOXUrkmkJm2qR75Q=="],
 
     "@ast-grep/napi": ["@ast-grep/napi@0.38.6", "", { "optionalDependencies": { "@ast-grep/napi-darwin-arm64": "0.38.6", "@ast-grep/napi-darwin-x64": "0.38.6", "@ast-grep/napi-linux-arm64-gnu": "0.38.6", "@ast-grep/napi-linux-arm64-musl": "0.38.6", "@ast-grep/napi-linux-x64-gnu": "0.38.6", "@ast-grep/napi-linux-x64-musl": "0.38.6", "@ast-grep/napi-win32-arm64-msvc": "0.38.6", "@ast-grep/napi-win32-ia32-msvc": "0.38.6", "@ast-grep/napi-win32-x64-msvc": "0.38.6" } }, "sha512-DGQfGPv0mQriq0Ale/A8jh7YUEjyaP7aY9r8HHSRsig6MIHWi7pnm2xqTv/+GwvfKV6wUi41Zs2asO4feuxOWA=="],
 
