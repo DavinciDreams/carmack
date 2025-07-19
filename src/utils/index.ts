@@ -176,22 +176,3 @@ export function sanitizeForLog(input: string, maxLength = 200): string {
       .slice(0, maxLength) + (input.length > maxLength ? '...' : '')
   );
 }
-
-// Export all parser utilities
-export {
-  buildMessageMap,
-  buildParentChildMap,
-  createParseReport,
-  filterMessages,
-  findRootMessages,
-  getChildrenIds,
-  getMessageStats,
-  isValidMessageData,
-  JSONLParseError,
-  type ParseResult,
-  type ParserOptions,
-  parseJSONL,
-  parseJSONLContent,
-  parseJSONLWithRecovery,
-  validateMessage,
-} from './parser.js';

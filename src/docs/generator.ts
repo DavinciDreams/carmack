@@ -12,7 +12,6 @@ import type {
 } from './types.js';
 import { validateDocumentationRequest, validateDocumentationResult } from './types.js';
 
-<<<<<<< Updated upstream
 // JSON Pattern structure interfaces
 interface JsonPatternTestCase {
   input: string;
@@ -64,30 +63,6 @@ interface ChangeAnalysis {
   changeType: 'added' | 'modified' | 'deleted';
   description: string;
   timestamp: string;
-=======
-interface Pattern {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  complexity: string;
-  riskLevel: string;
-  pattern: string;
-  replacement: string;
-  examples: {
-    before: string;
-    after: string;
-    description: string;
-  }[];
-  performance: {
-    [key: string]: unknown;
-  };
-  testCases: {
-    input: string;
-    expected: string;
-    description: string;
-  }[];
->>>>>>> Stashed changes
 }
 
 // Additional Zod schemas for generator-specific types
@@ -672,18 +647,13 @@ export class DocumentationGenerator {
       const content = await readFile('./src/patterns/enhanced-templates.json', 'utf-8');
       const data = JSON.parse(content) as JsonPatternsFile;
 
-<<<<<<< Updated upstream
       return data.patterns.map((pattern: JsonPatternStructure) => ({
-=======
-      return data.patterns.map((pattern: Pattern) => ({
->>>>>>> Stashed changes
         id: pattern.id,
         name: pattern.id.replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
         description: pattern.description,
         category: pattern.category,
         complexity: pattern.complexity,
         riskLevel: pattern.riskLevel,
-<<<<<<< Updated upstream
         pattern:
           typeof pattern.pattern === 'object' ? pattern.pattern.template || '' : pattern.pattern,
         replacement:
@@ -696,18 +666,6 @@ export class DocumentationGenerator {
             after: test.expected,
             description: test.description,
           })) || [],
-=======
-        // pattern: pattern.pattern.template || pattern.pattern,
-        // replacement: pattern.replacement.template || pattern.replacement,
-        examples:
-          pattern.testCases?.map(
-            (test: { input: string; expected: string; description: string }) => ({
-              before: test.input,
-              after: test.expected,
-              description: test.description,
-            })
-          ) || [],
->>>>>>> Stashed changes
         performance: pattern.performance,
       }));
     } catch (error) {
@@ -782,7 +740,6 @@ export class DocumentationGenerator {
     return '<html><body><h1>Pattern Documentation</h1><p>HTML format not yet implemented</p></body></html>';
   }
 
-<<<<<<< Updated upstream
   private async extractUsageExamples(_sourceFiles: string[]): Promise<UsageExample[]> {
     return []; // Placeholder
   }
@@ -804,29 +761,6 @@ export class DocumentationGenerator {
   }
 
   private async generateChangelogHTML(_changes: ChangeAnalysis[]): Promise<string> {
-=======
-  private async extractUsageExamples(_sourceFiles: string[]): Promise<unknown[]> {
-    return []; // Placeholder
-  }
-
-  private async generateUsageMarkdown(_examples: unknown[]): Promise<string> {
-    return '# Usage Documentation\n\nUsage documentation not yet implemented.';
-  }
-
-  private async generateUsageHTML(_examples: unknown[]): Promise<string> {
-    return '<html><body><h1>Usage Documentation</h1><p>HTML format not yet implemented</p></body></html>';
-  }
-
-  private async analyzeChanges(_sourceFiles: string[]): Promise<unknown[]> {
-    return []; // Placeholder
-  }
-
-  private async generateChangelogMarkdown(_changes: unknown[]): Promise<string> {
-    return '# Changelog\n\nChangelog generation not yet implemented.';
-  }
-
-  private async generateChangelogHTML(_changes: unknown[]): Promise<string> {
->>>>>>> Stashed changes
     return '<html><body><h1>Changelog</h1><p>HTML format not yet implemented</p></body></html>';
   }
 }

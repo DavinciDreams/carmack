@@ -141,15 +141,10 @@ export class MemoryTracker {
     let estimatedGCTime = 0;
 
     for (let i = 1; i < this.timeline.length; i++) {
-<<<<<<< Updated upstream
       const prev = this.timeline[i - 1];
       const curr = this.timeline[i];
 
       if (!prev || !curr) continue;
-=======
-      const prev = this.timeline[i - 1] as unknown;
-      const curr = this.timeline[i] as unknown;
->>>>>>> Stashed changes
 
       /** Detect significant heap reduction (likely GC) */
       const heapReduction = prev.heapUsed - curr.heapUsed;
@@ -260,15 +255,11 @@ export class CacheMonitor {
         memoryUsage: 0,
       });
     }
-<<<<<<< Updated upstream
     const stats = this.stats.get(cacheKey);
     if (!stats) {
       throw new Error(`Stats not found for cache key: ${cacheKey}`);
     }
     return stats;
-=======
-    return this.stats.get(cacheKey) as unknown;
->>>>>>> Stashed changes
   }
 }
 

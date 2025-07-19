@@ -112,8 +112,6 @@ export class TransformationError extends Error {
 - State machine definition in `src/machine.ts` (monolithic by design)
 
 ### Dependency Management
-- **Always use `bun` over `npm` or `yarn`** for package management
-- **Use `bun` instead of `bunx`** for running executables and scripts
 - Use native APIs over CLI tools (ESLint Node API, not CLI)
 - Prefer runtime bindings (@ast-grep/napi) over subprocess calls
 - Keep external dependencies minimal and well-justified
@@ -169,8 +167,6 @@ try {
 - ❌ Using external CLI tools when APIs are available
 - ❌ Creating circular dependencies between modules
 - ❌ Exposing internal implementation details in public APIs
-- ❌ Using `npm`, `yarn`, or `bunx` instead of `bun` commands
-- ❌ Running package managers other than Bun in this project
 
 ## When Suggesting Code
 

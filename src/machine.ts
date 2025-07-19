@@ -409,14 +409,10 @@ const _carmackCoderMachine = setup({
           actions: assign(({ context, event }) => {
             if (!context.currentTransformation) return context;
 
-<<<<<<< Updated upstream
             const transformationResult = event.output as {
               filesModified?: string[];
               status?: string;
             };
-=======
-            const transformationResult = event.output as unknown;
->>>>>>> Stashed changes
 
             return {
               ...context,
@@ -451,14 +447,10 @@ const _carmackCoderMachine = setup({
           actions: assign(({ context, event }) => {
             if (!context.currentTransformation) return context;
 
-<<<<<<< Updated upstream
             const transformationResult = event.output as {
               filesModified?: string[];
               status?: string;
             };
-=======
-            const transformationResult = event.output as unknown;
->>>>>>> Stashed changes
 
             return {
               ...context,

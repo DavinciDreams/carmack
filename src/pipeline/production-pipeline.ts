@@ -87,16 +87,11 @@ interface PipelineState {
 }
 
 // Helper function to invoke actors with proper async handling
-<<<<<<< Updated upstream
 async function invokeActor<T>(
   // biome-ignore lint/suspicious/noExplicitAny: XState ActorLogic has complex generics that require any for production compatibility
   actorLogic: ActorLogic<any, any, any, any, any>,
   input: unknown
 ): Promise<T> {
-=======
-// biome-ignore lint/suspicious/noExplicitAny: whack
-async function invokeActor<T>(actorLogic: any, input: unknown): Promise<T> {
->>>>>>> Stashed changes
   const actor = createActor(actorLogic, { input });
   actor.start();
 
@@ -450,11 +445,7 @@ export const productionPipelineActor = fromPromise(
  */
 async function executePipelineStages(
   input: PipelineRequest,
-<<<<<<< Updated upstream
   state: PipelineState
-=======
-  state: unknown
->>>>>>> Stashed changes
 ): Promise<PipelineResult> {
   const stages = [
     { name: 'preprocessing', fn: preprocessingStage },
@@ -528,11 +519,7 @@ async function executePipelineStages(
 /**
  * Stage 1: Preprocessing - Input validation and preparation
  */
-<<<<<<< Updated upstream
 async function preprocessingStage(input: PipelineRequest, state: PipelineState): Promise<void> {
-=======
-async function preprocessingStage(input: PipelineRequest, state: unknown): Promise<void> {
->>>>>>> Stashed changes
   // Validate file existence and readability
   for (const filePath of input.files) {
     try {
@@ -556,11 +543,7 @@ async function preprocessingStage(input: PipelineRequest, state: unknown): Promi
 /**
  * Stage 2: Pattern Discovery - Discover and learn patterns
  */
-<<<<<<< Updated upstream
 async function patternDiscoveryStage(input: PipelineRequest, state: PipelineState): Promise<void> {
-=======
-async function patternDiscoveryStage(input: PipelineRequest, state: unknown): Promise<void> {
->>>>>>> Stashed changes
   if (!input.config.patterns.enableDiscovery) return;
 
   // Discover patterns from current files
@@ -640,11 +623,7 @@ async function patternDiscoveryStage(input: PipelineRequest, state: unknown): Pr
 /**
  * Stage 3: Transformation - Apply transformations using preferred strategy
  */
-<<<<<<< Updated upstream
 async function transformationStage(input: PipelineRequest, state: PipelineState): Promise<void> {
-=======
-async function transformationStage(input: PipelineRequest, state: unknown): Promise<void> {
->>>>>>> Stashed changes
   const { strategy } = input.config;
   const { transformationRequest } = input;
 
@@ -689,11 +668,7 @@ async function transformationStage(input: PipelineRequest, state: unknown): Prom
 async function executeTransformation(
   type: 'template' | 'ast' | 'llm',
   input: PipelineRequest,
-<<<<<<< Updated upstream
   state: PipelineState
-=======
-  state: unknown
->>>>>>> Stashed changes
 ): Promise<{
   type: 'template' | 'ast' | 'llm';
   success: boolean;
@@ -821,11 +796,7 @@ async function executeTransformation(
 /**
  * Stage 4: Validation - Validate transformed code
  */
-<<<<<<< Updated upstream
 async function validationStage(input: PipelineRequest, state: PipelineState): Promise<void> {
-=======
-async function validationStage(input: PipelineRequest, state: unknown): Promise<void> {
->>>>>>> Stashed changes
   if (!input.config.quality.enableValidation) return;
 
   const validationTasks: Promise<ValidationActorResult>[] = [];
@@ -881,11 +852,7 @@ async function validationStage(input: PipelineRequest, state: unknown): Promise<
 /**
  * Stage 5: Testing - Run comprehensive tests
  */
-<<<<<<< Updated upstream
 async function testingStage(input: PipelineRequest, state: PipelineState): Promise<void> {
-=======
-async function testingStage(input: PipelineRequest, state: unknown): Promise<void> {
->>>>>>> Stashed changes
   if (!input.config.quality.enableTesting) return;
 
   try {
@@ -958,11 +925,7 @@ async function testingStage(input: PipelineRequest, state: unknown): Promise<voi
 /**
  * Stage 6: Feedback - Collect feedback and update learning
  */
-<<<<<<< Updated upstream
 async function feedbackStage(input: PipelineRequest, state: PipelineState): Promise<void> {
-=======
-async function feedbackStage(input: PipelineRequest, state: unknown): Promise<void> {
->>>>>>> Stashed changes
   if (!input.config.feedback.enableCollection) return;
 
   // Calculate automatic feedback score
@@ -972,11 +935,7 @@ async function feedbackStage(input: PipelineRequest, state: unknown): Promise<vo
   const feedbackData = {
     patternId: state.transformationsApplied[0]?.patternsUsed[0] || 'unknown',
     transformationId: state.transformationId,
-<<<<<<< Updated upstream
     success: state.transformationsApplied.some((t) => t.success),
-=======
-    success: state.transformationsApplied.some((t: unknown) => t.success),
->>>>>>> Stashed changes
     executionTime: Date.now() - state.startTime,
     codeQualityImprovement: calculateQualityImprovement(state),
     context: {
@@ -1024,11 +983,7 @@ async function feedbackStage(input: PipelineRequest, state: unknown): Promise<vo
 /**
  * Stage 7: Postprocessing - Cleanup and finalization
  */
-<<<<<<< Updated upstream
 async function postprocessingStage(input: PipelineRequest, state: PipelineState): Promise<void> {
-=======
-async function postprocessingStage(input: PipelineRequest, state: unknown): Promise<void> {
->>>>>>> Stashed changes
   // Ensure minimum processing time for test consistency
   const minProcessingTime = 2; // 2ms minimum to ensure timing is recorded
 
@@ -1071,30 +1026,18 @@ async function createBackup(files: string[], transformationId: string): Promise<
   }
 }
 
-<<<<<<< Updated upstream
 async function initializeMetrics(state: PipelineState): Promise<void> {
-=======
-async function initializeMetrics(state: unknown): Promise<void> {
->>>>>>> Stashed changes
   state.metrics = {
     startTime: Date.now(),
     memoryStart: process.memoryUsage(),
   };
 }
 
-<<<<<<< Updated upstream
 function calculateAutomaticScore(state: PipelineState): number {
   let score = 0.5; // Base score
 
   // Success bonus
   if (state.transformationsApplied.some((t) => t.success)) score += 0.3;
-=======
-function calculateAutomaticScore(state: unknown): number {
-  let score = 0.5; // Base score
-
-  // Success bonus
-  if (state.transformationsApplied.some((t: unknown) => t.success)) score += 0.3;
->>>>>>> Stashed changes
 
   // Quality bonus
   if (state.validationResults?.typeErrors === 0) score += 0.1;
@@ -1106,11 +1049,7 @@ function calculateAutomaticScore(state: unknown): number {
   return Math.min(1.0, score);
 }
 
-<<<<<<< Updated upstream
 function calculateQualityImprovement(state: PipelineState): number {
-=======
-function calculateQualityImprovement(state: unknown): number {
->>>>>>> Stashed changes
   // Simplified quality improvement calculation
   const errorReduction = (state.validationResults?.typeErrors || 0) === 0 ? 0.2 : -0.1;
   const testSuccess = (state.testResults?.passed || 0) > 0 ? 0.1 : -0.1;
@@ -1118,14 +1057,10 @@ function calculateQualityImprovement(state: unknown): number {
   return Math.max(-1, Math.min(1, errorReduction + testSuccess));
 }
 
-<<<<<<< Updated upstream
 async function generateTransformationReport(
   input: PipelineRequest,
   state: PipelineState
 ): Promise<void> {
-=======
-async function generateTransformationReport(input: PipelineRequest, state: unknown): Promise<void> {
->>>>>>> Stashed changes
   const report = {
     transformationId: state.transformationId,
     timestamp: new Date().toISOString(),
@@ -1134,11 +1069,7 @@ async function generateTransformationReport(input: PipelineRequest, state: unkno
       transformationType: input.transformationRequest.transformationType,
     },
     results: {
-<<<<<<< Updated upstream
       success: state.transformationsApplied.some((t) => t.success),
-=======
-      success: state.transformationsApplied.some((t: unknown) => t.success),
->>>>>>> Stashed changes
       filesModified: state.filesModified,
       transformationsApplied: state.transformationsApplied,
       executionTime: Date.now() - state.startTime,
@@ -1153,28 +1084,16 @@ async function generateTransformationReport(input: PipelineRequest, state: unkno
   await writeFile(reportPath, JSON.stringify(report, null, 2));
 }
 
-<<<<<<< Updated upstream
 async function cleanupTemporaryFiles(_state: PipelineState): Promise<void> {
-=======
-async function cleanupTemporaryFiles(_state: unknown): Promise<void> {
->>>>>>> Stashed changes
   // Cleanup any temporary files created during transformation
   // Implementation depends on specific temporary file patterns
 }
 
-<<<<<<< Updated upstream
 function buildPipelineResult(_input: PipelineRequest, state: PipelineState): PipelineResult {
   return {
     success:
       state.transformationsApplied.some((t) => t.success) &&
       state.errors.filter((e) => e.severity === 'critical').length === 0,
-=======
-function buildPipelineResult(_input: PipelineRequest, state: unknown): PipelineResult {
-  return {
-    success:
-      state.transformationsApplied.some((t: unknown) => t.success) &&
-      state.errors.filter((e: unknown) => e.severity === 'critical').length === 0,
->>>>>>> Stashed changes
     transformationId: state.transformationId,
     filesModified: state.filesModified,
     transformationsApplied: state.transformationsApplied,
@@ -1206,11 +1125,7 @@ function buildPipelineResult(_input: PipelineRequest, state: unknown): PipelineR
   };
 }
 
-<<<<<<< Updated upstream
 function generateRecommendations(state: PipelineState): string[] {
-=======
-function generateRecommendations(state: unknown): string[] {
->>>>>>> Stashed changes
   const recommendations: string[] = [];
 
   if ((state.validationResults?.typeErrors ?? 0) > 0) {
@@ -1244,13 +1159,8 @@ async function getDefaultTemplatePatterns(): Promise<unknown[]> {
 
     // Filter for template patterns and convert to expected format
     return fallbackData.patterns
-<<<<<<< Updated upstream
       .filter((p: { mode: string; [key: string]: unknown }) => p.mode === 'template')
       .map((p: { id: string; language: string; pattern: string; [key: string]: unknown }) => ({
-=======
-      .filter((p: unknown) => p.mode === 'template')
-      .map((p: unknown) => ({
->>>>>>> Stashed changes
         id: p.id,
         language: p.language,
         pattern: {
@@ -1297,13 +1207,8 @@ async function getDefaultASTPatterns(): Promise<unknown[]> {
 
     // Filter for AST patterns and convert to expected format
     return patternsData.patterns
-<<<<<<< Updated upstream
       .filter((p: { mode: string; [key: string]: unknown }) => p.mode === 'ast')
       .map((p: { id: string; language: string; pattern: string; [key: string]: unknown }) => ({
-=======
-      .filter((p: unknown) => p.mode === 'ast')
-      .map((p: unknown) => ({
->>>>>>> Stashed changes
         id: p.id,
         language: p.language,
         pattern: {

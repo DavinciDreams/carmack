@@ -80,7 +80,9 @@
     "bun": ">=1.0.0"
   },
   "trustedDependencies": [
-    "@biomejs/biome"
+    "@biomejs/biome",
+    "esbuild",
+    "lefthook"
   ],
   "devDependencies": {
     "@anthropic-ai/claude-code": "^1.0.56",
