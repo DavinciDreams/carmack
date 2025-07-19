@@ -87,11 +87,7 @@ export const enhancedTransformationActor = fromPromise(
     const validated = EnhancedTransformationRequestSchema.parse(input);
 
     try {
-<<<<<<< Updated upstream
-      let result: Record<string, unknown>;
-=======
       let result: EnhancedTransformationResult;
->>>>>>> Stashed changes
 
       switch (validated.transformationType) {
         case 'template':
@@ -330,12 +326,7 @@ async function applyRealASTPattern(
 
       // Apply transformations in reverse order to maintain positions
       const sortedMatches = matches.sort(
-<<<<<<< Updated upstream
         (a: ASTGrepNode, b: ASTGrepNode) => b.range().start.index - a.range().start.index
-=======
-        (a: unknown, b: unknown) =>
-          (b as unknown).range().start.index - (a as unknown).range().start.index
->>>>>>> Stashed changes
       );
 
       for (const match of sortedMatches) {
@@ -351,13 +342,8 @@ async function applyRealASTPattern(
           if (variables) {
             for (const [varName, varMatch] of Object.entries(variables)) {
               const varText = Array.isArray(varMatch)
-<<<<<<< Updated upstream
                 ? varMatch.map((m: ASTGrepNode) => m.text()).join(', ')
                 : (varMatch as ASTGrepNode).text();
-=======
-                ? varMatch.map((m: unknown) => (m as unknown).text()).join(', ')
-                : (varMatch as unknown).text();
->>>>>>> Stashed changes
               replacement = replacement.replace(new RegExp(`\\$${varName}`, 'g'), varText);
             }
           }

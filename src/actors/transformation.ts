@@ -159,11 +159,7 @@ async function applyTemplateTransformation(
             // Convert 'str' + var + 'str' to `str${var}str` with proper escaping
             modifiedContent = modifiedContent.replace(
               /['"`]([^'"`]*?)['"`]\s*\+\s*([a-zA-Z_$][\w.]*)\s*\+\s*['"`]([^'"`]*?)['"`]/g,
-<<<<<<< Updated upstream
               (_match, p1, p2, p3) => `\`${p1}\${${p2}}${p3}\``
-=======
-              '`$1' + '${' + '$2}$3`'
->>>>>>> Stashed changes
             );
             break;
 
@@ -1043,19 +1039,11 @@ async function templateLiteralConversionAST(
     // Convert string concatenation to template literals
     modifiedContent = modifiedContent.replace(
       /'([^']*?)'\s*\+\s*(\w+)\s*\+\s*'([^']*?)'/g,
-<<<<<<< Updated upstream
       (_match, p1, p2, p3) => `\`${p1}\${${p2}}${p3}\``
     );
     modifiedContent = modifiedContent.replace(
       /"([^"]*?)"\s*\+\s*(\w+)\s*\+\s*"([^"]*?)"/g,
       (_match, p1, p2, p3) => `\`${p1}\${${p2}}${p3}\``
-=======
-      '`$1' + '${' + '$2}$3`'
-    );
-    modifiedContent = modifiedContent.replace(
-      /"([^"]*?)"\s*\+\s*(\w+)\s*\+\s*"([^"]*?)"/g,
-      '`$1' + '${' + '$2}$3`'
->>>>>>> Stashed changes
     );
 
     if (modifiedContent !== content) {
