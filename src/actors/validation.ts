@@ -57,7 +57,16 @@ const ValidationInputSchema = z.union([
   z.object({
     type: z.literal('typeFix'),
     files: z.array(z.string()),
-    errors: z.array(z.any()), // ErrorInfo schema
+    errors: z.array(
+      z.object({
+        code: z.string(),
+        message: z.string(),
+        severity: z.enum(['error', 'warning', 'info']),
+        file: z.string().optional(),
+        line: z.number().optional(),
+        column: z.number().optional(),
+      })
+    ), // More specific ErrorInfo schema instead of z.any()
   }),
   z.object({
     type: z.literal('quality'),
@@ -148,9 +157,10 @@ async function validateFormat(files: string[]): Promise<ValidationResult> {
           encoding: 'utf8',
           timeout: 2000, // 2 second timeout
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         hasErrors = true;
-        const output = error.stdout || error.stderr || error.message;
+        const errorObj = error as { stdout?: string; stderr?: string; message?: string };
+        const output = errorObj.stdout || errorObj.stderr || errorObj.message || '';
 
         // Parse biome output for issues
         if (output.includes('Format')) {
@@ -238,8 +248,9 @@ async function fixFormat(files: string[]): Promise<ValidationResult> {
           encoding: 'utf8',
           timeout: 2000, // 2 second timeout
         });
-      } catch (error: any) {
-        const output = error.stdout || error.stderr || error.message;
+      } catch (error: unknown) {
+        const execError = error as { stdout?: string; stderr?: string; message?: string };
+        const output = execError.stdout || execError.stderr || execError.message || '';
         warnings.push({
           code: 'BIOME_FORMAT_WARNING',
           message: `Could not auto-fix ${file}: ${output}`,
@@ -338,12 +349,14 @@ async function validateTypesWithExec(
       warnings: [],
       fixableIssues: 0,
     };
-  } catch (error: any) {
-    if (signal.aborted) {
+  } catch (error: unknown) {
+    const errorObj = error as { signal?: { aborted: boolean } };
+    if (errorObj.signal?.aborted || signal.aborted) {
       throw new Error('TypeScript validation aborted due to timeout');
     }
 
-    const errorOutput = error.stderr || error.stdout || error.message || '';
+    const execError = error as { stderr?: string; stdout?: string; message?: string };
+    const errorOutput = execError.stderr || execError.stdout || execError.message || '';
     const errors: Array<{
       code: string;
       message: string;
@@ -433,7 +446,8 @@ async function fallbackTypeValidation(files: string[]): Promise<ValidationResult
       const content = await readFile(filePath, 'utf-8');
 
       for (const rule of typePatterns) {
-        let match;
+        let match: RegExpExecArray | null;
+        // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex iteration pattern
         while ((match = rule.pattern.exec(content)) !== null) {
           const beforeMatch = content.substring(0, match.index);
           const lineNumber = beforeMatch.split('\n').length;
@@ -505,7 +519,8 @@ async function fixTypes(files: string[], errors: ErrorInfo[]): Promise<Validatio
     // Process each file with type errors
     const filePathsArray = Array.from(errorsByFile.keys());
     for (const filePath of filePathsArray) {
-      const fileErrors = errorsByFile.get(filePath)!;
+      const fileErrors = errorsByFile.get(filePath);
+      if (!fileErrors) continue; // Skip if no errors found
       try {
         const { readFile } = await import('node:fs/promises');
         const originalContent = await readFile(filePath, 'utf-8');
@@ -626,7 +641,17 @@ Return only the corrected code without explanations.`;
 /**
  * Analyze the complexity of type errors for better LLM context
  */
-function analyzeTypeComplexity(content: string, errors: ErrorInfo[]): any {
+function analyzeTypeComplexity(
+  content: string,
+  errors: ErrorInfo[]
+): {
+  cyclomaticComplexity: number;
+  cognitiveComplexity: number;
+  linesOfCode: number;
+  nestingDepth: number;
+  functionCount: number;
+  classCount: number;
+} {
   const hasGenericTypes = content.includes('<') && content.includes('>');
   const hasUnionTypes = content.includes('|');
   const hasInterfaceDefinitions = content.includes('interface ');
@@ -677,9 +702,10 @@ async function verifyTypeFixes(
     });
 
     return { isValid: true, errors: [] };
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Parse any remaining errors
-    const errorOutput = error.stdout || error.stderr || '';
+    const execError = error as { stdout?: string; stderr?: string };
+    const errorOutput = execError.stdout || execError.stderr || '';
     const errors: ErrorInfo[] = [];
 
     const errorLines = errorOutput
@@ -760,43 +786,46 @@ async function validateQuality(files: string[]): Promise<ValidationResult> {
     });
 
     // Add timeout wrapper for ESLint operations
-    const lintWithTimeout = async (filePath: string): Promise<void> => {
-      return new Promise(async (resolve, reject) => {
+    const lintWithTimeout = (filePath: string): Promise<void> => {
+      return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
           reject(new Error(`ESLint timeout for ${filePath}`));
         }, 3000); // 3 second timeout per file
 
-        try {
-          const results = await eslint.lintFiles([filePath]);
+        // Run ESLint in an async IIFE to avoid async promise executor
+        (async () => {
+          try {
+            const results = await eslint.lintFiles([filePath]);
 
-          for (const result of results) {
-            for (const message of result.messages) {
-              const errorInfo: ErrorInfo = {
-                code: message.ruleId || 'ESLINT_ERROR',
-                message: message.message,
-                file: result.filePath,
-                line: message.line,
-                column: message.column,
-                severity: message.severity === 2 ? 'error' : 'warning',
-              };
+            for (const result of results) {
+              for (const message of result.messages) {
+                const errorInfo: ErrorInfo = {
+                  code: message.ruleId || 'ESLINT_ERROR',
+                  message: message.message,
+                  file: result.filePath,
+                  line: message.line,
+                  column: message.column,
+                  severity: message.severity === 2 ? 'error' : 'warning',
+                };
 
-              if (message.severity === 2) {
-                errors.push(errorInfo);
-              } else {
-                warnings.push(errorInfo);
-              }
+                if (message.severity === 2) {
+                  errors.push(errorInfo);
+                } else {
+                  warnings.push(errorInfo);
+                }
 
-              if (message.fix) {
-                fixableIssues++;
+                if (message.fix) {
+                  fixableIssues++;
+                }
               }
             }
+            clearTimeout(timeout);
+            resolve();
+          } catch (error) {
+            clearTimeout(timeout);
+            reject(error);
           }
-          clearTimeout(timeout);
-          resolve();
-        } catch (error) {
-          clearTimeout(timeout);
-          reject(error);
-        }
+        })();
       });
     };
 
@@ -887,7 +916,8 @@ async function fallbackQualityAnalysis(files: string[]): Promise<ValidationResul
       const content = await readFile(filePath, 'utf-8');
 
       for (const rule of qualityRules) {
-        let match;
+        let match: RegExpExecArray | null;
+        // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex iteration pattern
         while ((match = rule.pattern.exec(content)) !== null) {
           // Find line number for the match
           const beforeMatch = content.substring(0, match.index);
@@ -949,8 +979,9 @@ function analyzeCodeComplexity(content: string, filePath: string): ErrorInfo[] {
 
   // Check for overly complex functions
   const functionRegex = /function\s+(\w+)|const\s+(\w+)\s*=\s*\([^)]*\)\s*=>/g;
-  let match;
+  let match: RegExpExecArray | null;
 
+  // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex iteration pattern
   while ((match = functionRegex.exec(content)) !== null) {
     const functionName = match[1] || match[2];
     const functionStart = match.index;
@@ -960,7 +991,7 @@ function analyzeCodeComplexity(content: string, filePath: string): ErrorInfo[] {
     const braceMatch = afterFunction.match(/\{/);
 
     if (braceMatch) {
-      const bodyStart = functionStart + braceMatch.index! + 1;
+      const bodyStart = functionStart + (braceMatch.index || 0) + 1;
       const functionBody = extractFunctionBody(content, bodyStart);
 
       if (functionBody) {

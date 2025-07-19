@@ -56,7 +56,8 @@ export class LLMAnnotationAnalyzer {
       const opportunities = await this.identifyOpportunities(
         validatedRequest,
         patterns,
-        architecture
+        architecture,
+        context.language
       );
       console.log(`💡 Found ${opportunities.length} transformation opportunities`);
 
@@ -122,60 +123,60 @@ export class LLMAnnotationAnalyzer {
    */
   private async analyzeCodeContext(request: AnnotationRequest): Promise<CodeContext> {
     const { readFile } = await import('node:fs/promises');
-    // const { extname } = await import('path');
+    const { extname } = await import('node:path');
 
     // Analyze primary files to understand context
     const dependencies = new Set<string>();
     const exports = new Set<string>();
     let totalComplexity = 0;
     let fileCount = 0;
+    let detectedLanguage = 'unknown';
 
     for (const filePath of request.sourceFiles.slice(0, 10)) {
       // Sample first 10 files
       try {
         const content = await readFile(filePath, 'utf-8');
-        // const __ext = extname(filePath);
+        const ext = extname(filePath);
+
+        // Detect language from file extension
+        if (!detectedLanguage || detectedLanguage === 'unknown') {
+          detectedLanguage = this.detectLanguageFromExtension(ext);
+        }
+
+        // Extract language-specific imports/dependencies and exports
+        const languagePatterns = this.getLanguagePatterns(detectedLanguage);
 
         // Extract imports/dependencies
-        const importMatches = content.match(/import\s+.*?from\s+['"]([^'"]+)['"]/g);
-        if (importMatches) {
-          importMatches.forEach((match) => {
-            const moduleMatch = match.match(/from\s+['"]([^'"]+)['"]/);
-            if (moduleMatch?.[1]) {
-              dependencies.add(moduleMatch[1]);
-            }
-          });
+        for (const importPattern of languagePatterns.imports) {
+          const importMatches = content.match(new RegExp(importPattern, 'g'));
+          if (importMatches) {
+            importMatches.forEach((match) => {
+              const extracted = this.extractDependencyFromMatch(match, detectedLanguage);
+              if (extracted) {
+                dependencies.add(extracted);
+              }
+            });
+          }
         }
 
         // Extract exports
-        const exportMatches = content.match(
-          /export\s+(?:function|class|interface|type|const|let|var)\s+(\w+)/g
-        );
-        if (exportMatches) {
-          exportMatches.forEach((match) => {
-            const nameMatch = match.match(
-              /export\s+(?:function|class|interface|type|const|let|var)\s+(\w+)/
-            );
-            if (nameMatch?.[1]) {
-              exports.add(nameMatch[1]);
-            }
-          });
+        for (const exportPattern of languagePatterns.exports) {
+          const exportMatches = content.match(new RegExp(exportPattern, 'g'));
+          if (exportMatches) {
+            exportMatches.forEach((match) => {
+              const extracted = this.extractExportFromMatch(match, detectedLanguage);
+              if (extracted) {
+                exports.add(extracted);
+              }
+            });
+          }
         }
 
-        // Calculate basic complexity
-        const complexityIndicators = [
-          /\bif\b/g,
-          /\belse\b/g,
-          /\bwhile\b/g,
-          /\bfor\b/g,
-          /\bswitch\b/g,
-          /\btry\b/g,
-          /\bcatch\b/g,
-        ];
-
+        // Calculate basic complexity using language-agnostic patterns
+        const complexityIndicators = languagePatterns.complexity;
         let fileComplexity = 1;
         complexityIndicators.forEach((pattern) => {
-          const matches = content.match(pattern);
+          const matches = content.match(new RegExp(pattern, 'g'));
           if (matches) fileComplexity += matches.length;
         });
 
@@ -187,12 +188,16 @@ export class LLMAnnotationAnalyzer {
     }
 
     // Determine framework and purpose
-    const framework = this.detectFramework(Array.from(dependencies));
-    const purpose = this.inferPurpose(Array.from(dependencies), Array.from(exports));
+    const framework = this.detectFramework(Array.from(dependencies), detectedLanguage);
+    const purpose = this.inferPurpose(
+      Array.from(dependencies),
+      Array.from(exports),
+      detectedLanguage
+    );
 
     return {
       filePath: request.sourceFiles[0] || 'unknown',
-      language: 'typescript', // Infer from file extensions
+      language: detectedLanguage,
       framework,
       purpose,
       complexity: fileCount > 0 ? totalComplexity / fileCount : 0,
@@ -207,44 +212,11 @@ export class LLMAnnotationAnalyzer {
   private async detectPatterns(request: AnnotationRequest): Promise<PatternAnnotation[]> {
     const patterns: PatternAnnotation[] = [];
 
-    // Common patterns to detect
-    const patternDefinitions = [
-      {
-        id: 'singleton-pattern',
-        type: 'design' as const,
-        name: 'Singleton Pattern',
-        astPattern: 'class $CLASS { private static instance: $CLASS; }',
-        category: 'creational',
-      },
-      {
-        id: 'factory-pattern',
-        type: 'design' as const,
-        name: 'Factory Pattern',
-        astPattern: 'function create$NAME($PARAMS): $TYPE { return new $TYPE($ARGS); }',
-        category: 'creational',
-      },
-      {
-        id: 'async-await-pattern',
-        type: 'optimization' as const,
-        name: 'Async/Await Usage',
-        astPattern: 'async function $NAME($PARAMS) { await $EXPR; }',
-        category: 'asynchronous',
-      },
-      {
-        id: 'error-handling',
-        type: 'architectural' as const,
-        name: 'Error Handling',
-        astPattern: 'try { $BODY } catch ($ERROR) { $HANDLER }',
-        category: 'reliability',
-      },
-      {
-        id: 'type-assertion',
-        type: 'anti-pattern' as const,
-        name: 'Type Assertion',
-        astPattern: '$EXPR as $TYPE',
-        category: 'type-safety',
-      },
-    ];
+    // Get patterns based on detected language
+    const detectedLanguage = this.detectLanguageFromExtension(
+      request.sourceFiles[0] ? require('node:path').extname(request.sourceFiles[0]) : '.unknown'
+    );
+    const patternDefinitions = this.getPatternDefinitions(detectedLanguage);
 
     for (const filePath of request.sourceFiles.slice(0, 20)) {
       // Analyze first 20 files
@@ -282,6 +254,115 @@ export class LLMAnnotationAnalyzer {
     }
 
     return patterns;
+  }
+
+  private getPatternDefinitions(language: string) {
+    const commonPatterns = [
+      {
+        id: 'error-handling',
+        type: 'architectural' as const,
+        name: 'Error Handling',
+        astPattern: this.getErrorHandlingPattern(language),
+        category: 'reliability',
+      },
+    ];
+
+    if (['typescript', 'javascript'].includes(language)) {
+      return [
+        ...commonPatterns,
+        {
+          id: 'singleton-pattern',
+          type: 'design' as const,
+          name: 'Singleton Pattern',
+          astPattern: 'class $CLASS { private static instance: $CLASS; }',
+          category: 'creational',
+        },
+        {
+          id: 'factory-pattern',
+          type: 'design' as const,
+          name: 'Factory Pattern',
+          astPattern: 'function create$NAME($PARAMS): $TYPE { return new $TYPE($ARGS); }',
+          category: 'creational',
+        },
+        {
+          id: 'async-await-pattern',
+          type: 'optimization' as const,
+          name: 'Async/Await Usage',
+          astPattern: 'async function $NAME($PARAMS) { await $EXPR; }',
+          category: 'asynchronous',
+        },
+        {
+          id: 'type-assertion',
+          type: 'anti-pattern' as const,
+          name: 'Type Assertion',
+          astPattern: '$EXPR as $TYPE',
+          category: 'type-safety',
+        },
+      ];
+    }
+
+    if (['cpp', 'c', 'cuda'].includes(language)) {
+      return [
+        ...commonPatterns,
+        {
+          id: 'memory-management',
+          type: 'architectural' as const,
+          name: 'Manual Memory Management',
+          astPattern: 'new $TYPE',
+          category: 'memory',
+        },
+        {
+          id: 'pointer-usage',
+          type: 'optimization' as const,
+          name: 'Pointer Usage',
+          astPattern: '$TYPE* $VAR',
+          category: 'performance',
+        },
+        {
+          id: 'raii-pattern',
+          type: 'design' as const,
+          name: 'RAII Pattern',
+          astPattern: 'class $CLASS { ~$CLASS() { $BODY } };',
+          category: 'resource-management',
+        },
+      ];
+    }
+
+    if (language === 'python') {
+      return [
+        ...commonPatterns,
+        {
+          id: 'list-comprehension',
+          type: 'optimization' as const,
+          name: 'List Comprehension',
+          astPattern: '[$EXPR for $VAR in $ITER]',
+          category: 'pythonic',
+        },
+        {
+          id: 'context-manager',
+          type: 'design' as const,
+          name: 'Context Manager',
+          astPattern: 'with $EXPR as $VAR: $BODY',
+          category: 'resource-management',
+        },
+      ];
+    }
+
+    return commonPatterns;
+  }
+
+  private getErrorHandlingPattern(language: string): string {
+    switch (language) {
+      case 'python':
+        return 'try: $BODY except $ERROR: $HANDLER';
+      case 'java':
+        return 'try { $BODY } catch ($ERROR) { $HANDLER }';
+      case 'cpp':
+      case 'c':
+        return 'try { $BODY } catch ($ERROR) { $HANDLER }';
+      default:
+        return 'try { $BODY } catch ($ERROR) { $HANDLER }';
+    }
   }
 
   /**
@@ -345,7 +426,8 @@ export class LLMAnnotationAnalyzer {
   private async identifyOpportunities(
     _request: AnnotationRequest,
     patterns: PatternAnnotation[],
-    architecture: ArchitecturalAnnotation[]
+    architecture: ArchitecturalAnnotation[],
+    language: string
   ): Promise<TransformationOpportunity[]> {
     const opportunities: TransformationOpportunity[] = [];
 
@@ -370,7 +452,7 @@ export class LLMAnnotationAnalyzer {
           {
             description: `Replace ${antiPattern.name} with proper typing`,
             automated: true,
-            validation: 'TypeScript compilation check',
+            validation: this.getValidationMethod(language),
           },
         ],
         estimatedImpact: {
@@ -420,33 +502,299 @@ export class LLMAnnotationAnalyzer {
   }
 
   // Helper methods for analysis
-  private detectFramework(dependencies: string[]): string | undefined {
-    if (dependencies.some((dep) => dep.includes('react'))) return 'React';
-    if (dependencies.some((dep) => dep.includes('vue'))) return 'Vue';
-    if (dependencies.some((dep) => dep.includes('angular'))) return 'Angular';
-    if (dependencies.some((dep) => dep.includes('express'))) return 'Express';
-    if (dependencies.some((dep) => dep.includes('xstate'))) return 'XState';
+  private detectLanguageFromExtension(ext: string): string {
+    const languageMap: Record<string, string> = {
+      '.ts': 'typescript',
+      '.tsx': 'typescript',
+      '.js': 'javascript',
+      '.jsx': 'javascript',
+      '.py': 'python',
+      '.cpp': 'cpp',
+      '.cc': 'cpp',
+      '.cxx': 'cpp',
+      '.c': 'c',
+      '.h': 'c-header',
+      '.hpp': 'cpp-header',
+      '.hxx': 'cpp-header',
+      '.cu': 'cuda',
+      '.cuh': 'cuda-header',
+      '.java': 'java',
+      '.cs': 'csharp',
+      '.go': 'go',
+      '.rs': 'rust',
+      '.rb': 'ruby',
+      '.php': 'php',
+      '.swift': 'swift',
+      '.kt': 'kotlin',
+      '.scala': 'scala',
+      '.clj': 'clojure',
+      '.hs': 'haskell',
+      '.ml': 'ocaml',
+      '.fs': 'fsharp',
+      '.vb': 'vb.net',
+      '.dart': 'dart',
+      '.lua': 'lua',
+      '.r': 'r',
+      '.sql': 'sql',
+      '.sh': 'bash',
+      '.bat': 'batch',
+      '.ps1': 'powershell',
+    };
+    return languageMap[ext.toLowerCase()] || 'unknown';
+  }
+
+  private getLanguagePatterns(language: string): {
+    imports: string[];
+    exports: string[];
+    complexity: string[];
+  } {
+    const patterns: Record<string, { imports: string[]; exports: string[]; complexity: string[] }> =
+      {
+        typescript: {
+          imports: [
+            'import\\s+.*?from\\s+[\'"]([^\'"]+)[\'"]',
+            'require\\s*\\(\\s*[\'"]([^\'"]+)[\'"]\\s*\\)',
+          ],
+          exports: [
+            'export\\s+(?:function|class|interface|type|const|let|var)\\s+(\\w+)',
+            'export\\s*\\{\\s*([^}]+)\\s*\\}',
+          ],
+          complexity: [
+            '\\bif\\b',
+            '\\belse\\b',
+            '\\bwhile\\b',
+            '\\bfor\\b',
+            '\\bswitch\\b',
+            '\\btry\\b',
+            '\\bcatch\\b',
+          ],
+        },
+        javascript: {
+          imports: [
+            'import\\s+.*?from\\s+[\'"]([^\'"]+)[\'"]',
+            'require\\s*\\(\\s*[\'"]([^\'"]+)[\'"]\\s*\\)',
+          ],
+          exports: [
+            'export\\s+(?:function|class|const|let|var)\\s+(\\w+)',
+            'module\\.exports\\s*=',
+          ],
+          complexity: [
+            '\\bif\\b',
+            '\\belse\\b',
+            '\\bwhile\\b',
+            '\\bfor\\b',
+            '\\bswitch\\b',
+            '\\btry\\b',
+            '\\bcatch\\b',
+          ],
+        },
+        python: {
+          imports: ['import\\s+(\\w+(?:\\.\\w+)*)', 'from\\s+(\\w+(?:\\.\\w+)*)\\s+import'],
+          exports: ['def\\s+(\\w+)\\s*\\(', 'class\\s+(\\w+)\\s*(?:\\(|:)'],
+          complexity: [
+            '\\bif\\b',
+            '\\belif\\b',
+            '\\belse\\b',
+            '\\bwhile\\b',
+            '\\bfor\\b',
+            '\\btry\\b',
+            '\\bexcept\\b',
+          ],
+        },
+        cpp: {
+          imports: ['#include\\s*[<"]([^>"]+)[>"]', 'using\\s+namespace\\s+(\\w+)'],
+          exports: [
+            '(?:class|struct)\\s+(\\w+)',
+            '(?:public|private|protected)?\\s*:\\s*\\w+\\s+(\\w+)\\s*\\(',
+            '\\w+\\s+(\\w+)\\s*\\([^)]*\\)\\s*(?:\\{|;)',
+          ],
+          complexity: [
+            '\\bif\\b',
+            '\\belse\\b',
+            '\\bwhile\\b',
+            '\\bfor\\b',
+            '\\bswitch\\b',
+            '\\btry\\b',
+            '\\bcatch\\b',
+          ],
+        },
+        c: {
+          imports: ['#include\\s*[<"]([^>"]+)[>"]'],
+          exports: [
+            '(?:struct|enum|typedef)\\s+(\\w+)',
+            '\\w+\\s+(\\w+)\\s*\\([^)]*\\)\\s*(?:\\{|;)',
+          ],
+          complexity: ['\\bif\\b', '\\belse\\b', '\\bwhile\\b', '\\bfor\\b', '\\bswitch\\b'],
+        },
+        cuda: {
+          imports: ['#include\\s*[<"]([^>"]+)[>"]'],
+          exports: [
+            '__global__\\s+\\w+\\s+(\\w+)\\s*\\(',
+            '__device__\\s+\\w+\\s+(\\w+)\\s*\\(',
+            '__host__\\s+\\w+\\s+(\\w+)\\s*\\(',
+            '(?:class|struct)\\s+(\\w+)',
+          ],
+          complexity: ['\\bif\\b', '\\belse\\b', '\\bwhile\\b', '\\bfor\\b', '\\bswitch\\b'],
+        },
+        java: {
+          imports: ['import\\s+(\\w+(?:\\.\\w+)*(?:\\.\\*)?);'],
+          exports: [
+            '(?:public|private|protected)?\\s*(?:static)?\\s*(?:class|interface|enum)\\s+(\\w+)',
+            '(?:public|private|protected)?\\s*(?:static)?\\s*\\w+\\s+(\\w+)\\s*\\(',
+          ],
+          complexity: [
+            '\\bif\\b',
+            '\\belse\\b',
+            '\\bwhile\\b',
+            '\\bfor\\b',
+            '\\bswitch\\b',
+            '\\btry\\b',
+            '\\bcatch\\b',
+          ],
+        },
+      };
+
+    return (
+      patterns[language] || {
+        imports: ['#include\\s*[<"]([^>"]+)[>"]', 'import\\s+.*?from\\s+[\'"]([^\'"]+)[\'"]'],
+        exports: ['(?:function|class|def|struct)\\s+(\\w+)'],
+        complexity: ['\\bif\\b', '\\belse\\b', '\\bwhile\\b', '\\bfor\\b', '\\bswitch\\b'],
+      }
+    );
+  }
+
+  private extractDependencyFromMatch(match: string, language: string): string | null {
+    // Generic extraction logic for different languages
+    if (language === 'python') {
+      const pythonMatch = match.match(/(?:import|from)\s+([\w.]+)/);
+      return pythonMatch?.[1] || null;
+    }
+    if (['cpp', 'c', 'cuda'].includes(language)) {
+      const cppMatch = match.match(/#include\s*[<"]([^>"]+)[>"]/);
+      return cppMatch?.[1] || null;
+    }
+    if (['typescript', 'javascript'].includes(language)) {
+      const jsMatch = match.match(/(?:from|require\s*\(\s*)['"]([^'"]+)['"]/);
+      return jsMatch?.[1] || null;
+    }
+    if (language === 'java') {
+      const javaMatch = match.match(/import\s+([\w.]+)/);
+      return javaMatch?.[1] || null;
+    }
+    return null;
+  }
+
+  private extractExportFromMatch(match: string, language: string): string | null {
+    // Generic extraction logic for different languages
+    if (language === 'python') {
+      const pythonMatch = match.match(/(?:def|class)\s+(\w+)/);
+      return pythonMatch?.[1] || null;
+    }
+    if (['cpp', 'c', 'cuda'].includes(language)) {
+      const cppMatch = match.match(/(?:class|struct|__global__|__device__)\s+\w*\s*(\w+)/);
+      return cppMatch?.[1] || null;
+    }
+    if (['typescript', 'javascript'].includes(language)) {
+      const jsMatch = match.match(/(?:export\s+)?(?:function|class|const|let|var)\s+(\w+)/);
+      return jsMatch?.[1] || null;
+    }
+    if (language === 'java') {
+      const javaMatch = match.match(/(?:class|interface|enum)\s+(\w+)/);
+      return javaMatch?.[1] || null;
+    }
+    return null;
+  }
+
+  private detectFramework(dependencies: string[], language: string): string | undefined {
+    // Language-specific framework detection
+    if (['typescript', 'javascript'].includes(language)) {
+      if (dependencies.some((dep) => dep.includes('react'))) return 'React';
+      if (dependencies.some((dep) => dep.includes('vue'))) return 'Vue';
+      if (dependencies.some((dep) => dep.includes('angular'))) return 'Angular';
+      if (dependencies.some((dep) => dep.includes('express'))) return 'Express';
+      if (dependencies.some((dep) => dep.includes('xstate'))) return 'XState';
+      if (dependencies.some((dep) => dep.includes('next'))) return 'Next.js';
+    }
+
+    if (language === 'python') {
+      if (dependencies.some((dep) => dep.includes('django'))) return 'Django';
+      if (dependencies.some((dep) => dep.includes('flask'))) return 'Flask';
+      if (dependencies.some((dep) => dep.includes('fastapi'))) return 'FastAPI';
+      if (dependencies.some((dep) => dep.includes('pytorch'))) return 'PyTorch';
+      if (dependencies.some((dep) => dep.includes('tensorflow'))) return 'TensorFlow';
+      if (dependencies.some((dep) => dep.includes('numpy'))) return 'NumPy/SciPy';
+    }
+
+    if (['cpp', 'c', 'cuda'].includes(language)) {
+      if (dependencies.some((dep) => dep.includes('cuda'))) return 'CUDA';
+      if (dependencies.some((dep) => dep.includes('opencv'))) return 'OpenCV';
+      if (dependencies.some((dep) => dep.includes('boost'))) return 'Boost';
+      if (dependencies.some((dep) => dep.includes('qt'))) return 'Qt';
+      if (dependencies.some((dep) => dep.includes('eigen'))) return 'Eigen';
+    }
+
+    if (language === 'java') {
+      if (dependencies.some((dep) => dep.includes('spring'))) return 'Spring';
+      if (dependencies.some((dep) => dep.includes('android'))) return 'Android';
+      if (dependencies.some((dep) => dep.includes('junit'))) return 'JUnit';
+    }
+
     return undefined;
   }
 
-  private inferPurpose(dependencies: string[], exports: string[]): string {
-    if (dependencies.some((dep) => dep.includes('test') || dep.includes('jest'))) {
+  private inferPurpose(dependencies: string[], exports: string[], language: string): string {
+    // Language-specific purpose inference
+    if (
+      dependencies.some(
+        (dep) =>
+          dep.includes('test') ||
+          dep.includes('jest') ||
+          dep.includes('unittest') ||
+          dep.includes('gtest')
+      )
+    ) {
       return 'Testing utilities and test suites';
     }
-    if (
-      exports.some(
-        (exp) => exp.toLowerCase().includes('api') || exp.toLowerCase().includes('server')
-      )
-    ) {
-      return 'API server and backend services';
+
+    if (['cpp', 'c', 'cuda'].includes(language)) {
+      if (dependencies.some((dep) => dep.includes('cuda'))) {
+        return 'GPU computing and parallel processing with CUDA';
+      }
+      if (dependencies.some((dep) => dep.includes('opencv'))) {
+        return 'Computer vision and image processing';
+      }
+      return 'System-level programming and performance-critical applications';
     }
-    if (
-      exports.some(
-        (exp) => exp.toLowerCase().includes('component') || exp.toLowerCase().includes('ui')
-      )
-    ) {
-      return 'User interface components and frontend logic';
+
+    if (language === 'python') {
+      if (dependencies.some((dep) => dep.includes('django') || dep.includes('flask'))) {
+        return 'Web application backend services';
+      }
+      if (dependencies.some((dep) => dep.includes('numpy') || dep.includes('pandas'))) {
+        return 'Data analysis and scientific computing';
+      }
+      if (dependencies.some((dep) => dep.includes('tensorflow') || dep.includes('pytorch'))) {
+        return 'Machine learning and artificial intelligence';
+      }
     }
+
+    if (['typescript', 'javascript'].includes(language)) {
+      if (
+        exports.some(
+          (exp) => exp.toLowerCase().includes('api') || exp.toLowerCase().includes('server')
+        )
+      ) {
+        return 'API server and backend services';
+      }
+      if (
+        exports.some(
+          (exp) => exp.toLowerCase().includes('component') || exp.toLowerCase().includes('ui')
+        )
+      ) {
+        return 'User interface components and frontend logic';
+      }
+    }
+
     if (
       exports.some(
         (exp) => exp.toLowerCase().includes('util') || exp.toLowerCase().includes('helper')
@@ -454,6 +802,7 @@ export class LLMAnnotationAnalyzer {
     ) {
       return 'Utility functions and helper modules';
     }
+
     return 'General application logic and business rules';
   }
 
@@ -758,6 +1107,28 @@ ${annotation.llmPrompts.optimization}
         documentation: '',
       },
     };
+  }
+
+  private getValidationMethod(language: string): string {
+    switch (language) {
+      case 'typescript':
+        return 'TypeScript compilation check';
+      case 'javascript':
+        return 'ESLint and runtime testing';
+      case 'python':
+        return 'Python syntax check and unit tests';
+      case 'cpp':
+      case 'c':
+        return 'Compilation with gcc/clang and unit tests';
+      case 'cuda':
+        return 'NVCC compilation and CUDA runtime tests';
+      case 'java':
+        return 'javac compilation and JUnit tests';
+      case 'rust':
+        return 'Rust compiler check and cargo test';
+      default:
+        return 'Language-specific compilation and testing';
+    }
   }
 }
 

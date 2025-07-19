@@ -7,6 +7,19 @@ import { analysisActor } from '../../src/actors/analysis.js';
 import { transformationActor } from '../../src/actors/transformation.js';
 import type { AstPattern } from '../../src/types.js';
 
+// Type definitions for scalability test data structures
+// biome-ignore lint/correctness/noUnusedVariables: Used in generated code template strings
+interface ScalabilityTestItem {
+  [key: string]: unknown;
+}
+
+// biome-ignore lint/correctness/noUnusedVariables: Used in generated code template strings
+interface ProcessedResult {
+  result: unknown;
+  processed: boolean;
+  timestamp: number;
+}
+
 describe('Scalability Tests', () => {
   let testDir: string;
   let originalCwd: string;
@@ -40,14 +53,14 @@ describe('Scalability Tests', () => {
       let code = `
         // Large codebase file ${i}
         export class LargeModule${i} {
-          private data: any[] = [];
-          private cache: Map<string, any> = new Map();
+          private data: ScalabilityTestItem[] = [];
+          private cache: Map<string, ScalabilityTestItem> = new Map();
       `;
 
       // Add many methods with patterns to transform
       for (let j = 0; j < methodsPerFile; j++) {
         code += `
-          method${j}(input: any): any {
+          method${j}(input: ScalabilityTestItem): ProcessedResult {
             var result = input;
             var processed = false;
             var temp = null;
@@ -140,7 +153,8 @@ describe('Scalability Tests', () => {
       );
 
       const analysisTime = Date.now() - startTime;
-      const analysis = analysisResult.output!;
+      const analysis = analysisResult.output;
+      if (!analysis) throw new Error('Analysis result has no output');
 
       expect(analysis.complexity).toBeDefined();
       expect(analysisTime).toBeLessThan(15000); // Should complete within 15 seconds
@@ -163,6 +177,7 @@ describe('Scalability Tests', () => {
         mode: 'template' as const,
         files,
         patterns: scalabilityPatterns,
+        dryRun: false,
       };
 
       const transformationActorInstance = createActor(transformationActor, {
@@ -177,7 +192,8 @@ describe('Scalability Tests', () => {
       );
 
       const transformationTime = Date.now() - startTime;
-      const transformation = transformationResult.output!;
+      const transformation = transformationResult.output;
+      if (!transformation) throw new Error('Transformation result has no output');
 
       expect(transformation).toBeDefined();
       expect(transformationTime).toBeLessThan(30000); // Should complete within 30 seconds
@@ -210,7 +226,8 @@ describe('Scalability Tests', () => {
       );
 
       const analysisTime = Date.now() - startTime;
-      const analysis = analysisResult.output!;
+      const analysis = analysisResult.output;
+      if (!analysis) throw new Error('Analysis result has no output');
 
       expect(analysis.complexity).toBeDefined();
       expect(analysisTime).toBeLessThan(20000); // Should complete within 20 seconds
@@ -231,6 +248,7 @@ describe('Scalability Tests', () => {
         mode: 'template' as const,
         files,
         patterns: scalabilityPatterns,
+        dryRun: false,
       };
 
       const transformationActorInstance = createActor(transformationActor, {
@@ -245,7 +263,8 @@ describe('Scalability Tests', () => {
       );
 
       const transformationTime = Date.now() - startTime;
-      const transformation = transformationResult.output!;
+      const transformation = transformationResult.output;
+      if (!transformation) throw new Error('Transformation result has no output');
 
       expect(transformation).toBeDefined();
       expect(transformationTime).toBeLessThan(45000); // Should complete within 45 seconds
@@ -277,7 +296,8 @@ describe('Scalability Tests', () => {
       );
 
       const analysisTime = Date.now() - startTime;
-      const analysis = analysisResult.output!;
+      const analysis = analysisResult.output;
+      if (!analysis) throw new Error('Analysis result has no output');
 
       expect(analysis.complexity).toBeDefined();
       expect(analysisTime).toBeLessThan(15000); // Should complete within 15 seconds
@@ -306,6 +326,7 @@ describe('Scalability Tests', () => {
         mode: 'template' as const,
         files,
         patterns: scalabilityPatterns,
+        dryRun: false,
       };
 
       const transformationActorInstance = createActor(transformationActor, {
@@ -324,7 +345,8 @@ describe('Scalability Tests', () => {
       const totalMemoryDelta = finalMemory.heapUsed - initialMemory.heapUsed;
 
       const duration = Date.now() - startTime;
-      const transformation = transformationResult.output!;
+      const transformation = transformationResult.output;
+      if (!transformation) throw new Error('Transformation result has no output');
 
       expect(transformation).toBeDefined();
       expect(totalMemoryDelta).toBeLessThan(200 * 1024 * 1024); // Should use less than 200MB total
@@ -386,6 +408,7 @@ describe('Scalability Tests', () => {
         mode: 'template' as const,
         files,
         patterns: manyPatterns,
+        dryRun: false,
       };
 
       const transformationActorInstance = createActor(transformationActor, {
@@ -400,7 +423,8 @@ describe('Scalability Tests', () => {
       );
 
       const transformationTime = Date.now() - startTime;
-      const transformation = transformationResult.output!;
+      const transformation = transformationResult.output;
+      if (!transformation) throw new Error('Transformation result has no output');
 
       expect(transformation).toBeDefined();
       expect(transformationTime).toBeLessThan(25000); // Should complete within 25 seconds
@@ -441,7 +465,8 @@ describe('Scalability Tests', () => {
       );
 
       const analysisTime = Date.now() - startTime;
-      const analysis = analysisResult.output!;
+      const analysis = analysisResult.output;
+      if (!analysis) throw new Error('Analysis result has no output');
 
       // Now run transformation
       const transformationStart = Date.now();
@@ -450,6 +475,7 @@ describe('Scalability Tests', () => {
         mode: 'template' as const,
         files,
         patterns: scalabilityPatterns,
+        dryRun: false,
       };
 
       const transformationActorInstance = createActor(transformationActor, {
@@ -468,7 +494,8 @@ describe('Scalability Tests', () => {
       const finalMemory = process.memoryUsage();
       const memoryDelta = finalMemory.heapUsed - initialMemory.heapUsed;
 
-      const transformation = transformationResult.output!;
+      const transformation = transformationResult.output;
+      if (!transformation) throw new Error('Transformation result has no output');
 
       expect(analysis.complexity).toBeDefined();
       expect(transformation).toBeDefined();

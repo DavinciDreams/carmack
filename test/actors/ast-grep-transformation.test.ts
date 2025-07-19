@@ -4,17 +4,58 @@ import { join } from 'node:path';
 import { createActor } from 'xstate';
 import {
   type AstGrepPattern,
+  type AstGrepTransformationRequest,
   astGrepTransformationActor,
   BUILTIN_AST_PATTERNS,
 } from '../../src/actors/ast-grep-transformation';
 
-// Helper function to invoke the actor
-async function invokeAstGrepActor(input: any) {
-  const actor = createActor(astGrepTransformationActor, { input });
+// Result type for AST-grep transformation
+interface AstGrepTransformationResult {
+  filesModified: string[];
+  transformationsApplied: number;
+  appliedPatterns: Array<{ file: string; pattern: string; count: number }>;
+  mode: 'ast';
+}
+
+// Helper function to invoke the actor with proper options
+async function invokeAstGrepActor(input: {
+  targetFiles: string[];
+  patterns: AstGrepPattern[];
+  options?: Partial<{
+    dryRun: boolean;
+    maxComplexity: number;
+    enableBatching: boolean;
+    skipConflicts: boolean;
+    preserveFormatting: boolean;
+    maxMatchesPerPattern: number;
+  }>;
+}): Promise<AstGrepTransformationResult> {
+  // Create a complete input with defaults
+  const completeInput: AstGrepTransformationRequest = {
+    targetFiles: input.targetFiles,
+    patterns: input.patterns,
+    options: {
+      dryRun: input.options?.dryRun ?? false,
+      maxComplexity: input.options?.maxComplexity ?? 7,
+      enableBatching: input.options?.enableBatching ?? true,
+      skipConflicts: input.options?.skipConflicts ?? true,
+      preserveFormatting: input.options?.preserveFormatting ?? true,
+      maxMatchesPerPattern: input.options?.maxMatchesPerPattern ?? 1000,
+    },
+  };
+
+  const actor = createActor(astGrepTransformationActor, { input: completeInput });
   actor.start();
   return new Promise((resolve, reject) => {
     actor.subscribe({
-      complete: () => resolve(actor.getSnapshot().output),
+      complete: () => {
+        const output = actor.getSnapshot().output;
+        if (output) {
+          resolve(output);
+        } else {
+          reject(new Error('No output from actor'));
+        }
+      },
       error: reject,
     });
   });
@@ -50,13 +91,14 @@ var globalVar = "global";
 
       await writeFile(testFile, content, 'utf-8');
 
-      const pattern = BUILTIN_AST_PATTERNS.find((p) => p.id === 'var-to-const-let-ast')!;
+      const pattern = BUILTIN_AST_PATTERNS.find((p) => p.id === 'var-to-const-let-ast');
+      if (!pattern) throw new Error('Pattern not found');
 
-      const result = (await invokeAstGrepActor({
+      const result = await invokeAstGrepActor({
         targetFiles: [testFile],
         patterns: [pattern],
         options: { dryRun: false },
-      })) as any;
+      });
 
       expect(result.filesModified).toContain(testFile);
       expect(result.transformationsApplied).toBeGreaterThan(0);
@@ -76,13 +118,14 @@ function multiply(x, y) { return x * y; }
 
       await writeFile(testFile, content, 'utf-8');
 
-      const pattern = BUILTIN_AST_PATTERNS.find((p) => p.id === 'function-to-arrow-ast')!;
+      const pattern = BUILTIN_AST_PATTERNS.find((p) => p.id === 'function-to-arrow-ast');
+      if (!pattern) throw new Error('Pattern not found');
 
-      const result = (await invokeAstGrepActor({
+      const result = await invokeAstGrepActor({
         targetFiles: [testFile],
         patterns: [pattern],
         options: { dryRun: false },
-      })) as any;
+      });
 
       expect(result.filesModified).toContain(testFile);
       expect(result.transformationsApplied).toBe(2);
@@ -102,13 +145,14 @@ const user = { name: name, age: age };
 
       await writeFile(testFile, content, 'utf-8');
 
-      const pattern = BUILTIN_AST_PATTERNS.find((p) => p.id === 'object-property-shorthand-ast')!;
+      const pattern = BUILTIN_AST_PATTERNS.find((p) => p.id === 'object-property-shorthand-ast');
+      if (!pattern) throw new Error('Pattern not found');
 
-      const result = (await invokeAstGrepActor({
+      const result = await invokeAstGrepActor({
         targetFiles: [testFile],
         patterns: [pattern],
         options: { dryRun: false },
-      })) as any;
+      });
 
       expect(result.filesModified).toContain(testFile);
       expect(result.transformationsApplied).toBe(2);
@@ -129,13 +173,14 @@ const hasValue = items.indexOf(3) !== -1;
 
       await writeFile(testFile, content, 'utf-8');
 
-      const pattern = BUILTIN_AST_PATTERNS.find((p) => p.id === 'array-includes-ast')!;
+      const pattern = BUILTIN_AST_PATTERNS.find((p) => p.id === 'array-includes-ast');
+      if (!pattern) throw new Error('Pattern not found');
 
-      const result = (await invokeAstGrepActor({
+      const result = await invokeAstGrepActor({
         targetFiles: [testFile],
         patterns: [pattern],
         options: { dryRun: false },
-      })) as any;
+      });
 
       expect(result.filesModified).toContain(testFile);
       expect(result.transformationsApplied).toBe(2);
@@ -173,11 +218,11 @@ console.log("another debug");
         category: 'debugging',
       };
 
-      const result = (await invokeAstGrepActor({
+      const result = await invokeAstGrepActor({
         targetFiles: [testFile],
         patterns: [customPattern],
         options: { dryRun: false },
-      })) as any;
+      });
 
       expect(result.filesModified).toContain(testFile);
       expect(result.transformationsApplied).toBe(2);
@@ -211,10 +256,12 @@ var globalVar = "global";
           conditions: [
             {
               when: 'scope == "function"',
+              // biome-ignore lint/suspicious/noThenProperty: AST-grep uses 'then' for replacement templates
               then: 'let $VAR = $VALUE',
             },
             {
               when: 'scope == "global"',
+              // biome-ignore lint/suspicious/noThenProperty: AST-grep uses 'then' for replacement templates
               then: 'const $VAR = $VALUE',
             },
           ],
@@ -225,11 +272,11 @@ var globalVar = "global";
         category: 'modernization',
       };
 
-      const result = (await invokeAstGrepActor({
+      const result = await invokeAstGrepActor({
         targetFiles: [testFile],
         patterns: [conditionalPattern],
         options: { dryRun: false },
-      })) as any;
+      });
 
       expect(result.filesModified).toContain(testFile);
       expect(result.transformationsApplied).toBe(2);
@@ -254,19 +301,20 @@ function func${i}() { return ${i}; }
         files.push(testFile);
       }
 
-      const patterns = [
-        BUILTIN_AST_PATTERNS.find((p) => p.id === 'var-to-const-let-ast')!,
-        BUILTIN_AST_PATTERNS.find((p) => p.id === 'function-to-arrow-ast')!,
-      ];
+      const varPattern = BUILTIN_AST_PATTERNS.find((p) => p.id === 'var-to-const-let-ast');
+      const functionPattern = BUILTIN_AST_PATTERNS.find((p) => p.id === 'function-to-arrow-ast');
+      if (!varPattern || !functionPattern) throw new Error('Patterns not found');
 
-      const result = (await invokeAstGrepActor({
+      const patterns = [varPattern, functionPattern];
+
+      const result = await invokeAstGrepActor({
         targetFiles: files,
         patterns,
         options: {
           dryRun: false,
           enableBatching: true,
         },
-      })) as any;
+      });
 
       expect(result.filesModified).toHaveLength(5);
       expect(result.transformationsApplied).toBe(10); // 2 patterns × 5 files
@@ -325,11 +373,11 @@ var test = "value";
         },
       };
 
-      const result = (await invokeAstGrepActor({
+      const result = await invokeAstGrepActor({
         targetFiles: [testFile],
         patterns: [lowPriorityPattern, highPriorityPattern],
         options: { dryRun: false },
-      })) as any;
+      });
 
       expect(result.transformationsApplied).toBe(1);
 
@@ -348,13 +396,14 @@ this is not valid typescript syntax {{{
 
       await writeFile(testFile, content, 'utf-8');
 
-      const pattern = BUILTIN_AST_PATTERNS.find((p) => p.id === 'var-to-const-let-ast')!;
+      const pattern = BUILTIN_AST_PATTERNS.find((p) => p.id === 'var-to-const-let-ast');
+      if (!pattern) throw new Error('Pattern not found');
 
-      const result = (await invokeAstGrepActor({
+      const result = await invokeAstGrepActor({
         targetFiles: [testFile],
         patterns: [pattern],
         options: { dryRun: false },
-      })) as any;
+      });
 
       expect(result.filesModified).toHaveLength(0);
       expect(result.transformationsApplied).toBe(0);
@@ -363,13 +412,14 @@ this is not valid typescript syntax {{{
     it('should handle non-existent files gracefully', async () => {
       const nonExistentFile = join(testDir, 'does-not-exist.ts');
 
-      const pattern = BUILTIN_AST_PATTERNS.find((p) => p.id === 'var-to-const-let-ast')!;
+      const pattern = BUILTIN_AST_PATTERNS.find((p) => p.id === 'var-to-const-let-ast');
+      if (!pattern) throw new Error('Pattern not found');
 
-      const result = (await invokeAstGrepActor({
+      const result = await invokeAstGrepActor({
         targetFiles: [nonExistentFile],
         patterns: [pattern],
         options: { dryRun: false },
-      })) as any;
+      });
 
       expect(result.filesModified).toHaveLength(0);
       expect(result.transformationsApplied).toBe(0);
@@ -398,14 +448,14 @@ var test = "value";
         category: 'test',
       };
 
-      const result = (await invokeAstGrepActor({
+      const result = await invokeAstGrepActor({
         targetFiles: [testFile],
         patterns: [highComplexityPattern],
         options: {
           dryRun: false,
           maxComplexity: 7,
         },
-      })) as any;
+      });
 
       expect(result.transformationsApplied).toBe(0);
 
@@ -423,13 +473,14 @@ var test = "value";
 
       await writeFile(testFile, originalContent, 'utf-8');
 
-      const pattern = BUILTIN_AST_PATTERNS.find((p) => p.id === 'var-to-const-let-ast')!;
+      const pattern = BUILTIN_AST_PATTERNS.find((p) => p.id === 'var-to-const-let-ast');
+      if (!pattern) throw new Error('Pattern not found');
 
-      const result = (await invokeAstGrepActor({
+      const result = await invokeAstGrepActor({
         targetFiles: [testFile],
         patterns: [pattern],
         options: { dryRun: true },
-      })) as any;
+      });
 
       expect(result.filesModified).toHaveLength(0);
       expect(result.transformationsApplied).toBeGreaterThan(0);
@@ -449,7 +500,7 @@ var test = "value";
         // Missing required fields
         id: 'invalid',
         pattern: { rule: { pattern: 'var $VAR = $VALUE' } },
-      } as any;
+      } as unknown as AstGrepPattern;
 
       await expect(
         invokeAstGrepActor({
@@ -468,8 +519,11 @@ var test = "value";
 
       await writeFile(testFile, content, 'utf-8');
 
+      const basePattern = BUILTIN_AST_PATTERNS.find((p) => p.id === 'var-to-const-let-ast');
+      if (!basePattern) throw new Error('Pattern not found');
+
       const pattern: AstGrepPattern = {
-        ...BUILTIN_AST_PATTERNS.find((p) => p.id === 'var-to-const-let-ast')!,
+        ...basePattern,
         performance: {
           priority: 5,
           batchable: true,
@@ -477,11 +531,11 @@ var test = "value";
         },
       };
 
-      const result = (await invokeAstGrepActor({
+      const result = await invokeAstGrepActor({
         targetFiles: [testFile],
         patterns: [pattern],
         options: { dryRun: false },
-      })) as any;
+      });
 
       expect(result.transformationsApplied).toBe(3); // Limited by maxMatches
     });
@@ -523,14 +577,14 @@ var test = "value";
         },
       };
 
-      const result = (await invokeAstGrepActor({
+      const result = await invokeAstGrepActor({
         targetFiles: [testFile],
         patterns: [pattern1, pattern2],
         options: {
           dryRun: false,
           skipConflicts: true,
         },
-      })) as any;
+      });
 
       expect(result.transformationsApplied).toBe(1); // Only one pattern applied
 

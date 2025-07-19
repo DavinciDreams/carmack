@@ -57,7 +57,42 @@ export class LLMAnnotationSystem {
             }
           } else if (stats.isFile()) {
             const ext = extname(fullPath);
-            if (['.ts', '.js', '.tsx', '.jsx'].includes(ext)) {
+            if (
+              [
+                '.ts',
+                '.js',
+                '.tsx',
+                '.jsx',
+                '.py',
+                '.cpp',
+                '.c',
+                '.h',
+                '.hpp',
+                '.cu',
+                '.cuh',
+                '.java',
+                '.cs',
+                '.go',
+                '.rs',
+                '.rb',
+                '.php',
+                '.swift',
+                '.kt',
+                '.scala',
+                '.clj',
+                '.hs',
+                '.ml',
+                '.fs',
+                '.vb',
+                '.dart',
+                '.lua',
+                '.r',
+                '.sql',
+                '.sh',
+                '.bat',
+                '.ps1',
+              ].includes(ext)
+            ) {
               sourceFiles.push(fullPath);
             }
           }
@@ -72,7 +107,7 @@ export class LLMAnnotationSystem {
     const request: AnnotationRequest = {
       sourceFiles,
       targetDirectory: options.targetDirectory || './output/annotations',
-      includePatterns: options.includePatterns || ['**/*.ts', '**/*.js'],
+      includePatterns: options.includePatterns || ['**/*'],
       excludePatterns: options.excludePatterns || ['node_modules/**', '**/*.test.*', '**/*.spec.*'],
       analysisDepth: options.analysisDepth || 'detailed',
       focusAreas: options.focusAreas,

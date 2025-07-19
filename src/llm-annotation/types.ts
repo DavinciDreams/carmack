@@ -124,7 +124,7 @@ export type LLMAnnotation = z.infer<typeof LLMAnnotationSchema>;
 export const AnnotationRequestSchema = z.object({
   sourceFiles: z.array(z.string()),
   targetDirectory: z.string().optional(),
-  includePatterns: z.array(z.string()).default(['**/*.ts', '**/*.js']),
+  includePatterns: z.array(z.string()).default(['**/*']),
   excludePatterns: z.array(z.string()).default(['node_modules/**', '**/*.test.*']),
   analysisDepth: z.enum(['surface', 'detailed', 'comprehensive']).default('detailed'),
   focusAreas: z

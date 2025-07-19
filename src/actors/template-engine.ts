@@ -352,6 +352,7 @@ function findBasicTemplateMatches(content: string, pattern: TemplatePattern): Te
   const { regex, variableNames } = templateToRegex(pattern.pattern.template);
 
   let match: RegExpExecArray | null;
+  // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex iteration pattern
   while ((match = regex.exec(content)) !== null) {
     // Extract line number and context
     const beforeMatch = content.substring(0, match.index);
@@ -644,6 +645,7 @@ function findCallbackPatterns(content: string, pattern: TemplatePattern): Templa
   const callbackRegex = /(\w+)\s*\(\s*([^)]*?),?\s*function\s*\([^)]*\)\s*\{[^}]*\}\s*\)/g;
 
   let match: RegExpExecArray | null;
+  // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex iteration pattern
   while ((match = callbackRegex.exec(content)) !== null) {
     const [fullMatch, functionName, params] = match;
     if (!functionName || !params) continue;
@@ -685,6 +687,7 @@ function findFunctionModernizationPatterns(
   const simpleFunctionRegex = /function\s+(\w+)\s*\(([^)]*)\)\s*\{\s*return\s+([^;]+);\s*\}/g;
 
   let match: RegExpExecArray | null;
+  // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex iteration pattern
   while ((match = simpleFunctionRegex.exec(content)) !== null) {
     const [fullMatch, functionName, params, returnExpr] = match;
     if (!functionName || !params || !returnExpr) continue;
@@ -733,6 +736,7 @@ function findDestructuringOpportunities(
   }> = [];
 
   let match: RegExpExecArray | null;
+  // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex iteration pattern
   while ((match = propertyAccessRegex.exec(content)) !== null) {
     const [, varName, objName, propName] = match;
     if (!varName || !objName || !propName) continue;
@@ -806,6 +810,7 @@ function findStringConcatenationPatterns(
   const concatenationRegex = /(['"`])([^'"`]*?)\1\s*\+\s*(\w+)\s*\+\s*(['"`])([^'"`]*?)\4/g;
 
   let match: RegExpExecArray | null;
+  // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex iteration pattern
   while ((match = concatenationRegex.exec(content)) !== null) {
     const [fullMatch, , prefix, variable, , suffix] = match;
     if (!prefix || !variable || !suffix) continue;
