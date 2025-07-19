@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
-import { createActor, fromPromise, type ActorLogic } from 'xstate';
+import { type ActorLogic, createActor, fromPromise } from 'xstate';
 import { z } from 'zod';
 import { astGrepTransformationActor } from '../actors/ast-grep-transformation.ts';
 import { feedbackLoopActor } from '../actors/feedback-loop.ts';
@@ -87,9 +87,11 @@ interface PipelineState {
 }
 
 // Helper function to invoke actors with proper async handling
-// Using any for actorLogic due to complex XState generic constraints in production pipeline
-// biome-ignore lint/suspicious/noExplicitAny: XState actor logic has complex generics that are not easily typed
-async function invokeActor<T>(actorLogic: ActorLogic<any, any, any, any, any>, input: unknown): Promise<T> {
+async function invokeActor<T>(
+  // biome-ignore lint/suspicious/noExplicitAny: XState ActorLogic has complex generics that require any for production compatibility
+  actorLogic: ActorLogic<any, any, any, any, any>,
+  input: unknown
+): Promise<T> {
   const actor = createActor(actorLogic, { input });
   actor.start();
 
@@ -441,7 +443,10 @@ export const productionPipelineActor = fromPromise(
 /**
  * Execute all pipeline stages in sequence
  */
-async function executePipelineStages(input: PipelineRequest, state: PipelineState): Promise<PipelineResult> {
+async function executePipelineStages(
+  input: PipelineRequest,
+  state: PipelineState
+): Promise<PipelineResult> {
   const stages = [
     { name: 'preprocessing', fn: preprocessingStage },
     { name: 'pattern-discovery', fn: patternDiscoveryStage },
@@ -1052,7 +1057,10 @@ function calculateQualityImprovement(state: PipelineState): number {
   return Math.max(-1, Math.min(1, errorReduction + testSuccess));
 }
 
-async function generateTransformationReport(input: PipelineRequest, state: PipelineState): Promise<void> {
+async function generateTransformationReport(
+  input: PipelineRequest,
+  state: PipelineState
+): Promise<void> {
   const report = {
     transformationId: state.transformationId,
     timestamp: new Date().toISOString(),
@@ -1142,7 +1150,7 @@ function generateRecommendations(state: PipelineState): string[] {
 /**
  * Get default template patterns for basic transformations
  */
-async function getDefaultTemplatePatterns(): Promise<any[]> {
+async function getDefaultTemplatePatterns(): Promise<unknown[]> {
   try {
     // Use basic patterns.json for template transformations since enhanced-templates.json
     // has a different format that causes regex parsing issues
@@ -1192,7 +1200,7 @@ async function getDefaultTemplatePatterns(): Promise<any[]> {
 /**
  * Get default AST patterns for basic transformations
  */
-async function getDefaultASTPatterns(): Promise<any[]> {
+async function getDefaultASTPatterns(): Promise<unknown[]> {
   try {
     const patternsContent = await readFile(join(process.cwd(), 'patterns.json'), 'utf-8');
     const patternsData = JSON.parse(patternsContent);

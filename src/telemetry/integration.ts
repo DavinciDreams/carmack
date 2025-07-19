@@ -143,7 +143,7 @@ export class MemoryTracker {
     for (let i = 1; i < this.timeline.length; i++) {
       const prev = this.timeline[i - 1];
       const curr = this.timeline[i];
-      
+
       if (!prev || !curr) continue;
 
       /** Detect significant heap reduction (likely GC) */

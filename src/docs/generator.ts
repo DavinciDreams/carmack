@@ -12,6 +12,59 @@ import type {
 } from './types.js';
 import { validateDocumentationRequest, validateDocumentationResult } from './types.js';
 
+// JSON Pattern structure interfaces
+interface JsonPatternTestCase {
+  input: string;
+  expected: string;
+  description: string;
+}
+
+interface JsonPatternPerformance {
+  priority: number;
+  batchable: boolean;
+  conflicts?: string[];
+}
+
+interface JsonPatternStructure {
+  id: string;
+  description: string;
+  category: string;
+  complexity: number;
+  riskLevel: 'low' | 'medium' | 'high';
+  pattern:
+    | {
+        template?: string;
+      }
+    | string;
+  replacement:
+    | {
+        template?: string;
+      }
+    | string;
+  testCases?: JsonPatternTestCase[];
+  performance?: JsonPatternPerformance;
+}
+
+interface JsonPatternsFile {
+  patterns: JsonPatternStructure[];
+}
+
+// Usage example structure
+interface UsageExample {
+  filePath: string;
+  functionName: string;
+  usage: string;
+  context: string;
+}
+
+// Change analysis structure
+interface ChangeAnalysis {
+  filePath: string;
+  changeType: 'added' | 'modified' | 'deleted';
+  description: string;
+  timestamp: string;
+}
+
 // Additional Zod schemas for generator-specific types
 export const GeneratorMetadataSchema = z.object({
   generatedAt: z.string(),
@@ -592,21 +645,23 @@ export class DocumentationGenerator {
     try {
       const { readFile } = await import('node:fs/promises');
       const content = await readFile('./src/patterns/enhanced-templates.json', 'utf-8');
-      const data = JSON.parse(content);
+      const data = JSON.parse(content) as JsonPatternsFile;
 
-      // biome-ignore lint/suspicious/noExplicitAny: Dynamic JSON pattern structure
-      return data.patterns.map((pattern: any) => ({
+      return data.patterns.map((pattern: JsonPatternStructure) => ({
         id: pattern.id,
         name: pattern.id.replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
         description: pattern.description,
         category: pattern.category,
         complexity: pattern.complexity,
         riskLevel: pattern.riskLevel,
-        pattern: pattern.pattern.template || pattern.pattern,
-        replacement: pattern.replacement.template || pattern.replacement,
+        pattern:
+          typeof pattern.pattern === 'object' ? pattern.pattern.template || '' : pattern.pattern,
+        replacement:
+          typeof pattern.replacement === 'object'
+            ? pattern.replacement.template || ''
+            : pattern.replacement,
         examples:
-          // biome-ignore lint/suspicious/noExplicitAny: Dynamic test case structure
-          pattern.testCases?.map((test: any) => ({
+          pattern.testCases?.map((test: JsonPatternTestCase) => ({
             before: test.input,
             after: test.expected,
             description: test.description,
@@ -685,33 +740,27 @@ export class DocumentationGenerator {
     return '<html><body><h1>Pattern Documentation</h1><p>HTML format not yet implemented</p></body></html>';
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: Placeholder return type for future implementation
-  private async extractUsageExamples(_sourceFiles: string[]): Promise<any[]> {
+  private async extractUsageExamples(_sourceFiles: string[]): Promise<UsageExample[]> {
     return []; // Placeholder
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: Placeholder parameter type for future implementation
-  private async generateUsageMarkdown(_examples: any[]): Promise<string> {
+  private async generateUsageMarkdown(_examples: UsageExample[]): Promise<string> {
     return '# Usage Documentation\n\nUsage documentation not yet implemented.';
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: Placeholder parameter type for future implementation
-  private async generateUsageHTML(_examples: any[]): Promise<string> {
+  private async generateUsageHTML(_examples: UsageExample[]): Promise<string> {
     return '<html><body><h1>Usage Documentation</h1><p>HTML format not yet implemented</p></body></html>';
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: Placeholder return type for future implementation
-  private async analyzeChanges(_sourceFiles: string[]): Promise<any[]> {
+  private async analyzeChanges(_sourceFiles: string[]): Promise<ChangeAnalysis[]> {
     return []; // Placeholder
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: Placeholder parameter type for future implementation
-  private async generateChangelogMarkdown(_changes: any[]): Promise<string> {
+  private async generateChangelogMarkdown(_changes: ChangeAnalysis[]): Promise<string> {
     return '# Changelog\n\nChangelog generation not yet implemented.';
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: Placeholder parameter type for future implementation
-  private async generateChangelogHTML(_changes: any[]): Promise<string> {
+  private async generateChangelogHTML(_changes: ChangeAnalysis[]): Promise<string> {
     return '<html><body><h1>Changelog</h1><p>HTML format not yet implemented</p></body></html>';
   }
 }

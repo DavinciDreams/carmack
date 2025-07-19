@@ -348,6 +348,7 @@ describe('Dafny Actor', () => {
       };
 
       try {
+        // biome-ignore lint/suspicious/noExplicitAny: Testing invalid input requires any cast
         const actor = createActor(dafnyActor, { input: invalidInput as any });
         actor.start();
 
@@ -366,6 +367,7 @@ describe('Dafny Actor', () => {
       };
 
       try {
+        // biome-ignore lint/suspicious/noExplicitAny: Testing incomplete input requires any cast
         const actor = createActor(dafnyActor, { input: incompleteInput as any });
         actor.start();
 
