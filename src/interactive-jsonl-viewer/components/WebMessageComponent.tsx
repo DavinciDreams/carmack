@@ -1,15 +1,16 @@
-import React, { useCallback, useMemo } from 'react';
-import type { MessageItemProps } from '../utils/types';
+import type React from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   extractPlainText,
+  formatMessageContent,
+  formatTaskInput,
   formatTimestamp,
   formatToolResult,
+  formatUsageStats,
   getRoleColor,
   getRoleEmoji,
-  formatMessageContent,
-  formatUsageStats,
-  formatTaskInput,
 } from '../utils/formatting';
+import type { MessageItemProps } from '../utils/types';
 import './WebMessageComponent.css';
 
 interface WebMessageComponentProps extends MessageItemProps {
@@ -54,31 +55,37 @@ export const WebMessageComponent: React.FC<WebMessageComponentProps> = ({
     }
   }, [onToggleExpand, message.uuid, onDoubleClick]);
 
-  const handleExpandToggle = useCallback((event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    onToggleExpand(message.uuid);
-  }, [onToggleExpand, message.uuid]);
+  const handleExpandToggle = useCallback(
+    (event: React.MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      onToggleExpand(message.uuid);
+    },
+    [onToggleExpand, message.uuid]
+  );
 
   // Highlight search matches in text
-  const highlightSearchText = useCallback((text: string) => {
-    if (!searchQuery || !text) return text;
+  const highlightSearchText = useCallback(
+    (text: string) => {
+      if (!searchQuery || !text) return text;
 
-    const escapedQuery = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(`(${escapedQuery})`, 'gi');
-    const parts = text.split(regex);
+      const escapedQuery = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`(${escapedQuery})`, 'gi');
+      const parts = text.split(regex);
 
-    return parts.map((part, partIndex) => {
-      const isMatch = part.toLowerCase() === searchQuery.toLowerCase();
-      return isMatch ? (
-        <mark key={`highlight-${partIndex}`} className="search-highlight">
-          {part}
-        </mark>
-      ) : (
-        part
-      );
-    });
-  }, [searchQuery]);
+      return parts.map((part, partIndex) => {
+        const isMatch = part.toLowerCase() === searchQuery.toLowerCase();
+        return isMatch ? (
+          <mark key={`highlight-${partIndex}`} className="search-highlight">
+            {part}
+          </mark>
+        ) : (
+          part
+        );
+      });
+    },
+    [searchQuery]
+  );
 
   // Memoized content processing
   const contentPreview = useMemo(() => {
@@ -89,7 +96,7 @@ export const WebMessageComponent: React.FC<WebMessageComponentProps> = ({
     const toolCount = message.message?.tool_calls?.length || 0;
     const hasTools = toolCount > 0 ? ` (${toolCount} tools)` : '';
     const hasResult = message.toolUseResult ? ' [result]' : '';
-    
+
     return `${preview}${preview.length > 60 ? '...' : ''}${hasTools}${hasResult}`;
   }, [hasContent, isExpanded, message]);
 
@@ -133,9 +140,7 @@ export const WebMessageComponent: React.FC<WebMessageComponentProps> = ({
 
         <div className="message-metadata">
           <span className="timestamp">{formatTimestamp(message.timestamp)}</span>
-          {message.isSidechain && (
-            <span className="sidechain-badge">SUBTASK</span>
-          )}
+          {message.isSidechain && <span className="sidechain-badge">SUBTASK</span>}
           {message.parentUuid && message.parentUuid !== 'null' && (
             <span className="parent-indicator">↳</span>
           )}
@@ -169,9 +174,7 @@ export const WebMessageComponent: React.FC<WebMessageComponentProps> = ({
                       <span className="tool-name">{highlightSearchText(call.name)}</span>
                     </div>
                     {call.name === 'Task' && call.input ? (
-                      <div className="tool-input">
-                        {formatTaskInput(call.input)}
-                      </div>
+                      <div className="tool-input">{formatTaskInput(call.input)}</div>
                     ) : call.input && Object.keys(call.input).length > 0 ? (
                       <div className="tool-input">
                         {JSON.stringify(call.input).length > 80
@@ -192,18 +195,14 @@ export const WebMessageComponent: React.FC<WebMessageComponentProps> = ({
                 <span className="result-icon">📊</span>
                 <span className="section-title">Result:</span>
               </div>
-              <div className="tool-result-content">
-                {formatToolResult(message.toolUseResult)}
-              </div>
+              <div className="tool-result-content">{formatToolResult(message.toolUseResult)}</div>
             </div>
           )}
 
           {/* Usage Stats for Assistant Messages */}
           {message.message?.usage && role === 'assistant' && (
             <div className="usage-stats-section">
-              <div className="usage-stats">
-                {formatUsageStats(message.message.usage)}
-              </div>
+              <div className="usage-stats">{formatUsageStats(message.message.usage)}</div>
             </div>
           )}
         </div>
@@ -211,9 +210,7 @@ export const WebMessageComponent: React.FC<WebMessageComponentProps> = ({
 
       {/* Collapsed Content Preview */}
       {hasContent && !isExpanded && contentPreview && (
-        <div className="content-preview">
-          {highlightSearchText(contentPreview)}
-        </div>
+        <div className="content-preview">{highlightSearchText(contentPreview)}</div>
       )}
     </div>
   );

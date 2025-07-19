@@ -28,7 +28,7 @@
   max-height: 80vh;
   overflow-y: auto;
   color: #e0e0e0;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
   font-size: 12px;
   transform: scale(0.9);
   transition: transform 0.3s ease;
@@ -305,24 +305,24 @@
     max-width: none;
     margin: 16px;
   }
-  
+
   .filter-dialog-header {
     padding: 12px;
   }
-  
+
   .filter-dialog-content {
     padding: 12px;
   }
-  
+
   .filter-dialog-actions {
     flex-direction: column;
     padding: 12px;
   }
-  
+
   .filter-option {
     padding: 8px;
   }
-  
+
   .filter-option-header {
     flex-direction: column;
     align-items: flex-start;
@@ -336,41 +336,41 @@
     background-color: #000;
     border-color: #666;
   }
-  
+
   .filter-dialog-header {
     background-color: #111;
     border-color: #666;
   }
-  
+
   .filter-option {
     background-color: #111;
     border-color: #666;
   }
-  
+
   .filter-option:hover {
     background-color: #222;
     border-color: #777;
   }
-  
+
   .filter-option.selected {
     background-color: rgba(0, 102, 204, 0.4);
     border-color: #66b3ff;
   }
-  
+
   .current-filter-info {
     background-color: #111;
   }
-  
+
   .filter-preview {
     background-color: rgba(81, 207, 102, 0.2);
     border-color: rgba(81, 207, 102, 0.4);
   }
-  
+
   .filter-dialog-actions {
     background-color: #111;
     border-color: #666;
   }
-  
+
   .filter-dialog-help {
     background-color: #0a0a0a;
   }

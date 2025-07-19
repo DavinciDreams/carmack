@@ -1,5 +1,5 @@
+import { Box, render, Text } from 'ink';
 import React, { useEffect } from 'react';
-import { render, Box, Text } from 'ink';
 import { useAppState, useAppStateKeyboardHandlers } from './useAppState';
 import { useKeyboardNavigation } from './useKeyboardNavigation';
 
@@ -60,10 +60,8 @@ function AppStateExample() {
       {/* Header with stats */}
       <Box borderStyle="single" paddingX={1}>
         <Text color="green">
-          Messages: {computed.stats.totalMessages} | 
-          Selected: {state.selectedIndex + 1} | 
-          Filter: {state.filterType} | 
-          Mode: {state.viewMode}
+          Messages: {computed.stats.totalMessages} | Selected: {state.selectedIndex + 1} | Filter:{' '}
+          {state.filterType} | Mode: {state.viewMode}
           {state.searchQuery && ` | Search: "${state.searchQuery}"`}
         </Text>
       </Box>
@@ -131,24 +129,24 @@ interface MessageItemProps {
   onSelect: () => void;
 }
 
-function MessageItem({ 
-  message, 
-  index, 
-  isSelected, 
-  isExpanded, 
-  onToggleExpand, 
-  onSelect 
+function MessageItem({
+  message,
+  index,
+  isSelected,
+  isExpanded,
+  onToggleExpand,
+  onSelect,
 }: MessageItemProps) {
   const roleColor = {
     user: 'blue',
     assistant: 'green',
-    unknown: 'gray'
+    unknown: 'gray',
   }[message.message?.role || 'unknown'] as const;
 
   return (
     <Box
-      borderStyle={isSelected ? "double" : "single"}
-      borderColor={isSelected ? "blue" : "gray"}
+      borderStyle={isSelected ? 'double' : 'single'}
+      borderColor={isSelected ? 'blue' : 'gray'}
       paddingX={1}
       marginY={0}
     >
@@ -158,18 +156,13 @@ function MessageItem({
           <Text color={roleColor}>
             {message.message?.role || 'unknown'} | {message.uuid.slice(0, 8)}...
           </Text>
-          <Text color="gray">
-            {new Date(message.timestamp).toLocaleTimeString()}
-          </Text>
+          <Text color="gray">{new Date(message.timestamp).toLocaleTimeString()}</Text>
         </Box>
 
         {/* Message content preview */}
         <Box marginTop={1}>
           <Text wrap="wrap">
-            {isExpanded ? 
-              getFullMessageContent(message) : 
-              getMessagePreview(message)
-            }
+            {isExpanded ? getFullMessageContent(message) : getMessagePreview(message)}
           </Text>
         </Box>
 
@@ -178,7 +171,7 @@ function MessageItem({
           <Box marginTop={1} flexDirection="column">
             {message.message?.tool_calls && (
               <Text color="yellow">
-                Tool calls: {message.message.tool_calls.map(t => t.name).join(', ')}
+                Tool calls: {message.message.tool_calls.map((t) => t.name).join(', ')}
               </Text>
             )}
             {message.message?.usage && (
@@ -186,12 +179,8 @@ function MessageItem({
                 Tokens: {message.message.usage.input_tokens + message.message.usage.output_tokens}
               </Text>
             )}
-            {message.isSidechain && (
-              <Text color="magenta">SIDECHAIN</Text>
-            )}
-            {message.isMeta && (
-              <Text color="magenta">META</Text>
-            )}
+            {message.isSidechain && <Text color="magenta">SIDECHAIN</Text>}
+            {message.isMeta && <Text color="magenta">META</Text>}
           </Box>
         )}
       </Box>
@@ -207,18 +196,18 @@ function getMessagePreview(message: any): string {
 
 function getFullMessageContent(message: any): string {
   if (!message.message?.content) return '[No content]';
-  
+
   if (typeof message.message.content === 'string') {
     return message.message.content;
   }
-  
+
   if (Array.isArray(message.message.content)) {
     return message.message.content
-      .filter(item => item.type === 'text' && item.text)
-      .map(item => item.text)
+      .filter((item) => item.type === 'text' && item.text)
+      .map((item) => item.text)
       .join(' ');
   }
-  
+
   return '[Complex content]';
 }
 
@@ -233,7 +222,7 @@ function AdvancedAppStateExample() {
     // This would require extending the hook to support custom filters
     // For now, we can use search as a workaround
     const matchingMessages = state.messages.filter(customFilterFn);
-    const uuids = matchingMessages.map(m => m.uuid);
+    const uuids = matchingMessages.map((m) => m.uuid);
     // Use search to simulate custom filtering
     actions.setSearchQuery(uuids[0] || '');
   };
@@ -241,21 +230,25 @@ function AdvancedAppStateExample() {
   // Example: Custom statistics
   const customStats = {
     ...computed.stats,
-    averageTokensPerMessage: computed.stats.totalMessages > 0 ? 
-      computed.stats.totalTokens / computed.stats.totalMessages : 0,
-    messagesWithErrors: state.messages.filter(m => 
-      m.message?.content && typeof m.message.content === 'string' && 
-      m.message.content.toLowerCase().includes('error')
-    ).length
+    averageTokensPerMessage:
+      computed.stats.totalMessages > 0
+        ? computed.stats.totalTokens / computed.stats.totalMessages
+        : 0,
+    messagesWithErrors: state.messages.filter(
+      (m) =>
+        m.message?.content &&
+        typeof m.message.content === 'string' &&
+        m.message.content.toLowerCase().includes('error')
+    ).length,
   };
 
   // Example: Batch operations
   const batchActions = {
     expandAllUserMessages: () => {
-      const userMessages = state.messages.filter(m => m.message?.role === 'user');
-      userMessages.forEach(m => actions.toggleExpansion(m.uuid));
+      const userMessages = state.messages.filter((m) => m.message?.role === 'user');
+      userMessages.forEach((m) => actions.toggleExpansion(m.uuid));
     },
-    
+
     collapseAllButSelected: () => {
       const selectedMessage = computed.selectedMessage;
       actions.collapseAll();
@@ -263,33 +256,33 @@ function AdvancedAppStateExample() {
         actions.toggleExpansion(selectedMessage.uuid);
       }
     },
-    
+
     jumpToNextError: () => {
       const currentIndex = state.selectedIndex;
       const filteredMessages = computed.filteredMessages;
-      
+
       for (let i = currentIndex + 1; i < filteredMessages.length; i++) {
         const message = filteredMessages[i];
-        if (message.message?.content && 
-            typeof message.message.content === 'string' && 
-            message.message.content.toLowerCase().includes('error')) {
+        if (
+          message.message?.content &&
+          typeof message.message.content === 'string' &&
+          message.message.content.toLowerCase().includes('error')
+        ) {
           actions.selectMessage(i);
           return;
         }
       }
-    }
+    },
   };
 
   return (
     <Box flexDirection="column">
       <Text color="cyan">Advanced App State Example</Text>
       <Text>Custom stats: {JSON.stringify(customStats, null, 2)}</Text>
-      
+
       {/* Custom controls */}
       <Box marginTop={1}>
-        <Text color="yellow">
-          Custom actions available - extend the hook for your needs
-        </Text>
+        <Text color="yellow">Custom actions available - extend the hook for your needs</Text>
       </Box>
     </Box>
   );
@@ -308,17 +301,17 @@ function PerformanceTestExample() {
       timestamp: new Date(Date.now() - i * 1000).toISOString(),
       message: {
         role: i % 2 === 0 ? 'user' : 'assistant',
-        content: `Test message ${i} with some content that is longer than usual to test performance`
-      }
+        content: `Test message ${i} with some content that is longer than usual to test performance`,
+      },
     }));
 
     // Measure performance
     const startTime = performance.now();
-    
+
     // This would normally be done through loadMessages
     // but for testing we can directly set state
     console.log('Performance test: Loading', testMessages.length, 'messages');
-    
+
     const endTime = performance.now();
     console.log('Performance test: Loaded in', endTime - startTime, 'ms');
   }, []);

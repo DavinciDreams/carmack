@@ -1,7 +1,7 @@
-import type { MessageData, ContentItem, Todo, ToolUseResult } from './types';
+import type { ContentItem, MessageData, Todo, ToolUseResult } from './types';
 
 // Maximum length for truncation
-let MAX_LEN: number = 1000;
+const MAX_LEN = 1000;
 
 // Truncate long strings
 export const truncate = (str: string, maxLen: number): string => {
@@ -49,7 +49,7 @@ export const formatTaskInput = (input: any): string => {
 
   // Format prompt (truncated but showing key parts)
   if (input.prompt) {
-    output += `      📝 Prompt:\n`;
+    output += '      📝 Prompt:\n';
 
     // Check for XML content in prompt
     if (input.prompt.includes('<') && input.prompt.includes('>')) {
@@ -165,10 +165,7 @@ export const highlightSearchTerm = (text: string, searchTerm: string): string =>
 };
 
 // Format message content for display
-export const formatMessageContent = (
-  content: ContentItem[] | string,
-  maxWidth: number = 100
-): string => {
+export const formatMessageContent = (content: ContentItem[] | string, maxWidth = 100): string => {
   if (typeof content === 'string') {
     const lines = content.split('\n');
     return lines
@@ -195,41 +192,40 @@ export const formatMessageContent = (
               item.text.includes('confidence_score'))
           ) {
             return formatXML(item.text);
-          } else {
-            const lines = item.text.split('\n');
-            return lines
-              .map((line) => {
-                if (line.trim()) {
-                  // Wrap long lines
-                  if (line.length > maxWidth) {
-                    const words = line.split(' ');
-                    let currentLine = '';
-                    let result = '';
-                    words.forEach((word) => {
-                      if ((currentLine + word).length > maxWidth) {
-                        if (currentLine) {
-                          result += currentLine.trim() + '\n';
-                          currentLine = '  ' + word + ' ';
-                        } else {
-                          result += word + '\n';
-                        }
+          }
+          const lines = item.text.split('\n');
+          return lines
+            .map((line) => {
+              if (line.trim()) {
+                // Wrap long lines
+                if (line.length > maxWidth) {
+                  const words = line.split(' ');
+                  let currentLine = '';
+                  let result = '';
+                  words.forEach((word) => {
+                    if ((currentLine + word).length > maxWidth) {
+                      if (currentLine) {
+                        result += currentLine.trim() + '\n';
+                        currentLine = '  ' + word + ' ';
                       } else {
-                        currentLine += word + ' ';
+                        result += word + '\n';
                       }
-                    });
-                    if (currentLine.trim()) {
-                      result += currentLine.trim();
+                    } else {
+                      currentLine += word + ' ';
                     }
-                    return result;
-                  } else {
-                    return line;
+                  });
+                  if (currentLine.trim()) {
+                    result += currentLine.trim();
                   }
+                  return result;
                 }
                 return line;
-              })
-              .join('\n');
-          }
-        } else if (item.type === 'tool_result') {
+              }
+              return line;
+            })
+            .join('\n');
+        }
+        if (item.type === 'tool_result') {
           let preview = '';
           if (item.content) {
             if (typeof item.content === 'string') {
@@ -244,7 +240,8 @@ export const formatMessageContent = (
             }
           }
           return `🔧 Tool Result (${item.tool_use_id})\n    ${preview}`;
-        } else if (item.type === 'tool_use') {
+        }
+        if (item.type === 'tool_use') {
           let result = `🔨 ${item.name}`;
 
           // Special formatting for Task tool

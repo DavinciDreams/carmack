@@ -1,14 +1,14 @@
 import { Box, Text } from 'ink';
 import type React from 'react';
 import { useState } from 'react';
-import { ControlPanel } from './ControlPanel';
 import { useKeyboardNavigation } from '../hooks/useKeyboardNavigation';
 import type { AppState } from '../utils/types';
+import { ControlPanel } from './ControlPanel';
 
 /**
  * Example component demonstrating how to integrate the ControlPanel
  * with the keyboard navigation system from useKeyboardNavigation.
- * 
+ *
  * This serves as a reference implementation showing:
  * 1. How to set up the AppState with proper types
  * 2. How to integrate keyboard navigation handlers
@@ -17,7 +17,7 @@ import type { AppState } from '../utils/types';
  */
 export const ControlPanelExample: React.FC = () => {
   const [isControlPanelCollapsed, setIsControlPanelCollapsed] = useState(false);
-  
+
   // Example AppState - in real usage, this would come from your main component
   const [appState, setAppState] = useState<AppState>({
     messages: [
@@ -52,7 +52,7 @@ export const ControlPanelExample: React.FC = () => {
   // Initialize keyboard navigation - this handles all the keyboard shortcuts
   // and updates the appState automatically
   const keyboardHandlers = useKeyboardNavigation(appState, setAppState);
-  
+
   // The keyboardHandlers object contains all the navigation functions
   // They are automatically bound to keyboard inputs by the useKeyboardNavigation hook
   // This is just here to demonstrate the integration - you would use specific handlers
@@ -96,43 +96,29 @@ export const ControlPanelExample: React.FC = () => {
             </Text>
           </Box>
           <Box marginTop={1}>
-            <Text color="white">
-              View mode: {appState.viewMode}
-            </Text>
+            <Text color="white">View mode: {appState.viewMode}</Text>
           </Box>
           <Box marginTop={1}>
-            <Text color="white">
-              Filter: {appState.filterType}
-            </Text>
+            <Text color="white">Filter: {appState.filterType}</Text>
           </Box>
           <Box marginTop={1}>
-            <Text color="white">
-              Auto-scroll: {appState.autoScroll ? 'ON' : 'OFF'}
-            </Text>
+            <Text color="white">Auto-scroll: {appState.autoScroll ? 'ON' : 'OFF'}</Text>
           </Box>
           <Box marginTop={1}>
-            <Text color="white">
-              Help visible: {appState.showHelp ? 'YES' : 'NO'}
-            </Text>
+            <Text color="white">Help visible: {appState.showHelp ? 'YES' : 'NO'}</Text>
           </Box>
           {appState.searchQuery && (
             <Box marginTop={1}>
-              <Text color="white">
-                Search: "{appState.searchQuery}"
-              </Text>
+              <Text color="white">Search: "{appState.searchQuery}"</Text>
             </Box>
           )}
           {appState.error && (
             <Box marginTop={1}>
-              <Text color="red">
-                Error: {appState.error}
-              </Text>
+              <Text color="red">Error: {appState.error}</Text>
             </Box>
           )}
           <Box marginTop={1}>
-            <Text color="white">
-              Keyboard handlers: {exampleHandlerUsage}
-            </Text>
+            <Text color="white">Keyboard handlers: {exampleHandlerUsage}</Text>
           </Box>
         </Box>
       </Box>
@@ -140,7 +126,8 @@ export const ControlPanelExample: React.FC = () => {
       {/* Status bar */}
       <Box borderStyle="single" padding={1}>
         <Text color="gray">
-          Press ? to toggle help | All keyboard shortcuts are active and managed by useKeyboardNavigation
+          Press ? to toggle help | All keyboard shortcuts are active and managed by
+          useKeyboardNavigation
         </Text>
       </Box>
     </Box>

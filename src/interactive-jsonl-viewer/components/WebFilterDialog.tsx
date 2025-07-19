@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import type React from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { AppState, MessageData } from '../utils/types';
 import './WebFilterDialog.css';
 
@@ -20,7 +21,7 @@ export const WebFilterDialog: React.FC<WebFilterDialogProps> = ({
   const [selectedFilterType, setSelectedFilterType] =
     useState<AppState['filterType']>(currentFilterType);
   const [isAnimating, setIsAnimating] = useState(false);
-  
+
   const dialogRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
 
@@ -154,11 +155,7 @@ export const WebFilterDialog: React.FC<WebFilterDialogProps> = ({
           <h2 id="filter-dialog-title" className="filter-dialog-title">
             🔧 Filter Messages
           </h2>
-          <button
-            className="close-button"
-            onClick={handleCancel}
-            aria-label="Close filter dialog"
-          >
+          <button className="close-button" onClick={handleCancel} aria-label="Close filter dialog">
             ✕
           </button>
         </div>
@@ -191,9 +188,7 @@ export const WebFilterDialog: React.FC<WebFilterDialogProps> = ({
                       <span className="filter-option-label">{option.label}</span>
                       <span className="filter-option-count">({option.count})</span>
                     </div>
-                    <div className="filter-option-description">
-                      {option.description}
-                    </div>
+                    <div className="filter-option-description">{option.description}</div>
                   </div>
                 </label>
               ))}
@@ -204,9 +199,7 @@ export const WebFilterDialog: React.FC<WebFilterDialogProps> = ({
             <div className="filter-preview">
               <div className="preview-info">
                 <span className="preview-icon">👀</span>
-                <span>
-                  Preview: Will show {getMessageCount(selectedFilterType)} messages
-                </span>
+                <span>Preview: Will show {getMessageCount(selectedFilterType)} messages</span>
               </div>
             </div>
           )}
@@ -227,10 +220,7 @@ export const WebFilterDialog: React.FC<WebFilterDialogProps> = ({
           >
             ↺ Reset to All
           </button>
-          <button
-            className="filter-action-button tertiary"
-            onClick={handleCancel}
-          >
+          <button className="filter-action-button tertiary" onClick={handleCancel}>
             ✕ Cancel
           </button>
         </div>

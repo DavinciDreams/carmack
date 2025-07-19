@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import type React from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { MessageData } from '../utils/types';
 import './WebSearchInput.css';
 
@@ -27,7 +28,7 @@ export const WebSearchInput: React.FC<WebSearchInputProps> = ({
   const [previewResults, setPreviewResults] = useState<MessageData[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  
+
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -108,14 +109,17 @@ export const WebSearchInput: React.FC<WebSearchInputProps> = ({
   }, [query, isActive, debouncedSearch]);
 
   // Handle form submission
-  const handleSubmit = useCallback((event: React.FormEvent) => {
-    event.preventDefault();
-    onSearch(query);
-    setShowPreview(false);
-    if (onExit) {
-      onExit();
-    }
-  }, [onSearch, query, onExit]);
+  const handleSubmit = useCallback(
+    (event: React.FormEvent) => {
+      event.preventDefault();
+      onSearch(query);
+      setShowPreview(false);
+      if (onExit) {
+        onExit();
+      }
+    },
+    [onSearch, query, onExit]
+  );
 
   // Handle input changes
   const handleInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -123,23 +127,26 @@ export const WebSearchInput: React.FC<WebSearchInputProps> = ({
   }, []);
 
   // Handle key events
-  const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
-    switch (event.key) {
-      case 'Escape':
-        event.preventDefault();
-        setQuery('');
-        onSearch('');
-        setShowPreview(false);
-        if (onExit) {
-          onExit();
-        }
-        break;
-      case 'Enter':
-        event.preventDefault();
-        handleSubmit(event);
-        break;
-    }
-  }, [handleSubmit, onSearch, onExit]);
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
+      switch (event.key) {
+        case 'Escape':
+          event.preventDefault();
+          setQuery('');
+          onSearch('');
+          setShowPreview(false);
+          if (onExit) {
+            onExit();
+          }
+          break;
+        case 'Enter':
+          event.preventDefault();
+          handleSubmit(event);
+          break;
+      }
+    },
+    [handleSubmit, onSearch, onExit]
+  );
 
   // Handle clear
   const handleClear = useCallback(() => {
@@ -215,9 +222,7 @@ export const WebSearchInput: React.FC<WebSearchInputProps> = ({
             className="search-input"
             autoComplete="off"
           />
-          {isSearching && (
-            <span className="search-loading">⏳</span>
-          )}
+          {isSearching && <span className="search-loading">⏳</span>}
           {query && (
             <button
               type="button"

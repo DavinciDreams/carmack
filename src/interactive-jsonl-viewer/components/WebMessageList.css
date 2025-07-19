@@ -5,7 +5,7 @@
   height: 100%;
   background-color: #1a1a1a;
   color: #e0e0e0;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
   font-size: 12px;
   line-height: 1.4;
   border: 1px solid #333;
@@ -135,8 +135,12 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .message-list-error {
@@ -212,19 +216,19 @@
   .message-list {
     font-size: 11px;
   }
-  
+
   .message-list-header {
     flex-direction: column;
     gap: 8px;
     padding: 8px;
   }
-  
+
   .message-list-stats {
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
   }
-  
+
   .message-list-stats span {
     margin-right: 0;
   }
@@ -237,13 +241,13 @@
     color: #fff;
     border-color: #666;
   }
-  
+
   .message-list-header,
   .message-list-stats {
     background-color: #111;
     border-color: #666;
   }
-  
+
   .filter-button {
     background: #222;
     color: #fff;
@@ -256,7 +260,7 @@
   .loading-spinner {
     animation: none;
   }
-  
+
   .filter-button,
   .message-list-error button {
     transition: none;

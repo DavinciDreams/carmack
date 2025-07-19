@@ -21,17 +21,17 @@ import { loadPatterns } from './src/utils/index.js';
 
 // Export InteractiveViewer component for external use
 export { InteractiveViewer } from './src/interactive-jsonl-viewer/InteractiveViewer';
-export type { 
-  FilterOptions, 
-  ViewerState, 
-  ViewMode, 
-  MessageRole 
+export type {
+  FilterOptions,
+  MessageRole,
+  ViewerState,
+  ViewMode,
 } from './src/interactive-jsonl-viewer/types';
 
 // Export core transformation system types
-export type { 
-  TransformationMode, 
-  TransformationRequest 
+export type {
+  TransformationMode,
+  TransformationRequest,
 } from './src/types.js';
 
 interface CliOptions {
