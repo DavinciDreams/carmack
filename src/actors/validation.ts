@@ -1,7 +1,34 @@
 import { execSync } from 'node:child_process';
+import { ESLint } from 'eslint';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
 import type { ErrorInfo, ValidationResult } from '../types.js';
+
+const eslint = new ESLint({
+  overrideConfigFile: true,
+  overrideConfig: {
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+    },
+    rules: {
+      // Code quality rules
+      'prefer-const': 'warn',
+      'no-var': 'error',
+      'no-unused-vars': 'warn',
+      eqeqeq: 'error',
+      'no-console': 'warn',
+      complexity: ['warn', { max: 15 }],
+      'max-depth': ['warn', { max: 4 }],
+      'max-lines-per-function': ['warn', { max: 50 }],
+      'no-duplicate-imports': 'error',
+      'prefer-arrow-callback': 'warn',
+      'arrow-spacing': 'warn',
+      'object-shorthand': 'warn',
+      'prefer-template': 'warn',
+    },
+  },
+});
 
 // Utility function to get the correct Bun executable path
 function getBunExecutable(): string {
@@ -249,8 +276,12 @@ async function fixFormat(files: string[]): Promise<ValidationResult> {
           timeout: 2000, // 2 second timeout
         });
       } catch (error: unknown) {
+<<<<<<< Updated upstream
         const execError = error as { stdout?: string; stderr?: string; message?: string };
         const output = execError.stdout || execError.stderr || execError.message || '';
+=======
+        const output = error.stdout || error.stderr || error.message;
+>>>>>>> Stashed changes
         warnings.push({
           code: 'BIOME_FORMAT_WARNING',
           message: `Could not auto-fix ${file}: ${output}`,
@@ -350,8 +381,12 @@ async function validateTypesWithExec(
       fixableIssues: 0,
     };
   } catch (error: unknown) {
+<<<<<<< Updated upstream
     const errorObj = error as { signal?: { aborted: boolean } };
     if (errorObj.signal?.aborted || signal.aborted) {
+=======
+    if (signal.aborted) {
+>>>>>>> Stashed changes
       throw new Error('TypeScript validation aborted due to timeout');
     }
 
@@ -446,9 +481,14 @@ async function fallbackTypeValidation(files: string[]): Promise<ValidationResult
       const content = await readFile(filePath, 'utf-8');
 
       for (const rule of typePatterns) {
+<<<<<<< Updated upstream
         let match: RegExpExecArray | null;
         // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex iteration pattern
         while ((match = rule.pattern.exec(content)) !== null) {
+=======
+        let match = rule.pattern.exec(content);
+        for (; match != null; match = rule.pattern.exec(content)) {
+>>>>>>> Stashed changes
           const beforeMatch = content.substring(0, match.index);
           const lineNumber = beforeMatch.split('\n').length;
           const lineStart = beforeMatch.lastIndexOf('\n') + 1;
@@ -519,8 +559,12 @@ async function fixTypes(files: string[], errors: ErrorInfo[]): Promise<Validatio
     // Process each file with type errors
     const filePathsArray = Array.from(errorsByFile.keys());
     for (const filePath of filePathsArray) {
+<<<<<<< Updated upstream
       const fileErrors = errorsByFile.get(filePath);
       if (!fileErrors) continue; // Skip if no errors found
+=======
+      const fileErrors = errorsByFile.get(filePath) ?? [];
+>>>>>>> Stashed changes
       try {
         const { readFile } = await import('node:fs/promises');
         const originalContent = await readFile(filePath, 'utf-8');
@@ -641,6 +685,7 @@ Return only the corrected code without explanations.`;
 /**
  * Analyze the complexity of type errors for better LLM context
  */
+<<<<<<< Updated upstream
 function analyzeTypeComplexity(
   content: string,
   errors: ErrorInfo[]
@@ -652,6 +697,9 @@ function analyzeTypeComplexity(
   functionCount: number;
   classCount: number;
 } {
+=======
+function analyzeTypeComplexity(content: string, errors: ErrorInfo[]): unknown {
+>>>>>>> Stashed changes
   const hasGenericTypes = content.includes('<') && content.includes('>');
   const hasUnionTypes = content.includes('|');
   const hasInterfaceDefinitions = content.includes('interface ');
@@ -733,6 +781,61 @@ async function verifyTypeFixes(
   }
 }
 
+export interface LintResultsOk {
+  isSuccess: true;
+}
+
+export interface LintResultsError {
+  isSuccess: false;
+  warnings: ErrorInfo[];
+  errors: ErrorInfo[];
+  fixableIssues: number;
+}
+
+export type LintResults = LintResultsOk | LintResultsError;
+
+export async function lint(filePath: string): Promise<LintResults> {
+  const results = await eslint.lintFiles([filePath]);
+  const errors: ErrorInfo[] = [];
+  const warnings: ErrorInfo[] = [];
+  let fixableIssues = 0;
+
+  for (const result of results) {
+    for (const message of result.messages) {
+      const errorInfo: ErrorInfo = {
+        code: message.ruleId || 'ESLINT_ERROR',
+        message: message.message,
+        file: result.filePath,
+        line: message.line,
+        column: message.column,
+        severity: message.severity === 2 ? 'error' : 'warning',
+      };
+
+      if (message.severity === 2) {
+        errors.push(errorInfo);
+      } else {
+        warnings.push(errorInfo);
+      }
+
+      if (message.fix) {
+        fixableIssues++;
+      }
+    }
+  }
+
+  if (errors.length || warnings.length) {
+    return {
+      isSuccess: false,
+      errors,
+      warnings,
+      fixableIssues,
+    };
+  }
+  return {
+    isSuccess: true,
+  };
+}
+
 async function validateQuality(files: string[]): Promise<ValidationResult> {
   console.log(`Analyzing code quality for ${files.length} files using ESLint...`);
 
@@ -753,9 +856,10 @@ async function validateQuality(files: string[]): Promise<ValidationResult> {
 
   const errors: ErrorInfo[] = [];
   const warnings: ErrorInfo[] = [];
-  let fixableIssues = 0;
+  const fixableIssues = 0;
 
   try {
+<<<<<<< Updated upstream
     // Try to use ESLint programmatically with timeout
     const { ESLint } = await import('eslint');
 
@@ -829,9 +933,37 @@ async function validateQuality(files: string[]): Promise<ValidationResult> {
       });
     };
 
+=======
+    //     // const _eslint = new ESLint({
+    //     //   overrideConfigFile: true,
+    //       overrideConfig: {
+    //         languageOptions: {
+    //           ecmaVersion: 'latest',
+    //           sourceType: 'module',
+    //         },
+    //         rules: {
+    //           // Code quality rules
+    //           'prefer-const': 'warn',
+    //           'no-var': 'error',
+    //           'no-unused-vars': 'warn',
+    //           eqeqeq: 'error',
+    //           'no-console': 'warn',
+    //           complexity: ['warn', { max: 15 }],
+    //           'max-depth': ['warn', { max: 4 }],
+    //           'max-lines-per-function': ['warn', { max: 50 }],
+    //           'no-duplicate-imports': 'error',
+    //           'prefer-arrow-callback': 'warn',
+    //           'arrow-spacing': 'warn',
+    //           'object-shorthand': 'warn',
+    //           'prefer-template': 'warn',
+    //         },
+    //       },
+    //     });
+    //
+>>>>>>> Stashed changes
     for (const filePath of files) {
       try {
-        await lintWithTimeout(filePath);
+        await lint(filePath);
       } catch (error) {
         console.warn(`ESLint failed or timed out for ${filePath}:`, error);
         warnings.push({
@@ -853,7 +985,7 @@ async function validateQuality(files: string[]): Promise<ValidationResult> {
     console.warn('ESLint not available, using fallback quality analysis:', eslintError);
 
     // Fallback: Basic quality analysis using regex patterns
-    return await fallbackQualityAnalysis(files);
+    return fallbackQualityAnalysis(files);
   }
 }
 
@@ -916,9 +1048,14 @@ async function fallbackQualityAnalysis(files: string[]): Promise<ValidationResul
       const content = await readFile(filePath, 'utf-8');
 
       for (const rule of qualityRules) {
+<<<<<<< Updated upstream
         let match: RegExpExecArray | null;
         // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex iteration pattern
         while ((match = rule.pattern.exec(content)) !== null) {
+=======
+        let match = rule.pattern.exec(content);
+        for (; match != null; match = rule.pattern.exec(content)) {
+>>>>>>> Stashed changes
           // Find line number for the match
           const beforeMatch = content.substring(0, match.index);
           const lineNumber = beforeMatch.split('\n').length;
@@ -979,10 +1116,17 @@ function analyzeCodeComplexity(content: string, filePath: string): ErrorInfo[] {
 
   // Check for overly complex functions
   const functionRegex = /function\s+(\w+)|const\s+(\w+)\s*=\s*\([^)]*\)\s*=>/g;
+<<<<<<< Updated upstream
   let match: RegExpExecArray | null;
 
   // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex iteration pattern
   while ((match = functionRegex.exec(content)) !== null) {
+=======
+
+  let match = functionRegex.exec(content);
+
+  for (; match != null; match = functionRegex.exec(content)) {
+>>>>>>> Stashed changes
     const functionName = match[1] || match[2];
     const functionStart = match.index;
 
@@ -991,7 +1135,11 @@ function analyzeCodeComplexity(content: string, filePath: string): ErrorInfo[] {
     const braceMatch = afterFunction.match(/\{/);
 
     if (braceMatch) {
+<<<<<<< Updated upstream
       const bodyStart = functionStart + (braceMatch.index || 0) + 1;
+=======
+      const bodyStart = functionStart + (braceMatch.index || 0 + 1);
+>>>>>>> Stashed changes
       const functionBody = extractFunctionBody(content, bodyStart);
 
       if (functionBody) {

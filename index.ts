@@ -19,6 +19,7 @@ import { loadPatterns } from './src/utils/index.js';
  * provably correct outputs through formal verification.
  */
 
+<<<<<<< Updated upstream
 // Export InteractiveViewer component for external use
 export { InteractiveViewer } from './src/interactive-jsonl-viewer/InteractiveViewer';
 export type {
@@ -28,6 +29,8 @@ export type {
   ViewMode,
 } from './src/interactive-jsonl-viewer/types';
 
+=======
+>>>>>>> Stashed changes
 // Export core transformation system types
 export type {
   TransformationMode,

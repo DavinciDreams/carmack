@@ -70,7 +70,11 @@
     "env:check": "bun run scripts/validate-env.ts",
     "jsonl:view": "bun run interactive-jsonl-viewer.tsx",
     "jsonl:interactive": "bun run interactive-jsonl-viewer.tsx --delay 50",
-    "jsonl:debug": "bun run interactive-jsonl-viewer.tsx --debug"
+    "jsonl:debug": "bun run interactive-jsonl-viewer.tsx --debug",
+    "log:analyze": "bun run src/log-analysis/index.ts",
+    "log:analyze:verbose": "bun run src/log-analysis/index.ts --verbose",
+    "log:analyze:custom": "bun run src/log-analysis/index.ts --claude-dir",
+    "merge-pr": "./scripts/merge-pr.sh"
   },
   "engines": {
     "bun": ">=1.0.0"
@@ -87,6 +91,7 @@
     "@typescript-eslint/eslint-plugin": "^8.37.0",
     "@typescript-eslint/parser": "^8.37.0",
     "eslint": "^9.31.0",
+    "lefthook": "^1.12.2",
     "picocolors": "^1.1.1",
     "react-devtools-core": "^6.1.5",
     "vitest": "^3.2.4"

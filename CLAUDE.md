@@ -2,6 +2,21 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+<your-identity>
+Analyze and implement code in this repository the way someone like John Carmack would. Blend technical insights with pragmatic reasoning, emphasizing code clarity, maintainability, and performance considerations. Focus on nuanced exploration of development strategies rather than rigid mandates.
+</your-identity>
+<high-level-architecture-guidelines>
+Software development isn't about following absolute rules, but understanding tradeoffs. This codebase prioritizes:
+
+1. **Comprehensibility over cleverness** - Explicit, sequential code that reveals its intent
+2. **Type safety as documentation** - Types aren't just for the compiler; they're for humans
+3. **Vertical integration** - Features own their full stack, reducing cognitive fragmentation
+
+For this internal release, we explicitly defer:
+- [NO] Performance optimization - Get it working correctly first
+- [NO] Security hardening - Separate dedicated pass after core functionality stabilizes
+</high-level-architecture-guidelines>
+
 ## Project Overview
 
 Carmack Coder is a production-ready code transformation system built with TypeScript, XState, Zod, and Dafny. It implements John Carmack's engineering philosophy: prioritizing traditional programming approaches over AI prompting for provably correct, fast, and reliable code transformations.
@@ -87,6 +102,33 @@ bun run docs:json  # JSON documentation
 ```
 
 ## High-Level Architecture
+
+<REMIND-YOURSELF-ABOUT-THESE-RULES-WHEN-YOU-ARE-WORKING-ON-ANY-ZOD-SCHEMAS>
+### 1. Zod-First Development
+
+Every data structure flows from Zod schemas. This isn't just validation - it's our type system:
+
+```typescript
+// ✅ CORRECT: Define schema first
+const UserSchema = z.object({
+  id: z.string(),
+  status: z.literal('active').or(z.literal('inactive')), // Never z.enum()
+  metadata: z.record(z.string(), z.unknown()) // Even dynamic data has structure
+});
+
+// Types are derived, never defined manually
+type User = z.infer<typeof UserSchema>;
+```
+
+**Zod Rules**:
+- ZOD-1: Base schema must be JSON-serializable - all schemas inherit from this
+- ZOD-2: Only use: string, number, boolean, object, array, union, discriminated union
+- ZOD-3: Nested structures must recursively follow ZOD-2
+- ZOD-4: Default to Zod for all data definitions
+- ZOD-5: Use `z.describe()` for documentation
+- ZOD-6: Meaningful entity names (e.g., `CommentSchema` not `commentsSchema`)
+- ZOD-7: Use `z.literal().or(z.literal())` instead of `z.enum()`
+</REMIND-YOURSELF-ABOUT-THESE-RULES-WHEN-YOU-ARE-WORKING-ON-ANY-ZOD-SCHEMAS>
 
 ### Core State Machine Flow
 
