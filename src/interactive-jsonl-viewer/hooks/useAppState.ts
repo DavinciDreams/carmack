@@ -90,7 +90,7 @@ function createInitialState(): AppState {
     error: undefined,
     showHelp: false,
     autoScroll: false,
-    autoScrollDelay: 1000,
+    autoScrollDelay: 100,
   };
   console.log('Initial state created, messages type:', typeof initialState.messages);
   return initialState;

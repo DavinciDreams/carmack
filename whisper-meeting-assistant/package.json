@@ -1,0 +1,21 @@
+{
+  "name": "whisper-meeting-assistant",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"bun run server:dev\" \"bun run frontend:dev\"",
+    "server:dev": "bun --watch server/index.ts",
+    "frontend:dev": "cd frontend && bun run dev",
+    "setup:whisper": "bash scripts/setup-whisper.sh",
+    "build": "bun run frontend:build && bun build server/index.ts --compile --outfile=dist/server"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.1",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/ws": "^8.5.13",
+    "concurrently": "^9.1.0"
+  }
+}

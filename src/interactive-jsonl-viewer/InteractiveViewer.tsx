@@ -7,9 +7,7 @@ import { MessageList } from './components/MessageList';
 import { SearchInput } from './components/SearchInput';
 import { StatsPanel } from './components/StatsPanel';
 import { useAppState } from './hooks/useAppState';
-import { useKeyboardNavigation } from './hooks/useKeyboardNavigation';
 import type { CLIArgs } from './utils/types';
-import { MessageUtils } from './utils/messageUtils';
 
 interface InteractiveViewerProps {
   jsonlPath: string;
@@ -189,25 +187,7 @@ export const InteractiveViewer: React.FC<InteractiveViewerProps> = ({
     },
     []
   );
-  
-  // Handle filter changes
-  const handleFilterChange = useCallback(
-    (filterType: typeof state.filterType) => {
-      actions.setFilterType(filterType);
-    },
-    []
-  );
-  
-  // Handle view mode toggle
-  const handleViewModeToggle = useCallback(() => {
-    actions.toggleViewMode();
-  }, []);
-  
-  // Handle help toggle
-  const handleHelpToggle = useCallback(() => {
-    actions.toggleHelp();
-  }, []);
-
+    
   // Integrate keyboard navigation with enhanced functionality
   useInput((input, key) => {
     // Don't handle navigation when in input mode
@@ -249,7 +229,7 @@ export const InteractiveViewer: React.FC<InteractiveViewerProps> = ({
       const filterTypes = ['all', 'user', 'assistant', 'tools', 'sidechains'] as const;
       const currentIndex = filterTypes.indexOf(state.filterType);
       const nextIndex = (currentIndex + 1) % filterTypes.length;
-      actions.setFilterType(filterTypes[nextIndex]);
+      actions.setFilterType(filterTypes[nextIndex as unknown]);
     } else if (input === 's') {
       setShowSearch(true);
     } else if (input === 'F') {
