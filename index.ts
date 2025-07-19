@@ -2,7 +2,7 @@
 
 import { createActor } from 'xstate';
 import { carmackCoderMachine } from './src/machine.js';
-import type { TransformationMode, TransformationRequest } from './src/types.js';
+import type { MachineEvent, TransformationMode, TransformationRequest } from './src/types.js';
 import { loadPatterns } from './src/utils/index.js';
 
 /**
@@ -21,17 +21,17 @@ import { loadPatterns } from './src/utils/index.js';
 
 // Export InteractiveViewer component for external use
 export { InteractiveViewer } from './src/interactive-jsonl-viewer/InteractiveViewer';
-export type { 
-  FilterOptions, 
-  ViewerState, 
-  ViewMode, 
-  MessageRole 
+export type {
+  FilterOptions,
+  MessageRole,
+  ViewerState,
+  ViewMode,
 } from './src/interactive-jsonl-viewer/types';
 
 // Export core transformation system types
-export type { 
-  TransformationMode, 
-  TransformationRequest 
+export type {
+  TransformationMode,
+  TransformationRequest,
 } from './src/types.js';
 
 interface CliOptions {
@@ -196,7 +196,7 @@ async function main() {
   }
 
   // Create and start the state machine actor
-  const actor = createActor(carmackCoderMachine);
+  const actor = createActor(carmackCoderMachine as import('xstate').AnyActorLogic);
 
   // Subscribe to state changes for debugging
   actor.subscribe((state) => {
@@ -222,12 +222,13 @@ async function main() {
   }
 
   // Send transformation request
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  actor.send({
+  // Send transformation request with proper typing
+  const startEvent: Extract<MachineEvent, { type: 'START_TRANSFORMATION' }> = {
     type: 'START_TRANSFORMATION',
     request: transformationRequest,
-    // biome-ignore lint/suspicious/noExplicitAny: Required for XState event type compatibility
-  } as any);
+  };
+
+  actor.send(startEvent);
 
   // Wait for completion
   await new Promise<void>((resolve) => {

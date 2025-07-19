@@ -1,7 +1,7 @@
 import { Select } from '@inkjs/ui';
 import { Box, Text } from 'ink';
 import type React from 'react';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { AppState, MessageData } from '../utils/types';
 
 interface FilterDialogProps {

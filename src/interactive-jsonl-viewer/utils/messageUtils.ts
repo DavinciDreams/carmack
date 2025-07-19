@@ -1,9 +1,9 @@
 import type {
-  MessageData,
   AppState,
-  ConversationStats,
-  VirtualScrollState,
   ContentItem,
+  ConversationStats,
+  MessageData,
+  VirtualScrollState,
 } from './types';
 
 // Type for message hierarchy nodes

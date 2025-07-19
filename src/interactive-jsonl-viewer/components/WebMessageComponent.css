@@ -179,7 +179,7 @@
   color: #aaa;
   font-size: 11px;
   margin-left: 22px;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
 }
 
 /* Tool results */
@@ -200,7 +200,7 @@
   margin-left: 22px;
   color: #51cf66;
   font-size: 11px;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
 }
 
 /* Usage stats */
@@ -248,27 +248,27 @@
   .web-message-component {
     padding: 6px 8px;
   }
-  
+
   .message-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
   }
-  
+
   .message-metadata {
     font-size: 10px;
   }
-  
+
   .message-content {
     margin-left: 16px;
     padding-left: 8px;
   }
-  
+
   .content-preview {
     margin-left: 16px;
     padding-left: 8px;
   }
-  
+
   .tool-input,
   .tool-result-content,
   .usage-stats {
@@ -282,17 +282,17 @@
     background-color: rgba(0, 102, 204, 0.4);
     border-left-color: #66b3ff;
   }
-  
+
   .search-highlight {
     background-color: #ffff00;
     color: #000;
   }
-  
+
   .tool-call-item {
     background-color: rgba(77, 171, 247, 0.2);
     border-color: rgba(77, 171, 247, 0.4);
   }
-  
+
   .tool-result-content {
     background-color: rgba(81, 207, 102, 0.2);
     border-color: rgba(81, 207, 102, 0.4);
@@ -319,11 +319,11 @@
     break-inside: avoid;
     padding: 4px;
   }
-  
+
   .expand-toggle {
     display: none;
   }
-  
+
   .message-content {
     border-left-color: #000;
   }

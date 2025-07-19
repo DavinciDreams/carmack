@@ -179,19 +179,19 @@ export function sanitizeForLog(input: string, maxLength = 200): string {
 
 // Export all parser utilities
 export {
-  parseJSONL,
-  parseJSONLContent,
-  parseJSONLWithRecovery,
-  validateMessage,
-  buildParentChildMap,
   buildMessageMap,
+  buildParentChildMap,
+  createParseReport,
+  filterMessages,
   findRootMessages,
   getChildrenIds,
   getMessageStats,
-  createParseReport,
-  filterMessages,
   isValidMessageData,
   JSONLParseError,
   type ParseResult,
   type ParserOptions,
+  parseJSONL,
+  parseJSONLContent,
+  parseJSONLWithRecovery,
+  validateMessage,
 } from './parser.js';

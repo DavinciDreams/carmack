@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach } from 'bun:test';
-import type { MessageData } from '../utils/types';
+import { beforeEach, describe, expect, it } from 'bun:test';
 import { MessageUtils } from '../utils/messageUtils';
+import type { MessageData } from '../utils/types';
 
 // Mock localStorage
 const localStorageMock = {
@@ -31,7 +31,7 @@ describe('useAppState', () => {
         autoScroll: false,
         autoScrollDelay: 1000,
       };
-      
+
       expect(initialState.messages).toEqual([]);
       expect(initialState.selectedIndex).toBe(0);
       expect(initialState.filterType).toBe('all');
@@ -47,18 +47,22 @@ describe('useAppState', () => {
         {
           uuid: '1',
           timestamp: '2023-01-01T00:00:00Z',
-          message: { role: 'user', content: 'Test user message' }
+          message: { role: 'user', content: 'Test user message' },
         },
         {
           uuid: '2',
           timestamp: '2023-01-01T00:01:00Z',
-          message: { role: 'assistant', content: 'Test assistant response' }
+          message: { role: 'assistant', content: 'Test assistant response' },
         },
         {
           uuid: '3',
           timestamp: '2023-01-01T00:02:00Z',
-          message: { role: 'user', content: 'Another user message', tool_calls: [{ name: 'test_tool', input: {} }] }
-        }
+          message: {
+            role: 'user',
+            content: 'Another user message',
+            tool_calls: [{ name: 'test_tool', input: {} }],
+          },
+        },
       ];
 
       // Test all filter
@@ -68,7 +72,7 @@ describe('useAppState', () => {
       // Test user filter
       const userFiltered = MessageUtils.filterMessagesByType(testMessages, 'user');
       expect(userFiltered).toHaveLength(2);
-      expect(userFiltered.every(msg => msg.message?.role === 'user')).toBe(true);
+      expect(userFiltered.every((msg) => msg.message?.role === 'user')).toBe(true);
 
       // Test assistant filter
       const assistantFiltered = MessageUtils.filterMessagesByType(testMessages, 'assistant');
@@ -86,18 +90,18 @@ describe('useAppState', () => {
         {
           uuid: '1',
           timestamp: '2023-01-01T00:00:00Z',
-          message: { role: 'user', content: 'Hello world' }
+          message: { role: 'user', content: 'Hello world' },
         },
         {
           uuid: '2',
           timestamp: '2023-01-01T00:01:00Z',
-          message: { role: 'assistant', content: 'Hello there' }
+          message: { role: 'assistant', content: 'Hello there' },
         },
         {
           uuid: '3',
           timestamp: '2023-01-01T00:02:00Z',
-          message: { role: 'user', content: 'Goodbye world' }
-        }
+          message: { role: 'user', content: 'Goodbye world' },
+        },
       ];
 
       const searchResults = MessageUtils.searchMessages(testMessages, 'world');
@@ -114,13 +118,13 @@ describe('useAppState', () => {
         {
           uuid: '1',
           timestamp: '2023-01-01T00:00:00Z',
-          message: { role: 'user', content: 'Test 1' }
+          message: { role: 'user', content: 'Test 1' },
         },
         {
           uuid: '2',
           timestamp: '2023-01-01T00:01:00Z',
-          message: { role: 'assistant', content: 'Test 2' }
-        }
+          message: { role: 'assistant', content: 'Test 2' },
+        },
       ];
 
       const selection = MessageUtils.selectMessage(testMessages, 1);
@@ -139,27 +143,27 @@ describe('useAppState', () => {
         {
           uuid: '1',
           timestamp: '2023-01-01T00:00:00Z',
-          message: { 
-            role: 'user', 
+          message: {
+            role: 'user',
             content: 'Test message',
-            usage: { input_tokens: 10, output_tokens: 0 }
-          }
+            usage: { input_tokens: 10, output_tokens: 0 },
+          },
         },
         {
           uuid: '2',
           timestamp: '2023-01-01T00:01:00Z',
-          message: { 
-            role: 'assistant', 
+          message: {
+            role: 'assistant',
             content: 'Response',
-            usage: { input_tokens: 5, output_tokens: 15 }
-          }
+            usage: { input_tokens: 5, output_tokens: 15 },
+          },
         },
         {
           uuid: '3',
           timestamp: '2023-01-01T00:02:00Z',
           isSidechain: true,
-          message: { role: 'user', content: 'Sidechain message' }
-        }
+          message: { role: 'user', content: 'Sidechain message' },
+        },
       ];
 
       const stats = MessageUtils.calculateMessageStats(testMessages);
@@ -175,8 +179,8 @@ describe('useAppState', () => {
         {
           uuid: '1',
           timestamp: '2023-01-01T00:00:00Z',
-          message: { role: 'user', content: 'Valid message' }
-        }
+          message: { role: 'user', content: 'Valid message' },
+        },
       ];
 
       const validation = MessageUtils.validateMessages(validMessages);
@@ -188,8 +192,8 @@ describe('useAppState', () => {
         {
           uuid: '',
           timestamp: 'invalid-date',
-          message: { role: 'user', content: 'Invalid message' }
-        } as any
+          message: { role: 'user', content: 'Invalid message' },
+        } as any,
       ];
 
       const invalidValidation = MessageUtils.validateMessages(invalidMessages);
@@ -202,20 +206,20 @@ describe('useAppState', () => {
         {
           uuid: '1',
           timestamp: '2023-01-01T00:00:00Z',
-          message: { role: 'user', content: 'Root message' }
+          message: { role: 'user', content: 'Root message' },
         },
         {
           uuid: '2',
           timestamp: '2023-01-01T00:01:00Z',
           parentUuid: '1',
-          message: { role: 'assistant', content: 'Child message' }
+          message: { role: 'assistant', content: 'Child message' },
         },
         {
           uuid: '3',
           timestamp: '2023-01-01T00:02:00Z',
           parentUuid: '2',
-          message: { role: 'user', content: 'Grandchild message' }
-        }
+          message: { role: 'user', content: 'Grandchild message' },
+        },
       ];
 
       const hierarchy = MessageUtils.getMessageHierarchy(testMessages);
@@ -232,48 +236,48 @@ describe('useAppState', () => {
         {
           uuid: '1',
           timestamp: '2023-01-01T00:00:00Z',
-          message: { role: 'user', content: 'Thread root' }
+          message: { role: 'user', content: 'Thread root' },
         },
         {
           uuid: '2',
           timestamp: '2023-01-01T00:01:00Z',
           parentUuid: '1',
-          message: { role: 'assistant', content: 'Thread child 1' }
+          message: { role: 'assistant', content: 'Thread child 1' },
         },
         {
           uuid: '3',
           timestamp: '2023-01-01T00:02:00Z',
           parentUuid: '1',
-          message: { role: 'assistant', content: 'Thread child 2' }
+          message: { role: 'assistant', content: 'Thread child 2' },
         },
         {
           uuid: '4',
           timestamp: '2023-01-01T00:03:00Z',
-          message: { role: 'user', content: 'Different thread' }
-        }
+          message: { role: 'user', content: 'Different thread' },
+        },
       ];
 
       const thread = MessageUtils.getMessageThread(testMessages, '2');
       expect(thread).toHaveLength(3); // Root + 2 children
-      expect(thread.some(msg => msg.uuid === '1')).toBe(true);
-      expect(thread.some(msg => msg.uuid === '2')).toBe(true);
-      expect(thread.some(msg => msg.uuid === '3')).toBe(true);
-      expect(thread.some(msg => msg.uuid === '4')).toBe(false);
+      expect(thread.some((msg) => msg.uuid === '1')).toBe(true);
+      expect(thread.some((msg) => msg.uuid === '2')).toBe(true);
+      expect(thread.some((msg) => msg.uuid === '3')).toBe(true);
+      expect(thread.some((msg) => msg.uuid === '4')).toBe(false);
     });
 
     it('should handle virtual scrolling calculations', () => {
       const testMessages: MessageData[] = Array.from({ length: 100 }, (_, i) => ({
         uuid: `test-${i}`,
         timestamp: new Date(Date.now() + i * 1000).toISOString(),
-        message: { role: 'user', content: `Message ${i}` }
+        message: { role: 'user', content: `Message ${i}` },
       }));
 
       const scrollState = MessageUtils.calculateVirtualScroll(
         testMessages,
         500, // scrollTop
         400, // viewportHeight
-        50,  // itemHeight
-        2    // buffer
+        50, // itemHeight
+        2 // buffer
       );
 
       expect(scrollState.scrollTop).toBe(500);
@@ -289,48 +293,48 @@ describe('useAppState', () => {
         {
           uuid: '1',
           timestamp: '2023-01-01T00:00:00Z',
-          message: { role: 'user', content: 'User message' }
+          message: { role: 'user', content: 'User message' },
         },
         {
           uuid: '2',
           timestamp: '2023-01-01T00:01:00Z',
-          message: { role: 'assistant', content: 'Assistant response' }
+          message: { role: 'assistant', content: 'Assistant response' },
         },
         {
           uuid: '3',
           timestamp: '2023-01-01T00:02:00Z',
           isSidechain: true,
-          message: { role: 'user', content: 'Sidechain user message' }
+          message: { role: 'user', content: 'Sidechain user message' },
         },
         {
           uuid: '4',
           timestamp: '2023-01-01T00:03:00Z',
           isMeta: true,
-          message: { role: 'assistant', content: 'Meta assistant message' }
-        }
+          message: { role: 'assistant', content: 'Meta assistant message' },
+        },
       ];
 
       // Test role filtering
       const userOnly = MessageUtils.filterMessagesAdvanced(testMessages, {
-        roles: ['user']
+        roles: ['user'],
       });
       expect(userOnly).toHaveLength(2);
 
       // Test sidechain filtering
       const noSidechains = MessageUtils.filterMessagesAdvanced(testMessages, {
-        showSidechains: false
+        showSidechains: false,
       });
       expect(noSidechains).toHaveLength(3);
 
       // Test meta filtering
       const noMeta = MessageUtils.filterMessagesAdvanced(testMessages, {
-        showMeta: false
+        showMeta: false,
       });
       expect(noMeta).toHaveLength(3);
 
       // Test search query filtering
       const searchFiltered = MessageUtils.filterMessagesAdvanced(testMessages, {
-        searchQuery: 'Assistant'
+        searchQuery: 'Assistant',
       });
       expect(searchFiltered).toHaveLength(2);
     });
@@ -347,8 +351,8 @@ describe('useAppState', () => {
         message: {
           role: 'user' as const,
           content: 'Test content',
-          usage: { input_tokens: 10, output_tokens: 5 }
-        }
+          usage: { input_tokens: 10, output_tokens: 5 },
+        },
       };
 
       // The adapter is internal to useAppState, so we test the expected output structure
@@ -362,8 +366,8 @@ describe('useAppState', () => {
         message: {
           role: 'user',
           content: 'Test content',
-          usage: { input_tokens: 10, output_tokens: 5 }
-        }
+          usage: { input_tokens: 10, output_tokens: 5 },
+        },
       };
 
       // Test structure matches
@@ -379,12 +383,12 @@ describe('useAppState', () => {
       expect(MessageUtils.filterMessagesByType([], 'all')).toEqual([]);
       expect(MessageUtils.searchMessages([], 'test')).toEqual([]);
       expect(MessageUtils.getMessageHierarchy([])).toEqual([]);
-      
+
       // Test null/undefined inputs
       expect(MessageUtils.selectMessage([], -1).isValid).toBe(false);
       expect(MessageUtils.findMessageByUuid([], 'nonexistent')).toBe(null);
       expect(MessageUtils.getMessageIndexByUuid([], 'nonexistent')).toBe(-1);
-      
+
       // Test validation with empty/invalid data
       const emptyValidation = MessageUtils.validateMessages([]);
       expect(emptyValidation.isValid).toBe(true);
@@ -398,23 +402,23 @@ describe('useAppState', () => {
         {
           uuid: '1',
           timestamp: '2023-01-01T00:00:00Z',
-          message: { 
-            role: 'user', 
+          message: {
+            role: 'user',
             content: 'Search term in user message',
-            tool_calls: [{ name: 'search_tool', input: {} }]
-          }
+            tool_calls: [{ name: 'search_tool', input: {} }],
+          },
         },
         {
           uuid: '2',
           timestamp: '2023-01-01T00:01:00Z',
-          message: { role: 'assistant', content: 'Assistant response with search term' }
+          message: { role: 'assistant', content: 'Assistant response with search term' },
         },
         {
           uuid: '3',
           timestamp: '2023-01-01T00:02:00Z',
           isSidechain: true,
-          message: { role: 'user', content: 'Sidechain search term message' }
-        }
+          message: { role: 'user', content: 'Sidechain search term message' },
+        },
       ];
 
       // Filter by type first
@@ -438,7 +442,7 @@ describe('useAppState', () => {
         filterType: 'user',
         searchQuery: 'test query',
         expandedMessages: ['msg-1', 'msg-2'],
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
 
       // Test JSON serialization

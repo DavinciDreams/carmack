@@ -2,6 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
+import type { PatternAnnotation } from '../llm-annotation/types.js';
 import type { ComplexityMetrics, ValidationActorResult } from '../types.ts';
 
 /**
@@ -960,18 +961,18 @@ export const BUILTIN_TEST_SUITES: TestSuite[] = [
 /**
  * Test case generator for pattern-based testing
  */
-export function generateTestCasesFromPatterns(patterns: any[]): TestCase[] {
+export function generateTestCasesFromPatterns(patterns: PatternAnnotation[]): TestCase[] {
   return patterns.map((pattern, index) => ({
     id: `generated-${pattern.id}-${index}`,
     name: `Generated test for ${pattern.id}`,
     description: pattern.description || `Auto-generated test case for pattern ${pattern.id}`,
     input: {
-      code: pattern.testCases?.[0]?.input || 'var test = "example";',
-      language: pattern.language || 'typescript',
+      code: pattern.location.context || 'var test = "example";',
+      language: 'typescript', // Default since PatternAnnotation doesn't have language field
       patterns: [pattern.id],
     },
     expected: {
-      code: pattern.testCases?.[0]?.expected,
+      code: pattern.location.context || undefined,
       assertions: [
         {
           type: 'syntax_valid',
@@ -983,7 +984,7 @@ export function generateTestCasesFromPatterns(patterns: any[]): TestCase[] {
     metadata: {
       category: 'generated',
       priority: 'medium' as const,
-      tags: ['auto-generated', String(pattern.category || 'unknown')],
+      tags: ['auto-generated', pattern.category || 'unknown'],
       timeout: 30000,
     },
   }));

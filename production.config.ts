@@ -34,10 +34,26 @@ export const ProductionConfigSchema = z
       maxComplexityThreshold: z.number().min(1).max(50).default(15),
       allowedFileExtensions: z
         .array(z.string())
-        .default(['.ts', '.tsx', '.js', '.jsx', '.mts', '.cts']),
+        .default([
+          '.ts',
+          '.tsx',
+          '.js',
+          '.jsx',
+          '.mts',
+          '.cts',
+          '.py',
+          '.cpp',
+          '.c',
+          '.h',
+          '.hpp',
+          '.cu',
+          '.cuh',
+          '.cxx',
+          '.cc',
+        ]),
       riskLevelFilter: z.enum(['low', 'medium', 'high']).default('medium'),
       enableBackups: z.boolean().default(true),
-      dryRunFirst: z.boolean().default(true),
+      dryRunFirst: z.boolean().default(false),
     }),
 
     // CI/CD Integration
@@ -108,10 +124,26 @@ export const defaultProductionConfig: ProductionConfig = {
   transformation: {
     maxFilesPerBatch: Number.parseInt(process.env.MAX_FILES_PER_BATCH || '10', 10),
     maxComplexityThreshold: Number.parseInt(process.env.MAX_COMPLEXITY_THRESHOLD || '15', 10),
-    allowedFileExtensions: ['.ts', '.tsx', '.js', '.jsx', '.mts', '.cts'],
+    allowedFileExtensions: [
+      '.ts',
+      '.tsx',
+      '.js',
+      '.jsx',
+      '.mts',
+      '.cts',
+      '.py',
+      '.cpp',
+      '.c',
+      '.h',
+      '.hpp',
+      '.cu',
+      '.cuh',
+      '.cxx',
+      '.cc',
+    ],
     riskLevelFilter: (process.env.RISK_LEVEL_FILTER as 'low' | 'medium' | 'high') || 'medium',
     enableBackups: process.env.ENABLE_BACKUPS !== 'false',
-    dryRunFirst: process.env.DRY_RUN_FIRST !== 'false',
+    dryRunFirst: process.env.DRY_RUN_FIRST === 'true',
   },
   cicd: {
     platform:

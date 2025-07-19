@@ -3,13 +3,13 @@ import type React from 'react';
 import type { ClaudeMessage } from '../types';
 import {
   extractPlainText,
+  formatMessageContent,
+  formatTaskInput,
   formatTimestamp,
   formatToolResult,
+  formatUsageStats,
   getRoleColor,
   getRoleEmoji,
-  formatMessageContent,
-  formatUsageStats,
-  formatTaskInput,
 } from '../utils/formatting';
 
 interface MessageComponentProps {
@@ -55,11 +55,7 @@ export const MessageComponent: React.FC<MessageComponentProps> = ({
       <Box>
         {/* Expand/Collapse indicator and Role */}
         <Text color={roleColor} bold>
-          {hasContent && (
-            <Text color="yellow">
-              {expandIndicator} 
-            </Text>
-          )}
+          {hasContent && <Text color="yellow">{expandIndicator}</Text>}
           {roleEmoji} {role.toUpperCase()}
         </Text>
 

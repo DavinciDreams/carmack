@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'bun:test';
-import { calculateStats } from './StatsPanel';
+import { describe, expect, it } from 'bun:test';
 import type { ClaudeMessage } from '../types';
+import { calculateStats } from './StatsPanel';
 
 describe('StatsPanel', () => {
   describe('calculateStats', () => {

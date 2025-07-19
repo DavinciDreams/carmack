@@ -8,6 +8,28 @@ import { transformationActor } from '../../src/actors/transformation.js';
 import { validationActor } from '../../src/actors/validation.js';
 import type { AstPattern } from '../../src/types.js';
 
+// Type definitions for benchmark data structures
+interface BenchmarkItem {
+  [key: string]: unknown;
+}
+
+// biome-ignore lint/correctness/noUnusedVariables: Used in generated code template strings
+interface ProcessResult {
+  results: BenchmarkItem[];
+  errors: Error[];
+  stats: ProcessStats;
+}
+
+interface ProcessStats {
+  processed: number;
+  errors: number;
+}
+
+// biome-ignore lint/correctness/noUnusedVariables: Used in generated code template strings
+interface CacheEntry {
+  [key: string]: unknown;
+}
+
 describe('Performance Benchmarks', () => {
   let testDir: string;
   let originalCwd: string;
@@ -38,14 +60,14 @@ describe('Performance Benchmarks', () => {
     let code = `
       // Generated code with complexity level: ${complexity}
       class ComplexProcessor {
-        private cache: Map<string, any> = new Map();
-        private stats: { processed: number; errors: number } = { processed: 0, errors: 0 };
+        private cache: Map<string, CacheEntry> = new Map();
+        private stats: ProcessStats = { processed: 0, errors: 0 };
     `;
 
     // Add methods based on complexity
     for (let i = 0; i < complexity; i++) {
       code += `
-        process${i}(data: any[]): any[] {
+        process${i}(data: BenchmarkItem[]): ProcessResult {
           var results = [];
           var errors = [];
           
@@ -79,7 +101,7 @@ describe('Performance Benchmarks', () => {
           return { results, errors, stats: this.stats };
         }
         
-        private generateKey${i}(item: any): string {
+        private generateKey${i}(item: BenchmarkItem): string {
           var key = "";
           if (item != null) {
             key = JSON.stringify(item) + "_${i}";
@@ -87,8 +109,8 @@ describe('Performance Benchmarks', () => {
           return key;
         }
         
-        private transform${i}(item: any): any {
-          var transformed = {};
+        private transform${i}(item: BenchmarkItem): BenchmarkItem {
+          var transformed = {} as BenchmarkItem;
           for (var prop in item) {
             if (item.hasOwnProperty(prop)) {
               var value = item[prop];
@@ -131,13 +153,14 @@ describe('Performance Benchmarks', () => {
       });
 
       const duration = Date.now() - startTime;
-      const analysis = result.output!;
+      const analysis = result.output;
 
-      expect(analysis.complexity).toBeDefined();
+      expect(analysis).toBeDefined();
+      expect(analysis?.complexity).toBeDefined();
       expect(duration).toBeLessThan(1000); // Should complete within 1 second
 
       console.log(`   Small file analysis: ${duration}ms`);
-      console.log(`   Complexity: ${analysis.complexity?.cyclomaticComplexity}`);
+      console.log(`   Complexity: ${analysis?.complexity?.cyclomaticComplexity}`);
     });
 
     test('should analyze medium files efficiently', async () => {
@@ -159,13 +182,14 @@ describe('Performance Benchmarks', () => {
       });
 
       const duration = Date.now() - startTime;
-      const analysis = result.output!;
+      const analysis = result.output;
 
-      expect(analysis.complexity).toBeDefined();
+      expect(analysis).toBeDefined();
+      expect(analysis?.complexity).toBeDefined();
       expect(duration).toBeLessThan(3000); // Should complete within 3 seconds
 
       console.log(`   Medium file analysis: ${duration}ms`);
-      console.log(`   Complexity: ${analysis.complexity?.cyclomaticComplexity}`);
+      console.log(`   Complexity: ${analysis?.complexity?.cyclomaticComplexity}`);
     });
 
     test('should analyze large files within reasonable time', async () => {
@@ -187,13 +211,14 @@ describe('Performance Benchmarks', () => {
       });
 
       const duration = Date.now() - startTime;
-      const analysis = result.output!;
+      const analysis = result.output;
 
-      expect(analysis.complexity).toBeDefined();
+      expect(analysis).toBeDefined();
+      expect(analysis?.complexity).toBeDefined();
       expect(duration).toBeLessThan(8000); // Should complete within 8 seconds
 
       console.log(`   Large file analysis: ${duration}ms`);
-      console.log(`   Complexity: ${analysis.complexity?.cyclomaticComplexity}`);
+      console.log(`   Complexity: ${analysis?.complexity?.cyclomaticComplexity}`);
     });
 
     test('should analyze multiple files concurrently', async () => {
@@ -220,9 +245,10 @@ describe('Performance Benchmarks', () => {
       });
 
       const duration = Date.now() - startTime;
-      const analysis = result.output!;
+      const analysis = result.output;
 
-      expect(analysis.complexity).toBeDefined();
+      expect(analysis).toBeDefined();
+      expect(analysis?.complexity).toBeDefined();
       expect(duration).toBeLessThan(10000); // Should complete within 10 seconds
 
       console.log(`   Multi-file analysis (${files.length} files): ${duration}ms`);
@@ -274,6 +300,7 @@ describe('Performance Benchmarks', () => {
         mode: 'template' as const,
         files: ['transform-small.ts'],
         patterns,
+        dryRun: false,
       };
 
       const transformationActorInstance = createActor(transformationActor, {
@@ -288,13 +315,13 @@ describe('Performance Benchmarks', () => {
       );
 
       const duration = Date.now() - startTime;
-      const transformation = result.output!;
+      const transformation = result.output;
 
       expect(transformation).toBeDefined();
       expect(duration).toBeLessThan(2000); // Should complete within 2 seconds
 
       console.log(`   Small file transformation: ${duration}ms`);
-      console.log(`   Transformations applied: ${transformation.transformationsApplied || 0}`);
+      console.log(`   Transformations applied: ${transformation?.transformationsApplied || 0}`);
     });
 
     test('should transform medium files efficiently', async () => {
@@ -307,6 +334,7 @@ describe('Performance Benchmarks', () => {
         mode: 'template' as const,
         files: ['transform-medium.ts'],
         patterns,
+        dryRun: false,
       };
 
       const transformationActorInstance = createActor(transformationActor, {
@@ -321,13 +349,13 @@ describe('Performance Benchmarks', () => {
       );
 
       const duration = Date.now() - startTime;
-      const transformation = result.output!;
+      const transformation = result.output;
 
       expect(transformation).toBeDefined();
       expect(duration).toBeLessThan(5000); // Should complete within 5 seconds
 
       console.log(`   Medium file transformation: ${duration}ms`);
-      console.log(`   Transformations applied: ${transformation.transformationsApplied || 0}`);
+      console.log(`   Transformations applied: ${transformation?.transformationsApplied || 0}`);
     });
 
     test('should transform large files within reasonable time', async () => {
@@ -340,6 +368,7 @@ describe('Performance Benchmarks', () => {
         mode: 'template' as const,
         files: ['transform-large.ts'],
         patterns,
+        dryRun: false,
       };
 
       const transformationActorInstance = createActor(transformationActor, {
@@ -354,13 +383,13 @@ describe('Performance Benchmarks', () => {
       );
 
       const duration = Date.now() - startTime;
-      const transformation = result.output!;
+      const transformation = result.output;
 
       expect(transformation).toBeDefined();
       expect(duration).toBeLessThan(10000); // Should complete within 10 seconds
 
       console.log(`   Large file transformation: ${duration}ms`);
-      console.log(`   Transformations applied: ${transformation.transformationsApplied || 0}`);
+      console.log(`   Transformations applied: ${transformation?.transformationsApplied || 0}`);
     });
 
     test('should handle batch transformations efficiently', async () => {
@@ -378,6 +407,7 @@ describe('Performance Benchmarks', () => {
         mode: 'template' as const,
         files,
         patterns,
+        dryRun: false,
       };
 
       const transformationActorInstance = createActor(transformationActor, {
@@ -392,14 +422,14 @@ describe('Performance Benchmarks', () => {
       );
 
       const duration = Date.now() - startTime;
-      const transformation = result.output!;
+      const transformation = result.output;
 
       expect(transformation).toBeDefined();
       expect(duration).toBeLessThan(15000); // Should complete within 15 seconds
 
       console.log(`   Batch transformation (${files.length} files): ${duration}ms`);
       console.log(`   Average per file: ${Math.round(duration / files.length)}ms`);
-      console.log(`   Total transformations: ${transformation.transformationsApplied || 0}`);
+      console.log(`   Total transformations: ${transformation?.transformationsApplied || 0}`);
     });
   });
 
@@ -428,13 +458,13 @@ describe('Performance Benchmarks', () => {
         });
 
         const duration = Date.now() - startTime;
-        const validation = result.output!;
+        const validation = result.output;
 
         expect(validation).toBeDefined();
         expect(duration).toBeLessThan(2000); // Should complete within 2 seconds
 
         console.log(`   Small file validation: ${duration}ms`);
-        console.log(`   Valid: ${validation.isValid}`);
+        console.log(`   Valid: ${validation?.isValid}`);
       } catch (_error) {
         const duration = Date.now() - startTime;
         console.log(`   Small file validation (timeout/error): ${duration}ms`);
@@ -462,13 +492,13 @@ describe('Performance Benchmarks', () => {
         });
 
         const duration = Date.now() - startTime;
-        const validation = result.output!;
+        const validation = result.output;
 
         expect(validation).toBeDefined();
         expect(duration).toBeLessThan(4000); // Should complete within 4 seconds
 
         console.log(`   Medium file validation: ${duration}ms`);
-        console.log(`   Valid: ${validation.isValid}`);
+        console.log(`   Valid: ${validation?.isValid}`);
       } catch (_error) {
         const duration = Date.now() - startTime;
         console.log(`   Medium file validation (timeout/error): ${duration}ms`);
@@ -495,13 +525,13 @@ describe('Performance Benchmarks', () => {
       // Generate a large file with many patterns to match
       let largeCode = `
         class LargeDataProcessor {
-          private data: any[] = [];
+          private data: BenchmarkItem[] = [];
       `;
 
       // Add many similar methods to test memory usage
       for (let i = 0; i < 50; i++) {
         largeCode += `
-          process${i}(input: any): any {
+          process${i}(input: BenchmarkItem): BenchmarkItem {
             var result = input;
             var temp = null;
             var processed = false;
@@ -534,6 +564,7 @@ describe('Performance Benchmarks', () => {
         mode: 'template' as const,
         files: ['memory-test.ts'],
         patterns: memoryPatterns,
+        dryRun: false,
       };
 
       const transformationActorInstance = createActor(transformationActor, {
@@ -586,7 +617,7 @@ describe('Performance Benchmarks', () => {
 
     test('should handle concurrent transformations efficiently', async () => {
       const files: string[] = [];
-      const promises: Promise<any>[] = [];
+      const promises: Promise<unknown>[] = [];
 
       // Create multiple files
       for (let i = 0; i < 4; i++) {
@@ -604,6 +635,7 @@ describe('Performance Benchmarks', () => {
           mode: 'template' as const,
           files: [file],
           patterns: concurrentPatterns.slice(0, 2), // Use fewer patterns for speed
+          dryRun: false,
         };
 
         const actorInstance = createActor(transformationActor, { input: transformationInput });
@@ -625,8 +657,9 @@ describe('Performance Benchmarks', () => {
       console.log(`   Concurrent processing (${files.length} files): ${duration}ms`);
       console.log(`   Average per file: ${Math.round(duration / files.length)}ms`);
 
-      const totalTransformations = results.reduce((sum, result) => {
-        return sum + (result.output?.transformationsApplied || 0);
+      const totalTransformations = results.reduce((sum: number, result) => {
+        const transformationResult = result as { output?: { transformationsApplied?: number } };
+        return sum + (transformationResult.output?.transformationsApplied || 0);
       }, 0);
       console.log(`   Total transformations: ${totalTransformations}`);
     });

@@ -15,7 +15,7 @@ import type { AstPattern, ComplexityMetrics, TransformationRequest } from '../ty
  */
 
 // LLM Provider configuration
-const LLMProviderSchema = z.enum(['openai', 'anthropic', 'local', 'mock']);
+const LLMProviderSchema = z.enum(['openai', 'anthropic', 'openrouter', 'local', 'mock']);
 
 // LLM Configuration schema
 const LLMConfigSchema = z
@@ -231,6 +231,14 @@ export class LLMTransformer {
 
       // Apply the transformation if it's different
       if (originalContent !== llmResponse.transformedCode) {
+        console.log(`📝 Writing transformed code to ${filePath}`);
+        console.log(
+          `📏 Original length: ${originalContent.length}, New length: ${llmResponse.transformedCode.length}`
+        );
+        console.log(
+          `🔍 First 100 chars of transformed code: ${llmResponse.transformedCode.substring(0, 100)}...`
+        );
+
         await writeFile(filePath, llmResponse.transformedCode, 'utf-8');
 
         return {
@@ -433,8 +441,13 @@ Respond in this JSON format:
         const response = await this.makeAPICall(prompt);
 
         // Parse and validate response
+        console.log(`🔍 Raw API response: ${response.substring(0, 200)}...`);
         const parsedResponse = this.parseAPIResponse(response);
+        console.log(`📋 Parsed response keys: ${Object.keys(parsedResponse)}`);
         const validatedResponse = LLMResponseSchema.parse(parsedResponse);
+        console.log(
+          `✅ Validated response with transformedCode length: ${validatedResponse.transformedCode.length}`
+        );
 
         // Update token usage
         this.tokenUsage += this.estimateTokenUsage(prompt, validatedResponse.transformedCode);
@@ -466,6 +479,8 @@ Respond in this JSON format:
         return await this.callOpenAI(prompt);
       case 'anthropic':
         return await this.callAnthropic(prompt);
+      case 'openrouter':
+        return await this.callOpenRouter(prompt);
       case 'local':
         return await this.callLocalModel(prompt);
       default:
@@ -529,9 +544,11 @@ Respond in this JSON format:
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: this.config.model || 'claude-3-sonnet-20240229',
+        model: this.config.model || 'claude-3-5-sonnet-20241022',
         max_tokens: this.config.maxTokens,
         temperature: this.config.temperature,
+        system:
+          'You are an expert code transformation assistant. Transform the provided code to improve its quality, maintainability, and follow modern best practices. Focus on: type safety, performance, readability, and modern JavaScript/TypeScript patterns.',
         messages: [
           {
             role: 'user',
@@ -542,11 +559,74 @@ Respond in this JSON format:
     });
 
     if (!response.ok) {
-      throw new Error(`Anthropic API error: ${response.status} ${response.statusText}`);
+      let errorMessage = `Anthropic API error: ${response.status} ${response.statusText}`;
+      try {
+        const errorData = (await response.json()) as { error?: { message?: string } };
+        if (errorData.error) {
+          errorMessage += ` - ${errorData.error.message || JSON.stringify(errorData.error)}`;
+        }
+      } catch {
+        // If can't parse error JSON, use status text only
+      }
+      throw new Error(errorMessage);
     }
 
     const data = (await response.json()) as AnthropicResponse;
     return data.content?.[0]?.text || '';
+  }
+
+  /**
+   * Call OpenRouter API (OpenAI-compatible)
+   */
+  private async callOpenRouter(prompt: string): Promise<string> {
+    if (!this.config.apiKey) {
+      throw new Error('OpenRouter API key not provided');
+    }
+
+    const baseURL = this.config.baseURL || 'https://openrouter.ai/api/v1';
+
+    const response = await fetch(`${baseURL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.config.apiKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://github.com/DavinciDreams/carmack', // Optional: for better rate limits
+        'X-Title': 'Carmack Coder', // Optional: for analytics
+      },
+      body: JSON.stringify({
+        model: this.config.model || 'nvidia/llama-3.1-nemotron-ultra-253b-v1:free',
+        messages: [
+          {
+            role: 'system',
+            content:
+              'You are an expert code transformation assistant. Transform the provided code to improve its quality, maintainability, and follow modern best practices. Focus on: type safety, performance, readability, and modern JavaScript/TypeScript patterns.',
+          },
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        max_tokens: this.config.maxTokens,
+        temperature: this.config.temperature,
+        stream: false,
+      }),
+    });
+
+    if (!response.ok) {
+      let errorMessage = `OpenRouter API error: ${response.status} ${response.statusText}`;
+      try {
+        const errorData = (await response.json()) as { error?: { message?: string } };
+        if (errorData.error) {
+          errorMessage += ` - ${errorData.error.message || JSON.stringify(errorData.error)}`;
+        }
+      } catch {
+        // If can't parse error JSON, use status text only
+      }
+      throw new Error(errorMessage);
+    }
+
+    const data = (await response.json()) as OpenAIResponse;
+    return data.choices?.[0]?.message?.content || '';
   }
 
   /**
@@ -621,7 +701,59 @@ Respond in this JSON format:
   private parseAPIResponse(response: string): Record<string, unknown> {
     try {
       // Try to parse as JSON first
-      return JSON.parse(response);
+      const parsed = JSON.parse(response);
+      console.log(`🔍 Initial parsed response keys: ${Object.keys(parsed).join(', ')}`);
+
+      // Check if transformedCode field exists and what type it is
+      if (parsed.transformedCode !== undefined) {
+        const codeValue = parsed.transformedCode;
+        console.log(`🔍 transformedCode type: ${typeof codeValue}`);
+        console.log(
+          `🔍 First 100 chars of transformedCode: ${String(codeValue).substring(0, 100)}...`
+        );
+
+        // If transformedCode is itself a JSON string containing another JSON object, this is the bug
+        if (typeof codeValue === 'string') {
+          const trimmed = codeValue.trim();
+          if (trimmed.startsWith('{')) {
+            console.log('🐛 Detected JSON string in transformedCode field');
+            try {
+              const innerParsed = JSON.parse(codeValue);
+              console.log(`🔧 Inner JSON keys: ${Object.keys(innerParsed).join(', ')}`);
+
+              if (innerParsed.transformedCode && typeof innerParsed.transformedCode === 'string') {
+                console.log('🔧 Extracting actual code from nested JSON');
+                console.log(
+                  `🔧 Actual code preview: ${String(innerParsed.transformedCode).substring(0, 100)}...`
+                );
+
+                // Create a corrected response with the actual code
+                const correctedResponse = {
+                  ...parsed,
+                  transformedCode: innerParsed.transformedCode,
+                  explanation: innerParsed.explanation || parsed.explanation,
+                  confidence:
+                    innerParsed.confidence !== undefined
+                      ? innerParsed.confidence
+                      : parsed.confidence,
+                  warnings: innerParsed.warnings || parsed.warnings,
+                  appliedTransformations:
+                    innerParsed.appliedTransformations || parsed.appliedTransformations,
+                };
+
+                console.log('✅ Fixed double-nested JSON response');
+                return correctedResponse;
+              }
+            } catch (parseError) {
+              console.log(
+                `⚠️ Failed to parse nested JSON: ${parseError instanceof Error ? parseError.message : String(parseError)}`
+              );
+            }
+          }
+        }
+      }
+
+      return parsed;
     } catch {
       // If not JSON, try to extract JSON from markdown code blocks
       const jsonMatch = response.match(/```json\n([\s\S]*?)\n```/);

@@ -2,6 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { js, ts } from '@ast-grep/napi';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
+import type { ASTGrepNode } from '../docs/ast-analyzer.js';
 
 // Enhanced pattern schema with full AST-grep support
 const EnhancedPatternSchema = z.object({
@@ -78,7 +79,7 @@ export const enhancedTransformationActor = fromPromise(
     const validated = EnhancedTransformationRequestSchema.parse(input);
 
     try {
-      let result: any;
+      let result: Record<string, unknown>;
 
       switch (validated.transformationType) {
         case 'template':
@@ -288,10 +289,10 @@ async function applyEnhancedTemplatePattern(
  * Apply REAL AST pattern using ast-grep native API
  */
 async function applyRealASTPattern(
-  root: any,
+  root: unknown,
   content: string,
   pattern: EnhancedPattern,
-  _lang: any
+  _lang: unknown
 ): Promise<{ content: string; modified: boolean; transformCount: number }> {
   if (!pattern.astGrep) {
     return { content, modified: false, transformCount: 0 };
@@ -301,15 +302,23 @@ async function applyRealASTPattern(
     let modifiedContent = content;
     let transformCount = 0;
 
-    // Find all matches using ast-grep
-    const matches = root.findAll(pattern.astGrep.rule);
+    // Get the root node for searching
+    const rootNode = (root as { root: () => ASTGrepNode }).root();
+
+    // Find all matches using ast-grep - use pattern string
+    const patternString =
+      typeof pattern.astGrep.rule === 'string'
+        ? pattern.astGrep.rule
+        : pattern.astGrep.rule.pattern || '';
+
+    const matches = rootNode.findAll(patternString);
 
     if (matches && matches.length > 0) {
       console.log(`🔍 Found ${matches.length} AST matches for pattern ${pattern.id}`);
 
       // Apply transformations in reverse order to maintain positions
       const sortedMatches = matches.sort(
-        (a: any, b: any) => b.range().start.index - a.range().start.index
+        (a: ASTGrepNode, b: ASTGrepNode) => b.range().start.index - a.range().start.index
       );
 
       for (const match of sortedMatches) {
@@ -321,12 +330,12 @@ async function applyRealASTPattern(
           let replacement = pattern.astGrep.fix;
 
           // Handle variable substitutions
-          const variables = match.getMultipleMatches();
+          const variables = match.getMultipleMatches?.();
           if (variables) {
             for (const [varName, varMatch] of Object.entries(variables)) {
               const varText = Array.isArray(varMatch)
-                ? varMatch.map((m: any) => m.text()).join(', ')
-                : (varMatch as any).text();
+                ? varMatch.map((m: ASTGrepNode) => m.text()).join(', ')
+                : (varMatch as ASTGrepNode).text();
               replacement = replacement.replace(new RegExp(`\\$${varName}`, 'g'), varText);
             }
           }

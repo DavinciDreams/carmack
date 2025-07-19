@@ -75,7 +75,7 @@
   font-size: 12px;
   padding: 8px 0;
   outline: none;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
 }
 
 .search-input::placeholder {
@@ -231,21 +231,21 @@
     min-width: 250px;
     padding: 6px;
   }
-  
+
   .search-input-container {
     padding: 0 6px;
   }
-  
+
   .search-input {
     font-size: 11px;
     padding: 6px 0;
   }
-  
+
   .preview-item {
     flex-direction: column;
     gap: 4px;
   }
-  
+
   .preview-role {
     min-width: auto;
   }
@@ -257,27 +257,27 @@
     background-color: #000;
     border-color: #666;
   }
-  
+
   .search-input-container {
     background-color: #000;
     border-color: #666;
   }
-  
+
   .search-input-container:focus-within {
     border-color: #66b3ff;
     box-shadow: 0 0 0 2px rgba(102, 179, 255, 0.3);
   }
-  
+
   .search-preview {
     background-color: #000;
     border-color: #666;
   }
-  
+
   .preview-header {
     background-color: #111;
     border-color: #666;
   }
-  
+
   .search-stats {
     background-color: #111;
     border-color: #666;

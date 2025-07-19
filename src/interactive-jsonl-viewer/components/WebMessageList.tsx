@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import type { MessageData, AppState, VirtualScrollState } from '../utils/types';
+import type React from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MessageUtils } from '../utils/messageUtils';
+import type { AppState, MessageData, VirtualScrollState } from '../utils/types';
+import { WebFilterDialog } from './WebFilterDialog';
 import { WebMessageComponent } from './WebMessageComponent';
 import { WebSearchInput } from './WebSearchInput';
-import { WebFilterDialog } from './WebFilterDialog';
 import './WebMessageList.css';
 
 interface MessageListProps {
@@ -54,7 +55,7 @@ export const MessageList: React.FC<MessageListProps> = ({
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [scrollTop, setScrollTop] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(maxHeight);
-  
+
   // Refs
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -63,12 +64,12 @@ export const MessageList: React.FC<MessageListProps> = ({
   // Memoized filtered and sorted messages
   const filteredMessages = useMemo(() => {
     let result = MessageUtils.filterMessagesByType(messages, filterType);
-    
+
     if (searchQuery.trim()) {
       const searchResults = MessageUtils.searchMessages(result, searchQuery);
-      result = searchResults.map(r => r.message);
+      result = searchResults.map((r) => r.message);
     }
-    
+
     return MessageUtils.sortMessages(result, viewMode === 'tree' ? 'tree' : 'chronological');
   }, [messages, filterType, searchQuery, viewMode]);
 
@@ -113,69 +114,72 @@ export const MessageList: React.FC<MessageListProps> = ({
   }, []);
 
   // Handle keyboard navigation
-  const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
-    if (isSearchActive || isFilterOpen) {
-      return; // Let search/filter handle their own keyboard events
-    }
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
+      if (isSearchActive || isFilterOpen) {
+        return; // Let search/filter handle their own keyboard events
+      }
 
-    const currentIndex = Math.max(0, Math.min(selectedIndex, filteredMessages.length - 1));
-    
-    switch (event.key) {
-      case 'ArrowUp':
-        event.preventDefault();
-        if (currentIndex > 0) {
-          onSelect(currentIndex - 1);
-        }
-        break;
-      case 'ArrowDown':
-        event.preventDefault();
-        if (currentIndex < filteredMessages.length - 1) {
-          onSelect(currentIndex + 1);
-        }
-        break;
-      case 'Enter':
-      case ' ':
-        event.preventDefault();
-        if (filteredMessages[currentIndex]) {
-          onToggleExpand(filteredMessages[currentIndex].uuid);
-        }
-        break;
-      case 'Home':
-        event.preventDefault();
-        onSelect(0);
-        break;
-      case 'End':
-        event.preventDefault();
-        onSelect(filteredMessages.length - 1);
-        break;
-      case '/':
-        event.preventDefault();
-        if (showSearch) {
-          setIsSearchActive(true);
-        }
-        break;
-      case 'f':
-        event.preventDefault();
-        if (showFilter) {
-          setIsFilterOpen(true);
-        }
-        break;
-      case 'Escape':
-        event.preventDefault();
-        setIsSearchActive(false);
-        setIsFilterOpen(false);
-        break;
-    }
-  }, [
-    isSearchActive,
-    isFilterOpen,
-    selectedIndex,
-    filteredMessages,
-    onSelect,
-    onToggleExpand,
-    showSearch,
-    showFilter,
-  ]);
+      const currentIndex = Math.max(0, Math.min(selectedIndex, filteredMessages.length - 1));
+
+      switch (event.key) {
+        case 'ArrowUp':
+          event.preventDefault();
+          if (currentIndex > 0) {
+            onSelect(currentIndex - 1);
+          }
+          break;
+        case 'ArrowDown':
+          event.preventDefault();
+          if (currentIndex < filteredMessages.length - 1) {
+            onSelect(currentIndex + 1);
+          }
+          break;
+        case 'Enter':
+        case ' ':
+          event.preventDefault();
+          if (filteredMessages[currentIndex]) {
+            onToggleExpand(filteredMessages[currentIndex].uuid);
+          }
+          break;
+        case 'Home':
+          event.preventDefault();
+          onSelect(0);
+          break;
+        case 'End':
+          event.preventDefault();
+          onSelect(filteredMessages.length - 1);
+          break;
+        case '/':
+          event.preventDefault();
+          if (showSearch) {
+            setIsSearchActive(true);
+          }
+          break;
+        case 'f':
+          event.preventDefault();
+          if (showFilter) {
+            setIsFilterOpen(true);
+          }
+          break;
+        case 'Escape':
+          event.preventDefault();
+          setIsSearchActive(false);
+          setIsFilterOpen(false);
+          break;
+      }
+    },
+    [
+      isSearchActive,
+      isFilterOpen,
+      selectedIndex,
+      filteredMessages,
+      onSelect,
+      onToggleExpand,
+      showSearch,
+      showFilter,
+    ]
+  );
 
   // Scroll to selected message
   useEffect(() => {
@@ -192,16 +196,22 @@ export const MessageList: React.FC<MessageListProps> = ({
   }, [selectedIndex, itemHeight, scrollTop, viewportHeight]);
 
   // Handle search
-  const handleSearch = useCallback((query: string) => {
-    onSearchChange(query);
-    setIsSearchActive(false);
-  }, [onSearchChange]);
+  const handleSearch = useCallback(
+    (query: string) => {
+      onSearchChange(query);
+      setIsSearchActive(false);
+    },
+    [onSearchChange]
+  );
 
   // Handle filter
-  const handleFilter = useCallback((newFilterType: AppState['filterType']) => {
-    onFilterChange(newFilterType);
-    setIsFilterOpen(false);
-  }, [onFilterChange]);
+  const handleFilter = useCallback(
+    (newFilterType: AppState['filterType']) => {
+      onFilterChange(newFilterType);
+      setIsFilterOpen(false);
+    },
+    [onFilterChange]
+  );
 
   // Calculate total height for virtual scrolling
   const totalHeight = filteredMessages.length * itemHeight;
@@ -211,7 +221,7 @@ export const MessageList: React.FC<MessageListProps> = ({
     return (
       <div className={`message-list ${className}`}>
         <div className="message-list-loading">
-          <div className="loading-spinner"></div>
+          <div className="loading-spinner" />
           <p>Loading messages...</p>
         </div>
       </div>
@@ -237,9 +247,7 @@ export const MessageList: React.FC<MessageListProps> = ({
         <div className="message-list-empty">
           <p>No messages to display</p>
           {searchQuery && (
-            <p className="search-hint">
-              Try adjusting your search query or filter settings.
-            </p>
+            <p className="search-hint">Try adjusting your search query or filter settings.</p>
           )}
         </div>
       </div>
@@ -265,7 +273,7 @@ export const MessageList: React.FC<MessageListProps> = ({
             messages={filteredMessages}
           />
         )}
-        
+
         {showFilter && (
           <button
             className="filter-button"
@@ -301,7 +309,7 @@ export const MessageList: React.FC<MessageListProps> = ({
             const actualIndex = virtualScrollState.startIndex + index;
             const isSelected = actualIndex === selectedIndex;
             const isExpanded = expandedMessages.has(message.uuid);
-            
+
             return (
               <div
                 key={message.uuid}
@@ -342,9 +350,7 @@ export const MessageList: React.FC<MessageListProps> = ({
 
       {/* Keyboard shortcuts help */}
       <div className="message-list-shortcuts">
-        <small>
-          ↑/↓ Navigate • Enter/Space Expand • / Search • f Filter • Esc Cancel
-        </small>
+        <small>↑/↓ Navigate • Enter/Space Expand • / Search • f Filter • Esc Cancel</small>
       </div>
     </div>
   );

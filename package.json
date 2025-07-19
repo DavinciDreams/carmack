@@ -9,9 +9,9 @@
   "scripts": {
     "dev": "bun run index.ts",
     "build": "bun build index.ts --outdir ./dist --target bun",
-    "format": "bunx biome format --write .",
-    "lint": "bunx biome check --write .",
-    "type-check": "bunx tsc --noEmit",
+    "format": "bun biome format --write .",
+    "lint": "bun biome check --write .",
+    "type-check": "bun tsc --noEmit",
     "test": "bun run test/infrastructure/test-runner.ts",
     "test:all": "bun run test/infrastructure/test-runner.ts",
     "test:unit": "bun run test/infrastructure/test-runner.ts --category=unit",
@@ -79,24 +79,25 @@
     "@biomejs/biome"
   ],
   "devDependencies": {
-    "@anthropic-ai/claude-code": "^1.0.54",
-    "@biomejs/biome": "^2.0.6",
+    "@anthropic-ai/claude-code": "^1.0.56",
+    "@biomejs/biome": "^2.1.2",
     "@types/bun": "^1.2.18",
     "@types/chokidar": "^2.1.7",
     "@types/eslint": "^9.6.1",
-    "@typescript-eslint/eslint-plugin": "^8.35.1",
-    "@typescript-eslint/parser": "^8.35.1",
-    "eslint": "^9.30.1",
+    "@typescript-eslint/eslint-plugin": "^8.37.0",
+    "@typescript-eslint/parser": "^8.37.0",
+    "eslint": "^9.31.0",
     "picocolors": "^1.1.1",
+    "react-devtools-core": "^6.1.5",
     "vitest": "^3.2.4"
   },
   "peerDependencies": {
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@ast-grep/napi": "^0.38.6",
+    "@ast-grep/napi": "^0.38.7",
     "@inkjs/ui": "2.0.0",
-    "@types/node": "^24.0.10",
+    "@types/node": "^24.0.15",
     "@types/react": "19.1.8",
     "chokidar": "^4.0.3",
     "ink": "6.0.1",
@@ -106,6 +107,6 @@
     "react": "19.1.0",
     "simple-git": "^3.28.0",
     "xstate": "^5.20.1",
-    "zod": "^3.25.74"
+    "zod": "^3.25.76"
   }
 }

@@ -1,12 +1,14 @@
-import { Box, Text, useInput, useApp } from 'ink';
+import { Box, Text, useApp, useInput } from 'ink';
 import type React from 'react';
-import { useCallback, useEffect, useState, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ControlPanel } from './components/ControlPanel';
 import { FilterDialog } from './components/FilterDialog';
 import { MessageList } from './components/MessageList';
 import { SearchInput } from './components/SearchInput';
 import { StatsPanel } from './components/StatsPanel';
 import { useAppState } from './hooks/useAppState';
+import { useKeyboardNavigation } from './hooks/useKeyboardNavigation';
+import { MessageUtils } from './utils/messageUtils';
 import type { CLIArgs } from './utils/types';
 
 interface InteractiveViewerProps {
@@ -22,9 +24,12 @@ interface ErrorBoundaryState {
 }
 
 // Error boundary component for handling crashes
-const ErrorBoundary: React.FC<{ children: React.ReactNode; onError?: (error: Error) => void }> = ({ children, onError }) => {
+const ErrorBoundary: React.FC<{ children: React.ReactNode; onError?: (error: Error) => void }> = ({
+  children,
+  onError,
+}) => {
   const [state, setState] = useState<ErrorBoundaryState>({ hasError: false });
-  
+
   useEffect(() => {
     const handleError = (error: Error) => {
       setState({ hasError: true, error });
@@ -32,27 +37,29 @@ const ErrorBoundary: React.FC<{ children: React.ReactNode; onError?: (error: Err
         onError(error);
       }
     };
-    
+
     // Global error handler for unhandled promise rejections
     process.on('unhandledRejection', handleError);
     process.on('uncaughtException', handleError);
-    
+
     return () => {
       process.off('unhandledRejection', handleError);
       process.off('uncaughtException', handleError);
     };
   }, [onError]);
-  
+
   if (state.hasError) {
     return (
       <Box flexDirection="column" alignItems="center" justifyContent="center" height={15}>
-        <Text color="red" bold>❌ Application Error</Text>
+        <Text color="red" bold>
+          ❌ Application Error
+        </Text>
         <Text color="gray">{state.error?.message || 'An unexpected error occurred'}</Text>
         <Text color="cyan">Press Ctrl+C to exit</Text>
       </Box>
     );
   }
-  
+
   return <>{children}</>;
 };
 
@@ -63,16 +70,10 @@ export const InteractiveViewer: React.FC<InteractiveViewerProps> = ({
   cliArgs,
 }) => {
   const { exit } = useApp();
-  
+
   // Use the integrated app state hook
-  const { 
-    state, 
-    actions, 
-    computed, 
-    isLoading, 
-    error 
-  } = useAppState(jsonlPath, true);
-  
+  const { state, actions, computed, isLoading, error } = useAppState(jsonlPath, true);
+
   // UI state
   const [showStats, setShowStats] = useState(true);
   const [showControls, setShowControls] = useState(true);
@@ -80,22 +81,22 @@ export const InteractiveViewer: React.FC<InteractiveViewerProps> = ({
   const [showFilter, setShowFilter] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [layoutMode, setLayoutMode] = useState<'full' | 'compact'>('full');
-  
+
   // Auto-scroll delay configuration
   const autoScrollDelay = useRef(initialDelay);
-  
+
   // Initialize auto-scroll delay
   useEffect(() => {
     actions.setAutoScrollDelay(initialDelay);
   }, [initialDelay]);
-  
+
   // Handle CLI arguments
   useEffect(() => {
     if (cliArgs) {
       if (cliArgs.debug) {
         console.log('Debug mode enabled', { jsonlPath, cliArgs });
       }
-      
+
       if (cliArgs.delay) {
         const delay = Number.parseInt(cliArgs.delay, 10);
         if (!isNaN(delay) && delay > 0) {
@@ -105,7 +106,7 @@ export const InteractiveViewer: React.FC<InteractiveViewerProps> = ({
       }
     }
   }, [cliArgs]);
-  
+
   // Load the JSONL file
   useEffect(() => {
     if (jsonlPath) {
@@ -115,17 +116,17 @@ export const InteractiveViewer: React.FC<InteractiveViewerProps> = ({
 
   /**
    * Auto-scroll functionality with playing state sync
-   * 
+   *
    * CRITICAL FLOW for future LLMs:
    * 1. This effect runs when isPlaying is true AND state.autoScroll is true
    * 2. It creates an interval that calls actions.selectNext() every autoScrollDelay ms
    * 3. When we can't navigate down anymore, it stops playing
-   * 
+   *
    * PROBLEM: This is where auto-expand should happen!
    * - When actions.selectNext() moves to a new message, that message should auto-expand
    * - But this effect doesn't know about message expansion
    * - The expansion logic was in the dead useAutoScroll hook
-   * 
+   *
    * SOLUTION: Add another effect that watches state.selectedIndex changes during playback
    */
   useEffect(() => {
@@ -141,11 +142,17 @@ export const InteractiveViewer: React.FC<InteractiveViewerProps> = ({
     }, state.autoScrollDelay);
 
     return () => clearInterval(interval);
-  }, [isPlaying, state.autoScroll, state.autoScrollDelay, state.selectedIndex, computed.filteredMessages.length]);
-  
+  }, [
+    isPlaying,
+    state.autoScroll,
+    state.autoScrollDelay,
+    state.selectedIndex,
+    computed.filteredMessages.length,
+  ]);
+
   /**
    * Sync playing state with auto-scroll
-   * 
+   *
    * IMPORTANT for future LLMs:
    * - isPlaying is LOCAL state in InteractiveViewer
    * - state.autoScroll is GLOBAL state from useAppState
@@ -160,34 +167,53 @@ export const InteractiveViewer: React.FC<InteractiveViewerProps> = ({
 
   /**
    * Auto-expand messages during playback
-   * 
+   *
    * CRITICAL MISSING PIECE for future LLMs:
    * - This effect was in the dead useAutoScroll hook
    * - It needs to be HERE in InteractiveViewer
    * - When isPlaying AND selectedIndex changes, expand the current message
    * - Don't collapse previous messages (one-way expansion)
-   * 
+   *
    * FIXED DEPENDENCY ISSUE:
    * - Must include state.expandedMessages in deps to react to expansion changes
    * - Must include actions.toggleExpansion to prevent stale closures
    */
   useEffect(() => {
     if (!isPlaying) return;
-    
+
     const currentMessage = computed.selectedMessage;
     if (currentMessage?.uuid && !state.expandedMessages.has(currentMessage.uuid)) {
       actions.toggleExpansion(currentMessage.uuid);
     }
-  }, [isPlaying, state.selectedIndex, computed.selectedMessage?.uuid, state.expandedMessages, actions.toggleExpansion]);
-  
+  }, [
+    isPlaying,
+    state.selectedIndex,
+    computed.selectedMessage?.uuid,
+    state.expandedMessages,
+    actions.toggleExpansion,
+  ]);
+
   // Handle search with integrated state
-  const handleSearch = useCallback(
-    (query: string) => {
-      actions.setSearchQuery(query);
-    },
-    []
-  );
-    
+
+  const handleSearch = useCallback((query: string) => {
+    actions.setSearchQuery(query);
+  }, []);
+
+  // Handle filter changes
+  const handleFilterChange = useCallback((filterType: typeof state.filterType) => {
+    actions.setFilterType(filterType);
+  }, []);
+
+  // Handle view mode toggle
+  const handleViewModeToggle = useCallback(() => {
+    actions.toggleViewMode();
+  }, []);
+
+  // Handle help toggle
+  const handleHelpToggle = useCallback(() => {
+    actions.toggleHelp();
+  }, []);
+
   // Integrate keyboard navigation with enhanced functionality
   useInput((input, key) => {
     // Don't handle navigation when in input mode
@@ -212,7 +238,7 @@ export const InteractiveViewer: React.FC<InteractiveViewerProps> = ({
     } else if (input === ' ') {
       /**
        * Toggle auto-scroll/playing with Space key
-       * 
+       *
        * CRITICAL for future LLMs debugging auto-expand:
        * - This is the PRIMARY way users start playback
        * - It sets BOTH actions.toggleAutoScroll() AND setIsPlaying()
@@ -283,13 +309,16 @@ export const InteractiveViewer: React.FC<InteractiveViewerProps> = ({
   });
 
   // Error boundary wrapper
-  const handleError = useCallback((error: Error) => {
-    console.error('InteractiveViewer error:', error);
-    if (debug) {
-      console.error('Stack trace:', error.stack);
-    }
-  }, [debug]);
-  
+  const handleError = useCallback(
+    (error: Error) => {
+      console.error('InteractiveViewer error:', error);
+      if (debug) {
+        console.error('Stack trace:', error.stack);
+      }
+    },
+    [debug]
+  );
+
   // Loading state
   if (isLoading) {
     return (
@@ -310,7 +339,7 @@ export const InteractiveViewer: React.FC<InteractiveViewerProps> = ({
       </Box>
     );
   }
-  
+
   // No messages state
   if (!computed.hasMessages) {
     return (
@@ -318,8 +347,12 @@ export const InteractiveViewer: React.FC<InteractiveViewerProps> = ({
         <Text color="yellow">⚠️ No messages found in file</Text>
         <Text color="gray">Path: {jsonlPath}</Text>
         <Text color="gray">Debug: state.messages.length = {state.messages.length}</Text>
-        <Text color="gray">Debug: computed.filteredMessages.length = {computed.filteredMessages.length}</Text>
-        <Text color="gray">Debug: computed.hasMessages = {computed.hasMessages ? 'true' : 'false'}</Text>
+        <Text color="gray">
+          Debug: computed.filteredMessages.length = {computed.filteredMessages.length}
+        </Text>
+        <Text color="gray">
+          Debug: computed.hasMessages = {computed.hasMessages ? 'true' : 'false'}
+        </Text>
         <Text color="gray">Debug: isLoading = {isLoading ? 'true' : 'false'}</Text>
         <Text color="cyan">Press 'R' to retry or 'q' to quit</Text>
       </Box>
@@ -334,9 +367,7 @@ export const InteractiveViewer: React.FC<InteractiveViewerProps> = ({
           <Text bold color="cyan">
             📋 Interactive Claude JSONL Viewer - {jsonlPath.split('/').pop()}
           </Text>
-          {debug && (
-            <Text color="gray"> (Debug Mode)</Text>
-          )}
+          {debug && <Text color="gray"> (Debug Mode)</Text>}
         </Box>
 
         {/* Main content area */}
@@ -345,19 +376,14 @@ export const InteractiveViewer: React.FC<InteractiveViewerProps> = ({
           {layoutMode === 'full' && (
             <Box flexDirection="column" width="25%" minWidth={35} borderStyle="single">
               {showStats && (
-                <StatsPanel 
-                  messages={state.messages} 
+                <StatsPanel
+                  messages={state.messages}
                   filteredMessages={computed.filteredMessages}
                   stats={computed.stats}
                 />
               )}
 
-              {showControls && (
-                <ControlPanel 
-                  state={state}
-                  isVisible={showControls}
-                />
-              )}
+              {showControls && <ControlPanel state={state} isVisible={showControls} />}
             </Box>
           )}
 
@@ -379,15 +405,9 @@ export const InteractiveViewer: React.FC<InteractiveViewerProps> = ({
           </Box>
         </Box>
 
-
         {/* Search overlay */}
         {showSearch && (
-          <Box
-            position="absolute"
-            marginTop={5}
-            marginLeft={5}
-            marginRight={5}
-          >
+          <Box position="absolute" marginTop={5} marginLeft={5} marginRight={5}>
             <SearchInput
               onSearch={handleSearch}
               initialQuery={state.searchQuery}
@@ -402,12 +422,7 @@ export const InteractiveViewer: React.FC<InteractiveViewerProps> = ({
 
         {/* Filter overlay */}
         {showFilter && (
-          <Box
-            position="absolute"
-            marginTop={5}
-            marginLeft={5}
-            marginRight={5}
-          >
+          <Box position="absolute" marginTop={5} marginLeft={5} marginRight={5}>
             <FilterDialog
               currentFilterType={state.filterType}
               messages={state.messages}
@@ -424,20 +439,22 @@ export const InteractiveViewer: React.FC<InteractiveViewerProps> = ({
         {/* Status bar */}
         <Box borderStyle="single" padding={1} flexDirection="column">
           <Text color="white">
-            {isPlaying ? '⏸️ Playing' : '▶️ Paused'} | 
-            Message {state.selectedIndex + 1}/{computed.filteredMessages.length} |
+            {isPlaying ? '⏸️ Playing' : '▶️ Paused'} | Message {state.selectedIndex + 1}/
+            {computed.filteredMessages.length} |
             {computed.isSearching && `Search: "${state.searchQuery}" | `}
             {computed.isFiltering && `Filter: ${state.filterType} | `}
-            Mode: {state.viewMode} | 
-            Layout: {layoutMode} | 
-            {state.autoScrollDelay}ms delay | 
-            Press ? for help
+            Mode: {state.viewMode} | Layout: {layoutMode} |{state.autoScrollDelay}ms delay | Press ?
+            for help
           </Text>
           {state.showHelp && (
             <Box marginTop={1} paddingY={1} borderTop borderColor="gray">
               <Box flexDirection="column">
-                <Text bold color="cyan">Help - Keyboard Shortcuts</Text>
-                <Text color="white">Navigation: up/down arrows, left/right page, g/G first/last</Text>
+                <Text bold color="cyan">
+                  Help - Keyboard Shortcuts
+                </Text>
+                <Text color="white">
+                  Navigation: up/down arrows, left/right page, g/G first/last
+                </Text>
                 <Text color="white">Actions: Space play, Enter expand, Tab view</Text>
                 <Text color="white">Filters: f cycle, a all, A assistant</Text>
                 <Text color="white">Other: r reset, R refresh, q quit, ? toggle help</Text>

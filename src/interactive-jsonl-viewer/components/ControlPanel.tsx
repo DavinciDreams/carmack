@@ -173,9 +173,9 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
             Keys:
           </Text>
           <Box marginLeft={2}>
-            <Text color="white">↑/↓ nav  Space play  ? help</Text>
-            <Text color="white">←/→ jump  Enter expand  q quit</Text>
-            <Text color="white">f filter  t view  r reset</Text>
+            <Text color="white">↑/↓ nav Space play ? help</Text>
+            <Text color="white">←/→ jump Enter expand q quit</Text>
+            <Text color="white">f filter t view r reset</Text>
           </Box>
         </Box>
       )}
