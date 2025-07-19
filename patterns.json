@@ -181,6 +181,16 @@
       "complexity": 1,
       "riskLevel": "low",
       "mode": "template"
+    },
+    {
+      "id": "cpp-add-comment-mark",
+      "language": "cpp",
+      "pattern": "namespace cudaq {",
+      "replacement": "namespace cudaq { // CUDA-Q namespace",
+      "description": "Add documentation comment to cudaq namespace",
+      "complexity": 1,
+      "riskLevel": "low",
+      "mode": "template"
     }
   ],
   "categories": {
