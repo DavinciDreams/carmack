@@ -88,6 +88,7 @@
     "@typescript-eslint/parser": "^8.37.0",
     "eslint": "^9.31.0",
     "picocolors": "^1.1.1",
+    "react-devtools-core": "^6.1.5",
     "vitest": "^3.2.4"
   },
   "peerDependencies": {
