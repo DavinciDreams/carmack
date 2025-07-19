@@ -194,6 +194,7 @@ export const InteractiveViewer: React.FC<InteractiveViewerProps> = ({
   ]);
 
   // Handle search with integrated state
+
   const handleSearch = useCallback((query: string) => {
     actions.setSearchQuery(query);
   }, []);
@@ -254,7 +255,7 @@ export const InteractiveViewer: React.FC<InteractiveViewerProps> = ({
       const filterTypes = ['all', 'user', 'assistant', 'tools', 'sidechains'] as const;
       const currentIndex = filterTypes.indexOf(state.filterType);
       const nextIndex = (currentIndex + 1) % filterTypes.length;
-      actions.setFilterType(filterTypes[nextIndex]);
+      actions.setFilterType(filterTypes[nextIndex as unknown]);
     } else if (input === 's') {
       setShowSearch(true);
     } else if (input === 'F') {
