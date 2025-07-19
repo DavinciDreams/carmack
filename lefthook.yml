@@ -1,46 +1,46 @@
-skip_output:
-  - meta
-  - summary
+# skip_output:
+#   - meta
+#   - summary
 
-pre-commit:
-  parallel: true
-  commands:
-    format:
-      glob: "*.{js,ts,tsx,json,md}"
-      run: bun run format
-    lint:
-      glob: "*.{js,ts,tsx,json}"
-      run: bun run lint
-    # re-enable after fixing unknown type errors
-    # typecheck:
-    #   glob: "*.{ts,tsx}"
-    #   run: bun run type-check
-
-# pre-push:
+# pre-commit:
 #   parallel: true
 #   commands:
-#     validate-merge-commits:
-#       glob: "*"
-#       run: |
-#         # Check if this is a merge commit and validate it has PR URL
-#         if git log -1 --merges --oneline | grep -q "Merge pull request"; then
-#           COMMIT_MSG=$(git log -1 --pretty=%B)
-#           if ! echo "$COMMIT_MSG" | grep -qE "PR: https://github\.com/.*/(pull|issues)/[0-9]+"; then
-#             echo "❌ Merge commit missing PR URL"
-#             echo "Use 'bun run merge-pr <number>' to merge with proper commit message"
-#             exit 1
-#           fi
-#           echo "✅ Merge commit has proper PR URL"
-#         fi
+#     format:
+#       glob: "*.{js,ts,tsx,json,md}"
+#       run: bun run format
+#     lint:
+#       glob: "*.{js,ts,tsx,json}"
+#       run: bun run lint
+#     # re-enable after fixing unknown type errors
+#     # typecheck:
+#     #   glob: "*.{ts,tsx}"
+#     #   run: bun run type-check
 
-# post-merge:
-#   commands:
-#     notify-merge:
-#       run: |
-#         # Notify about successful merge with validation
-#         COMMIT_MSG=$(git log -1 --pretty=%B)
-#         if echo "$COMMIT_MSG" | grep -qE "PR: https://github\.com/.*/(pull|issues)/[0-9]+"; then
-#           echo "✅ Successfully merged with PR tracking"
-#         else
-#           echo "⚠️  Merge completed but missing PR URL - consider using 'bun run merge-pr' next time"
-#         fi
+# # pre-push:
+# #   parallel: true
+# #   commands:
+# #     validate-merge-commits:
+# #       glob: "*"
+# #       run: |
+# #         # Check if this is a merge commit and validate it has PR URL
+# #         if git log -1 --merges --oneline | grep -q "Merge pull request"; then
+# #           COMMIT_MSG=$(git log -1 --pretty=%B)
+# #           if ! echo "$COMMIT_MSG" | grep -qE "PR: https://github\.com/.*/(pull|issues)/[0-9]+"; then
+# #             echo "❌ Merge commit missing PR URL"
+# #             echo "Use 'bun run merge-pr <number>' to merge with proper commit message"
+# #             exit 1
+# #           fi
+# #           echo "✅ Merge commit has proper PR URL"
+# #         fi
+
+# # post-merge:
+# #   commands:
+# #     notify-merge:
+# #       run: |
+# #         # Notify about successful merge with validation
+# #         COMMIT_MSG=$(git log -1 --pretty=%B)
+# #         if echo "$COMMIT_MSG" | grep -qE "PR: https://github\.com/.*/(pull|issues)/[0-9]+"; then
+# #           echo "✅ Successfully merged with PR tracking"
+# #         else
+# #           echo "⚠️  Merge completed but missing PR URL - consider using 'bun run merge-pr' next time"
+# #         fi
