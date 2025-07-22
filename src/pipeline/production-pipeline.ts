@@ -4,7 +4,7 @@ import { createActor, fromPromise } from 'xstate';
 import { z } from 'zod';
 import { astGrepTransformationActor } from '../actors/ast-grep-transformation.ts';
 import { feedbackLoopActor } from '../actors/feedback-loop.ts';
-// import { complexityActor } from '../actors/complexity.ts';
+import { complexityActor } from '../actors/complexity.ts';
 import { llmTestingFrameworkActor } from '../actors/llm-testing-framework.ts';
 import { llmTransformationActor } from '../actors/llm-transformation.ts';
 import { patternDiscoveryActor } from '../actors/pattern-discovery.ts';
@@ -16,6 +16,7 @@ import { validationActor } from '../actors/validation.ts';
 // Import standardized result types
 import type {
   AstGrepResult,
+  ComplexityMetrics,
   FeedbackLoopResult,
   LLMTestingResult,
   LLMTransformationResult,
@@ -500,29 +501,44 @@ async function transformationStage(input: PipelineRequest, state: any): Promise<
   const { strategy } = input.config;
   const { transformationRequest } = input;
 
-  // Determine transformation order
+  // Determine transformation order - enforce template → AST → LLM sequence
   const transformationOrder =
     transformationRequest.transformationType === 'auto'
       ? strategy.preferredOrder
       : [transformationRequest.transformationType as 'template' | 'ast' | 'llm'];
 
+  console.log(`🔄 Executing transformations in order: ${transformationOrder.join(' → ')}`);
+
   let transformationSuccessful = false;
+  let cumulativeFilesModified = new Set<string>();
 
+  // Execute transformations sequentially, allowing each to build on the previous
   for (const transformationType of transformationOrder) {
-    if (transformationSuccessful && !strategy.fallbackEnabled) break;
-
     try {
+      console.log(`🎯 Executing ${transformationType} transformation...`);
       const result = await executeTransformation(transformationType, input, state);
 
       if (result.success) {
         state.transformationsApplied.push(result);
-        state.filesModified.push(...result.filesModified);
+        
+        // Track cumulative file modifications
+        result.filesModified.forEach(file => cumulativeFilesModified.add(file));
         transformationSuccessful = true;
 
-        if (!strategy.fallbackEnabled) break; // Stop after first success if fallback disabled
+        console.log(`✅ ${transformationType} transformation completed: ${result.filesModified.length} files modified`);
+
+        // For sequential mode, continue to next transformation even after success
+        // This allows template → AST → LLM to build upon each other
+        if (strategy.fallbackEnabled || transformationOrder.length > 1) {
+          continue;
+        } else {
+          break; // Stop after first success if fallback disabled and single transformation
+        }
+      } else {
+        console.log(`⚠️ ${transformationType} transformation had no effect`);
       }
     } catch (error) {
-      console.warn(`Transformation ${transformationType} failed:`, error);
+      console.warn(`❌ Transformation ${transformationType} failed:`, error);
 
       if (!strategy.fallbackEnabled) {
         throw error; // Re-throw if fallback disabled
@@ -530,9 +546,14 @@ async function transformationStage(input: PipelineRequest, state: any): Promise<
     }
   }
 
+  // Update state with all modified files
+  state.filesModified = Array.from(cumulativeFilesModified);
+
   if (!transformationSuccessful) {
     throw new Error('All transformation methods failed');
   }
+
+  console.log(`🎉 Transformation stage completed: ${state.filesModified.length} total files modified`);
 }
 
 /**
@@ -702,6 +723,43 @@ async function validationStage(input: PipelineRequest, state: any): Promise<void
     })
   );
 
+  // Complexity analysis
+  let complexityMetrics: ComplexityMetrics | null = null;
+  if (input.config.quality.enableComplexityCheck && state.filesModified.length > 0) {
+    try {
+      console.log('🧮 Running complexity analysis...');
+      complexityMetrics = await invokeActor<ComplexityMetrics>(complexityActor, {
+        files: state.filesModified,
+      });
+      
+      // Check if complexity increased beyond threshold
+      const maxComplexityIncrease = input.config.quality.maxComplexityIncrease;
+      const baselineComplexity = 5; // Simplified baseline - in production this would be stored
+      const complexityIncrease = (complexityMetrics.cyclomaticComplexity - baselineComplexity) / baselineComplexity;
+      
+      if (complexityIncrease > maxComplexityIncrease) {
+        state.errors.push({
+          stage: 'validation',
+          error: 'complexity_increase',
+          message: `Complexity increased by ${(complexityIncrease * 100).toFixed(1)}% (max allowed: ${(maxComplexityIncrease * 100).toFixed(1)}%)`,
+          severity: 'warning' as const,
+          recoverable: true,
+        });
+      }
+      
+      console.log(`✅ Complexity analysis completed: cyclomatic=${complexityMetrics.cyclomaticComplexity}, cognitive=${complexityMetrics.cognitiveComplexity}`);
+    } catch (error) {
+      console.warn('⚠️ Complexity analysis failed:', error);
+      state.errors.push({
+        stage: 'validation',
+        error: 'complexity_analysis_failed',
+        message: `Complexity analysis failed: ${error instanceof Error ? error.message : String(error)}`,
+        severity: 'warning' as const,
+        recoverable: true,
+      });
+    }
+  }
+
   const validationResults = await Promise.all(validationTasks);
 
   // Aggregate validation results
@@ -720,6 +778,9 @@ async function validationStage(input: PipelineRequest, state: any): Promise<void
       0
     ),
   };
+
+  // Store complexity metrics for result building
+  state.complexityMetrics = complexityMetrics;
 }
 
 /**
@@ -968,8 +1029,8 @@ function buildPipelineResult(_input: PipelineRequest, state: any): PipelineResul
     filesModified: state.filesModified,
     transformationsApplied: state.transformationsApplied,
     qualityMetrics: {
-      complexityBefore: 5, // Simplified
-      complexityAfter: 5,
+      complexityBefore: 5, // Simplified baseline - in production this would be stored from initial analysis
+      complexityAfter: state.complexityMetrics?.cyclomaticComplexity || 5,
       typeErrors: state.validationResults?.typeErrors || 0,
       formatIssues: state.validationResults?.formatIssues || 0,
       testResults: state.testResults || { passed: 0, failed: 0, coverage: 0 },
@@ -1022,13 +1083,11 @@ function generateRecommendations(state: any): string[] {
  */
 async function getDefaultTemplatePatterns(): Promise<any[]> {
   try {
-    // Use basic patterns.json for template transformations since enhanced-templates.json
-    // has a different format that causes regex parsing issues
-    const fallbackContent = await readFile(join(process.cwd(), 'patterns.json'), 'utf-8');
-    const fallbackData = JSON.parse(fallbackContent);
+    const patternsContent = await readFile(join(process.cwd(), 'patterns.json'), 'utf-8');
+    const patternsData = JSON.parse(patternsContent);
 
-    // Filter for template patterns and convert to expected format
-    return fallbackData.patterns
+    // Filter for template patterns and convert to template engine format
+    return patternsData.patterns
       .filter((p: any) => p.mode === 'template')
       .map((p: any) => ({
         id: p.id,
@@ -1043,8 +1102,13 @@ async function getDefaultTemplatePatterns(): Promise<any[]> {
         description: p.description,
         complexity: p.complexity,
         riskLevel: p.riskLevel,
-        category: 'default',
-      }));
+        category: 'template',
+        performance: {
+          priority: p.complexity <= 2 ? 9 : 7, // Higher priority for simpler patterns
+          batchable: true,
+        },
+      }))
+      .sort((a: any, b: any) => (b.performance?.priority || 5) - (a.performance?.priority || 5));
   } catch (error) {
     console.warn('Failed to load template patterns:', error);
     return [
@@ -1062,6 +1126,10 @@ async function getDefaultTemplatePatterns(): Promise<any[]> {
         complexity: 1,
         riskLevel: 'low',
         category: 'fallback',
+        performance: {
+          priority: 5,
+          batchable: true,
+        },
       },
     ];
   }
@@ -1075,7 +1143,7 @@ async function getDefaultASTPatterns(): Promise<any[]> {
     const patternsContent = await readFile(join(process.cwd(), 'patterns.json'), 'utf-8');
     const patternsData = JSON.parse(patternsContent);
 
-    // Filter for AST patterns and convert to expected format
+    // Filter for AST patterns and convert to AST-grep format
     return patternsData.patterns
       .filter((p: any) => p.mode === 'ast')
       .map((p: any) => ({
@@ -1092,8 +1160,13 @@ async function getDefaultASTPatterns(): Promise<any[]> {
         description: p.description,
         complexity: p.complexity,
         riskLevel: p.riskLevel,
-        category: p.category || 'default',
-      }));
+        category: p.category || 'modernization',
+        performance: {
+          priority: p.complexity <= 2 ? 8 : 6, // Higher priority for simpler patterns
+          batchable: true,
+        },
+      }))
+      .sort((a: any, b: any) => (b.performance?.priority || 5) - (a.performance?.priority || 5));
   } catch (error) {
     console.warn('Failed to load AST patterns:', error);
     return [
@@ -1112,6 +1185,10 @@ async function getDefaultASTPatterns(): Promise<any[]> {
         complexity: 2,
         riskLevel: 'low',
         category: 'modernization',
+        performance: {
+          priority: 5,
+          batchable: true,
+        },
       },
       {
         id: 'array-includes-ast-fallback',
@@ -1128,6 +1205,10 @@ async function getDefaultASTPatterns(): Promise<any[]> {
         complexity: 2,
         riskLevel: 'low',
         category: 'modernization',
+        performance: {
+          priority: 5,
+          batchable: true,
+        },
       },
     ];
   }
