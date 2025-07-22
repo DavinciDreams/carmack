@@ -145,7 +145,6 @@ async function applyCppTransformations(request: CppTransformationRequest): Promi
       const content = await readFile(filePath, 'utf-8');
       const transformResult = await transformCppFile(
         content,
-        filePath,
         activePatterns,
         request.options
       );
@@ -248,7 +247,6 @@ function prepareCppPatterns(patterns: CppPattern[], maxComplexity: number): CppP
  */
 async function transformCppFile(
   content: string,
-  filePath: string,
   patterns: CppPattern[],
   options: CppTransformationRequest['options']
 ): Promise<{
@@ -262,7 +260,6 @@ async function transformCppFile(
     verificationErrors?: string[];
   }>;
 }> {
-  let modifiedContent = content;
   const transformations: Array<{
     patternId: string;
     count: number;
@@ -271,6 +268,7 @@ async function transformCppFile(
     verificationErrors?: string[];
   }> = [];
   let totalModified = false;
+  let modifiedContent = content;
 
   // Track applied patterns to avoid conflicts
   const appliedPatterns = new Set<string>();
