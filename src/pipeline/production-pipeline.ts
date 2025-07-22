@@ -85,6 +85,7 @@ interface PipelineState {
   qualityScore?: number;
   qualityImprovement?: number;
   transformationReport?: unknown;
+  complexityMetrics?: ComplexityMetrics;
 }
 
 // Helper function to invoke actors with proper async handling
@@ -907,7 +908,14 @@ async function validationStage(input: PipelineRequest, state: PipelineState): Pr
   };
 
   // Store complexity metrics for result building
-  state.complexityMetrics = complexityMetrics;
+  state.complexityMetrics = complexityMetrics ?? {
+    cyclomaticComplexity: 0,
+    cognitiveComplexity: 0,
+    linesOfCode: 0,
+    nestingDepth: 0,
+    functionCount: 0,
+    classCount: 0,
+  };
 }
 
 /**
@@ -1217,7 +1225,7 @@ async function getDefaultTemplatePatterns(): Promise<unknown[]> {
     const patternsData = JSON.parse(patternsContent);
 
     // Filter for template patterns and convert to expected format
-    return fallbackData.patterns
+    return patternsData.patterns
       .filter((p: { mode: string; [key: string]: unknown }) => p.mode === 'template')
       .map((p: { id: string; language: string; pattern: string; [key: string]: unknown }) => ({
         id: p.id,
@@ -1234,7 +1242,7 @@ async function getDefaultTemplatePatterns(): Promise<unknown[]> {
         riskLevel: p.riskLevel,
         category: 'template',
         performance: {
-          priority: p.complexity <= 2 ? 9 : 7, // Higher priority for simpler patterns
+          priority: typeof p.complexity === 'number' && p.complexity <= 2 ? 9 : 7, // Higher priority for simpler patterns
           batchable: true,
         },
       }))
@@ -1292,7 +1300,7 @@ async function getDefaultASTPatterns(): Promise<unknown[]> {
         riskLevel: p.riskLevel,
         category: p.category || 'modernization',
         performance: {
-          priority: p.complexity <= 2 ? 8 : 6, // Higher priority for simpler patterns
+          priority: typeof p.complexity === 'number' && p.complexity <= 2 ? 8 : 6, // Higher priority for simpler patterns
           batchable: true,
         },
       }))
