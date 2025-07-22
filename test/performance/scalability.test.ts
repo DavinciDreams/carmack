@@ -163,6 +163,7 @@ describe('Scalability Tests', () => {
         mode: 'template' as const,
         files,
         patterns: scalabilityPatterns,
+        dryRun: false,
       };
 
       const transformationActorInstance = createActor(transformationActor, {
@@ -231,6 +232,7 @@ describe('Scalability Tests', () => {
         mode: 'template' as const,
         files,
         patterns: scalabilityPatterns,
+        dryRun: false,
       };
 
       const transformationActorInstance = createActor(transformationActor, {
@@ -306,6 +308,7 @@ describe('Scalability Tests', () => {
         mode: 'template' as const,
         files,
         patterns: scalabilityPatterns,
+        dryRun: false,
       };
 
       const transformationActorInstance = createActor(transformationActor, {
@@ -381,11 +384,11 @@ describe('Scalability Tests', () => {
       // Generate files with patterns that match many of the above
       const files = await generateLargeCodebase(4, 12);
       const startTime = Date.now();
-
       const transformationInput = {
         mode: 'template' as const,
         files,
         patterns: manyPatterns,
+        dryRun: false,
       };
 
       const transformationActorInstance = createActor(transformationActor, {
@@ -450,6 +453,7 @@ describe('Scalability Tests', () => {
         mode: 'template' as const,
         files,
         patterns: scalabilityPatterns,
+        dryRun: false,
       };
 
       const transformationActorInstance = createActor(transformationActor, {
