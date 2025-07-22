@@ -182,7 +182,8 @@ export async function validateYamlFile<T>(
       return { valid: false, errors: error.originalError };
     }
     
-    return { valid: false };
+    // Re-throw non-validation errors (like file not found) so they can be handled by the caller
+    throw error;
   }
 }
 
