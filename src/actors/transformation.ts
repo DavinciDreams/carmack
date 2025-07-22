@@ -16,13 +16,34 @@ const TransformationInputSchema = z.object({
   patterns: z.array(
     z.object({
       id: z.string(),
-      language: z.string(),
+      language: z.enum(['typescript', 'javascript', 'cpp', 'c']),
       pattern: z.string(),
       replacement: z.string(),
       description: z.string(),
-      complexity: z.number(),
+      complexity: z.number().int().min(1).max(10),
       riskLevel: z.enum(['low', 'medium', 'high']),
       mode: z.enum(['template', 'ast', 'llm']).optional().default('template'),
+      // Enhanced metadata for C++ patterns
+      category: z.string().optional(),
+      performance: z.object({
+        priority: z.number().min(1).max(10).default(5),
+        batchable: z.boolean().default(true),
+        conflicts: z.array(z.string()).optional(),
+        maxMatches: z.number().optional(),
+      }).optional(),
+      // Formal verification support
+      verification: z.object({
+        dafnySpec: z.string().optional(),
+        invariants: z.array(z.string()).optional(),
+        preconditions: z.array(z.string()).optional(),
+        postconditions: z.array(z.string()).optional(),
+      }).optional(),
+      // Test cases for validation
+      testCases: z.array(z.object({
+        input: z.string(),
+        expected: z.string(),
+        description: z.string(),
+      })).optional(),
     })
   ),
   request: z
@@ -33,13 +54,34 @@ const TransformationInputSchema = z.object({
         .array(
           z.object({
             id: z.string(),
-            language: z.string(),
+            language: z.enum(['typescript', 'javascript', 'cpp', 'c']),
             pattern: z.string(),
             replacement: z.string(),
             description: z.string(),
-            complexity: z.number(),
+            complexity: z.number().int().min(1).max(10),
             riskLevel: z.enum(['low', 'medium', 'high']),
             mode: z.enum(['template', 'ast', 'llm']).optional().default('template'),
+            // Enhanced metadata for C++ patterns
+            category: z.string().optional(),
+            performance: z.object({
+              priority: z.number().min(1).max(10).default(5),
+              batchable: z.boolean().default(true),
+              conflicts: z.array(z.string()).optional(),
+              maxMatches: z.number().optional(),
+            }).optional(),
+            // Formal verification support
+            verification: z.object({
+              dafnySpec: z.string().optional(),
+              invariants: z.array(z.string()).optional(),
+              preconditions: z.array(z.string()).optional(),
+              postconditions: z.array(z.string()).optional(),
+            }).optional(),
+            // Test cases for validation
+            testCases: z.array(z.object({
+              input: z.string(),
+              expected: z.string(),
+              description: z.string(),
+            })).optional(),
           })
         )
         .optional(),
@@ -230,6 +272,9 @@ async function applyTemplateTransformation(
     filesModified,
     transformationsApplied: totalTransformations,
     mode: 'template' as const,
+    success: filesModified.length > 0,
+    errors: [],
+    warnings: [],
   };
 }
 
@@ -406,6 +451,9 @@ async function applyAstTransformation(files: string[], patterns: AstPattern[]) {
     filesModified,
     transformationsApplied: totalTransformations,
     mode: 'ast' as const,
+    success: filesModified.length > 0,
+    errors: [],
+    warnings: [],
   };
 }
 
