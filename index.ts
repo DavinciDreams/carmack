@@ -238,12 +238,13 @@ async function main() {
     const totalTime = results.reduce((sum, r) => sum + r.duration, 0);
 
     console.log(`\n🎯 Pipeline completed: ${successCount}/${results.length} modes successful`);
+    console.log(`📊 Total successful transformations: ${totalTransformations}`);
     console.log(`⏱️  Total execution time: ${totalTime}ms`);
 
     if (successCount === results.length) {
-      console.log('🎉 All transformation modes completed successfully!');
+      console.log(`🎉 All transformation modes completed successfully! (${totalTransformations} transformations applied)`);
     } else {
-      console.log('⚠️  Some transformation modes encountered issues but pipeline continued');
+      console.log(`⚠️  Some transformation modes encountered issues but pipeline continued (${totalTransformations} transformations applied)`);
     }
   }
 
