@@ -2,7 +2,7 @@
 
 /**
  * Intelligent Commit Message Enhancement Script
- * 
+ *
  * Analyzes staged changes and enhances commit messages with:
  * - Automated change analysis
  * - Impact assessment
@@ -96,8 +96,14 @@ async function analyzeStagedChanges(): Promise<CommitAnalysis> {
  * Parse git diff output into structured file changes
  */
 function parseDiffOutput(diffOutput: string, statusOutput: string): FileChange[] {
-  const diffLines = diffOutput.trim().split('\n').filter(line => line);
-  const statusLines = statusOutput.trim().split('\n').filter(line => line);
+  const diffLines = diffOutput
+    .trim()
+    .split('\n')
+    .filter((line) => line);
+  const statusLines = statusOutput
+    .trim()
+    .split('\n')
+    .filter((line) => line);
 
   const statusMap = new Map<string, string>();
   for (const line of statusLines) {
@@ -115,8 +121,8 @@ function parseDiffOutput(diffOutput: string, statusOutput: string): FileChange[]
       files.push({
         file,
         status: status as FileChange['status'],
-        insertions: insertions === '-' ? 0 : parseInt(insertions, 10),
-        deletions: deletions === '-' ? 0 : parseInt(deletions, 10),
+        insertions: insertions === '-' ? 0 : Number.parseInt(insertions, 10),
+        deletions: deletions === '-' ? 0 : Number.parseInt(deletions, 10),
         type: categorizeFile(file),
         language: getFileLanguage(file),
       });
@@ -131,11 +137,16 @@ function parseDiffOutput(diffOutput: string, statusOutput: string): FileChange[]
  */
 function categorizeFile(filePath: string): FileChange['type'] {
   const path = filePath.toLowerCase();
-  
+
   if (path.includes('test') || path.includes('spec') || path.includes('__tests__')) {
     return 'test';
   }
-  if (path.includes('config') || path.includes('.json') || path.includes('.yml') || path.includes('.yaml')) {
+  if (
+    path.includes('config') ||
+    path.includes('.json') ||
+    path.includes('.yml') ||
+    path.includes('.yaml')
+  ) {
     return 'config';
   }
   if (path.includes('readme') || path.includes('doc') || path.includes('.md')) {
@@ -144,7 +155,7 @@ function categorizeFile(filePath: string): FileChange['type'] {
   if (path.includes('package.json') || path.includes('bun.lock') || path.includes('dockerfile')) {
     return 'build';
   }
-  
+
   return 'source';
 }
 
@@ -182,7 +193,7 @@ function getFileLanguage(filePath: string): string | undefined {
     '.nim': 'Nim',
     '.zig': 'Zig',
   };
-  
+
   return languageMap[ext];
 }
 
@@ -195,9 +206,9 @@ function calculateImpactLevel(
   totalDeletions: number
 ): CommitAnalysis['impactLevel'] {
   const totalChanges = totalInsertions + totalDeletions;
-  const sourceFiles = files.filter(f => f.type === 'source').length;
-  const hasConfigChanges = files.some(f => f.type === 'config');
-  const hasBuildChanges = files.some(f => f.type === 'build');
+  const sourceFiles = files.filter((f) => f.type === 'source').length;
+  const hasConfigChanges = files.some((f) => f.type === 'config');
+  const hasBuildChanges = files.some((f) => f.type === 'build');
 
   if (totalChanges > 500 || sourceFiles > 10 || hasBuildChanges) {
     return 'critical';
@@ -208,7 +219,7 @@ function calculateImpactLevel(
   if (totalChanges > 50 || sourceFiles > 2) {
     return 'medium';
   }
-  
+
   return 'low';
 }
 
@@ -216,19 +227,19 @@ function calculateImpactLevel(
  * Infer the type of change based on files and patterns
  */
 function inferChangeType(files: FileChange[]): CommitAnalysis['changeType'] {
-  const hasTests = files.some(f => f.type === 'test');
-  const hasSource = files.some(f => f.type === 'source');
-  const hasDocs = files.some(f => f.type === 'docs');
-  const hasConfig = files.some(f => f.type === 'config');
-  const hasBuild = files.some(f => f.type === 'build');
+  const hasTests = files.some((f) => f.type === 'test');
+  const hasSource = files.some((f) => f.type === 'source');
+  const hasDocs = files.some((f) => f.type === 'docs');
+  const hasConfig = files.some((f) => f.type === 'config');
+  const hasBuild = files.some((f) => f.type === 'build');
 
   // Analyze file names and content for patterns
-  const fileNames = files.map(f => basename(f.file).toLowerCase());
-  const hasFixPattern = fileNames.some(name => 
-    name.includes('fix') || name.includes('bug') || name.includes('patch')
+  const fileNames = files.map((f) => basename(f.file).toLowerCase());
+  const hasFixPattern = fileNames.some(
+    (name) => name.includes('fix') || name.includes('bug') || name.includes('patch')
   );
-  const hasFeaturePattern = fileNames.some(name =>
-    name.includes('feature') || name.includes('add') || name.includes('new')
+  const hasFeaturePattern = fileNames.some(
+    (name) => name.includes('feature') || name.includes('add') || name.includes('new')
   );
 
   if (hasFixPattern) return 'fix';
@@ -236,9 +247,9 @@ function inferChangeType(files: FileChange[]): CommitAnalysis['changeType'] {
   if (hasTests && !hasSource) return 'test';
   if (hasDocs && !hasSource) return 'docs';
   if (hasConfig || hasBuild) return 'chore';
-  if (hasSource && files.every(f => f.insertions + f.deletions < 50)) return 'style';
+  if (hasSource && files.every((f) => f.insertions + f.deletions < 50)) return 'style';
   if (hasSource) return 'refactor';
-  
+
   return 'chore';
 }
 
@@ -247,10 +258,10 @@ function inferChangeType(files: FileChange[]): CommitAnalysis['changeType'] {
  */
 function identifyAffectedComponents(files: FileChange[]): string[] {
   const components = new Set<string>();
-  
+
   for (const file of files) {
     const pathParts = file.file.split('/');
-    
+
     // Extract component names from path structure
     if (pathParts.includes('src')) {
       const srcIndex = pathParts.indexOf('src');
@@ -259,7 +270,7 @@ function identifyAffectedComponents(files: FileChange[]): string[] {
         components.add(component);
       }
     }
-    
+
     // Extract from filename patterns
     const fileName = basename(file.file, extname(file.file));
     if (fileName.includes('-')) {
@@ -270,7 +281,7 @@ function identifyAffectedComponents(files: FileChange[]): string[] {
       }
     }
   }
-  
+
   return Array.from(components).slice(0, 5); // Limit to top 5 components
 }
 
@@ -282,34 +293,33 @@ function assessRisk(files: FileChange[]): CommitAnalysis['riskAssessment'] {
   let riskScore = 0;
 
   // Check for high-risk patterns
-  const criticalFiles = files.filter(f => 
-    f.file.includes('config') || 
-    f.file.includes('package.json') ||
-    f.file.includes('tsconfig') ||
-    f.file.includes('dockerfile')
+  const criticalFiles = files.filter(
+    (f) =>
+      f.file.includes('config') ||
+      f.file.includes('package.json') ||
+      f.file.includes('tsconfig') ||
+      f.file.includes('dockerfile')
   );
-  
+
   if (criticalFiles.length > 0) {
     factors.push('Configuration changes');
     riskScore += 2;
   }
 
-  const largeChanges = files.filter(f => f.insertions + f.deletions > 100);
+  const largeChanges = files.filter((f) => f.insertions + f.deletions > 100);
   if (largeChanges.length > 0) {
     factors.push('Large file changes');
     riskScore += 1;
   }
 
-  const deletions = files.filter(f => f.status === 'D');
+  const deletions = files.filter((f) => f.status === 'D');
   if (deletions.length > 0) {
     factors.push('File deletions');
     riskScore += 1;
   }
 
-  const coreFiles = files.filter(f => 
-    f.file.includes('index') || 
-    f.file.includes('main') ||
-    f.file.includes('app')
+  const coreFiles = files.filter(
+    (f) => f.file.includes('index') || f.file.includes('main') || f.file.includes('app')
   );
   if (coreFiles.length > 0) {
     factors.push('Core file modifications');
@@ -326,7 +336,9 @@ function assessRisk(files: FileChange[]): CommitAnalysis['riskAssessment'] {
 /**
  * Calculate quality metrics for the changes
  */
-async function calculateQualityMetrics(files: FileChange[]): Promise<CommitAnalysis['qualityMetrics']> {
+async function calculateQualityMetrics(
+  files: FileChange[]
+): Promise<CommitAnalysis['qualityMetrics']> {
   let codeComplexity = 0;
   let typeErrors = 0;
   let lintIssues = 0;
@@ -334,7 +346,7 @@ async function calculateQualityMetrics(files: FileChange[]): Promise<CommitAnaly
   // Estimate complexity based on change size and patterns
   for (const file of files) {
     const changeSize = file.insertions + file.deletions;
-    
+
     // Simple heuristic: larger changes tend to be more complex
     if (changeSize > 100) codeComplexity += 3;
     else if (changeSize > 50) codeComplexity += 2;
@@ -348,7 +360,7 @@ async function calculateQualityMetrics(files: FileChange[]): Promise<CommitAnaly
       stdio: 'pipe',
       timeout: 5000, // 5 second timeout
     });
-    
+
     // Count error lines
     typeErrors = (tscOutput.match(/error TS\d+:/g) || []).length;
   } catch (error: any) {
@@ -364,7 +376,7 @@ async function calculateQualityMetrics(files: FileChange[]): Promise<CommitAnaly
       stdio: 'pipe',
       timeout: 5000,
     });
-    
+
     const biomeResult = JSON.parse(biomeOutput);
     lintIssues = biomeResult.diagnostics?.length || 0;
   } catch (error) {
@@ -382,12 +394,9 @@ async function calculateQualityMetrics(files: FileChange[]): Promise<CommitAnaly
 /**
  * Generate enhanced commit message
  */
-function generateEnhancedMessage(
-  originalMessage: string,
-  analysis: CommitAnalysis
-): string {
+function generateEnhancedMessage(originalMessage: string, analysis: CommitAnalysis): string {
   const lines: string[] = [];
-  
+
   // Original message (cleaned up)
   const cleanMessage = originalMessage.trim();
   if (cleanMessage && cleanMessage !== '' && !cleanMessage.startsWith('#')) {
@@ -395,26 +404,29 @@ function generateEnhancedMessage(
   } else {
     // Generate a message if none provided
     const typePrefix = getTypePrefix(analysis.changeType);
-    const componentSuffix = analysis.affectedComponents.length > 0 
-      ? ` (${analysis.affectedComponents.slice(0, 2).join(', ')})`
-      : '';
+    const componentSuffix =
+      analysis.affectedComponents.length > 0
+        ? ` (${analysis.affectedComponents.slice(0, 2).join(', ')})`
+        : '';
     lines.push(`${typePrefix}: ${generateDefaultMessage(analysis)}${componentSuffix}`);
   }
-  
+
   lines.push(''); // Empty line
-  
+
   // Change summary
   lines.push('## 📊 Change Summary');
   lines.push(`- **Type**: ${analysis.changeType}`);
   lines.push(`- **Impact**: ${analysis.impactLevel}`);
-  lines.push(`- **Files**: ${analysis.files.length} (${analysis.totalInsertions}+ ${analysis.totalDeletions}-)`);
-  
+  lines.push(
+    `- **Files**: ${analysis.files.length} (${analysis.totalInsertions}+ ${analysis.totalDeletions}-)`
+  );
+
   if (analysis.affectedComponents.length > 0) {
     lines.push(`- **Components**: ${analysis.affectedComponents.join(', ')}`);
   }
-  
+
   lines.push('');
-  
+
   // Risk assessment
   if (analysis.riskAssessment.level !== 'low' || analysis.riskAssessment.factors.length > 0) {
     lines.push('## ⚠️ Risk Assessment');
@@ -424,32 +436,31 @@ function generateEnhancedMessage(
     }
     lines.push('');
   }
-  
+
   // Quality metrics
   lines.push('## 🎯 Quality Metrics');
   lines.push(`- **Complexity**: ${analysis.qualityMetrics.codeComplexity}/10`);
   lines.push(`- **Type Errors**: ${analysis.qualityMetrics.typeErrors}`);
   lines.push(`- **Lint Issues**: ${analysis.qualityMetrics.lintIssues}`);
-  
+
   if (analysis.qualityMetrics.testCoverage !== undefined) {
     lines.push(`- **Test Coverage**: ${analysis.qualityMetrics.testCoverage}%`);
   }
-  
+
   lines.push('');
-  
+
   // File breakdown
   if (analysis.files.length > 0 && analysis.files.length <= 10) {
     lines.push('## 📁 Files Changed');
     for (const file of analysis.files) {
       const statusIcon = getStatusIcon(file.status);
-      const sizeInfo = file.insertions + file.deletions > 0 
-        ? ` (+${file.insertions} -${file.deletions})`
-        : '';
+      const sizeInfo =
+        file.insertions + file.deletions > 0 ? ` (+${file.insertions} -${file.deletions})` : '';
       lines.push(`- ${statusIcon} \`${file.file}\`${sizeInfo}`);
     }
     lines.push('');
   }
-  
+
   // Reasoning (inferred)
   const reasoning = inferReasoning(analysis);
   if (reasoning) {
@@ -457,11 +468,11 @@ function generateEnhancedMessage(
     lines.push(reasoning);
     lines.push('');
   }
-  
+
   // Auto-generated footer
   lines.push('---');
   lines.push('*Auto-enhanced by Carmack Coder*');
-  
+
   return lines.join('\n');
 }
 
@@ -478,7 +489,7 @@ function getTypePrefix(changeType: CommitAnalysis['changeType']): string {
     test: 'test',
     chore: 'chore',
   };
-  
+
   return prefixes[changeType];
 }
 
@@ -487,26 +498,26 @@ function getTypePrefix(changeType: CommitAnalysis['changeType']): string {
  */
 function generateDefaultMessage(analysis: CommitAnalysis): string {
   const { changeType, files } = analysis;
-  
+
   if (changeType === 'feature') {
-    return `add new functionality`;
+    return 'add new functionality';
   }
   if (changeType === 'fix') {
-    return `resolve issues`;
+    return 'resolve issues';
   }
   if (changeType === 'refactor') {
-    return `improve code structure`;
+    return 'improve code structure';
   }
   if (changeType === 'docs') {
-    return `update documentation`;
+    return 'update documentation';
   }
   if (changeType === 'test') {
-    return `add/update tests`;
+    return 'add/update tests';
   }
   if (changeType === 'style') {
-    return `improve code formatting`;
+    return 'improve code formatting';
   }
-  
+
   return `update ${files.length} file${files.length === 1 ? '' : 's'}`;
 }
 
@@ -521,7 +532,7 @@ function getStatusIcon(status: FileChange['status']): string {
     R: '🔄', // Renamed
     C: '📋', // Copied
   };
-  
+
   return icons[status] || '📝';
 }
 
@@ -530,31 +541,31 @@ function getStatusIcon(status: FileChange['status']): string {
  */
 function inferReasoning(analysis: CommitAnalysis): string | null {
   const { changeType, files, riskAssessment, qualityMetrics } = analysis;
-  
+
   if (changeType === 'fix' && qualityMetrics.typeErrors > 0) {
     return 'Addressing TypeScript type errors to improve code safety and maintainability.';
   }
-  
+
   if (changeType === 'refactor' && qualityMetrics.codeComplexity > 5) {
     return 'Reducing code complexity to improve readability and maintainability.';
   }
-  
+
   if (riskAssessment.level === 'high') {
     return 'High-impact changes requiring careful review and testing before deployment.';
   }
-  
-  if (files.some(f => f.type === 'test')) {
+
+  if (files.some((f) => f.type === 'test')) {
     return 'Improving test coverage to ensure code reliability and prevent regressions.';
   }
-  
-  if (files.some(f => f.type === 'config')) {
+
+  if (files.some((f) => f.type === 'config')) {
     return 'Configuration updates to improve development workflow and build process.';
   }
-  
+
   if (changeType === 'feature') {
     return 'Adding new functionality to enhance user experience and system capabilities.';
   }
-  
+
   return null;
 }
 
@@ -563,31 +574,32 @@ function inferReasoning(analysis: CommitAnalysis): string | null {
  */
 async function main(): Promise<void> {
   const commitMsgFile = process.argv[2];
-  
+
   if (!commitMsgFile) {
     console.error('❌ Commit message file not provided');
     process.exit(1);
   }
-  
+
   try {
     console.log('✨ Enhancing commit message with AI analysis...');
-    
+
     // Read original commit message
     const originalMessage = await readFile(commitMsgFile, 'utf-8');
-    
+
     // Analyze staged changes
     const analysis = await analyzeStagedChanges();
-    
+
     // Generate enhanced message
     const enhancedMessage = generateEnhancedMessage(originalMessage, analysis);
-    
+
     // Write back to commit message file
     await writeFile(commitMsgFile, enhancedMessage, 'utf-8');
-    
+
     console.log('✅ Commit message enhanced successfully!');
     console.log(`📊 Analysis: ${analysis.changeType} (${analysis.impactLevel} impact)`);
-    console.log(`📁 Files: ${analysis.files.length}, Quality: ${10 - analysis.qualityMetrics.codeComplexity}/10`);
-    
+    console.log(
+      `📁 Files: ${analysis.files.length}, Quality: ${10 - analysis.qualityMetrics.codeComplexity}/10`
+    );
   } catch (error: any) {
     console.error('❌ Failed to enhance commit message:', error.message);
     // Don't fail the commit, just log the error

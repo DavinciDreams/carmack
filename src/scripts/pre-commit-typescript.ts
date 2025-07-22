@@ -2,17 +2,20 @@
 
 /**
  * Pre-commit TypeScript Error Detection and Auto-Fix Script
- * 
+ *
  * This script runs during pre-commit hooks to automatically detect and fix
  * TypeScript errors before they reach the repository.
  */
 
 import { execSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { readFile, readdir } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createActor } from 'xstate';
-import { typeScriptErrorResolverActor, type TypeScriptFixResult } from '../actors/typescript-error-resolver.js';
+import {
+  type TypeScriptFixResult,
+  typeScriptErrorResolverActor,
+} from '../actors/typescript-error-resolver.js';
 
 interface PreCommitConfig {
   autoFix: boolean;
@@ -34,11 +37,11 @@ async function getStagedTypeScriptFiles(): Promise<string[]> {
 
     const files = output
       .split('\n')
-      .filter(file => file.trim())
-      .filter(file => file.endsWith('.ts') || file.endsWith('.tsx'))
-      .filter(file => existsSync(file))
-      .filter(file => !file.includes('node_modules'))
-      .filter(file => !file.includes('.d.ts'));
+      .filter((file) => file.trim())
+      .filter((file) => file.endsWith('.ts') || file.endsWith('.tsx'))
+      .filter((file) => existsSync(file))
+      .filter((file) => !file.includes('node_modules'))
+      .filter((file) => !file.includes('.d.ts'));
 
     return files;
   } catch (error) {
@@ -52,15 +55,18 @@ async function getStagedTypeScriptFiles(): Promise<string[]> {
  */
 async function getAllTypeScriptFiles(): Promise<string[]> {
   try {
-    const output = execSync('find src -name "*.ts" -not -path "*/node_modules/*" -not -name "*.d.ts"', {
-      encoding: 'utf-8',
-      stdio: 'pipe',
-    });
+    const output = execSync(
+      'find src -name "*.ts" -not -path "*/node_modules/*" -not -name "*.d.ts"',
+      {
+        encoding: 'utf-8',
+        stdio: 'pipe',
+      }
+    );
 
     return output
       .split('\n')
-      .filter(file => file.trim())
-      .filter(file => existsSync(file));
+      .filter((file) => file.trim())
+      .filter((file) => existsSync(file));
   } catch (error) {
     // Fallback: manually traverse src directory
     return await findTypeScriptFiles('src');
@@ -72,13 +78,13 @@ async function getAllTypeScriptFiles(): Promise<string[]> {
  */
 async function findTypeScriptFiles(dir: string): Promise<string[]> {
   const files: string[] = [];
-  
+
   try {
     const entries = await readdir(dir, { withFileTypes: true });
-    
+
     for (const entry of entries) {
       const fullPath = join(dir, entry.name);
-      
+
       if (entry.isDirectory() && entry.name !== 'node_modules') {
         const subFiles = await findTypeScriptFiles(fullPath);
         files.push(...subFiles);
@@ -89,7 +95,7 @@ async function findTypeScriptFiles(dir: string): Promise<string[]> {
   } catch (error) {
     // Directory doesn't exist or can't be read
   }
-  
+
   return files;
 }
 
@@ -150,18 +156,18 @@ function generateSummaryReport(
   console.log(`Errors Found: ${errorsFound}`);
   console.log(`Errors Fixed: ${errorsFixed}`);
   console.log(`Files Modified: ${filesModified.length}`);
-  
+
   if (filesModified.length > 0) {
     console.log('\n📝 Modified Files:');
-    filesModified.forEach(file => console.log(`  • ${file}`));
+    filesModified.forEach((file) => console.log(`  • ${file}`));
   }
 
   if (warnings.length > 0) {
     console.log('\n⚠️ Warnings:');
-    warnings.forEach(warning => console.log(`  • ${warning}`));
+    warnings.forEach((warning) => console.log(`  • ${warning}`));
   }
 
-  const successRate = errorsFound > 0 ? (errorsFixed / errorsFound * 100).toFixed(1) : '100.0';
+  const successRate = errorsFound > 0 ? ((errorsFixed / errorsFound) * 100).toFixed(1) : '100.0';
   console.log(`\n🎯 Success Rate: ${successRate}%`);
 }
 
@@ -174,10 +180,12 @@ async function main(): Promise<void> {
   try {
     // Load configuration
     const config = await loadConfig();
-    console.log(`📋 Config: autoFix=${config.autoFix}, maxRisk=${config.maxRiskLevel}, dryRun=${config.dryRun}`);
+    console.log(
+      `📋 Config: autoFix=${config.autoFix}, maxRisk=${config.maxRiskLevel}, dryRun=${config.dryRun}`
+    );
 
     // Get files to check
-    const files = config.stagedFilesOnly 
+    const files = config.stagedFilesOnly
       ? await getStagedTypeScriptFiles()
       : await getAllTypeScriptFiles();
 
@@ -189,8 +197,8 @@ async function main(): Promise<void> {
     console.log(`🔍 Checking ${files.length} TypeScript files...\n`);
 
     // Filter out excluded patterns
-    const filteredFiles = files.filter(file => {
-      return !config.excludePatterns.some(pattern => {
+    const filteredFiles = files.filter((file) => {
+      return !config.excludePatterns.some((pattern) => {
         const regex = new RegExp(pattern.replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*'));
         return regex.test(file);
       });
@@ -249,7 +257,6 @@ async function main(): Promise<void> {
       console.log('\n✅ All TypeScript errors resolved successfully!');
       process.exit(0);
     }
-
   } catch (error: any) {
     console.error('\n❌ Pre-commit TypeScript check failed:', error.message);
     console.error('🔧 Try running: bun run type-check');

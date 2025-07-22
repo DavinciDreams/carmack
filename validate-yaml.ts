@@ -1,20 +1,20 @@
 #!/usr/bin/env bun
 
-import { YAML } from './src/utils/yaml-handler.js';
 import { glob } from 'glob';
+import { YAML } from './src/utils/yaml-handler.js';
 
 async function validateYamlFiles() {
   console.log('🔍 Scanning for YAML files...');
-  
-  const yamlFiles = await glob('**/*.{yml,yaml}', { 
-    ignore: ['node_modules/**', 'dist/**', '.git/**'] 
+
+  const yamlFiles = await glob('**/*.{yml,yaml}', {
+    ignore: ['node_modules/**', 'dist/**', '.git/**'],
   });
-  
+
   console.log(`📄 Found ${yamlFiles.length} YAML files`);
-  
+
   let validCount = 0;
   let errorCount = 0;
-  
+
   for (const file of yamlFiles) {
     try {
       const data = await YAML.parseFile(file);
@@ -30,11 +30,11 @@ async function validateYamlFiles() {
       errorCount++;
     }
   }
-  
-  console.log(`\n📊 Summary:`);
+
+  console.log('\n📊 Summary:');
   console.log(`   ✅ Valid files: ${validCount}`);
   console.log(`   ❌ Error files: ${errorCount}`);
-  
+
   if (errorCount === 0) {
     console.log('🎉 All YAML files are valid!');
   } else {

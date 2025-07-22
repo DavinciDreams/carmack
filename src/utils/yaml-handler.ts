@@ -1,10 +1,10 @@
+import { readFile, writeFile } from 'node:fs/promises';
 import * as yaml from 'js-yaml';
 import { z } from 'zod';
-import { readFile, writeFile } from 'node:fs/promises';
 
 /**
  * YAML Handler - Provably correct YAML processing with Zod validation
- * 
+ *
  * Following Carmack principles:
  * 1. Type Safety First - Zod schemas for all operations
  * 2. Error Resilience - Explicit error handling
@@ -35,14 +35,16 @@ export class YamlSerializationError extends Error {
 }
 
 // Configuration schema for YAML operations
-const YamlOptionsSchema = z.object({
-  indent: z.number().int().min(1).max(8).default(2),
-  lineWidth: z.number().int().min(40).max(200).default(120),
-  noRefs: z.boolean().default(true),
-  sortKeys: z.boolean().default(true),
-  quotingType: z.enum(['"', "'"]).default('"'),
-  forceQuotes: z.boolean().default(false),
-}).strict();
+const YamlOptionsSchema = z
+  .object({
+    indent: z.number().int().min(1).max(8).default(2),
+    lineWidth: z.number().int().min(40).max(200).default(120),
+    noRefs: z.boolean().default(true),
+    sortKeys: z.boolean().default(true),
+    quotingType: z.enum(['"', "'"]).default('"'),
+    forceQuotes: z.boolean().default(false),
+  })
+  .strict();
 
 export type YamlOptions = z.infer<typeof YamlOptionsSchema>;
 
@@ -52,27 +54,20 @@ export type YamlOptions = z.infer<typeof YamlOptionsSchema>;
  * @param schema - Optional Zod schema for validation
  * @returns Parsed and validated object
  */
-export function parseYamlString<T>(
-  yamlString: string,
-  schema?: z.ZodType<T>
-): T {
+export function parseYamlString<T>(yamlString: string, schema?: z.ZodType<T>): T {
   try {
     const parsed = yaml.load(yamlString);
-    
+
     if (schema) {
       return schema.parse(parsed);
     }
-    
+
     return parsed as T;
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new YamlParseError(
-        `YAML validation failed: ${error.message}`,
-        undefined,
-        error
-      );
+      throw new YamlParseError(`YAML validation failed: ${error.message}`, undefined, error);
     }
-    
+
     throw new YamlParseError(
       `Failed to parse YAML: ${error instanceof Error ? error.message : 'Unknown error'}`,
       undefined,
@@ -87,10 +82,7 @@ export function parseYamlString<T>(
  * @param schema - Optional Zod schema for validation
  * @returns Parsed and validated object
  */
-export async function parseYamlFile<T>(
-  filePath: string,
-  schema?: z.ZodType<T>
-): Promise<T> {
+export async function parseYamlFile<T>(filePath: string, schema?: z.ZodType<T>): Promise<T> {
   try {
     const fileContent = await readFile(filePath, 'utf-8');
     return parseYamlString(fileContent, schema);
@@ -98,7 +90,7 @@ export async function parseYamlFile<T>(
     if (error instanceof YamlParseError) {
       throw new YamlParseError(error.message, filePath, error.originalError);
     }
-    
+
     throw new YamlParseError(
       `Failed to read YAML file: ${error instanceof Error ? error.message : 'Unknown error'}`,
       filePath,
@@ -113,13 +105,10 @@ export async function parseYamlFile<T>(
  * @param options - YAML formatting options
  * @returns YAML string
  */
-export function serializeToYaml(
-  data: unknown,
-  options: Partial<YamlOptions> = {}
-): string {
+export function serializeToYaml(data: unknown, options: Partial<YamlOptions> = {}): string {
   try {
     const validatedOptions = YamlOptionsSchema.parse(options);
-    
+
     return yaml.dump(data, {
       indent: validatedOptions.indent,
       lineWidth: validatedOptions.lineWidth,
@@ -155,7 +144,7 @@ export async function writeYamlFile(
     if (error instanceof YamlSerializationError) {
       throw error;
     }
-    
+
     throw new YamlSerializationError(
       `Failed to write YAML file: ${error instanceof Error ? error.message : 'Unknown error'}`,
       data,
@@ -181,7 +170,7 @@ export async function validateYamlFile<T>(
     if (error instanceof YamlParseError && error.originalError instanceof z.ZodError) {
       return { valid: false, errors: error.originalError };
     }
-    
+
     // Re-throw non-validation errors (like file not found) so they can be handled by the caller
     throw error;
   }
@@ -194,11 +183,7 @@ export async function validateYamlFile<T>(
  * @param schema - Optional validation schema
  * @returns Parsed value or default
  */
-export function safeParseYaml<T>(
-  yamlString: string,
-  defaultValue: T,
-  schema?: z.ZodType<T>
-): T {
+export function safeParseYaml<T>(yamlString: string, defaultValue: T, schema?: z.ZodType<T>): T {
   try {
     return parseYamlString(yamlString, schema);
   } catch {
@@ -209,33 +194,43 @@ export function safeParseYaml<T>(
 // Pre-defined schemas for common YAML configurations
 export const CommonYamlSchemas = {
   // Environment configuration schema
-  environment: z.object({
-    name: z.string(),
-    variables: z.record(z.string()),
-    services: z.array(z.string()).optional(),
-  }).strict(),
-  
+  environment: z
+    .object({
+      name: z.string(),
+      variables: z.record(z.string()),
+      services: z.array(z.string()).optional(),
+    })
+    .strict(),
+
   // CI/CD pipeline schema
-  pipeline: z.object({
-    stages: z.array(z.string()),
-    jobs: z.record(z.object({
-      script: z.array(z.string()),
-      stage: z.string().optional(),
-      dependencies: z.array(z.string()).optional(),
-    })),
-  }).strict(),
-  
+  pipeline: z
+    .object({
+      stages: z.array(z.string()),
+      jobs: z.record(
+        z.object({
+          script: z.array(z.string()),
+          stage: z.string().optional(),
+          dependencies: z.array(z.string()).optional(),
+        })
+      ),
+    })
+    .strict(),
+
   // Docker Compose schema (simplified)
-  dockerCompose: z.object({
-    version: z.string(),
-    services: z.record(z.object({
-      image: z.string().optional(),
-      build: z.string().optional(),
-      ports: z.array(z.string()).optional(),
-      environment: z.record(z.string()).optional(),
-      volumes: z.array(z.string()).optional(),
-    })),
-  }).strict(),
+  dockerCompose: z
+    .object({
+      version: z.string(),
+      services: z.record(
+        z.object({
+          image: z.string().optional(),
+          build: z.string().optional(),
+          ports: z.array(z.string()).optional(),
+          environment: z.record(z.string()).optional(),
+          volumes: z.array(z.string()).optional(),
+        })
+      ),
+    })
+    .strict(),
 };
 
 // Export convenience functions

@@ -2,8 +2,8 @@
  * Custom Production Configuration for CUDA Quantum Repository
  */
 
-import { z } from 'zod';
-import { ProductionConfigSchema } from './production.config.ts';
+import type { z } from 'zod';
+import type { ProductionConfigSchema } from './production.config.ts';
 
 export const cudaQuantumConfig = {
   repository: {
@@ -48,8 +48,8 @@ export const cudaQuantumConfig = {
   },
   qualityGates: {
     requireTypeCheck: false, // TypeScript checking disabled for C++/Python
-    requireLinting: false,   // ESLint disabled for non-JS projects
-    requireTests: false,     // Skip test requirements for initial run
+    requireLinting: false, // ESLint disabled for non-JS projects
+    requireTests: false, // Skip test requirements for initial run
     requireDafnyVerification: false,
     maxComplexityIncrease: 5,
     minTestCoverage: 50, // Lower threshold for C++/Python
@@ -61,13 +61,13 @@ export const cudaQuantumConfig = {
     alertingWebhook: undefined,
     performanceThresholds: {
       maxTransformationTime: 300000, // 5 minutes
-      maxMemoryUsage: 1024,          // 1GB in MB
-      maxCpuUsage: 80,               // 80%
+      maxMemoryUsage: 1024, // 1GB in MB
+      maxCpuUsage: 80, // 80%
     },
   },
   rollback: {
     enableAutoRollback: true,
-    rollbackOnTestFailure: false,     // Disabled since tests are disabled
+    rollbackOnTestFailure: false, // Disabled since tests are disabled
     rollbackOnComplexityIncrease: true,
     maxRollbackAttempts: 3,
     rollbackTimeoutMs: 60000,

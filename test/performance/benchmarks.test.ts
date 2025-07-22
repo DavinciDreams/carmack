@@ -631,4 +631,3 @@ describe('Performance Benchmarks', () => {
     });
   });
 });
-

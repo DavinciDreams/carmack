@@ -1,15 +1,18 @@
 /**
  * Tests for TypeScript Error Resolver Actor
- * 
+ *
  * Validates automated TypeScript error detection and resolution
  */
 
-import { expect, test, describe, beforeEach, afterEach } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { createActor } from 'xstate';
-import { typeScriptErrorResolverActor, type TypeScriptFixResult } from '../../src/actors/typescript-error-resolver.js';
+import {
+  type TypeScriptFixResult,
+  typeScriptErrorResolverActor,
+} from '../../src/actors/typescript-error-resolver.js';
 
 describe('TypeScript Error Resolver', () => {
   let testDir: string;
@@ -48,7 +51,7 @@ function calculate(a, b) {
     });
 
     actor.start();
-    
+
     const result = await new Promise((resolve, reject) => {
       actor.subscribe({
         complete: () => {
@@ -90,7 +93,7 @@ export const calculate = (a: number, b: number): number => {
     });
 
     actor.start();
-    
+
     const result = await new Promise((resolve, reject) => {
       actor.subscribe({
         complete: () => {
@@ -128,7 +131,7 @@ console.log(obj.nonExistentProperty);
     });
 
     actor.start();
-    
+
     const result = await new Promise((resolve, reject) => {
       actor.subscribe({
         complete: () => {
@@ -165,7 +168,7 @@ function test(param) {
     });
 
     actor.start();
-    
+
     const result = await new Promise<TypeScriptFixResult>((resolve, reject) => {
       actor.subscribe({
         complete: () => {
@@ -181,13 +184,13 @@ function test(param) {
     });
 
     expect(result).toBeDefined();
-    expect(result.warnings.some(w => w.includes('DRY RUN'))).toBe(true);
+    expect(result.warnings.some((w) => w.includes('DRY RUN'))).toBe(true);
   });
 
   test('should handle multiple files', async () => {
     const file1 = join(testDir, 'file1.ts');
     const file2 = join(testDir, 'file2.ts');
-    
+
     await writeFile(file1, 'function test1(param) { return param; }');
     await writeFile(file2, 'function test2(param) { return param; }');
 
@@ -201,7 +204,7 @@ function test(param) {
     });
 
     actor.start();
-    
+
     const result = await new Promise((resolve, reject) => {
       actor.subscribe({
         complete: () => {
@@ -240,7 +243,7 @@ function processData(data) {
     });
 
     actor.start();
-    
+
     const result = await new Promise((resolve, reject) => {
       actor.subscribe({
         complete: () => {
@@ -269,7 +272,7 @@ function processData(data) {
     });
 
     actor.start();
-    
+
     const result = await new Promise((resolve, reject) => {
       actor.subscribe({
         complete: () => {
@@ -298,7 +301,7 @@ function processData(data) {
         },
       });
     }).not.toThrow();
-    
+
     // Note: Invalid inputs would be caught by TypeScript at compile time
     // due to strict typing, so we test valid cases instead
   });
@@ -335,7 +338,7 @@ users.push({ name: "John" }); // Missing age property
     });
 
     actor.start();
-    
+
     const result = await new Promise<TypeScriptFixResult>((resolve, reject) => {
       actor.subscribe({
         complete: () => {

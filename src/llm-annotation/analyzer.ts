@@ -1,5 +1,5 @@
-import { fromPromise } from 'xstate';
 import * as yaml from 'js-yaml';
+import { fromPromise } from 'xstate';
 import type { ASTGrepAnalyzer } from '../docs/ast-analyzer.js';
 import type { ModuleDoc } from '../docs/types.js';
 import type {
@@ -650,17 +650,19 @@ export class LLMAnnotationAnalyzer {
         version: annotation.version,
         metadata: {
           analyzer: annotation.metadata.analyzer,
-          runtime: annotation.metadata.runtime,
-          configuration: annotation.metadata.configuration
+          confidence: annotation.metadata.confidence,
+          processingTime: annotation.metadata.processingTime,
+          sourceFiles: annotation.metadata.sourceFiles,
+          totalLines: annotation.metadata.totalLines,
         },
         summary: {
           overview: annotation.summary.overview,
           keyFindings: annotation.summary.keyFindings,
           recommendations: annotation.summary.recommendations,
           patternsDetected: annotation.patterns.length,
-          opportunitiesFound: annotation.opportunities.length
+          opportunitiesFound: annotation.opportunities.length,
         },
-        patterns: annotation.patterns.map(pattern => ({
+        patterns: annotation.patterns.map((pattern) => ({
           name: pattern.name,
           type: pattern.type,
           impact: pattern.impact,
@@ -668,26 +670,23 @@ export class LLMAnnotationAnalyzer {
           location: {
             file: pattern.location.file,
             startLine: pattern.location.startLine,
-            endLine: pattern.location.endLine
+            endLine: pattern.location.endLine,
           },
-          confidence: pattern.confidence
+          confidence: pattern.confidence,
         })),
-        opportunities: annotation.opportunities.map(opp => ({
+        opportunities: annotation.opportunities.map((opp) => ({
           description: opp.description,
-          impact: opp.impact,
           effort: opp.effort,
-          location: {
-            file: opp.location.file,
-            startLine: opp.location.startLine,
-            endLine: opp.location.endLine
-          }
+          location: opp.location,
+          benefits: opp.benefits,
+          steps: opp.steps,
+          estimatedImpact: opp.estimatedImpact,
+          risk: opp.risk,
+          title: opp.title,
+          type: opp.type,
+          rationale: opp.rationale,
         })),
-        architectural: annotation.architectural ? {
-          type: annotation.architectural.type,
-          impact: annotation.architectural.impact,
-          description: annotation.architectural.description,
-          recommendations: annotation.architectural.recommendations
-        } : null
+        architecture: annotation.architecture,
       };
 
       return yaml.dump(yamlData, {
@@ -696,7 +695,7 @@ export class LLMAnnotationAnalyzer {
         noRefs: true,
         sortKeys: true,
         quotingType: '"',
-        forceQuotes: false
+        forceQuotes: false,
       });
     } catch (error) {
       // Fallback to simple YAML-like format if serialization fails

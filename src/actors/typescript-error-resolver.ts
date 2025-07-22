@@ -1,6 +1,6 @@
 /**
  * TypeScript Error Detection and Resolution Actor
- * 
+ *
  * Automatically detects and fixes TypeScript errors using AST transformations
  * and intelligent pattern matching. Integrates with the existing Carmack Coder
  * architecture for seamless error resolution.
@@ -71,7 +71,7 @@ const ERROR_RESOLUTION_PATTERNS: ErrorResolution[] = [
     confidence: 0.7,
     riskLevel: 'medium',
   },
-  
+
   // TS2345: Argument of type 'X' is not assignable to parameter of type 'Y'
   {
     errorCode: 2345,
@@ -81,7 +81,7 @@ const ERROR_RESOLUTION_PATTERNS: ErrorResolution[] = [
     confidence: 0.8,
     riskLevel: 'low',
   },
-  
+
   // TS2531: Object is possibly 'null'
   {
     errorCode: 2531,
@@ -91,7 +91,7 @@ const ERROR_RESOLUTION_PATTERNS: ErrorResolution[] = [
     confidence: 0.6,
     riskLevel: 'high',
   },
-  
+
   // TS2532: Object is possibly 'undefined'
   {
     errorCode: 2532,
@@ -101,7 +101,7 @@ const ERROR_RESOLUTION_PATTERNS: ErrorResolution[] = [
     confidence: 0.6,
     riskLevel: 'high',
   },
-  
+
   // TS2339: Property 'X' does not exist on type 'Y'
   {
     errorCode: 2339,
@@ -111,7 +111,7 @@ const ERROR_RESOLUTION_PATTERNS: ErrorResolution[] = [
     confidence: 0.5,
     riskLevel: 'high',
   },
-  
+
   // TS7006: Parameter 'X' implicitly has an 'any' type
   {
     errorCode: 7006,
@@ -121,7 +121,7 @@ const ERROR_RESOLUTION_PATTERNS: ErrorResolution[] = [
     confidence: 0.9,
     riskLevel: 'low',
   },
-  
+
   // TS7034: Variable 'X' implicitly has type 'any'
   {
     errorCode: 7034,
@@ -131,7 +131,7 @@ const ERROR_RESOLUTION_PATTERNS: ErrorResolution[] = [
     confidence: 0.9,
     riskLevel: 'low',
   },
-  
+
   // TS2304: Cannot find name 'X'
   {
     errorCode: 2304,
@@ -141,7 +141,7 @@ const ERROR_RESOLUTION_PATTERNS: ErrorResolution[] = [
     confidence: 0.3,
     riskLevel: 'high',
   },
-  
+
   // TS2307: Cannot find module 'X'
   {
     errorCode: 2307,
@@ -151,12 +151,13 @@ const ERROR_RESOLUTION_PATTERNS: ErrorResolution[] = [
     confidence: 0.4,
     riskLevel: 'medium',
   },
-  
+
   // TS2355: A function whose declared type is neither 'void' nor 'any' must return a value
   {
     errorCode: 2355,
     pattern: 'function\\s+(\\w+)\\s*\\([^)]*\\)\\s*:\\s*([^{]+)\\s*\\{',
-    replacement: 'function $1(): $2 {\n  // TODO: Implement return value\n  throw new Error("Not implemented");',
+    replacement:
+      'function $1(): $2 {\n  // TODO: Implement return value\n  throw new Error("Not implemented");',
     description: 'Add placeholder return statement',
     confidence: 0.7,
     riskLevel: 'medium',
@@ -183,13 +184,13 @@ export class TypeScriptErrorResolver {
     try {
       const fileArgs = files.length > 0 ? files.join(' ') : '';
       const command = `${this.tscPath} --noEmit --pretty false ${fileArgs}`;
-      
+
       // TypeScript compiler returns non-zero exit code when errors exist
-      const output = execSync(command, { 
+      const output = execSync(command, {
         encoding: 'utf-8',
         stdio: 'pipe',
       });
-      
+
       return this.parseTypeScriptOutput(output);
     } catch (error: any) {
       // TypeScript errors are in stderr
@@ -207,18 +208,20 @@ export class TypeScriptErrorResolver {
 
     for (const line of lines) {
       // Parse TypeScript error format: file(line,col): error TS####: message
-      const match = line.match(/^(.+?)\((\d+),(\d+)\):\s+(error|warning|suggestion)\s+TS(\d+):\s+(.+)$/);
-      
+      const match = line.match(
+        /^(.+?)\((\d+),(\d+)\):\s+(error|warning|suggestion)\s+TS(\d+):\s+(.+)$/
+      );
+
       if (match) {
         const [, file, lineStr, colStr, category, codeStr, messageText] = match;
-        
+
         // Ensure all captured groups exist before using them
         if (file && lineStr && colStr && category && codeStr && messageText) {
           errors.push({
             file: file.trim(),
-            line: parseInt(lineStr, 10),
-            column: parseInt(colStr, 10),
-            code: parseInt(codeStr, 10),
+            line: Number.parseInt(lineStr, 10),
+            column: Number.parseInt(colStr, 10),
+            code: Number.parseInt(codeStr, 10),
             category: category as 'error' | 'warning' | 'suggestion',
             messageText: messageText.trim(),
             source: line,
@@ -236,7 +239,7 @@ export class TypeScriptErrorResolver {
   async applyFixes(
     errors: TypeScriptError[],
     maxRiskLevel: 'low' | 'medium' | 'high',
-    dryRun: boolean = false
+    dryRun = false
   ): Promise<TypeScriptFixResult> {
     const result: TypeScriptFixResult = {
       success: false,
@@ -273,13 +276,9 @@ export class TypeScriptErrorResolver {
 
         for (const error of sortedErrors) {
           const resolution = this.findResolution(error);
-          
+
           if (resolution && riskLevels[resolution.riskLevel] <= maxRisk) {
-            const fix = await this.applyErrorFix(
-              modifiedContent,
-              error,
-              resolution
-            );
+            const fix = await this.applyErrorFix(modifiedContent, error, resolution);
 
             if (fix.success) {
               modifiedContent = fix.content;
@@ -287,7 +286,9 @@ export class TypeScriptErrorResolver {
               result.errorsFixed++;
               result.fixesApplied.push(resolution);
             } else {
-              result.warnings.push(`Failed to fix error ${error.code} in ${filePath}: ${fix.reason}`);
+              result.warnings.push(
+                `Failed to fix error ${error.code} in ${filePath}: ${fix.reason}`
+              );
             }
           } else {
             result.warnings.push(`No safe resolution found for error ${error.code} in ${filePath}`);
@@ -302,7 +303,6 @@ export class TypeScriptErrorResolver {
           result.filesModified.push(filePath);
           result.warnings.push(`DRY RUN: Would modify ${filePath}`);
         }
-
       } catch (error: any) {
         result.warnings.push(`Error processing file ${filePath}: ${error.message}`);
       }
@@ -319,7 +319,7 @@ export class TypeScriptErrorResolver {
    * Find appropriate resolution for a TypeScript error
    */
   private findResolution(error: TypeScriptError): ErrorResolution | null {
-    return ERROR_RESOLUTION_PATTERNS.find(pattern => pattern.errorCode === error.code) || null;
+    return ERROR_RESOLUTION_PATTERNS.find((pattern) => pattern.errorCode === error.code) || null;
   }
 
   /**
@@ -356,10 +356,7 @@ export class TypeScriptErrorResolver {
   /**
    * Generate intelligent type suggestions based on context
    */
-  async generateTypeSuggestions(
-    filePath: string,
-    error: TypeScriptError
-  ): Promise<string[]> {
+  async generateTypeSuggestions(filePath: string, error: TypeScriptError): Promise<string[]> {
     const suggestions: string[] = [];
 
     try {
@@ -371,7 +368,7 @@ export class TypeScriptErrorResolver {
       if (error.code === 7006 || error.code === 7034) {
         // Implicit any - suggest based on usage patterns
         suggestions.push('string', 'number', 'boolean', 'unknown');
-        
+
         // Look for return statements to infer function return types
         if (errorLine && errorLine.includes('function')) {
           const functionBody = this.extractFunctionBody(lines, error.line - 1);
@@ -386,7 +383,6 @@ export class TypeScriptErrorResolver {
         suggestions.push('Nullish coalescing (??)');
         suggestions.push('Type guard');
       }
-
     } catch (err) {
       // Fallback suggestions
       suggestions.push('any', 'unknown');
@@ -405,18 +401,18 @@ export class TypeScriptErrorResolver {
 
     for (let i = startLine; i < lines.length; i++) {
       const line = lines[i];
-      
+
       if (!line) continue; // Skip undefined lines
-      
+
       if (line.includes('{')) {
         braceCount += (line.match(/\{/g) || []).length;
         inFunction = true;
       }
-      
+
       if (inFunction) {
         body.push(line);
       }
-      
+
       if (line.includes('}')) {
         braceCount -= (line.match(/\}/g) || []).length;
         if (braceCount <= 0) break;
@@ -431,7 +427,7 @@ export class TypeScriptErrorResolver {
    */
   private inferReturnTypes(functionBody: string[]): string[] {
     const types: string[] = [];
-    
+
     for (const line of functionBody) {
       if (line.includes('return')) {
         // Simple heuristics for return type inference
@@ -466,7 +462,7 @@ export const typeScriptErrorResolverActor = fromPromise(
     try {
       console.log('🔍 Detecting TypeScript errors...');
       const errors = await resolver.getTypeScriptErrors(validatedInput.files);
-      
+
       if (errors.length === 0) {
         return {
           success: true,
@@ -481,7 +477,7 @@ export const typeScriptErrorResolverActor = fromPromise(
       }
 
       console.log(`📋 Found ${errors.length} TypeScript errors`);
-      
+
       if (validatedInput.autoFix) {
         console.log('🔧 Applying automatic fixes...');
         const result = await resolver.applyFixes(
@@ -489,22 +485,20 @@ export const typeScriptErrorResolverActor = fromPromise(
           validatedInput.maxRiskLevel,
           validatedInput.dryRun
         );
-        
+
         console.log(`✅ ${result.summary}`);
         return result;
-      } else {
-        return {
-          success: false,
-          errorsFound: errors.length,
-          errorsFixed: 0,
-          errorsRemaining: errors.length,
-          filesModified: [],
-          fixesApplied: [],
-          warnings: ['Auto-fix disabled'],
-          summary: `Found ${errors.length} TypeScript errors (auto-fix disabled)`,
-        };
       }
-
+      return {
+        success: false,
+        errorsFound: errors.length,
+        errorsFixed: 0,
+        errorsRemaining: errors.length,
+        filesModified: [],
+        fixesApplied: [],
+        warnings: ['Auto-fix disabled'],
+        summary: `Found ${errors.length} TypeScript errors (auto-fix disabled)`,
+      };
     } catch (error: any) {
       return {
         success: false,

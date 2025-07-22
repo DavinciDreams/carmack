@@ -232,9 +232,13 @@ export class LLMTransformer {
       // Apply the transformation if it's different
       if (originalContent !== llmResponse.transformedCode) {
         console.log(`📝 Writing transformed code to ${filePath}`);
-        console.log(`📏 Original length: ${originalContent.length}, New length: ${llmResponse.transformedCode.length}`);
-        console.log(`🔍 First 100 chars of transformed code: ${llmResponse.transformedCode.substring(0, 100)}...`);
-        
+        console.log(
+          `📏 Original length: ${originalContent.length}, New length: ${llmResponse.transformedCode.length}`
+        );
+        console.log(
+          `🔍 First 100 chars of transformed code: ${llmResponse.transformedCode.substring(0, 100)}...`
+        );
+
         await writeFile(filePath, llmResponse.transformedCode, 'utf-8');
 
         return {
@@ -441,7 +445,9 @@ Respond in this JSON format:
         const parsedResponse = this.parseAPIResponse(response);
         console.log(`📋 Parsed response keys: ${Object.keys(parsedResponse)}`);
         const validatedResponse = LLMResponseSchema.parse(parsedResponse);
-        console.log(`✅ Validated response with transformedCode length: ${validatedResponse.transformedCode.length}`);
+        console.log(
+          `✅ Validated response with transformedCode length: ${validatedResponse.transformedCode.length}`
+        );
 
         // Update token usage
         this.tokenUsage += this.estimateTokenUsage(prompt, validatedResponse.transformedCode);
@@ -541,7 +547,8 @@ Respond in this JSON format:
         model: this.config.model || 'claude-3-5-sonnet-20241022',
         max_tokens: this.config.maxTokens,
         temperature: this.config.temperature,
-        system: 'You are an expert code transformation assistant. Transform the provided code to improve its quality, maintainability, and follow modern best practices. Focus on: type safety, performance, readability, and modern JavaScript/TypeScript patterns.',
+        system:
+          'You are an expert code transformation assistant. Transform the provided code to improve its quality, maintainability, and follow modern best practices. Focus on: type safety, performance, readability, and modern JavaScript/TypeScript patterns.',
         messages: [
           {
             role: 'user',
@@ -554,7 +561,7 @@ Respond in this JSON format:
     if (!response.ok) {
       let errorMessage = `Anthropic API error: ${response.status} ${response.statusText}`;
       try {
-        const errorData = await response.json() as any;
+        const errorData = (await response.json()) as any;
         if (errorData.error) {
           errorMessage += ` - ${errorData.error.message || JSON.stringify(errorData.error)}`;
         }
@@ -577,7 +584,7 @@ Respond in this JSON format:
     }
 
     const baseURL = this.config.baseURL || 'https://openrouter.ai/api/v1';
-    
+
     const response = await fetch(`${baseURL}/chat/completions`, {
       method: 'POST',
       headers: {
@@ -591,7 +598,8 @@ Respond in this JSON format:
         messages: [
           {
             role: 'system',
-            content: 'You are an expert code transformation assistant. Transform the provided code to improve its quality, maintainability, and follow modern best practices. Focus on: type safety, performance, readability, and modern JavaScript/TypeScript patterns.',
+            content:
+              'You are an expert code transformation assistant. Transform the provided code to improve its quality, maintainability, and follow modern best practices. Focus on: type safety, performance, readability, and modern JavaScript/TypeScript patterns.',
           },
           {
             role: 'user',
@@ -607,7 +615,7 @@ Respond in this JSON format:
     if (!response.ok) {
       let errorMessage = `OpenRouter API error: ${response.status} ${response.statusText}`;
       try {
-        const errorData = await response.json() as any;
+        const errorData = (await response.json()) as any;
         if (errorData.error) {
           errorMessage += ` - ${errorData.error.message || JSON.stringify(errorData.error)}`;
         }
@@ -695,46 +703,56 @@ Respond in this JSON format:
       // Try to parse as JSON first
       const parsed = JSON.parse(response);
       console.log(`🔍 Initial parsed response keys: ${Object.keys(parsed).join(', ')}`);
-      
+
       // Check if transformedCode field exists and what type it is
       if (parsed.transformedCode !== undefined) {
         const codeValue = parsed.transformedCode;
         console.log(`🔍 transformedCode type: ${typeof codeValue}`);
-        console.log(`🔍 First 100 chars of transformedCode: ${String(codeValue).substring(0, 100)}...`);
-        
+        console.log(
+          `🔍 First 100 chars of transformedCode: ${String(codeValue).substring(0, 100)}...`
+        );
+
         // If transformedCode is itself a JSON string containing another JSON object, this is the bug
         if (typeof codeValue === 'string') {
           const trimmed = codeValue.trim();
           if (trimmed.startsWith('{')) {
-            console.log(`🐛 Detected JSON string in transformedCode field`);
+            console.log('🐛 Detected JSON string in transformedCode field');
             try {
               const innerParsed = JSON.parse(codeValue);
               console.log(`🔧 Inner JSON keys: ${Object.keys(innerParsed).join(', ')}`);
-              
+
               if (innerParsed.transformedCode && typeof innerParsed.transformedCode === 'string') {
-                console.log(`🔧 Extracting actual code from nested JSON`);
-                console.log(`🔧 Actual code preview: ${String(innerParsed.transformedCode).substring(0, 100)}...`);
-                
+                console.log('🔧 Extracting actual code from nested JSON');
+                console.log(
+                  `🔧 Actual code preview: ${String(innerParsed.transformedCode).substring(0, 100)}...`
+                );
+
                 // Create a corrected response with the actual code
                 const correctedResponse = {
                   ...parsed,
                   transformedCode: innerParsed.transformedCode,
                   explanation: innerParsed.explanation || parsed.explanation,
-                  confidence: innerParsed.confidence !== undefined ? innerParsed.confidence : parsed.confidence,
+                  confidence:
+                    innerParsed.confidence !== undefined
+                      ? innerParsed.confidence
+                      : parsed.confidence,
                   warnings: innerParsed.warnings || parsed.warnings,
-                  appliedTransformations: innerParsed.appliedTransformations || parsed.appliedTransformations
+                  appliedTransformations:
+                    innerParsed.appliedTransformations || parsed.appliedTransformations,
                 };
-                
-                console.log(`✅ Fixed double-nested JSON response`);
+
+                console.log('✅ Fixed double-nested JSON response');
                 return correctedResponse;
               }
             } catch (parseError) {
-              console.log(`⚠️ Failed to parse nested JSON: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
+              console.log(
+                `⚠️ Failed to parse nested JSON: ${parseError instanceof Error ? parseError.message : String(parseError)}`
+              );
             }
           }
         }
       }
-      
+
       return parsed;
     } catch {
       // If not JSON, try to extract JSON from markdown code blocks

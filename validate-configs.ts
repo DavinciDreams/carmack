@@ -1,14 +1,15 @@
 #!/usr/bin/env bun
+
 /**
  * Configuration Validation Script
- * 
+ *
  * Validates all common configuration files in the project
  * Usage: bun run validate-configs.ts [--verbose] [--fix]
  */
 
-import { ConfigValidator } from './src/utils/config-validators';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { ConfigValidator } from './src/utils/config-validators';
 
 interface ValidationResults {
   file: string;
@@ -26,13 +27,10 @@ const CONFIG_FILES = [
   { path: '.github/workflows/test.yml', validator: 'github-workflow', required: false },
 ] as const;
 
-async function validateFile(
-  filePath: string, 
-  validatorType: string
-): Promise<ValidationResults> {
+async function validateFile(filePath: string, validatorType: string): Promise<ValidationResults> {
   try {
     let result;
-    
+
     switch (validatorType) {
       case 'lefthook':
         result = await ConfigValidator.validateLefthook(filePath);
@@ -70,14 +68,14 @@ async function main() {
   const args = process.argv.slice(2);
   const verbose = args.includes('--verbose') || args.includes('-v');
   const fix = args.includes('--fix');
-  
+
   console.log('🔍 Validating configuration files...\n');
 
   const results: ValidationResults[] = [];
-  
+
   for (const config of CONFIG_FILES) {
     const fullPath = join(process.cwd(), config.path);
-    
+
     if (!existsSync(fullPath)) {
       if (config.required) {
         results.push({
@@ -106,10 +104,10 @@ async function main() {
 
   let totalFiles = 0;
   let validFiles = 0;
-  
+
   for (const result of results) {
     totalFiles++;
-    
+
     if (result.valid) {
       validFiles++;
       console.log(`✅ ${result.file} - Valid`);
@@ -125,13 +123,13 @@ async function main() {
 
   console.log('━'.repeat(50));
   console.log(`📈 Summary: ${validFiles}/${totalFiles} files valid`);
-  
+
   if (validFiles === totalFiles) {
     console.log('🎉 All configuration files are valid!');
     process.exit(0);
   } else {
     console.log('⚠️  Some configuration files have issues.');
-    
+
     if (fix) {
       console.log('\n🔧 Auto-fix suggestions:');
       for (const result of results) {
@@ -151,7 +149,7 @@ async function main() {
     } else {
       console.log('💡 Run with --fix flag to see auto-fix suggestions');
     }
-    
+
     process.exit(1);
   }
 }

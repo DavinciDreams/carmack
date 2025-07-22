@@ -1,11 +1,11 @@
-import { describe, expect, it, beforeAll, afterAll } from 'bun:test';
-import { ConfigValidator } from '../../src/utils/config-validators';
-import { mkdir, writeFile, rm } from 'node:fs/promises';
+import { afterAll, beforeAll, describe, expect, it } from 'bun:test';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { ConfigValidator } from '../../src/utils/config-validators';
 
 describe('Config Validators', () => {
   const testDir = join(process.cwd(), 'test-temp-config');
-  
+
   beforeAll(async () => {
     // Create test directory
     await mkdir(testDir, { recursive: true });
@@ -25,17 +25,17 @@ pre-commit:
       run: 'bun test'
       tags: 'test'
 `;
-      
+
       const filePath = join(testDir, 'valid-lefthook.yml');
       await writeFile(filePath, validConfig);
-      
+
       const result = await ConfigValidator.validateLefthook(filePath);
-      
+
       if (!result.valid) {
         console.log('Validation errors:', result.errors);
         console.log('Result data:', result.data);
       }
-      
+
       expect(result.valid).toBe(true);
       expect(result.errors).toBeUndefined();
       expect(result.data).toBeDefined();
@@ -50,10 +50,10 @@ pre-commit:
     lint:
       invalid_run_field: 'bun run lint'
 `;
-      
+
       const filePath = join(testDir, 'invalid-lefthook.yml');
       await writeFile(filePath, invalidConfig);
-      
+
       const result = await ConfigValidator.validateLefthook(filePath);
       expect(result.valid).toBe(false);
       expect(result.errors).toBeDefined();
@@ -86,10 +86,10 @@ services:
       POSTGRES_USER: 'user'
       POSTGRES_PASSWORD: 'password'
 `;
-      
+
       const filePath = join(testDir, 'valid-docker-compose.yml');
       await writeFile(filePath, validConfig);
-      
+
       const result = await ConfigValidator.validateDockerCompose(filePath);
       expect(result.valid).toBe(true);
       expect(result.errors).toBeUndefined();
@@ -106,10 +106,10 @@ services:
     invalid_field: 'should not be here'
     image: 'nginx:latest'
 `;
-      
+
       const filePath = join(testDir, 'invalid-docker-compose.yml');
       await writeFile(filePath, invalidConfig);
-      
+
       const result = await ConfigValidator.validateDockerCompose(filePath);
       expect(result.valid).toBe(false);
       expect(result.errors).toBeDefined();
@@ -129,10 +129,10 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 `;
-      
+
       const filePath = join(testDir, 'valid-prometheus.yml');
       await writeFile(filePath, validConfig);
-      
+
       const result = await ConfigValidator.validatePrometheus(filePath);
       expect(result.valid).toBe(true);
       expect(result.errors).toBeUndefined();
@@ -157,10 +157,10 @@ jobs:
       - name: 'Run Tests'
         run: 'bun test'
 `;
-      
+
       const filePath = join(testDir, 'valid-workflow.yml');
       await writeFile(filePath, validConfig);
-      
+
       const result = await ConfigValidator.validateGitHubWorkflow(filePath);
       expect(result.valid).toBe(true);
       expect(result.errors).toBeUndefined();

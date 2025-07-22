@@ -1,19 +1,19 @@
-import { describe, expect, test, beforeEach, afterEach } from 'bun:test';
-import { z } from 'zod';
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { z } from 'zod';
 import {
-  parseYamlString,
+  CommonYamlSchemas,
   parseYamlFile,
-  serializeToYaml,
-  writeYamlFile,
-  validateYamlFile,
+  parseYamlString,
   safeParseYaml,
+  serializeToYaml,
+  validateYamlFile,
+  writeYamlFile,
+  YAML,
   YamlParseError,
   YamlSerializationError,
-  CommonYamlSchemas,
-  YAML,
 } from '../../src/utils/yaml-handler.js';
 
 describe('YAML Handler', () => {
@@ -40,13 +40,13 @@ features:
   - feature1
   - feature2
 `;
-      
+
       const result = parseYamlString(yaml);
-      
+
       expect(result).toEqual({
         name: 'test',
         version: '1.0.0',
-        features: ['feature1', 'feature2']
+        features: ['feature1', 'feature2'],
       });
     });
 
@@ -64,9 +64,9 @@ features:
   - feature1
   - feature2
 `;
-      
+
       const result = parseYamlString(yaml, schema);
-      
+
       expect(result.name).toBe('test');
       expect(result.features).toHaveLength(2);
     });
@@ -79,7 +79,7 @@ features:
   - feature1
     invalid: indentation
 `;
-      
+
       expect(() => parseYamlString(invalidYaml)).toThrow(YamlParseError);
     });
 
@@ -93,7 +93,7 @@ features:
 name: test
 version: "1.0.0"
 `;
-      
+
       expect(() => parseYamlString(yaml, schema)).toThrow(YamlParseError);
     });
   });
@@ -107,19 +107,19 @@ config:
   enabled: true
   timeout: 5000
 `;
-      
+
       const testFile = join(testDir, 'test.yml');
       await writeFile(testFile, yamlContent);
-      
+
       const result = await parseYamlFile(testFile);
-      
+
       expect(result).toEqual({
         name: 'test-file',
         description: 'Test YAML file',
         config: {
           enabled: true,
-          timeout: 5000
-        }
+          timeout: 5000,
+        },
       });
     });
 
@@ -138,12 +138,12 @@ config:
   enabled: true
   timeout: 5000
 `;
-      
+
       const testFile = join(testDir, 'test-schema.yml');
       await writeFile(testFile, yamlContent);
-      
+
       const result = await parseYamlFile(testFile, schema);
-      
+
       expect(result.name).toBe('test-file');
       expect(result.config.enabled).toBe(true);
       expect(result.config.timeout).toBe(5000);
@@ -151,7 +151,7 @@ config:
 
     test('should throw YamlParseError for non-existent file', async () => {
       const nonExistentFile = join(testDir, 'non-existent.yml');
-      
+
       await expect(parseYamlFile(nonExistentFile)).rejects.toThrow(YamlParseError);
     });
   });
@@ -164,12 +164,12 @@ config:
         features: ['feature1', 'feature2'],
         config: {
           enabled: true,
-          timeout: 5000
-        }
+          timeout: 5000,
+        },
       };
-      
+
       const yaml = serializeToYaml(data);
-      
+
       expect(yaml).toContain('name: test');
       expect(yaml).toContain('version: 1.0.0'); // js-yaml doesn't quote simple strings
       expect(yaml).toContain('- feature1');
@@ -178,13 +178,13 @@ config:
 
     test('should respect formatting options', () => {
       const data = { name: 'test', version: '1.0.0' };
-      
+
       const yaml = serializeToYaml(data, {
         indent: 4,
         quotingType: "'",
-        forceQuotes: true
+        forceQuotes: true,
       });
-      
+
       expect(yaml).toContain("name: 'test'");
       expect(yaml).toContain("version: '1.0.0'");
       // Check for 4-space indentation (harder to verify directly)
@@ -198,18 +198,18 @@ config:
             ports: ['80:80', '443:443'],
             environment: {
               NODE_ENV: 'production',
-              DEBUG: 'false'
-            }
+              DEBUG: 'false',
+            },
           },
           db: {
             image: 'postgres:13',
-            volumes: ['db_data:/var/lib/postgresql/data']
-          }
-        }
+            volumes: ['db_data:/var/lib/postgresql/data'],
+          },
+        },
       };
-      
+
       const yaml = serializeToYaml(data);
-      
+
       expect(yaml).toContain('services:');
       expect(yaml).toContain('web:');
       expect(yaml).toContain('image: nginx:latest'); // js-yaml handles quoting intelligently
@@ -223,13 +223,13 @@ config:
         name: 'test-output',
         settings: {
           enabled: true,
-          count: 42
-        }
+          count: 42,
+        },
       };
-      
+
       const outputFile = join(testDir, 'output.yml');
       await writeYamlFile(outputFile, data);
-      
+
       // Read back and verify
       const result = await parseYamlFile(outputFile);
       expect(result).toEqual(data);
@@ -237,13 +237,13 @@ config:
 
     test('should apply custom formatting options', async () => {
       const data = { name: 'test', items: ['a', 'b', 'c'] };
-      
+
       const outputFile = join(testDir, 'formatted.yml');
       await writeYamlFile(outputFile, data, {
         indent: 4,
-        sortKeys: false
+        sortKeys: false,
       });
-      
+
       // Read raw content to check formatting
       const content = await Bun.file(outputFile).text();
       expect(content).toContain('name: test');
@@ -262,16 +262,16 @@ config:
 name: valid-config
 version: "1.0.0"
 `;
-      
+
       const testFile = join(testDir, 'valid.yml');
       await writeFile(testFile, yamlContent);
-      
+
       const result = await validateYamlFile(testFile, schema);
-      
+
       expect(result.valid).toBe(true);
       expect(result.data).toEqual({
         name: 'valid-config',
-        version: '1.0.0'
+        version: '1.0.0',
       });
     });
 
@@ -285,12 +285,12 @@ version: "1.0.0"
 name: invalid-config
 version: "1.0.0"
 `;
-      
+
       const testFile = join(testDir, 'invalid.yml');
       await writeFile(testFile, yamlContent);
-      
+
       const result = await validateYamlFile(testFile, schema);
-      
+
       expect(result.valid).toBe(false);
       expect(result.errors).toBeInstanceOf(z.ZodError);
     });
@@ -300,18 +300,18 @@ version: "1.0.0"
     test('should return parsed data for valid YAML', () => {
       const yaml = 'name: test\nvalue: 42';
       const defaultValue = { name: 'default', value: 0 };
-      
+
       const result = safeParseYaml(yaml, defaultValue);
-      
+
       expect(result).toEqual({ name: 'test', value: 42 });
     });
 
     test('should return default value for invalid YAML', () => {
       const invalidYaml = 'name: test\n  invalid: indentation';
       const defaultValue = { name: 'default', value: 0 };
-      
+
       const result = safeParseYaml(invalidYaml, defaultValue);
-      
+
       expect(result).toEqual(defaultValue);
     });
 
@@ -323,9 +323,9 @@ version: "1.0.0"
 
       const yaml = 'name: test\nvalue: 42';
       const defaultValue = { name: 'default', value: 0 };
-      
+
       const result = safeParseYaml(yaml, defaultValue, schema);
-      
+
       expect(result).toEqual({ name: 'test', value: 42 });
     });
   });
@@ -336,13 +336,13 @@ version: "1.0.0"
         name: 'development',
         variables: {
           NODE_ENV: 'development',
-          DEBUG: 'true'
+          DEBUG: 'true',
         },
-        services: ['web', 'db']
+        services: ['web', 'db'],
       };
-      
+
       const result = CommonYamlSchemas.environment.parse(config);
-      
+
       expect(result.name).toBe('development');
       expect(result.variables.NODE_ENV).toBe('development');
       expect(result.services).toContain('web');
@@ -354,18 +354,18 @@ version: "1.0.0"
         jobs: {
           build: {
             script: ['npm install', 'npm run build'],
-            stage: 'build'
+            stage: 'build',
           },
           test: {
             script: ['npm test'],
             stage: 'test',
-            dependencies: ['build']
-          }
-        }
+            dependencies: ['build'],
+          },
+        },
       };
-      
+
       const result = CommonYamlSchemas.pipeline.parse(config);
-      
+
       expect(result.stages).toHaveLength(3);
       expect(result.jobs.build.script).toContain('npm install');
       expect(result.jobs.test.dependencies).toContain('build');
@@ -377,15 +377,15 @@ version: "1.0.0"
       const data = { test: true };
       const yamlString = YAML.serialize(data);
       const parsed = YAML.parse(yamlString);
-      
+
       expect(parsed).toEqual(data);
-      
+
       const testFile = join(testDir, 'convenience.yml');
       await YAML.writeFile(testFile, data);
-      
+
       const fileData = await YAML.parseFile(testFile);
       expect(fileData).toEqual(data);
-      
+
       const safeData = YAML.safeParse('invalid: yaml\n  bad: indentation', data);
       expect(safeData).toEqual(data);
     });
@@ -418,7 +418,7 @@ version: "1.0.0"
     test('should handle serialization errors gracefully', () => {
       const circularData = { self: null as any };
       circularData.self = circularData;
-      
+
       expect(() => serializeToYaml(circularData)).toThrow(YamlSerializationError);
     });
   });

@@ -182,7 +182,7 @@ async function main() {
   } else {
     // Run all transformation modes in succession: Template → AST → LLM
     console.log('🚀 Running comprehensive transformation pipeline: Template → AST → LLM');
-    
+
     const modes: TransformationMode[] = ['template', 'ast', 'llm'];
     let totalTransformations = 0;
     const results: Array<{ mode: TransformationMode; success: boolean; duration: number }> = [];
@@ -215,7 +215,7 @@ async function main() {
         const duration = Date.now() - startTime;
         results.push({ mode, success: false, duration });
         console.error(`❌ ${mode.toUpperCase()} transformation failed:`, error);
-        
+
         // Continue with next mode instead of stopping
         if (options.verbose) {
           console.log('Continuing with next transformation mode...');
@@ -227,19 +227,19 @@ async function main() {
     console.log(`\n${'='.repeat(60)}`);
     console.log('📊 TRANSFORMATION PIPELINE SUMMARY');
     console.log(`${'='.repeat(60)}`);
-    
+
     results.forEach(({ mode, success, duration }) => {
       const status = success ? '✅ SUCCESS' : '❌ FAILED';
       const time = duration > 0 ? `${duration}ms` : 'skipped';
       console.log(`${mode.toUpperCase().padEnd(8)} ${status.padEnd(10)} (${time})`);
     });
-    
-    const successCount = results.filter(r => r.success).length;
+
+    const successCount = results.filter((r) => r.success).length;
     const totalTime = results.reduce((sum, r) => sum + r.duration, 0);
-    
+
     console.log(`\n🎯 Pipeline completed: ${successCount}/${results.length} modes successful`);
     console.log(`⏱️  Total execution time: ${totalTime}ms`);
-    
+
     if (successCount === results.length) {
       console.log('🎉 All transformation modes completed successfully!');
     } else {
@@ -247,69 +247,69 @@ async function main() {
     }
   }
 
-async function runSingleTransformation(
-  mode: TransformationMode,
-  targetFiles: string[],
-  filteredPatterns: AstPattern[],
-  options: CliOptions
-): Promise<void> {
-  // Create and start the state machine actor
-  const actor = createActor(carmackCoderMachine);
+  async function runSingleTransformation(
+    mode: TransformationMode,
+    targetFiles: string[],
+    filteredPatterns: AstPattern[],
+    options: CliOptions
+  ): Promise<void> {
+    // Create and start the state machine actor
+    const actor = createActor(carmackCoderMachine);
 
-  // Subscribe to state changes for debugging
-  if (options.verbose) {
-    actor.subscribe((state) => {
-      console.log(`State: ${state.value}`);
-      if (state.context.currentTransformation) {
-        console.log(`Status: ${state.context.currentTransformation.status}`);
-      }
+    // Subscribe to state changes for debugging
+    if (options.verbose) {
+      actor.subscribe((state) => {
+        console.log(`State: ${state.value}`);
+        if (state.context.currentTransformation) {
+          console.log(`Status: ${state.context.currentTransformation.status}`);
+        }
+      });
+    }
+
+    actor.start();
+
+    // Dynamic transformation request based on mode
+    const transformationRequest: TransformationRequest = {
+      targetFiles,
+      transformationType: mode,
+      patterns: filteredPatterns,
+      maxComplexity: options.maxComplexity,
+      dryRun: options.dryRun,
+    };
+
+    if (options.verbose) {
+      console.log('🎛️ Transformation Request:', JSON.stringify(transformationRequest, null, 2));
+    }
+
+    // Send transformation request
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    actor.send({
+      type: 'START_TRANSFORMATION',
+      request: transformationRequest,
+      // biome-ignore lint/suspicious/noExplicitAny: Required for XState event type compatibility
+    } as any);
+
+    // Wait for completion
+    await new Promise<void>((resolve, reject) => {
+      actor.subscribe((state) => {
+        if (state.matches('succeeded')) {
+          console.log(`✅ ${mode.toUpperCase()} transformation succeeded!`);
+          if (options.verbose) {
+            console.log('Final context:', JSON.stringify(state.context, null, 2));
+          }
+          actor.stop();
+          resolve();
+        } else if (state.matches('failed')) {
+          console.error(`❌ ${mode.toUpperCase()} transformation failed`);
+          if (options.verbose) {
+            console.log('Final context:', JSON.stringify(state.context, null, 2));
+          }
+          actor.stop();
+          reject(new Error(`${mode} transformation failed`));
+        }
+      });
     });
   }
-
-  actor.start();
-
-  // Dynamic transformation request based on mode
-  const transformationRequest: TransformationRequest = {
-    targetFiles,
-    transformationType: mode,
-    patterns: filteredPatterns,
-    maxComplexity: options.maxComplexity,
-    dryRun: options.dryRun,
-  };
-
-  if (options.verbose) {
-    console.log('🎛️ Transformation Request:', JSON.stringify(transformationRequest, null, 2));
-  }
-
-  // Send transformation request
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  actor.send({
-    type: 'START_TRANSFORMATION',
-    request: transformationRequest,
-    // biome-ignore lint/suspicious/noExplicitAny: Required for XState event type compatibility
-  } as any);
-
-  // Wait for completion
-  await new Promise<void>((resolve, reject) => {
-    actor.subscribe((state) => {
-      if (state.matches('succeeded')) {
-        console.log(`✅ ${mode.toUpperCase()} transformation succeeded!`);
-        if (options.verbose) {
-          console.log('Final context:', JSON.stringify(state.context, null, 2));
-        }
-        actor.stop();
-        resolve();
-      } else if (state.matches('failed')) {
-        console.error(`❌ ${mode.toUpperCase()} transformation failed`);
-        if (options.verbose) {
-          console.log('Final context:', JSON.stringify(state.context, null, 2));
-        }
-        actor.stop();
-        reject(new Error(`${mode} transformation failed`));
-      }
-    });
-  });
-}
 }
 
 // Handle errors gracefully
