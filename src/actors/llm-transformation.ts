@@ -1,9 +1,9 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
-import type { LLMResponse as ProviderLLMResponse } from '../providers/llm-providers.js';
-import { getLLMProviderManager } from '../providers/llm-providers.js';
 import type { AstPattern, ComplexityMetrics, TransformationRequest } from '../types.js';
+import { getLLMProviderManager } from '../providers/llm-providers.js';
+import type { LLMResponse as ProviderLLMResponse } from '../providers/llm-providers.js';
 
 /**
  * Comprehensive LLM Transformation System
@@ -67,6 +67,7 @@ const LLMTransformationResultSchema = z.object({
   errors: z.array(z.string()).optional(),
   warnings: z.array(z.string()).optional(),
 });
+
 
 export type LLMProvider = z.infer<typeof LLMProviderSchema>;
 export type LLMConfig = z.infer<typeof LLMConfigSchema>;
@@ -414,10 +415,7 @@ Respond in this JSON format:
   /**
    * Call LLM API with retry logic
    */
-  private async callLLMAPI(
-    prompt: string,
-    originalCode: string
-  ): Promise<LLMTransformationResponse> {
+  private async callLLMAPI(prompt: string, originalCode: string): Promise<LLMTransformationResponse> {
     let lastError: Error | null = null;
 
     for (let attempt = 1; attempt <= this.config.retries; attempt++) {
@@ -462,11 +460,10 @@ Respond in this JSON format:
   private async makeAPICall(prompt: string): Promise<string> {
     try {
       const providerManager = getLLMProviderManager();
-
+      
       const request = {
         prompt,
-        systemPrompt:
-          'You are an expert code transformation assistant. Transform the provided code to improve its quality, maintainability, and follow modern best practices. Always respond with valid JSON in the specified format.',
+        systemPrompt: 'You are an expert code transformation assistant. Transform the provided code to improve its quality, maintainability, and follow modern best practices. Always respond with valid JSON in the specified format.',
         context: {
           language: 'typescript',
           complexity: 5,
@@ -499,6 +496,7 @@ Respond in this JSON format:
       return await this.callMockAPI(prompt);
     }
   }
+
 
   /**
    * Mock API for testing and development
@@ -622,10 +620,7 @@ Respond in this JSON format:
   /**
    * Create fallback response when LLM fails
    */
-  private createFallbackResponse(
-    originalCode: string,
-    error: Error | null
-  ): LLMTransformationResponse {
+  private createFallbackResponse(originalCode: string, error: Error | null): LLMTransformationResponse {
     return {
       transformedCode: originalCode, // Return original code unchanged
       explanation: `LLM transformation failed: ${error?.message || 'Unknown error'}. Returning original code.`,
