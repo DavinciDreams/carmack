@@ -18,6 +18,26 @@ interface ValidationResults {
   errors?: string[];
 }
 
+// Type-safe validator function signature
+type ValidatorFunction = (filePath: string) => Promise<{
+  valid: boolean;
+  errors?: string[];
+  data?: unknown;
+}>;
+
+// Validator lookup table for better performance and maintainability
+const VALIDATOR_MAP: Record<string, ValidatorFunction> = {
+  lefthook: ConfigValidator.validateLefthook,
+  'docker-compose': ConfigValidator.validateDockerCompose,
+  prometheus: ConfigValidator.validatePrometheus,
+  'github-workflow': ConfigValidator.validateGitHubWorkflow,
+} as const;
+
+// Type guard for validator types
+function isValidValidatorType(type: string): type is keyof typeof VALIDATOR_MAP {
+  return type in VALIDATOR_MAP;
+}
+
 const CONFIG_FILES = [
   { path: 'lefthook.yml', validator: 'lefthook', required: false },
   { path: 'docker-compose.yml', validator: 'docker-compose', required: false },
@@ -29,24 +49,14 @@ const CONFIG_FILES = [
 
 async function validateFile(filePath: string, validatorType: string): Promise<ValidationResults> {
   try {
-    let result;
-
-    switch (validatorType) {
-      case 'lefthook':
-        result = await ConfigValidator.validateLefthook(filePath);
-        break;
-      case 'docker-compose':
-        result = await ConfigValidator.validateDockerCompose(filePath);
-        break;
-      case 'prometheus':
-        result = await ConfigValidator.validatePrometheus(filePath);
-        break;
-      case 'github-workflow':
-        result = await ConfigValidator.validateGitHubWorkflow(filePath);
-        break;
-      default:
-        throw new Error(`Unknown validator type: ${validatorType}`);
+    // Early validation of validator type with type guard
+    if (!isValidValidatorType(validatorType)) {
+      throw new Error(`Unknown validator type: ${validatorType}. Available types: ${Object.keys(VALIDATOR_MAP).join(', ')}`);
     }
+
+    // Type-safe validator lookup with performance optimization
+    const validator = VALIDATOR_MAP[validatorType];
+    const result = await validator(filePath);
 
     return {
       file: filePath,
@@ -55,11 +65,15 @@ async function validateFile(filePath: string, validatorType: string): Promise<Va
       errors: result.errors,
     };
   } catch (error) {
+    // Enhanced error context for debugging
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const contextualError = `Validation failed for ${validatorType} validator on file ${filePath}: ${errorMessage}`;
+    
     return {
       file: filePath,
       type: validatorType,
       valid: false,
-      errors: [error instanceof Error ? error.message : String(error)],
+      errors: [contextualError],
     };
   }
 }
