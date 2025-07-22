@@ -242,9 +242,13 @@ async function main() {
     console.log(`⏱️  Total execution time: ${totalTime}ms`);
 
     if (successCount === results.length) {
-      console.log(`🎉 All transformation modes completed successfully! (${totalTransformations} transformations applied)`);
+      console.log(
+        `🎉 All transformation modes completed successfully! (${totalTransformations} transformations applied)`
+      );
     } else {
-      console.log(`⚠️  Some transformation modes encountered issues but pipeline continued (${totalTransformations} transformations applied)`);
+      console.log(
+        `⚠️  Some transformation modes encountered issues but pipeline continued (${totalTransformations} transformations applied)`
+      );
     }
   }
 
