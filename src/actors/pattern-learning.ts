@@ -774,7 +774,9 @@ export class PatternLearner {
       // Create pattern in the correct AstPattern format
       return {
         id: discovered.id,
-        language: (['typescript', 'javascript', 'cpp', 'c'] as const).includes(discovered.context.language as any)
+        language: (['typescript', 'javascript', 'cpp', 'c'] as const).includes(
+          discovered.context.language as any
+        )
           ? (discovered.context.language as 'typescript' | 'javascript' | 'cpp' | 'c')
           : 'typescript',
         pattern: discovered.pattern.before,

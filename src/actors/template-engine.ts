@@ -1233,7 +1233,11 @@ function findCppNamespacePatterns(content: string, pattern: TemplatePattern): Te
       match: fullMatch,
       variables: [
         { name: 'OLD_USING', value: 'using namespace std;', type: 'statement' },
-        { name: 'COMMENT', value: '// Avoid \'using namespace std;\' - use specific declarations instead', type: 'statement' },
+        {
+          name: 'COMMENT',
+          value: "// Avoid 'using namespace std;' - use specific declarations instead",
+          type: 'statement',
+        },
       ],
       startIndex: match.index,
       endIndex: match.index + fullMatch.length,

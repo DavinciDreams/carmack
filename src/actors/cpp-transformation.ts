@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 /**
  * C++ Modernization Transformation Engine
- * 
+ *
  * Specialized actor for C++ code transformations with focus on:
  * - Type safety improvements (nullptr, modern casts)
  * - Performance optimizations (constexpr)
@@ -23,43 +23,54 @@ const CppPatternSchema = z.object({
   riskLevel: z.enum(['low', 'medium', 'high']),
   mode: z.enum(['template', 'ast']),
   category: z.enum(['safety', 'performance', 'hygiene', 'modernization']),
-  
+
   // Performance and conflict resolution
-  performance: z.object({
-    priority: z.number().min(1).max(10).default(5),
-    batchable: z.boolean().default(true),
-    conflicts: z.array(z.string()).optional(),
-    maxMatches: z.number().optional(),
-  }).optional(),
-  
+  performance: z
+    .object({
+      priority: z.number().min(1).max(10).default(5),
+      batchable: z.boolean().default(true),
+      conflicts: z.array(z.string()).optional(),
+      maxMatches: z.number().optional(),
+    })
+    .optional(),
+
   // Formal verification support
-  verification: z.object({
-    dafnySpec: z.string().optional(),
-    invariants: z.array(z.string()).optional(),
-    preconditions: z.array(z.string()).optional(),
-    postconditions: z.array(z.string()).optional(),
-  }).optional(),
-  
+  verification: z
+    .object({
+      dafnySpec: z.string().optional(),
+      invariants: z.array(z.string()).optional(),
+      preconditions: z.array(z.string()).optional(),
+      postconditions: z.array(z.string()).optional(),
+    })
+    .optional(),
+
   // Test cases for validation
-  testCases: z.array(z.object({
-    input: z.string(),
-    expected: z.string(),
-    description: z.string(),
-  })).optional(),
+  testCases: z
+    .array(
+      z.object({
+        input: z.string(),
+        expected: z.string(),
+        description: z.string(),
+      })
+    )
+    .optional(),
 });
 
 const CppTransformationRequestSchema = z.object({
   targetFiles: z.array(z.string()),
   patterns: z.array(CppPatternSchema),
-  options: z.object({
-    dryRun: z.boolean().default(false),
-    maxComplexity: z.number().default(7),
-    enableBatching: z.boolean().default(true),
-    skipConflicts: z.boolean().default(true),
-    preserveFormatting: z.boolean().default(true),
-    enableVerification: z.boolean().default(true),
-    maxMatchesPerPattern: z.number().default(1000),
-  }).optional().default({}),
+  options: z
+    .object({
+      dryRun: z.boolean().default(false),
+      maxComplexity: z.number().default(7),
+      enableBatching: z.boolean().default(true),
+      skipConflicts: z.boolean().default(true),
+      preserveFormatting: z.boolean().default(true),
+      enableVerification: z.boolean().default(true),
+      maxMatchesPerPattern: z.number().default(1000),
+    })
+    .optional()
+    .default({}),
 });
 
 export type CppPattern = z.infer<typeof CppPatternSchema>;
@@ -104,10 +115,10 @@ export const cppTransformationActor = fromPromise(
     );
 
     const result = await applyCppTransformations(validatedInput);
-    
+
     const endTime = Date.now();
     const totalTime = endTime - startTime;
-    
+
     result.performanceMetrics = {
       totalTime,
       averageTimePerFile: totalTime / validatedInput.targetFiles.length,
@@ -125,7 +136,9 @@ export const cppTransformationActor = fromPromise(
 /**
  * Apply C++ transformations with verification
  */
-async function applyCppTransformations(request: CppTransformationRequest): Promise<CppTransformationResult> {
+async function applyCppTransformations(
+  request: CppTransformationRequest
+): Promise<CppTransformationResult> {
   const filesModified: string[] = [];
   const appliedPatterns: CppTransformationResult['appliedPatterns'] = [];
   const verificationResults: CppTransformationResult['verificationResults'] = [];
@@ -143,11 +156,7 @@ async function applyCppTransformations(request: CppTransformationRequest): Promi
       }
 
       const content = await readFile(filePath, 'utf-8');
-      const transformResult = await transformCppFile(
-        content,
-        activePatterns,
-        request.options
-      );
+      const transformResult = await transformCppFile(content, activePatterns, request.options);
 
       if (transformResult.modified && !request.options.dryRun) {
         await writeFile(filePath, transformResult.content, 'utf-8');
@@ -204,7 +213,7 @@ async function applyCppTransformations(request: CppTransformationRequest): Promi
  */
 function isCppFile(filePath: string): boolean {
   const cppExtensions = ['.cpp', '.cxx', '.cc', '.c++', '.hpp', '.hxx', '.h++', '.h'];
-  return cppExtensions.some(ext => filePath.toLowerCase().endsWith(ext));
+  return cppExtensions.some((ext) => filePath.toLowerCase().endsWith(ext));
 }
 
 /**
@@ -221,10 +230,10 @@ function prepareCppPatterns(patterns: CppPattern[], maxComplexity: number): CppP
         modernization: 2,
         hygiene: 1,
       };
-      
+
       const aPriority = categoryPriority[a.category] || 0;
       const bPriority = categoryPriority[b.category] || 0;
-      
+
       if (aPriority !== bPriority) {
         return bPriority - aPriority;
       }
@@ -232,7 +241,7 @@ function prepareCppPatterns(patterns: CppPattern[], maxComplexity: number): CppP
       // Then by performance priority
       const aPerf = a.performance?.priority ?? 5;
       const bPerf = b.performance?.priority ?? 5;
-      
+
       if (aPerf !== bPerf) {
         return bPerf - aPerf;
       }
@@ -293,13 +302,9 @@ async function transformCppFile(
       // Verify transformation if enabled
       let verified = true;
       let verificationErrors: string[] = [];
-      
+
       if (options.enableVerification && pattern.verification) {
-        const verificationResult = await verifyCppTransformation(
-          content,
-          modifiedContent,
-          pattern
-        );
+        const verificationResult = await verifyCppTransformation(content, modifiedContent, pattern);
         verified = verificationResult.verified;
         verificationErrors = verificationResult.errors;
       }
@@ -341,7 +346,7 @@ async function applyCppPattern(
       // Simple string replacement for template patterns
       const regex = new RegExp(escapeRegExp(pattern.pattern), 'g');
       const matches = content.match(regex);
-      
+
       if (matches && matches.length > 0) {
         const limitedMatches = Math.min(matches.length, maxMatches);
         modifiedContent = content.replace(regex, pattern.replacement);
@@ -380,7 +385,7 @@ async function applyAdvancedCppPattern(
 
   // Special handling for different C++ patterns
   switch (pattern.id) {
-    case 'cpp-nullptr-conversion':
+    case 'cpp-nullptr-conversion': {
       // Convert NULL to nullptr with context awareness
       const nullRegex = /\bNULL\b/g;
       const nullMatches = content.match(nullRegex);
@@ -389,8 +394,9 @@ async function applyAdvancedCppPattern(
         modifiedContent = content.replace(nullRegex, 'nullptr');
       }
       break;
+    }
 
-    case 'cpp-constexpr-const':
+    case 'cpp-constexpr-const': {
       // Convert static const to static constexpr for compile-time constants
       const constRegex = /\bstatic\s+const\b/g;
       const constMatches = content.match(constRegex);
@@ -399,8 +405,9 @@ async function applyAdvancedCppPattern(
         modifiedContent = content.replace(constRegex, 'static constexpr');
       }
       break;
+    }
 
-    case 'cpp-modern-cast':
+    case 'cpp-modern-cast': {
       // Convert C-style casts to static_cast (simplified)
       const castRegex = /\((\w+)\)\s*(\w+)/g;
       const castMatches = content.match(castRegex);
@@ -409,8 +416,9 @@ async function applyAdvancedCppPattern(
         modifiedContent = content.replace(castRegex, 'static_cast<$1>($2)');
       }
       break;
+    }
 
-    case 'cpp-include-iostream':
+    case 'cpp-include-iostream': {
       // Modernize iostream header
       const iostreamRegex = /#include\s*<iostream\.h>/g;
       const iostreamMatches = content.match(iostreamRegex);
@@ -419,8 +427,9 @@ async function applyAdvancedCppPattern(
         modifiedContent = content.replace(iostreamRegex, '#include <iostream>');
       }
       break;
+    }
 
-    case 'cpp-std-namespace':
+    case 'cpp-std-namespace': {
       // Replace global using namespace std
       const namespaceRegex = /using\s+namespace\s+std\s*;/g;
       const namespaceMatches = content.match(namespaceRegex);
@@ -428,17 +437,18 @@ async function applyAdvancedCppPattern(
         matchCount = Math.min(namespaceMatches.length, maxMatches);
         modifiedContent = content.replace(
           namespaceRegex,
-          '// Avoid \'using namespace std;\' - use specific declarations instead\n// using std::cout;\n// using std::endl;'
+          "// Avoid 'using namespace std;' - use specific declarations instead\n// using std::cout;\n// using std::endl;"
         );
       }
       break;
+    }
 
-    case 'cpp-double-include-fix':
+    case 'cpp-double-include-fix': {
       // Remove duplicate includes (simplified)
       const lines = content.split('\n');
       const seenIncludes = new Set<string>();
       const filteredLines: string[] = [];
-      
+
       for (const line of lines) {
         const includeMatch = line.match(/#include\s*[<"](.*)[>"]/);
         if (includeMatch && includeMatch[1]) {
@@ -453,14 +463,15 @@ async function applyAdvancedCppPattern(
           filteredLines.push(line);
         }
       }
-      
+
       if (matchCount > 0) {
         modifiedContent = filteredLines.join('\n');
         matchCount = Math.min(matchCount, maxMatches);
       }
       break;
+    }
 
-    default:
+    default: {
       // Fallback to simple pattern replacement
       const regex = new RegExp(escapeRegExp(pattern.pattern), 'g');
       const matches = content.match(regex);
@@ -468,6 +479,7 @@ async function applyAdvancedCppPattern(
         matchCount = Math.min(matches.length, maxMatches);
         modifiedContent = content.replace(regex, pattern.replacement);
       }
+    }
   }
 
   return { content: modifiedContent, matchCount };
@@ -507,7 +519,7 @@ async function verifyCppTransformation(
         }
         break;
 
-      case 'cpp-modern-cast':
+      case 'cpp-modern-cast': {
         // Verify that C-style casts are converted to modern casts
         const cStyleCastRegex = /\(\w+\)\s*\w+/;
         if (cStyleCastRegex.test(transformed)) {
@@ -515,17 +527,17 @@ async function verifyCppTransformation(
           verified = false;
         }
         break;
+      }
     }
 
     // Check for syntax preservation (basic)
     const originalBraces = (original.match(/[{}]/g) || []).length;
     const transformedBraces = (transformed.match(/[{}]/g) || []).length;
-    
+
     if (Math.abs(originalBraces - transformedBraces) > 2) {
       errors.push('Significant brace count mismatch - possible syntax error');
       verified = false;
     }
-
   } catch (error) {
     errors.push(`Verification error: ${error}`);
     verified = false;

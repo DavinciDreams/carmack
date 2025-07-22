@@ -39,25 +39,33 @@ export const AstPatternSchema = z.object({
   mode: TransformationModeSchema.optional().default('template'), // Default to template mode for backward compatibility
   // Enhanced metadata for C++ patterns
   category: z.string().optional(),
-  performance: z.object({
-    priority: z.number().min(1).max(10).default(5),
-    batchable: z.boolean().default(true),
-    conflicts: z.array(z.string()).optional(),
-    maxMatches: z.number().optional(),
-  }).optional(),
+  performance: z
+    .object({
+      priority: z.number().min(1).max(10).default(5),
+      batchable: z.boolean().default(true),
+      conflicts: z.array(z.string()).optional(),
+      maxMatches: z.number().optional(),
+    })
+    .optional(),
   // Formal verification support
-  verification: z.object({
-    dafnySpec: z.string().optional(),
-    invariants: z.array(z.string()).optional(),
-    preconditions: z.array(z.string()).optional(),
-    postconditions: z.array(z.string()).optional(),
-  }).optional(),
+  verification: z
+    .object({
+      dafnySpec: z.string().optional(),
+      invariants: z.array(z.string()).optional(),
+      preconditions: z.array(z.string()).optional(),
+      postconditions: z.array(z.string()).optional(),
+    })
+    .optional(),
   // Test cases for validation
-  testCases: z.array(z.object({
-    input: z.string(),
-    expected: z.string(),
-    description: z.string(),
-  })).optional(),
+  testCases: z
+    .array(
+      z.object({
+        input: z.string(),
+        expected: z.string(),
+        description: z.string(),
+      })
+    )
+    .optional(),
 });
 
 // Error handling

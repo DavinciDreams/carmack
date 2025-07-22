@@ -712,7 +712,7 @@ const _carmackCoderMachine = setup({
             ...context,
             patterns: [
               ...context.patterns,
-              ...((event.output.newPatterns || []).filter(
+              ...(event.output.newPatterns || []).filter(
                 (p: any): p is AstPattern =>
                   typeof p.id === 'string' &&
                   (p.language === 'typescript' ||
@@ -725,7 +725,7 @@ const _carmackCoderMachine = setup({
                   typeof p.complexity === 'number' &&
                   (p.riskLevel === 'low' || p.riskLevel === 'medium' || p.riskLevel === 'high') &&
                   typeof p.mode === 'string'
-              )),
+              ),
             ],
           })),
         },
