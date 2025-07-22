@@ -527,7 +527,7 @@ function extractVariables(node: SgNode, pattern: AstGrepPattern): Record<string,
 
     // If no variables were extracted, try pattern-based extraction as final fallback
     if (Object.keys(variables).length === 0) {
-      console.log(`   🔄 No variables extracted, trying pattern-based fallback`);
+      console.log('   🔄 No variables extracted, trying pattern-based fallback');
       const variableMatches = extractVariablesFromPattern(nodeText, patternText);
       Object.assign(variables, variableMatches);
       if (Object.keys(variableMatches).length > 0) {

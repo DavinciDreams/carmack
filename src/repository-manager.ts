@@ -1,11 +1,10 @@
-import { fromPromise } from 'xstate';
+import { createActor, fromPromise } from 'xstate';
 import { z } from 'zod';
-import { createActor } from 'xstate';
-import type { AstPattern, TransformationResult, TransformationRequest } from './types.js';
-import { AstPatternSchema, TransformationRequestSchema } from './types.js';
 import { gitActor } from './actors/git.js';
-import { patternLearningActor, type LearningResult } from './actors/pattern-learning.js';
+import { type LearningResult, patternLearningActor } from './actors/pattern-learning.js';
 import { carmackCoderMachine } from './machine.js';
+import type { AstPattern, TransformationRequest, TransformationResult } from './types.js';
+import { AstPatternSchema, TransformationRequestSchema } from './types.js';
 
 // Repository management types and schemas
 export const RepositoryConfigSchema = z.object({

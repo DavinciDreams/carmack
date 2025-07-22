@@ -3,8 +3,8 @@
 import { createActor } from 'xstate';
 import { carmackCoderMachine } from './src/machine.js';
 import type {
-  MachineEvent,
   AstPattern,
+  MachineEvent,
   TransformationMode,
   TransformationRequest,
 } from './src/types.js';
