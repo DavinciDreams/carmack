@@ -319,7 +319,7 @@ export class VectorUtils {
       throw new Error('Vectors must have the same length');
     }
 
-    return Math.sqrt(a.reduce((sum, val, i) => sum + Math.pow(val - (b[i] ?? 0), 2), 0));
+    return Math.sqrt(a.reduce((sum, val, i) => sum + (val - (b[i] ?? 0)) ** 2, 0));
   }
 
   /**
