@@ -536,6 +536,7 @@ export class PatternLearner {
         // Promote successful experimental pattern to stable
         const optimized: LearnedPattern = {
           ...pattern,
+          language: pattern.language as 'typescript' | 'javascript' | 'cpp' | 'c',
           riskLevel: 'low',
           confidence: Math.min(0.95, effectiveness.successRate),
         };
@@ -773,7 +774,11 @@ export class PatternLearner {
       // Create pattern in the correct AstPattern format
       return {
         id: discovered.id,
-        language: discovered.context.language,
+        language: (['typescript', 'javascript', 'cpp', 'c'] as const).includes(
+          discovered.context.language as any
+        )
+          ? (discovered.context.language as 'typescript' | 'javascript' | 'cpp' | 'c')
+          : 'typescript',
         pattern: discovered.pattern.before,
         replacement: discovered.pattern.after,
         description: `Auto-discovered pattern (confidence: ${(discovered.confidence * 100).toFixed(1)}%)`,

@@ -3,8 +3,8 @@ import { dirname, join } from 'node:path';
 import { type ActorLogic, createActor, fromPromise } from 'xstate';
 import { z } from 'zod';
 import { astGrepTransformationActor } from '../actors/ast-grep-transformation.ts';
-import { feedbackLoopActor } from '../actors/feedback-loop.ts';
 import { complexityActor } from '../actors/complexity.ts';
+import { feedbackLoopActor } from '../actors/feedback-loop.ts';
 import { llmTestingFrameworkActor } from '../actors/llm-testing-framework.ts';
 import { llmTransformationActor } from '../actors/llm-transformation.ts';
 import { patternDiscoveryActor } from '../actors/pattern-discovery.ts';
@@ -638,7 +638,7 @@ async function transformationStage(input: PipelineRequest, state: PipelineState)
   console.log(`🔄 Executing transformations in order: ${transformationOrder.join(' → ')}`);
 
   let transformationSuccessful = false;
-  let cumulativeFilesModified = new Set<string>();
+  const cumulativeFilesModified = new Set<string>();
 
   // Execute transformations sequentially, allowing each to build on the previous
   for (const transformationType of transformationOrder) {
@@ -660,7 +660,6 @@ async function transformationStage(input: PipelineRequest, state: PipelineState)
         // For sequential mode, continue to next transformation even after success
         // This allows template → AST → LLM to build upon each other
         if (strategy.fallbackEnabled || transformationOrder.length > 1) {
-          continue;
         } else {
           break; // Stop after first success if fallback disabled and single transformation
         }

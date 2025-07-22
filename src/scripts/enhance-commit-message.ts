@@ -363,9 +363,9 @@ async function calculateQualityMetrics(
 
     // Count error lines
     typeErrors = (tscOutput.match(/error TS\d+:/g) || []).length;
-  } catch (error: any) {
+  } catch (error: unknown) {
     // TypeScript errors are in stderr, count them
-    const output = error.stdout || error.stderr || '';
+    const output = (error as any)?.stdout || (error as any)?.stderr || '';
     typeErrors = (output.match(/error TS\d+:/g) || []).length;
   }
 
@@ -600,8 +600,9 @@ async function main(): Promise<void> {
     console.log(
       `📁 Files: ${analysis.files.length}, Quality: ${10 - analysis.qualityMetrics.codeComplexity}/10`
     );
-  } catch (error: any) {
-    console.error('❌ Failed to enhance commit message:', error.message);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('❌ Failed to enhance commit message:', errorMessage);
     // Don't fail the commit, just log the error
     process.exit(0);
   }

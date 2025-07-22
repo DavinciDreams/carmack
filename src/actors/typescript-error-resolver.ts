@@ -192,9 +192,10 @@ export class TypeScriptErrorResolver {
       });
 
       return this.parseTypeScriptOutput(output);
-    } catch (error: any) {
+    } catch (error: unknown) {
       // TypeScript errors are in stderr
-      const output = error.stdout || error.stderr || '';
+      const execError = error as { stdout?: string; stderr?: string };
+      const output = execError.stdout || execError.stderr || '';
       return this.parseTypeScriptOutput(output);
     }
   }
@@ -261,7 +262,7 @@ export class TypeScriptErrorResolver {
       if (!errorsByFile.has(error.file)) {
         errorsByFile.set(error.file, []);
       }
-      errorsByFile.get(error.file)!.push(error);
+      errorsByFile.get(error.file)?.push(error);
     }
 
     // Process each file
@@ -303,8 +304,9 @@ export class TypeScriptErrorResolver {
           result.filesModified.push(filePath);
           result.warnings.push(`DRY RUN: Would modify ${filePath}`);
         }
-      } catch (error: any) {
-        result.warnings.push(`Error processing file ${filePath}: ${error.message}`);
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        result.warnings.push(`Error processing file ${filePath}: ${errorMessage}`);
       }
     }
 
@@ -348,8 +350,9 @@ export class TypeScriptErrorResolver {
       }
 
       return { success: false, content, reason: 'Pattern did not match' };
-    } catch (error: any) {
-      return { success: false, content, reason: error.message };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      return { success: false, content, reason: errorMessage };
     }
   }
 
@@ -499,7 +502,8 @@ export const typeScriptErrorResolverActor = fromPromise(
         warnings: ['Auto-fix disabled'],
         summary: `Found ${errors.length} TypeScript errors (auto-fix disabled)`,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       return {
         success: false,
         errorsFound: 0,
@@ -507,8 +511,8 @@ export const typeScriptErrorResolverActor = fromPromise(
         errorsRemaining: 0,
         filesModified: [],
         fixesApplied: [],
-        warnings: [error.message],
-        summary: `Error during TypeScript analysis: ${error.message}`,
+        warnings: [errorMessage],
+        summary: `Error during TypeScript analysis: ${errorMessage}`,
       };
     }
   }

@@ -391,10 +391,7 @@
       "error-handling-improvement",
       "prefer-readonly-arrays"
     ],
-    "logging": [
-      "console-log-to-console-error",
-      "remove-console-log"
-    ],
+    "logging": ["console-log-to-console-error", "remove-console-log"],
     "syntax-fixes": [
       "fix-double-semicolons",
       "fix-malformed-object-literal",
@@ -422,18 +419,9 @@
       "cpp-modern-cast",
       "cpp-double-include-fix"
     ],
-    "cpp-safety": [
-      "cpp-nullptr-conversion",
-      "cpp-modern-cast"
-    ],
-    "cpp-performance": [
-      "cpp-constexpr-const"
-    ],
-    "cpp-hygiene": [
-      "cpp-std-namespace",
-      "cpp-double-include-fix",
-      "cpp-include-iostream"
-    ]
+    "cpp-safety": ["cpp-nullptr-conversion", "cpp-modern-cast"],
+    "cpp-performance": ["cpp-constexpr-const"],
+    "cpp-hygiene": ["cpp-std-namespace", "cpp-double-include-fix", "cpp-include-iostream"]
   },
   "metadata": {
     "created": "2025-07-22",

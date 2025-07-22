@@ -110,8 +110,9 @@ async function organizeImports(filePath: string): Promise<boolean> {
     }
 
     return false;
-  } catch (error) {
-    console.warn(`⚠️ Failed to organize imports in ${filePath}:`, error);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.warn(`⚠️ Failed to organize imports in ${filePath}:`, errorMessage);
     return false;
   }
 }
@@ -151,8 +152,9 @@ async function removeUnusedCode(filePath: string): Promise<boolean> {
     }
 
     return false;
-  } catch (error) {
-    console.warn(`⚠️ Failed to remove unused code in ${filePath}:`, error);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.warn(`⚠️ Failed to remove unused code in ${filePath}:`, errorMessage);
     return false;
   }
 }
@@ -189,8 +191,9 @@ async function main(): Promise<void> {
       } else {
         console.log(`  ✨ ${file} already clean`);
       }
-    } catch (error: any) {
-      console.error(`  ❌ Error processing ${file}:`, error.message);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(`  ❌ Error processing ${file}:`, errorMessage);
     }
   }
 
@@ -205,8 +208,9 @@ async function main(): Promise<void> {
 
 // Run if called directly
 if (import.meta.main) {
-  main().catch((error) => {
-    console.error('Fatal error:', error);
+  main().catch((error: unknown) => {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('Fatal error:', errorMessage);
     process.exit(1);
   });
 }

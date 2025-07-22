@@ -417,12 +417,17 @@ export class ConfigValidator {
     prometheus?: { valid: boolean; errors?: string[] };
     workflows?: Array<{ file: string; valid: boolean; errors?: string[] }>;
   }> {
-    const results: any = {};
+    const results: {
+      lefthook?: { valid: boolean; errors?: string[] };
+      dockerCompose?: { valid: boolean; errors?: string[] };
+      prometheus?: { valid: boolean; errors?: string[] };
+      workflows?: Array<{ file: string; valid: boolean; errors?: string[] }>;
+    } = {};
 
     // Validate lefthook.yml
     try {
       results.lefthook = await ConfigValidator.validateLefthook();
-    } catch (error) {
+    } catch (_error) {
       results.lefthook = {
         valid: false,
         errors: ['File not found or not accessible'],
@@ -432,7 +437,7 @@ export class ConfigValidator {
     // Validate docker-compose.yml
     try {
       results.dockerCompose = await ConfigValidator.validateDockerCompose();
-    } catch (error) {
+    } catch (_error) {
       results.dockerCompose = {
         valid: false,
         errors: ['File not found or not accessible'],
@@ -442,7 +447,7 @@ export class ConfigValidator {
     // Validate prometheus configs
     try {
       results.prometheus = await ConfigValidator.validatePrometheus('monitoring/prometheus.yml');
-    } catch (error) {
+    } catch (_error) {
       results.prometheus = {
         valid: false,
         errors: ['File not found or not accessible'],
@@ -459,9 +464,9 @@ export class ConfigValidator {
         results.workflows.push({
           file,
           valid: result.valid,
-          errors: result.errors,
+          ...(result.errors && { errors: result.errors }),
         });
-      } catch (error) {
+      } catch (_error) {
         results.workflows.push({
           file,
           valid: false,
