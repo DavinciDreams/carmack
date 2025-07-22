@@ -301,7 +301,6 @@ describe('Performance Benchmarks', () => {
         files: ['transform-small.ts'],
         patterns,
         dryRun: false,
-        dryRun: false,
       };
 
       const transformationActorInstance = createActor(transformationActor, {

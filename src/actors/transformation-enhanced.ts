@@ -4,15 +4,8 @@ import { fromPromise, createActor } from 'xstate';
 import { z } from 'zod';
 import type { ASTGrepNode } from '../docs/ast-analyzer.js';
 
-import { cppTransformationActor, type CppPattern, BUILTIN_CPP_PATTERNS } from './cpp-transformation.js';
+import { cppTransformationActor, BUILTIN_CPP_PATTERNS } from './cpp-transformation.js';
 
-// Enhanced transformation result type
-interface EnhancedTransformationResult {
-  filesModified: string[];
-  transformationsApplied: number;
-  appliedPatterns: Array<{ file: string; pattern: string; count: number }>;
-  mode: 'template' | 'ast' | 'llm';
-}
 
 // Enhanced pattern schema with full AST-grep support
 const EnhancedPatternSchema = z.object({
