@@ -19,7 +19,7 @@ import { z } from 'zod';
 // Enhanced template pattern schema with sophisticated matching
 const TemplatePatternSchema = z.object({
   id: z.string(),
-  language: z.enum(['typescript', 'javascript']),
+  language: z.enum(['typescript', 'javascript', 'cpp', 'c']),
 
   // Pattern matching configuration
   pattern: z.object({
@@ -564,6 +564,27 @@ function findSemanticPatterns(content: string, pattern: TemplatePattern): Templa
     case 'template-literal-conversion':
       matches.push(...findStringConcatenationPatterns(content, pattern));
       break;
+
+    // C++ specific patterns
+    case 'cpp-nullptr-conversion':
+      matches.push(...findCppNullptrPatterns(content, pattern));
+      break;
+
+    case 'cpp-constexpr-const':
+      matches.push(...findCppConstexprPatterns(content, pattern));
+      break;
+
+    case 'cpp-modern-cast':
+      matches.push(...findCppModernCastPatterns(content, pattern));
+      break;
+
+    case 'cpp-include-iostream':
+      matches.push(...findCppIncludePatterns(content, pattern));
+      break;
+
+    case 'cpp-std-namespace':
+      matches.push(...findCppNamespacePatterns(content, pattern));
+      break;
   }
 
   return matches;
@@ -1047,4 +1068,186 @@ function preserveFormatting(replacement: string, match: TemplateMatch): string {
   });
 
   return indentedLines.join('\n');
+}
+
+/**
+ * Find C++ nullptr conversion patterns
+ */
+function findCppNullptrPatterns(content: string, pattern: TemplatePattern): TemplateMatch[] {
+  const matches: TemplateMatch[] = [];
+  const nullRegex = /\bNULL\b/g;
+
+  let match: RegExpExecArray | null;
+  // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex iteration pattern
+  while ((match = nullRegex.exec(content)) !== null) {
+    const [fullMatch] = match;
+
+    matches.push({
+      pattern,
+      match: fullMatch,
+      variables: [
+        { name: 'NULL_VALUE', value: 'NULL', type: 'identifier' },
+        { name: 'REPLACEMENT', value: 'nullptr', type: 'identifier' },
+      ],
+      startIndex: match.index,
+      endIndex: match.index + fullMatch.length,
+      lineNumber: content.substring(0, match.index).split('\n').length,
+      context: {
+        precedingCode: content.substring(Math.max(0, match.index - 50), match.index),
+        followingCode: content.substring(
+          match.index + fullMatch.length,
+          Math.min(content.length, match.index + fullMatch.length + 50)
+        ),
+        indentation: extractIndentation(content, match.index),
+      },
+    });
+  }
+
+  return matches;
+}
+
+/**
+ * Find C++ constexpr conversion patterns
+ */
+function findCppConstexprPatterns(content: string, pattern: TemplatePattern): TemplateMatch[] {
+  const matches: TemplateMatch[] = [];
+  const constRegex = /\bstatic\s+const\b/g;
+
+  let match: RegExpExecArray | null;
+  // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex iteration pattern
+  while ((match = constRegex.exec(content)) !== null) {
+    const [fullMatch] = match;
+
+    matches.push({
+      pattern,
+      match: fullMatch,
+      variables: [
+        { name: 'OLD_DECL', value: 'static const', type: 'identifier' },
+        { name: 'NEW_DECL', value: 'static constexpr', type: 'identifier' },
+      ],
+      startIndex: match.index,
+      endIndex: match.index + fullMatch.length,
+      lineNumber: content.substring(0, match.index).split('\n').length,
+      context: {
+        precedingCode: content.substring(Math.max(0, match.index - 50), match.index),
+        followingCode: content.substring(
+          match.index + fullMatch.length,
+          Math.min(content.length, match.index + fullMatch.length + 50)
+        ),
+        indentation: extractIndentation(content, match.index),
+      },
+    });
+  }
+
+  return matches;
+}
+
+/**
+ * Find C++ modern cast patterns
+ */
+function findCppModernCastPatterns(content: string, pattern: TemplatePattern): TemplateMatch[] {
+  const matches: TemplateMatch[] = [];
+  const castRegex = /\((\w+)\)\s*(\w+)/g;
+
+  let match: RegExpExecArray | null;
+  // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex iteration pattern
+  while ((match = castRegex.exec(content)) !== null) {
+    const [fullMatch, castType, variable] = match;
+    if (!castType || !variable) continue;
+
+    matches.push({
+      pattern,
+      match: fullMatch,
+      variables: [
+        { name: 'CAST_TYPE', value: castType, type: 'identifier' },
+        { name: 'VARIABLE', value: variable, type: 'identifier' },
+        { name: 'MODERN_CAST', value: `static_cast<${castType}>(${variable})`, type: 'expression' },
+      ],
+      startIndex: match.index,
+      endIndex: match.index + fullMatch.length,
+      lineNumber: content.substring(0, match.index).split('\n').length,
+      context: {
+        precedingCode: content.substring(Math.max(0, match.index - 50), match.index),
+        followingCode: content.substring(
+          match.index + fullMatch.length,
+          Math.min(content.length, match.index + fullMatch.length + 50)
+        ),
+        indentation: extractIndentation(content, match.index),
+      },
+    });
+  }
+
+  return matches;
+}
+
+/**
+ * Find C++ include modernization patterns
+ */
+function findCppIncludePatterns(content: string, pattern: TemplatePattern): TemplateMatch[] {
+  const matches: TemplateMatch[] = [];
+  const includeRegex = /#include\s*<iostream\.h>/g;
+
+  let match: RegExpExecArray | null;
+  // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex iteration pattern
+  while ((match = includeRegex.exec(content)) !== null) {
+    const [fullMatch] = match;
+
+    matches.push({
+      pattern,
+      match: fullMatch,
+      variables: [
+        { name: 'OLD_INCLUDE', value: '#include <iostream.h>', type: 'statement' },
+        { name: 'NEW_INCLUDE', value: '#include <iostream>', type: 'statement' },
+      ],
+      startIndex: match.index,
+      endIndex: match.index + fullMatch.length,
+      lineNumber: content.substring(0, match.index).split('\n').length,
+      context: {
+        precedingCode: content.substring(Math.max(0, match.index - 50), match.index),
+        followingCode: content.substring(
+          match.index + fullMatch.length,
+          Math.min(content.length, match.index + fullMatch.length + 50)
+        ),
+        indentation: extractIndentation(content, match.index),
+      },
+    });
+  }
+
+  return matches;
+}
+
+/**
+ * Find C++ namespace usage patterns
+ */
+function findCppNamespacePatterns(content: string, pattern: TemplatePattern): TemplateMatch[] {
+  const matches: TemplateMatch[] = [];
+  const namespaceRegex = /using\s+namespace\s+std\s*;/g;
+
+  let match: RegExpExecArray | null;
+  // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex iteration pattern
+  while ((match = namespaceRegex.exec(content)) !== null) {
+    const [fullMatch] = match;
+
+    matches.push({
+      pattern,
+      match: fullMatch,
+      variables: [
+        { name: 'OLD_USING', value: 'using namespace std;', type: 'statement' },
+        { name: 'COMMENT', value: '// Avoid \'using namespace std;\' - use specific declarations instead', type: 'statement' },
+      ],
+      startIndex: match.index,
+      endIndex: match.index + fullMatch.length,
+      lineNumber: content.substring(0, match.index).split('\n').length,
+      context: {
+        precedingCode: content.substring(Math.max(0, match.index - 50), match.index),
+        followingCode: content.substring(
+          match.index + fullMatch.length,
+          Math.min(content.length, match.index + fullMatch.length + 50)
+        ),
+        indentation: extractIndentation(content, match.index),
+      },
+    });
+  }
+
+  return matches;
 }

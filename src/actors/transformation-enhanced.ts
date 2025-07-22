@@ -1,8 +1,10 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { js, ts } from '@ast-grep/napi';
-import { fromPromise } from 'xstate';
+import { fromPromise, createActor } from 'xstate';
 import { z } from 'zod';
 import type { ASTGrepNode } from '../docs/ast-analyzer.js';
+
+import { cppTransformationActor, type CppPattern, BUILTIN_CPP_PATTERNS } from './cpp-transformation.js';
 
 // Enhanced transformation result type
 interface EnhancedTransformationResult {
@@ -15,7 +17,7 @@ interface EnhancedTransformationResult {
 // Enhanced pattern schema with full AST-grep support
 const EnhancedPatternSchema = z.object({
   id: z.string(),
-  language: z.enum(['typescript', 'javascript']),
+  language: z.enum(['typescript', 'javascript', 'cpp', 'c']),
   mode: z.enum(['template', 'ast']).default('template'),
   pattern: z.union([
     z.string(), // Template pattern
@@ -101,6 +103,66 @@ export const enhancedTransformationActor = fromPromise(
           break;
         default:
           throw new Error(`Unknown transformation type: ${validated.transformationType}`);
+      }
+
+      // Handle C++ files with specialized transformation
+      const cppFiles = validated.targetFiles.filter(file =>
+        file.endsWith('.cpp') || file.endsWith('.cxx') || file.endsWith('.cc') ||
+        file.endsWith('.c++') || file.endsWith('.hpp') || file.endsWith('.hxx') ||
+        file.endsWith('.h++') || file.endsWith('.h')
+      );
+
+      if (cppFiles.length > 0) {
+        console.log(`🔧 Applying specialized C++ transformations to ${cppFiles.length} files`);
+        
+        // Convert patterns to C++ format and apply C++ transformations
+        const cppPatterns = BUILTIN_CPP_PATTERNS.filter(p => p.complexity <= validated.maxComplexity);
+        
+        const cppRequest = {
+          targetFiles: cppFiles,
+          patterns: cppPatterns,
+          options: {
+            dryRun: validated.dryRun,
+            maxComplexity: validated.maxComplexity,
+            enableBatching: true,
+            skipConflicts: true,
+            preserveFormatting: true,
+            enableVerification: true,
+            maxMatchesPerPattern: 1000,
+          },
+        };
+
+        try {
+          const cppActor = createActor(cppTransformationActor, { input: cppRequest });
+          cppActor.start();
+          const cppResult = await new Promise((resolve, reject) => {
+            const subscription = cppActor.subscribe((state) => {
+              if (state.status === 'done') {
+                subscription.unsubscribe();
+                cppActor.stop();
+                resolve(state.output);
+              } else if (state.status === 'error') {
+                subscription.unsubscribe();
+                cppActor.stop();
+                reject(state.error);
+              }
+            });
+          });
+          
+          // Merge C++ results with main results
+          if (typeof result === 'object' && result !== null) {
+            const mainResult = result as any;
+            const cppResultTyped = cppResult as any;
+            mainResult.filesModified = [...(mainResult.filesModified || []), ...(cppResultTyped.filesModified || [])];
+            mainResult.transformationsApplied = (mainResult.transformationsApplied || 0) + (cppResultTyped.transformationsApplied || 0);
+            mainResult.appliedPatterns = [...(mainResult.appliedPatterns || []), ...(cppResultTyped.appliedPatterns || [])];
+            mainResult.cppVerificationResults = cppResultTyped.verificationResults;
+            mainResult.cppPerformanceMetrics = cppResultTyped.performanceMetrics;
+          }
+        } catch (cppError) {
+          console.error('C++ transformation error:', cppError);
+          // Continue with main transformation even if C++ fails
+        }
       }
 
       return {
