@@ -1,4 +1,4 @@
-import type { Vector, ClusterResult, PatternFeatureVector } from './types.js';
+import type { ClusterResult, PatternFeatureVector, Vector } from './types.js';
 import { VectorUtils } from './types.js';
 
 /**
@@ -138,7 +138,7 @@ export class KMeansClusterer {
    * Find the nearest centroid for a given vector
    */
   private findNearestCentroid(vector: Vector, centroids: Vector[]): number {
-    let minDistance = Infinity;
+    let minDistance = Number.POSITIVE_INFINITY;
     let nearestIndex = 0;
 
     for (let i = 0; i < centroids.length; i++) {
@@ -447,7 +447,7 @@ export class HierarchicalClusterer {
   /**
    * Cluster patterns using hierarchical clustering
    */
-  cluster(patterns: PatternFeatureVector[], targetClusters: number = 5): ClusterResult[] {
+  cluster(patterns: PatternFeatureVector[], targetClusters = 5): ClusterResult[] {
     if (patterns.length === 0) {
       return [];
     }
@@ -506,7 +506,7 @@ export class HierarchicalClusterer {
    * Find the two closest clusters based on linkage criteria
    */
   private findClosestClusters(clusters: any[]): { cluster1Index: number; cluster2Index: number } {
-    let minDistance = Infinity;
+    let minDistance = Number.POSITIVE_INFINITY;
     let cluster1Index = 0;
     let cluster2Index = 1;
 
@@ -543,7 +543,7 @@ export class HierarchicalClusterer {
    * Single linkage: minimum distance between any two points
    */
   private singleLinkage(vectors1: Vector[], vectors2: Vector[]): number {
-    let minDistance = Infinity;
+    let minDistance = Number.POSITIVE_INFINITY;
 
     for (const v1 of vectors1) {
       for (const v2 of vectors2) {
@@ -669,7 +669,7 @@ export class PatternClusterer {
 
     // For small datasets, use hierarchical clustering
     if (patterns.length < 50) {
-      return this.cluster(patterns, {
+      return PatternClusterer.cluster(patterns, {
         algorithm: 'hierarchical',
         k: Math.min(5, Math.ceil(patterns.length / 3)),
         linkage: 'average',
@@ -679,7 +679,7 @@ export class PatternClusterer {
     // For medium datasets, use k-means
     if (patterns.length < 500) {
       const k = Math.min(10, Math.ceil(Math.sqrt(patterns.length / 2)));
-      return this.cluster(patterns, {
+      return PatternClusterer.cluster(patterns, {
         algorithm: 'kmeans',
         k,
         maxIterations: 100,
@@ -688,7 +688,7 @@ export class PatternClusterer {
     }
 
     // For large datasets, use DBSCAN for efficiency
-    return this.cluster(patterns, {
+    return PatternClusterer.cluster(patterns, {
       algorithm: 'dbscan',
       eps: 0.5,
       minPts: Math.max(3, Math.ceil(patterns.length * 0.01)),

@@ -1,6 +1,6 @@
-import type { EffectivenessMetrics, PatternFeatureVector, SimilarityResult } from './types.js';
-import { StatisticalAnalyzer } from './statistics.js';
 import { z } from 'zod';
+import { StatisticalAnalyzer } from './statistics.js';
+import type { EffectivenessMetrics, PatternFeatureVector, SimilarityResult } from './types.js';
 
 /**
  * Pattern Effectiveness Scoring System
@@ -263,7 +263,7 @@ export class PatternEffectivenessScorer {
 
     return history.map((record) => {
       const age = now - record.timestamp;
-      const weight = Math.pow(0.5, age / halfLifeMs);
+      const weight = 0.5 ** (age / halfLifeMs);
       return { record, weight };
     });
   }
@@ -585,11 +585,11 @@ export class PatternEffectivenessScorer {
 
     if (completenessRatio > 0.8) {
       return 'high';
-    } else if (completenessRatio > 0.5) {
-      return 'medium';
-    } else {
-      return 'low';
     }
+    if (completenessRatio > 0.5) {
+      return 'medium';
+    }
+    return 'low';
   }
 
   /**

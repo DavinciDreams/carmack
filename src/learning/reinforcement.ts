@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { RLState, RLAction, RLReward, EffectivenessMetrics } from './types.ts';
+import type { EffectivenessMetrics, RLAction, RLReward, RLState } from './types.ts';
 
 /**
  * Reinforcement Learning System for Pattern Optimization
@@ -64,10 +64,9 @@ export class QLearningAgent {
     if (Math.random() < this.explorationRate) {
       // Explore: select random action
       return this.selectRandomAction(state.availableActions);
-    } else {
-      // Exploit: select best known action
-      return this.selectBestAction(stateKey, state.availableActions);
     }
+    // Exploit: select best known action
+    return this.selectBestAction(stateKey, state.availableActions);
   }
 
   /**
@@ -152,7 +151,7 @@ export class QLearningAgent {
 
     const stateActions = this.qTable.get(stateKey)!;
     let bestAction = availableActions[0]!;
-    let bestValue = -Infinity;
+    let bestValue = Number.NEGATIVE_INFINITY;
 
     for (const action of availableActions) {
       const actionKey = this.getActionKey({ action, confidence: 1.0 });
@@ -276,8 +275,7 @@ export class PolicyGradientAgent {
     // Normalize rewards
     const mean = discountedRewards.reduce((sum, r) => sum + r, 0) / discountedRewards.length;
     const std = Math.sqrt(
-      discountedRewards.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) /
-        discountedRewards.length
+      discountedRewards.reduce((sum, r) => sum + (r - mean) ** 2, 0) / discountedRewards.length
     );
     const normalizedRewards = discountedRewards.map((r) => (r - mean) / (std + 1e-8));
 
@@ -399,7 +397,7 @@ export class ExperienceReplayBuffer {
   private maxSize: number;
   private currentIndex = 0;
 
-  constructor(maxSize: number = 10000) {
+  constructor(maxSize = 10000) {
     this.maxSize = maxSize;
   }
 

@@ -1,11 +1,11 @@
 import { z } from 'zod';
 import type {
   PatternFeatureVector,
+  PatternSimilarityConfig,
   SimilarityMetrics,
   SimilarityResult,
-  PatternSimilarityConfig,
 } from './types.ts';
-import { VectorUtils, PatternSimilarityConfigSchema } from './types.ts';
+import { PatternSimilarityConfigSchema, VectorUtils } from './types.ts';
 
 /**
  * Pattern Similarity Detection System
@@ -517,7 +517,7 @@ export class PatternSimilarityDetector {
 
     const mean = validValues.reduce((sum, val) => sum + val, 0) / validValues.length;
     const variance =
-      validValues.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / validValues.length;
+      validValues.reduce((sum, val) => sum + (val - mean) ** 2, 0) / validValues.length;
     const stdDev = Math.sqrt(variance);
 
     // Lower standard deviation = higher confidence

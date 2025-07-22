@@ -213,9 +213,9 @@ class TextPreprocessor {
     const originalText = text;
 
     // Basic cleaning
-    let cleanedText = text
+    const cleanedText = text
       .toLowerCase()
-      .replace(/[^\w\s\-\.]/g, ' ') // Remove special characters except hyphens and dots
+      .replace(/[^\w\s\-.]/g, ' ') // Remove special characters except hyphens and dots
       .replace(/\s+/g, ' ') // Normalize whitespace
       .trim();
 
@@ -282,7 +282,7 @@ class KeywordExtractor {
   /**
    * Extract keywords from text using TF-IDF-like scoring
    */
-  extractKeywords(text: string, maxKeywords: number = 20): Keyword[] {
+  extractKeywords(text: string, maxKeywords = 20): Keyword[] {
     const preprocessed = this.preprocessor.preprocess(text);
     const tokens = preprocessed.tokens;
 

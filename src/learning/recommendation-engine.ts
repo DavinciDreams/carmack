@@ -1,10 +1,9 @@
 import { z } from 'zod';
+import type { EffectivenessScore, PatternEffectivenessScorer } from './effectiveness-scorer.ts';
+import type { NLPAnalyzer } from './nlp.ts';
+import type { ReinforcementLearningManager } from './reinforcement.ts';
+import type { PatternSimilarityDetector } from './similarity.ts';
 import type { PatternFeatureVector, RLState } from './types.ts';
-import type { EffectivenessScore } from './effectiveness-scorer.ts';
-import { PatternSimilarityDetector } from './similarity.ts';
-import { ReinforcementLearningManager } from './reinforcement.ts';
-import { NLPAnalyzer } from './nlp.ts';
-import { PatternEffectivenessScorer } from './effectiveness-scorer.ts';
 
 /**
  * Recommendation request schema
