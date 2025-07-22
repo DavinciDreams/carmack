@@ -239,6 +239,13 @@ export class LLMTransformer {
           `🔍 First 100 chars of transformed code: ${llmResponse.transformedCode.substring(0, 100)}...`
         );
 
+        console.log(
+          `📏 Original length: ${originalContent.length}, New length: ${llmResponse.transformedCode.length}`
+        );
+        console.log(
+          `🔍 First 100 chars of transformed code: ${llmResponse.transformedCode.substring(0, 100)}...`
+        );
+
         await writeFile(filePath, llmResponse.transformedCode, 'utf-8');
 
         return {
@@ -561,7 +568,7 @@ Respond in this JSON format:
     if (!response.ok) {
       let errorMessage = `Anthropic API error: ${response.status} ${response.statusText}`;
       try {
-        const errorData = (await response.json()) as any;
+        const errorData = (await response.json()) as { error?: { message?: string } };
         if (errorData.error) {
           errorMessage += ` - ${errorData.error.message || JSON.stringify(errorData.error)}`;
         }
@@ -615,7 +622,7 @@ Respond in this JSON format:
     if (!response.ok) {
       let errorMessage = `OpenRouter API error: ${response.status} ${response.statusText}`;
       try {
-        const errorData = (await response.json()) as any;
+        const errorData = (await response.json()) as { error?: { message?: string } };
         if (errorData.error) {
           errorMessage += ` - ${errorData.error.message || JSON.stringify(errorData.error)}`;
         }

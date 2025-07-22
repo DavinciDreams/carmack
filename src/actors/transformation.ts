@@ -159,7 +159,7 @@ async function applyTemplateTransformation(
             // Convert 'str' + var + 'str' to `str${var}str` with proper escaping
             modifiedContent = modifiedContent.replace(
               /['"`]([^'"`]*?)['"`]\s*\+\s*([a-zA-Z_$][\w.]*)\s*\+\s*['"`]([^'"`]*?)['"`]/g,
-              '`$1${$2}$3`'
+              (_match, p1, p2, p3) => `\`${p1}\${${p2}}${p3}\``
             );
             break;
 
@@ -521,9 +521,9 @@ async function enhanceObjectDestructuring(
  * Remove unnecessary return statements
  */
 async function removeUnnecessaryReturnsAST(
-  _root: any,
+  _root: unknown,
   content: string,
-  _lang: any
+  _lang: unknown
 ): Promise<string> {
   try {
     // Remove unnecessary return statements from arrow functions
@@ -547,9 +547,9 @@ async function removeUnnecessaryReturnsAST(
  * Combine variable declarations
  */
 async function combineVariableDeclarations(
-  _root: any,
+  _root: unknown,
   content: string,
-  _lang: any
+  _lang: unknown
 ): Promise<string> {
   try {
     // Find consecutive const/let declarations that can be combined
@@ -645,9 +645,9 @@ async function callbackToPromise(_root: unknown, content: string, _lang: unknown
  * Modernize function declarations
  */
 async function modernizeFunctionDeclarations(
-  _root: any,
+  _root: unknown,
   content: string,
-  _lang: any
+  _lang: unknown
 ): Promise<string> {
   try {
     // Convert simple function declarations to arrow functions where appropriate
@@ -674,10 +674,10 @@ async function modernizeFunctionDeclarations(
  * Apply generic AST pattern using AST-grep syntax
  */
 async function applyGenericASTPattern(
-  _root: any,
+  _root: unknown,
   content: string,
   pattern: AstPattern,
-  _lang: any
+  _lang: unknown
 ): Promise<string> {
   try {
     // Simplified pattern matching using regex for now
@@ -1001,9 +1001,9 @@ async function arrayIncludesAST(_root: unknown, content: string, _lang: unknown)
  * AST-based object property shorthand conversion
  */
 async function objectPropertyShorthandAST(
-  _root: any,
+  _root: unknown,
   content: string,
-  _lang: any
+  _lang: unknown
 ): Promise<string> {
   try {
     console.log('🔄 Processing object property shorthand...');
@@ -1028,9 +1028,9 @@ async function objectPropertyShorthandAST(
  * AST-based template literal conversion
  */
 async function templateLiteralConversionAST(
-  _root: any,
+  _root: unknown,
   content: string,
-  _lang: any
+  _lang: unknown
 ): Promise<string> {
   try {
     console.log('🔄 Processing template literal conversions...');
@@ -1039,11 +1039,11 @@ async function templateLiteralConversionAST(
     // Convert string concatenation to template literals
     modifiedContent = modifiedContent.replace(
       /'([^']*?)'\s*\+\s*(\w+)\s*\+\s*'([^']*?)'/g,
-      '`$1${$2}$3`'
+      (_match, p1, p2, p3) => `\`${p1}\${${p2}}${p3}\``
     );
     modifiedContent = modifiedContent.replace(
       /"([^"]*?)"\s*\+\s*(\w+)\s*\+\s*"([^"]*?)"/g,
-      '`$1${$2}$3`'
+      (_match, p1, p2, p3) => `\`${p1}\${${p2}}${p3}\``
     );
 
     if (modifiedContent !== content) {

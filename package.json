@@ -9,9 +9,9 @@
   "scripts": {
     "dev": "bun run index.ts",
     "build": "bun build index.ts --outdir ./dist --target bun",
-    "format": "bunx biome format --write .",
-    "lint": "bunx biome check --write .",
-    "type-check": "bunx tsc --noEmit",
+    "format": "bun biome format --write .",
+    "lint": "bun biome check --write .",
+    "type-check": "bun tsc --noEmit",
     "test": "bun run test/infrastructure/test-runner.ts",
     "test:all": "bun run test/infrastructure/test-runner.ts",
     "test:unit": "bun run test/infrastructure/test-runner.ts --category=unit",
@@ -72,37 +72,56 @@
     "monitor": "open http://localhost:3000",
     "status": "echo '🚀 Carmack Coder Status Check' && bun run format && bun run lint && echo '✅ Linting: Clean' && bun run test:high && echo '✅ High Priority Tests: Passed' && echo '🎯 Overall: Production Ready!'",
     "env:validate": "bun run scripts/validate-env.ts",
-    "env:check": "bun run scripts/validate-env.ts"
+    "env:check": "bun run scripts/validate-env.ts",
+    "jsonl:view": "bun run interactive-jsonl-viewer.tsx",
+    "jsonl:interactive": "bun run interactive-jsonl-viewer.tsx --delay 50",
+    "jsonl:debug": "bun run interactive-jsonl-viewer.tsx --debug",
+    "log:analyze": "bun run src/log-analysis/index.ts",
+    "log:analyze:verbose": "bun run src/log-analysis/index.ts --verbose",
+    "log:analyze:custom": "bun run src/log-analysis/index.ts --claude-dir",
+    "merge-pr": "./scripts/merge-pr.sh"
   },
   "engines": {
     "bun": ">=1.0.0"
   },
   "trustedDependencies": [
-    "@biomejs/biome"
+    "@biomejs/biome",
+    "esbuild",
+    "lefthook"
   ],
   "devDependencies": {
-    "@biomejs/biome": "^2.0.6",
+    "@anthropic-ai/claude-code": "^1.0.56",
+    "@biomejs/biome": "^2.1.2",
     "@types/bun": "^1.2.18",
     "@types/chokidar": "^2.1.7",
     "@types/eslint": "^9.6.1",
     "@types/js-yaml": "^4.0.9",
-    "@typescript-eslint/eslint-plugin": "^8.35.1",
-    "@typescript-eslint/parser": "^8.35.1",
-    "eslint": "^9.30.1",
+    "@typescript-eslint/eslint-plugin": "^8.37.0",
+    "@typescript-eslint/parser": "^8.37.0",
+    "eslint": "^9.31.0",
+    "lefthook": "^1.12.2",
+    "picocolors": "^1.1.1",
+    "react-devtools-core": "^6.1.5",
     "vitest": "^3.2.4"
   },
   "peerDependencies": {
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@ast-grep/napi": "^0.38.6",
-    "@types/node": "^24.0.10",
+    "@ast-grep/napi": "^0.38.7",
+    "@inkjs/ui": "2.0.0",
+    "@types/node": "^24.0.15",
+    "@types/react": "19.1.8",
     "chokidar": "^4.0.3",
     "glob": "^11.0.3",
+    "ink": "6.0.1",
+    "ink-spinner": "5.0.0",
+    "ink-text-input": "6.0.0",
     "jiti": "^2.4.2",
     "js-yaml": "^4.1.0",
+    "react": "19.1.0",
     "simple-git": "^3.28.0",
     "xstate": "^5.20.1",
-    "zod": "^3.25.74"
+    "zod": "^3.25.76"
   }
 }

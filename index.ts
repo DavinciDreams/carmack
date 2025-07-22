@@ -2,7 +2,7 @@
 
 import { createActor } from 'xstate';
 import { carmackCoderMachine } from './src/machine.js';
-import type { AstPattern, TransformationMode, TransformationRequest } from './src/types.js';
+import type { MachineEvent, AstPattern, TransformationMode, TransformationRequest } from './src/types.js';
 import { loadPatterns } from './src/utils/index.js';
 
 /**
@@ -18,6 +18,12 @@ import { loadPatterns } from './src/utils/index.js';
  * The system prioritizes speed (template -> AST -> LLM) while ensuring
  * provably correct outputs through formal verification.
  */
+
+// Export core transformation system types
+export type {
+  TransformationMode,
+  TransformationRequest,
+} from './src/types.js';
 
 interface CliOptions {
   mode: TransformationMode | undefined;
@@ -286,13 +292,14 @@ async function main() {
       console.log('🎛️ Transformation Request:', JSON.stringify(transformationRequest, null, 2));
     }
 
-    // Send transformation request
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    actor.send({
-      type: 'START_TRANSFORMATION',
-      request: transformationRequest,
-      // biome-ignore lint/suspicious/noExplicitAny: Required for XState event type compatibility
-    } as any);
+  // Send transformation request
+  // Send transformation request with proper typing
+  const startEvent: Extract<MachineEvent, { type: 'START_TRANSFORMATION' }> = {
+    type: 'START_TRANSFORMATION',
+    request: transformationRequest,
+  };
+
+  actor.send(startEvent);
 
     // Wait for completion
     await new Promise<void>((resolve, reject) => {
