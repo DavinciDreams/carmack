@@ -74,15 +74,17 @@ export const RLStateSchema = z.object({
     qualityRequirements: z.enum(['basic', 'standard', 'high', 'critical']),
   }),
   currentMetrics: EffectivenessMetricsSchema,
-  availableActions: z.array(z.enum([
-    'increase_priority',
-    'decrease_priority',
-    'modify_pattern',
-    'combine_patterns',
-    'split_pattern',
-    'deprecate_pattern',
-    'promote_pattern',
-  ])),
+  availableActions: z.array(
+    z.enum([
+      'increase_priority',
+      'decrease_priority',
+      'modify_pattern',
+      'combine_patterns',
+      'split_pattern',
+      'deprecate_pattern',
+      'promote_pattern',
+    ])
+  ),
 });
 
 // Reinforcement learning action and reward
@@ -124,10 +126,12 @@ export const NLPAnalysisSchema = z.object({
     domain: z.array(z.string()), // e.g., ['frontend', 'typescript', 'react']
   }),
   semanticEmbedding: VectorSchema,
-  relatedConcepts: z.array(z.object({
-    concept: z.string(),
-    relevance: z.number().min(0).max(1),
-  })),
+  relatedConcepts: z.array(
+    z.object({
+      concept: z.string(),
+      relevance: z.number().min(0).max(1),
+    })
+  ),
 });
 
 // Pattern recommendation with confidence and reasoning
@@ -178,23 +182,27 @@ export const LearningConfigSchema = z.object({
 // Training data for machine learning models
 export const TrainingDataSchema = z.object({
   patterns: z.array(PatternFeatureVectorSchema),
-  transformations: z.array(z.object({
-    id: z.string(),
-    beforeCode: z.string(),
-    afterCode: z.string(),
-    patternIds: z.array(z.string()),
-    success: z.boolean(),
-    metrics: EffectivenessMetricsSchema.partial(),
-    context: z.record(z.any()),
-    timestamp: z.number(),
-  })),
-  feedback: z.array(z.object({
-    patternId: z.string(),
-    rating: z.number().min(1).max(5),
-    comment: z.string().optional(),
-    userId: z.string().optional(),
-    timestamp: z.number(),
-  })),
+  transformations: z.array(
+    z.object({
+      id: z.string(),
+      beforeCode: z.string(),
+      afterCode: z.string(),
+      patternIds: z.array(z.string()),
+      success: z.boolean(),
+      metrics: EffectivenessMetricsSchema.partial(),
+      context: z.record(z.any()),
+      timestamp: z.number(),
+    })
+  ),
+  feedback: z.array(
+    z.object({
+      patternId: z.string(),
+      rating: z.number().min(1).max(5),
+      comment: z.string().optional(),
+      userId: z.string().optional(),
+      timestamp: z.number(),
+    })
+  ),
 });
 
 // Model performance metrics
@@ -213,44 +221,56 @@ export const ModelPerformanceSchema = z.object({
 });
 
 // Similarity detection types
-export const SimilarityMetricsSchema = z.object({
-  cosine: z.number().min(0).max(1),
-  semantic: z.number().min(0).max(1),
-  behavioral: z.number().min(0).max(1),
-  structural: z.number().min(0).max(1),
-}).strict();
+export const SimilarityMetricsSchema = z
+  .object({
+    cosine: z.number().min(0).max(1),
+    semantic: z.number().min(0).max(1),
+    behavioral: z.number().min(0).max(1),
+    structural: z.number().min(0).max(1),
+  })
+  .strict();
 
-export const SimilarityResultSchema = z.object({
-  similarity: z.number().min(0).max(1),
-  metrics: SimilarityMetricsSchema.optional(),
-  confidence: z.number().min(0).max(1),
-  algorithm: z.enum(['cosine', 'semantic', 'behavioral', 'structural', 'hybrid']),
-  computationTime: z.number().int().min(0),
-}).strict();
+export const SimilarityResultSchema = z
+  .object({
+    similarity: z.number().min(0).max(1),
+    metrics: SimilarityMetricsSchema.optional(),
+    confidence: z.number().min(0).max(1),
+    algorithm: z.enum(['cosine', 'semantic', 'behavioral', 'structural', 'hybrid']),
+    computationTime: z.number().int().min(0),
+  })
+  .strict();
 
-export const PatternSimilarityConfigSchema = z.object({
-  algorithm: z.enum(['cosine', 'semantic', 'behavioral', 'structural', 'hybrid']).default('hybrid'),
-  threshold: z.number().min(0).max(1).default(0.7),
-  weights: z.object({
-    cosine: z.number().min(0).max(1).default(0.3),
-    semantic: z.number().min(0).max(1).default(0.3),
-    behavioral: z.number().min(0).max(1).default(0.2),
-    structural: z.number().min(0).max(1).default(0.2),
-  }).default({}),
-  enableCaching: z.boolean().default(true),
-  maxCacheSize: z.number().int().positive().default(1000),
-}).strict();
+export const PatternSimilarityConfigSchema = z
+  .object({
+    algorithm: z
+      .enum(['cosine', 'semantic', 'behavioral', 'structural', 'hybrid'])
+      .default('hybrid'),
+    threshold: z.number().min(0).max(1).default(0.7),
+    weights: z
+      .object({
+        cosine: z.number().min(0).max(1).default(0.3),
+        semantic: z.number().min(0).max(1).default(0.3),
+        behavioral: z.number().min(0).max(1).default(0.2),
+        structural: z.number().min(0).max(1).default(0.2),
+      })
+      .default({}),
+    enableCaching: z.boolean().default(true),
+    maxCacheSize: z.number().int().positive().default(1000),
+  })
+  .strict();
 
 // Clustering configuration
-export const ClusteringConfigSchema = z.object({
-  algorithm: z.enum(['kmeans', 'dbscan', 'hierarchical']).default('kmeans'),
-  k: z.number().int().min(1).optional(), // for k-means
-  eps: z.number().min(0).optional(), // for DBSCAN
-  minPts: z.number().int().min(1).optional(), // for DBSCAN
-  linkage: z.enum(['single', 'complete', 'average']).optional(), // for hierarchical
-  maxIterations: z.number().int().min(1).default(100),
-  tolerance: z.number().min(0).default(1e-4),
-}).strict();
+export const ClusteringConfigSchema = z
+  .object({
+    algorithm: z.enum(['kmeans', 'dbscan', 'hierarchical']).default('kmeans'),
+    k: z.number().int().min(1).optional(), // for k-means
+    eps: z.number().min(0).optional(), // for DBSCAN
+    minPts: z.number().int().min(1).optional(), // for DBSCAN
+    linkage: z.enum(['single', 'complete', 'average']).optional(), // for hierarchical
+    maxIterations: z.number().int().min(1).default(100),
+    tolerance: z.number().min(0).default(1e-4),
+  })
+  .strict();
 
 // Export all types
 export type PatternFeatureVector = z.infer<typeof PatternFeatureVectorSchema>;
@@ -310,7 +330,7 @@ export class VectorUtils {
     if (magnitude === 0) {
       return vector.slice(); // Return copy of zero vector
     }
-    return vector.map(val => val / magnitude);
+    return vector.map((val) => val / magnitude);
   }
 
   /**
@@ -330,7 +350,7 @@ export class VectorUtils {
       }
     }
 
-    return centroid.map(val => val / vectors.length);
+    return centroid.map((val) => val / vectors.length);
   }
 
   /**
@@ -357,6 +377,6 @@ export class VectorUtils {
    * Multiply vector by scalar
    */
   static scale(vector: Vector, scalar: number): Vector {
-    return vector.map(val => val * scalar);
+    return vector.map((val) => val * scalar);
   }
 }

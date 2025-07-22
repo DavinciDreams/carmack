@@ -1,89 +1,106 @@
 import { z } from 'zod';
-import type {
-  NLPAnalysis,
-  Vector,
-} from './types.ts';
+import type { NLPAnalysis, Vector } from './types.ts';
 
 /**
  * Natural Language Processing System for Pattern Analysis
- * 
+ *
  * Implements text analysis, sentiment analysis, keyword extraction,
  * and semantic understanding for pattern descriptions and user feedback.
  */
 
 // NLP Configuration Schema
-const NLPConfigSchema = z.object({
-  embeddingModel: z.string().default('sentence-transformers'),
-  maxTokens: z.number().int().positive().default(512),
-  languages: z.array(z.string()).default(['en']),
-  enableSentimentAnalysis: z.boolean().default(true),
-  enableKeywordExtraction: z.boolean().default(true),
-  enableIntentClassification: z.boolean().default(true),
-  enableTopicModeling: z.boolean().default(true),
-  minKeywordScore: z.number().min(0).max(1).default(0.3),
-  maxKeywords: z.number().int().positive().default(20),
-}).strict();
+const NLPConfigSchema = z
+  .object({
+    embeddingModel: z.string().default('sentence-transformers'),
+    maxTokens: z.number().int().positive().default(512),
+    languages: z.array(z.string()).default(['en']),
+    enableSentimentAnalysis: z.boolean().default(true),
+    enableKeywordExtraction: z.boolean().default(true),
+    enableIntentClassification: z.boolean().default(true),
+    enableTopicModeling: z.boolean().default(true),
+    minKeywordScore: z.number().min(0).max(1).default(0.3),
+    maxKeywords: z.number().int().positive().default(20),
+  })
+  .strict();
 
 export type NLPConfig = z.infer<typeof NLPConfigSchema>;
 
 // Text preprocessing result
-const PreprocessedTextSchema = z.object({
-  originalText: z.string(),
-  cleanedText: z.string(),
-  tokens: z.array(z.string()),
-  sentences: z.array(z.string()),
-  wordCount: z.number().int().min(0),
-  characterCount: z.number().int().min(0),
-  language: z.string(),
-}).strict();
+const PreprocessedTextSchema = z
+  .object({
+    originalText: z.string(),
+    cleanedText: z.string(),
+    tokens: z.array(z.string()),
+    sentences: z.array(z.string()),
+    wordCount: z.number().int().min(0),
+    characterCount: z.number().int().min(0),
+    language: z.string(),
+  })
+  .strict();
 
 export type PreprocessedText = z.infer<typeof PreprocessedTextSchema>;
 
 // Keyword extraction result
-const KeywordSchema = z.object({
-  word: z.string(),
-  score: z.number().min(0).max(1),
-  frequency: z.number().int().min(0),
-  position: z.number().int().min(0),
-  category: z.enum(['technical', 'domain', 'action', 'quality', 'general']).optional(),
-}).strict();
+const KeywordSchema = z
+  .object({
+    word: z.string(),
+    score: z.number().min(0).max(1),
+    frequency: z.number().int().min(0),
+    position: z.number().int().min(0),
+    category: z.enum(['technical', 'domain', 'action', 'quality', 'general']).optional(),
+  })
+  .strict();
 
 export type Keyword = z.infer<typeof KeywordSchema>;
 
 // Sentiment analysis result
-const SentimentSchema = z.object({
-  score: z.number().min(-1).max(1), // -1 = very negative, 0 = neutral, 1 = very positive
-  confidence: z.number().min(0).max(1),
-  label: z.enum(['very_negative', 'negative', 'neutral', 'positive', 'very_positive']),
-  aspects: z.array(z.object({
-    aspect: z.string(),
-    sentiment: z.number().min(-1).max(1),
+const SentimentSchema = z
+  .object({
+    score: z.number().min(-1).max(1), // -1 = very negative, 0 = neutral, 1 = very positive
     confidence: z.number().min(0).max(1),
-  })).optional(),
-}).strict();
+    label: z.enum(['very_negative', 'negative', 'neutral', 'positive', 'very_positive']),
+    aspects: z
+      .array(
+        z.object({
+          aspect: z.string(),
+          sentiment: z.number().min(-1).max(1),
+          confidence: z.number().min(0).max(1),
+        })
+      )
+      .optional(),
+  })
+  .strict();
 
 export type Sentiment = z.infer<typeof SentimentSchema>;
 
 // Intent classification result
-const IntentSchema = z.object({
-  intent: z.enum(['refactor', 'optimize', 'modernize', 'fix', 'enhance']),
-  confidence: z.number().min(0).max(1),
-  subIntents: z.array(z.object({
-    intent: z.string(),
+const IntentSchema = z
+  .object({
+    intent: z.enum(['refactor', 'optimize', 'modernize', 'fix', 'enhance']),
     confidence: z.number().min(0).max(1),
-  })).optional(),
-}).strict();
+    subIntents: z
+      .array(
+        z.object({
+          intent: z.string(),
+          confidence: z.number().min(0).max(1),
+        })
+      )
+      .optional(),
+  })
+  .strict();
 
 export type Intent = z.infer<typeof IntentSchema>;
 
 // Topic modeling result
-const TopicSchema = z.object({
-  id: z.string(),
-  label: z.string(),
-  keywords: z.array(z.string()),
-  probability: z.number().min(0).max(1),
-  coherence: z.number().min(0).max(1),
-}).strict();
+const TopicSchema = z
+  .object({
+    id: z.string(),
+    label: z.string(),
+    keywords: z.array(z.string()),
+    probability: z.number().min(0).max(1),
+    coherence: z.number().min(0).max(1),
+  })
+  .strict();
 
 export type Topic = z.infer<typeof TopicSchema>;
 
@@ -93,17 +110,100 @@ export type Topic = z.infer<typeof TopicSchema>;
  */
 class TextPreprocessor {
   private stopWords = new Set([
-    'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by',
-    'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did',
-    'will', 'would', 'could', 'should', 'may', 'might', 'can', 'this', 'that', 'these', 'those',
-    'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them', 'my', 'your',
-    'his', 'her', 'its', 'our', 'their', 'mine', 'yours', 'hers', 'ours', 'theirs'
+    'the',
+    'a',
+    'an',
+    'and',
+    'or',
+    'but',
+    'in',
+    'on',
+    'at',
+    'to',
+    'for',
+    'of',
+    'with',
+    'by',
+    'is',
+    'are',
+    'was',
+    'were',
+    'be',
+    'been',
+    'being',
+    'have',
+    'has',
+    'had',
+    'do',
+    'does',
+    'did',
+    'will',
+    'would',
+    'could',
+    'should',
+    'may',
+    'might',
+    'can',
+    'this',
+    'that',
+    'these',
+    'those',
+    'i',
+    'you',
+    'he',
+    'she',
+    'it',
+    'we',
+    'they',
+    'me',
+    'him',
+    'her',
+    'us',
+    'them',
+    'my',
+    'your',
+    'his',
+    'her',
+    'its',
+    'our',
+    'their',
+    'mine',
+    'yours',
+    'hers',
+    'ours',
+    'theirs',
   ]);
 
   private codeKeywords = new Set([
-    'function', 'class', 'method', 'variable', 'const', 'let', 'var', 'if', 'else', 'for', 'while',
-    'return', 'import', 'export', 'async', 'await', 'promise', 'callback', 'api', 'interface',
-    'type', 'enum', 'namespace', 'module', 'component', 'service', 'controller', 'model', 'view'
+    'function',
+    'class',
+    'method',
+    'variable',
+    'const',
+    'let',
+    'var',
+    'if',
+    'else',
+    'for',
+    'while',
+    'return',
+    'import',
+    'export',
+    'async',
+    'await',
+    'promise',
+    'callback',
+    'api',
+    'interface',
+    'type',
+    'enum',
+    'namespace',
+    'module',
+    'component',
+    'service',
+    'controller',
+    'model',
+    'view',
   ]);
 
   /**
@@ -111,7 +211,7 @@ class TextPreprocessor {
    */
   preprocess(text: string): PreprocessedText {
     const originalText = text;
-    
+
     // Basic cleaning
     let cleanedText = text
       .toLowerCase()
@@ -121,7 +221,7 @@ class TextPreprocessor {
 
     // Tokenization
     const tokens = this.tokenize(cleanedText);
-    
+
     // Sentence splitting
     const sentences = this.splitSentences(originalText);
 
@@ -142,15 +242,15 @@ class TextPreprocessor {
   private tokenize(text: string): string[] {
     return text
       .split(/\s+/)
-      .filter(token => token.length > 1)
-      .filter(token => !this.stopWords.has(token));
+      .filter((token) => token.length > 1)
+      .filter((token) => !this.stopWords.has(token));
   }
 
   private splitSentences(text: string): string[] {
     return text
       .split(/[.!?]+/)
-      .map(sentence => sentence.trim())
-      .filter(sentence => sentence.length > 0);
+      .map((sentence) => sentence.trim())
+      .filter((sentence) => sentence.length > 0);
   }
 
   private detectLanguage(text: string): string {
@@ -160,7 +260,7 @@ class TextPreprocessor {
     const englishCount = englishWords.reduce((count, word) => {
       return count + (text.toLowerCase().includes(word) ? 1 : 0);
     }, 0);
-    
+
     return englishCount > 2 ? 'en' : 'unknown';
   }
 
@@ -188,14 +288,19 @@ class KeywordExtractor {
 
     // Calculate term frequencies
     const termFreq = new Map<string, number>();
-    tokens.forEach(token => {
+    tokens.forEach((token) => {
       termFreq.set(token, (termFreq.get(token) || 0) + 1);
     });
 
     // Calculate keyword scores
     const keywords: Keyword[] = [];
     for (const [word, frequency] of termFreq.entries()) {
-      const score = this.calculateKeywordScore(word, frequency, tokens.length, preprocessed.originalText);
+      const score = this.calculateKeywordScore(
+        word,
+        frequency,
+        tokens.length,
+        preprocessed.originalText
+      );
       const position = preprocessed.originalText.toLowerCase().indexOf(word.toLowerCase());
       const category = this.categorizeKeyword(word);
 
@@ -209,44 +314,49 @@ class KeywordExtractor {
     }
 
     // Sort by score and return top keywords
-    return keywords
-      .sort((a, b) => b.score - a.score)
-      .slice(0, maxKeywords);
+    return keywords.sort((a, b) => b.score - a.score).slice(0, maxKeywords);
   }
 
-  private calculateKeywordScore(word: string, frequency: number, totalTokens: number, originalText: string): number {
+  private calculateKeywordScore(
+    word: string,
+    frequency: number,
+    totalTokens: number,
+    originalText: string
+  ): number {
     // Base TF score
     const tf = frequency / totalTokens;
-    
+
     // Length bonus (longer words are often more meaningful)
     const lengthBonus = Math.min(word.length / 10, 1);
-    
+
     // Position bonus (words appearing early are often more important)
     const position = originalText.toLowerCase().indexOf(word.toLowerCase());
-    const positionBonus = position === -1 ? 0 : Math.max(0, 1 - (position / originalText.length));
-    
+    const positionBonus = position === -1 ? 0 : Math.max(0, 1 - position / originalText.length);
+
     // Code keyword bonus
     const codeBonus = this.preprocessor.isCodeKeyword(word) ? 0.5 : 0;
-    
+
     // Capitalization bonus (proper nouns, acronyms)
     const capBonus = /^[A-Z]/.test(word) ? 0.3 : 0;
 
     return tf + lengthBonus * 0.3 + positionBonus * 0.2 + codeBonus + capBonus;
   }
 
-  private categorizeKeyword(word: string): 'technical' | 'domain' | 'action' | 'quality' | 'general' {
+  private categorizeKeyword(
+    word: string
+  ): 'technical' | 'domain' | 'action' | 'quality' | 'general' {
     const technical = ['function', 'class', 'method', 'api', 'interface', 'component', 'service'];
     const domain = ['typescript', 'javascript', 'react', 'node', 'frontend', 'backend', 'database'];
     const action = ['refactor', 'optimize', 'improve', 'fix', 'enhance', 'update', 'modernize'];
     const quality = ['performance', 'security', 'maintainability', 'readability', 'scalability'];
 
     const lowerWord = word.toLowerCase();
-    
-    if (technical.some(t => lowerWord.includes(t))) return 'technical';
-    if (domain.some(d => lowerWord.includes(d))) return 'domain';
-    if (action.some(a => lowerWord.includes(a))) return 'action';
-    if (quality.some(q => lowerWord.includes(q))) return 'quality';
-    
+
+    if (technical.some((t) => lowerWord.includes(t))) return 'technical';
+    if (domain.some((d) => lowerWord.includes(d))) return 'domain';
+    if (action.some((a) => lowerWord.includes(a))) return 'action';
+    if (quality.some((q) => lowerWord.includes(q))) return 'quality';
+
     return 'general';
   }
 }
@@ -257,15 +367,56 @@ class KeywordExtractor {
  */
 class SentimentAnalyzer {
   private positiveWords = new Set([
-    'good', 'great', 'excellent', 'amazing', 'wonderful', 'fantastic', 'perfect', 'best',
-    'love', 'like', 'enjoy', 'happy', 'pleased', 'satisfied', 'impressed', 'awesome',
-    'efficient', 'fast', 'clean', 'elegant', 'simple', 'clear', 'useful', 'helpful'
+    'good',
+    'great',
+    'excellent',
+    'amazing',
+    'wonderful',
+    'fantastic',
+    'perfect',
+    'best',
+    'love',
+    'like',
+    'enjoy',
+    'happy',
+    'pleased',
+    'satisfied',
+    'impressed',
+    'awesome',
+    'efficient',
+    'fast',
+    'clean',
+    'elegant',
+    'simple',
+    'clear',
+    'useful',
+    'helpful',
   ]);
 
   private negativeWords = new Set([
-    'bad', 'terrible', 'awful', 'horrible', 'worst', 'hate', 'dislike', 'annoying',
-    'frustrated', 'disappointed', 'confused', 'difficult', 'hard', 'complex', 'slow',
-    'broken', 'buggy', 'error', 'problem', 'issue', 'fail', 'wrong', 'poor'
+    'bad',
+    'terrible',
+    'awful',
+    'horrible',
+    'worst',
+    'hate',
+    'dislike',
+    'annoying',
+    'frustrated',
+    'disappointed',
+    'confused',
+    'difficult',
+    'hard',
+    'complex',
+    'slow',
+    'broken',
+    'buggy',
+    'error',
+    'problem',
+    'issue',
+    'fail',
+    'wrong',
+    'poor',
   ]);
 
   private intensifiers = new Map([
@@ -290,7 +441,7 @@ class SentimentAnalyzer {
 
     for (let i = 0; i < words.length; i++) {
       const word = words[i]!.replace(/[^\w]/g, '');
-      
+
       // Check for intensifiers
       if (this.intensifiers.has(word)) {
         intensifier = this.intensifiers.get(word)!;
@@ -314,7 +465,7 @@ class SentimentAnalyzer {
 
     // Normalize score
     const normalizedScore = wordCount > 0 ? Math.max(-1, Math.min(1, score / wordCount)) : 0;
-    
+
     // Calculate confidence based on number of sentiment words found
     const confidence = Math.min(1, wordCount / Math.max(1, words.length * 0.1));
 
@@ -328,7 +479,9 @@ class SentimentAnalyzer {
     };
   }
 
-  private scoreToLabel(score: number): 'very_negative' | 'negative' | 'neutral' | 'positive' | 'very_positive' {
+  private scoreToLabel(
+    score: number
+  ): 'very_negative' | 'negative' | 'neutral' | 'positive' | 'very_positive' {
     if (score <= -0.6) return 'very_negative';
     if (score <= -0.2) return 'negative';
     if (score >= 0.6) return 'very_positive';
@@ -343,11 +496,42 @@ class SentimentAnalyzer {
  */
 class IntentClassifier {
   private intentPatterns = new Map([
-    ['refactor', ['refactor', 'restructure', 'reorganize', 'clean up', 'rewrite', 'analyze', 'review', 'examine']],
-    ['optimize', ['optimize', 'improve performance', 'speed up', 'make faster', 'efficiency', 'performance']],
-    ['modernize', ['modernize', 'update', 'upgrade', 'latest', 'current', 'new version', 'document', 'comment']],
+    [
+      'refactor',
+      [
+        'refactor',
+        'restructure',
+        'reorganize',
+        'clean up',
+        'rewrite',
+        'analyze',
+        'review',
+        'examine',
+      ],
+    ],
+    [
+      'optimize',
+      ['optimize', 'improve performance', 'speed up', 'make faster', 'efficiency', 'performance'],
+    ],
+    [
+      'modernize',
+      ['modernize', 'update', 'upgrade', 'latest', 'current', 'new version', 'document', 'comment'],
+    ],
     ['fix', ['fix', 'bug', 'error', 'issue', 'problem', 'broken', 'repair', 'debug']],
-    ['enhance', ['enhance', 'improve', 'better', 'add feature', 'extend', 'augment', 'explain', 'describe', 'clarify']],
+    [
+      'enhance',
+      [
+        'enhance',
+        'improve',
+        'better',
+        'add feature',
+        'extend',
+        'augment',
+        'explain',
+        'describe',
+        'clarify',
+      ],
+    ],
   ]);
 
   /**
@@ -401,7 +585,7 @@ class SemanticEmbedding {
   generateEmbedding(text: string): Vector {
     const preprocessor = new TextPreprocessor();
     const keywordExtractor = new KeywordExtractor();
-    
+
     const preprocessed = preprocessor.preprocess(text);
     const keywords = keywordExtractor.extractKeywords(text, 50);
 
@@ -415,7 +599,7 @@ class SemanticEmbedding {
 
     // Keyword category features
     const categoryCount = { technical: 0, domain: 0, action: 0, quality: 0, general: 0 };
-    keywords.forEach(keyword => {
+    keywords.forEach((keyword) => {
       if (keyword.category) {
         categoryCount[keyword.category]++;
       }
@@ -478,9 +662,10 @@ export class NLPAnalyzer {
 
     // Extract keywords
     const keywords = this.config.enableKeywordExtraction
-      ? this.keywordExtractor.extractKeywords(description, this.config.maxKeywords)
-          .filter(keyword => keyword.score >= this.config.minKeywordScore)
-          .map(keyword => keyword.word)
+      ? this.keywordExtractor
+          .extractKeywords(description, this.config.maxKeywords)
+          .filter((keyword) => keyword.score >= this.config.minKeywordScore)
+          .map((keyword) => keyword.word)
       : [];
 
     // Analyze sentiment
@@ -528,8 +713,9 @@ export class NLPAnalyzer {
   }> {
     const sentiment = this.sentimentAnalyzer.analyzeSentiment(feedbackText);
     const intent = this.intentClassifier.classifyIntent(feedbackText);
-    const keywords = this.keywordExtractor.extractKeywords(feedbackText, 10)
-      .map(keyword => keyword.word);
+    const keywords = this.keywordExtractor
+      .extractKeywords(feedbackText, 10)
+      .map((keyword) => keyword.word);
 
     const suggestions = this.generateSuggestions(sentiment, intent, keywords);
 
@@ -563,20 +749,47 @@ export class NLPAnalyzer {
   private extractDomain(keywords: string[], description: string): string[] {
     const domains = new Set<string>();
     const domainKeywords = {
-      'frontend': ['react', 'vue', 'angular', 'html', 'css', 'javascript', 'typescript', 'ui', 'component'],
-      'backend': ['node', 'express', 'api', 'server', 'database', 'sql', 'mongodb', 'rest', 'graphql'],
-      'mobile': ['react-native', 'flutter', 'ios', 'android', 'mobile', 'app'],
-      'devops': ['docker', 'kubernetes', 'ci', 'cd', 'deployment', 'infrastructure', 'cloud'],
-      'testing': ['test', 'unit', 'integration', 'e2e', 'jest', 'cypress', 'testing'],
-      'security': ['security', 'auth', 'authentication', 'authorization', 'encryption', 'vulnerability'],
+      frontend: [
+        'react',
+        'vue',
+        'angular',
+        'html',
+        'css',
+        'javascript',
+        'typescript',
+        'ui',
+        'component',
+      ],
+      backend: [
+        'node',
+        'express',
+        'api',
+        'server',
+        'database',
+        'sql',
+        'mongodb',
+        'rest',
+        'graphql',
+      ],
+      mobile: ['react-native', 'flutter', 'ios', 'android', 'mobile', 'app'],
+      devops: ['docker', 'kubernetes', 'ci', 'cd', 'deployment', 'infrastructure', 'cloud'],
+      testing: ['test', 'unit', 'integration', 'e2e', 'jest', 'cypress', 'testing'],
+      security: [
+        'security',
+        'auth',
+        'authentication',
+        'authorization',
+        'encryption',
+        'vulnerability',
+      ],
     };
 
     const lowerDescription = description.toLowerCase();
-    const lowerKeywords = keywords.map(k => k.toLowerCase());
+    const lowerKeywords = keywords.map((k) => k.toLowerCase());
 
     for (const [domain, domainWords] of Object.entries(domainKeywords)) {
-      const hasMatch = domainWords.some(word => 
-        lowerDescription.includes(word) || lowerKeywords.includes(word)
+      const hasMatch = domainWords.some(
+        (word) => lowerDescription.includes(word) || lowerKeywords.includes(word)
       );
       if (hasMatch) {
         domains.add(domain);
@@ -589,41 +802,47 @@ export class NLPAnalyzer {
   private calculateComplexity(preprocessed: PreprocessedText, keywords: string[]): number {
     // Base complexity from text length
     const lengthComplexity = Math.min(preprocessed.wordCount / 50, 1);
-    
+
     // Technical keyword complexity
-    const technicalKeywords = keywords.filter(keyword => 
+    const technicalKeywords = keywords.filter((keyword) =>
       this.preprocessor.isCodeKeyword(keyword)
     );
     const technicalComplexity = Math.min(technicalKeywords.length / 10, 1);
-    
+
     // Sentence complexity
     const avgSentenceLength = preprocessed.wordCount / Math.max(preprocessed.sentences.length, 1);
     const sentenceComplexity = Math.min(avgSentenceLength / 20, 1);
 
-    return Math.min((lengthComplexity + technicalComplexity + sentenceComplexity) / 3 * 10, 10);
+    return Math.min(((lengthComplexity + technicalComplexity + sentenceComplexity) / 3) * 10, 10);
   }
 
-  private extractRelatedConcepts(keywords: string[], description: string): Array<{ concept: string; relevance: number }> {
+  private extractRelatedConcepts(
+    keywords: string[],
+    description: string
+  ): Array<{ concept: string; relevance: number }> {
     const concepts = new Map<string, number>();
-    
+
     // Extract concepts from keywords
     keywords.forEach((keyword, index) => {
-      const relevance = Math.max(0.1, 1 - (index / keywords.length));
+      const relevance = Math.max(0.1, 1 - index / keywords.length);
       concepts.set(keyword, relevance);
     });
 
     // Add related technical concepts
     const technicalConcepts = {
-      'performance': ['optimization', 'speed', 'efficiency', 'memory'],
-      'maintainability': ['readability', 'documentation', 'structure', 'organization'],
-      'scalability': ['growth', 'expansion', 'load', 'capacity'],
-      'security': ['safety', 'protection', 'vulnerability', 'encryption'],
+      performance: ['optimization', 'speed', 'efficiency', 'memory'],
+      maintainability: ['readability', 'documentation', 'structure', 'organization'],
+      scalability: ['growth', 'expansion', 'load', 'capacity'],
+      security: ['safety', 'protection', 'vulnerability', 'encryption'],
     };
 
     const lowerDescription = description.toLowerCase();
     for (const [concept, related] of Object.entries(technicalConcepts)) {
-      if (lowerDescription.includes(concept) || keywords.some(k => k.toLowerCase().includes(concept))) {
-        related.forEach(relatedConcept => {
+      if (
+        lowerDescription.includes(concept) ||
+        keywords.some((k) => k.toLowerCase().includes(concept))
+      ) {
+        related.forEach((relatedConcept) => {
           if (!concepts.has(relatedConcept)) {
             concepts.set(relatedConcept, 0.5);
           }

@@ -441,7 +441,7 @@ export const productionPipelineActor = fromPromise(
       // Check if enhanced orchestrator is enabled
       if (validatedInput.config.enhanced?.enableOrchestrator) {
         console.log('🎯 Using Enhanced Transformation Orchestrator');
-        
+
         // Convert to enhanced pipeline request format
         const enhancedRequest: ProductionPipelineRequest = {
           files: validatedInput.files,
@@ -452,14 +452,17 @@ export const productionPipelineActor = fromPromise(
 
         try {
           // Use Enhanced Transformation Orchestrator
-          const orchestratorResult = await invokeActor<EnhancedPipelineResult>(enhancedTransformationOrchestratorActor, enhancedRequest);
-          
+          const orchestratorResult = await invokeActor<EnhancedPipelineResult>(
+            enhancedTransformationOrchestratorActor,
+            enhancedRequest
+          );
+
           // Convert orchestrator result to production pipeline result format
           return {
             success: orchestratorResult.success,
             transformationId,
             filesModified: orchestratorResult.filesModified,
-            transformationsApplied: orchestratorResult.transformationsApplied.map(t => ({
+            transformationsApplied: orchestratorResult.transformationsApplied.map((t) => ({
               type: t.type as 'template' | 'ast' | 'llm',
               patternsUsed: [],
               executionTime: 0, // Not provided by enhanced result
@@ -499,11 +502,12 @@ export const productionPipelineActor = fromPromise(
             },
             feedback: {
               automaticScore: 0.8, // Default score for enhanced orchestrator
-              recommendations: orchestratorResult.errors.length === 0
-                ? ['Enhanced transformation completed successfully']
-                : ['Review transformation errors and warnings'],
+              recommendations:
+                orchestratorResult.errors.length === 0
+                  ? ['Enhanced transformation completed successfully']
+                  : ['Review transformation errors and warnings'],
             },
-            errors: orchestratorResult.errors.map(e => ({
+            errors: orchestratorResult.errors.map((e) => ({
               stage: 'enhanced-orchestrator',
               error: e.message,
               message: e.message,
@@ -517,7 +521,10 @@ export const productionPipelineActor = fromPromise(
             },
           };
         } catch (orchestratorError) {
-          console.warn('⚠️ Enhanced orchestrator failed, falling back to standard pipeline:', orchestratorError);
+          console.warn(
+            '⚠️ Enhanced orchestrator failed, falling back to standard pipeline:',
+            orchestratorError
+          );
           // Fall through to standard pipeline
         }
       }

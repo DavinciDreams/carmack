@@ -531,7 +531,9 @@ function extractVariables(node: SgNode, pattern: AstGrepPattern): Record<string,
       const variableMatches = extractVariablesFromPattern(nodeText, patternText);
       Object.assign(variables, variableMatches);
       if (Object.keys(variableMatches).length > 0) {
-        console.log(`   ✅ Pattern-based extraction found: ${Object.keys(variableMatches).join(', ')}`);
+        console.log(
+          `   ✅ Pattern-based extraction found: ${Object.keys(variableMatches).join(', ')}`
+        );
       }
     }
 

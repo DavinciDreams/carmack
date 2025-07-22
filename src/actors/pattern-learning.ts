@@ -7,15 +7,7 @@ import { PatternSimilarityDetector } from '../learning/similarity.ts';
 import { StatisticalAnalyzer, PatternStatistics } from '../learning/statistics.ts';
 import { ReinforcementLearningManager } from '../learning/reinforcement.ts';
 import { createNLPAnalyzer } from '../learning/nlp.ts';
-import type {
-  PatternFeatureVector,
-  ClusterResult,
-  SimilarityResult,
-  EffectivenessMetrics,
-  RLState,
-  RLAction,
-  NLPAnalysis,
-} from '../learning/types.ts';
+import type { PatternFeatureVector, NLPAnalysis } from '../learning/types.ts';
 
 // Extended pattern type for learning with confidence
 type LearnedPattern = AstPattern & {
@@ -252,7 +244,7 @@ export class PatternLearner {
 
   constructor(dataPath = './data') {
     this.dataPath = dataPath;
-    
+
     // Initialize ML components
     this.clusterer = new PatternClusterer();
     this.similarityDetector = new PatternSimilarityDetector();
@@ -744,12 +736,12 @@ export class PatternLearner {
     try {
       // Create feature vectors for pattern analysis
       const featureVectors: PatternFeatureVector[] = [];
-      
+
       for (const filePath of transformation.filesModified) {
         try {
           // Read file content for analysis
           const fileContent = await readFile(filePath, 'utf-8');
-          
+
           // Use NLP to analyze the transformation description
           const nlpAnalysis = await this.nlpAnalyzer.analyzeText(
             transformation.id,
@@ -761,10 +753,16 @@ export class PatternLearner {
             patternId: `${transformation.id}-${filePath}`,
             features: nlpAnalysis.semanticEmbedding,
             metadata: {
-              language: nlpAnalysis.extractedFeatures.domain.includes('typescript') ? 'typescript' : 'javascript',
+              language: nlpAnalysis.extractedFeatures.domain.includes('typescript')
+                ? 'typescript'
+                : 'javascript',
               complexity: nlpAnalysis.extractedFeatures.complexity,
-              riskLevel: nlpAnalysis.extractedFeatures.complexity > 7 ? 'high' :
-                        nlpAnalysis.extractedFeatures.complexity > 4 ? 'medium' : 'low',
+              riskLevel:
+                nlpAnalysis.extractedFeatures.complexity > 7
+                  ? 'high'
+                  : nlpAnalysis.extractedFeatures.complexity > 4
+                    ? 'medium'
+                    : 'low',
               category: nlpAnalysis.extractedFeatures.intent,
               transformationType: transformation.mode,
               usageCount: 1,
@@ -789,7 +787,6 @@ export class PatternLearner {
           };
 
           patterns.push(discoveredPattern);
-
         } catch (fileError) {
           console.warn(`Failed to analyze file ${filePath}:`, fileError);
         }
@@ -806,21 +803,21 @@ export class PatternLearner {
         for (const cluster of clusterResults) {
           if (cluster.size > 1) {
             // Found a cluster of similar patterns - this indicates a reusable pattern
-            const clusterPatterns = patterns.filter(p =>
-              featureVectors.some(fv =>
-                fv.patternId.includes(p.id.split('-')[1] || '') &&
-                cluster.patterns.includes(fv.patternId)
+            const clusterPatterns = patterns.filter((p) =>
+              featureVectors.some(
+                (fv) =>
+                  fv.patternId.includes(p.id.split('-')[1] || '') &&
+                  cluster.patterns.includes(fv.patternId)
               )
             );
 
             // Increase confidence for patterns in clusters
-            clusterPatterns.forEach(pattern => {
+            clusterPatterns.forEach((pattern) => {
               pattern.confidence = Math.min(0.95, (pattern.confidence || 0.7) + 0.2);
             });
           }
         }
       }
-
     } catch (error) {
       console.warn('Failed to analyze transformation for patterns:', error);
     }
@@ -885,17 +882,20 @@ export class PatternLearner {
 
     // Increase confidence for clear intent
     const intentConfidenceMap = {
-      'refactor': 0.8,
-      'optimize': 0.9,
-      'modernize': 0.85,
-      'fix': 0.95,
-      'enhance': 0.7,
+      refactor: 0.8,
+      optimize: 0.9,
+      modernize: 0.85,
+      fix: 0.95,
+      enhance: 0.7,
     };
-    confidence = Math.max(confidence, intentConfidenceMap[nlpAnalysis.extractedFeatures.intent] || 0.5);
+    confidence = Math.max(
+      confidence,
+      intentConfidenceMap[nlpAnalysis.extractedFeatures.intent] || 0.5
+    );
 
     // Increase confidence for common patterns
     const commonPatterns = ['var ', 'function ', 'console.log', 'for ('];
-    const hasCommonPattern = commonPatterns.some(pattern => fileContent.includes(pattern));
+    const hasCommonPattern = commonPatterns.some((pattern) => fileContent.includes(pattern));
     if (hasCommonPattern) {
       confidence += 0.1;
     }

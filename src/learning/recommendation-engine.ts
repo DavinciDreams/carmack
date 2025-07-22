@@ -1,8 +1,5 @@
 import { z } from 'zod';
-import type {
-  PatternFeatureVector,
-  RLState,
-} from './types.ts';
+import type { PatternFeatureVector, RLState } from './types.ts';
 import type { EffectivenessScore } from './effectiveness-scorer.ts';
 import { PatternSimilarityDetector } from './similarity.ts';
 import { ReinforcementLearningManager } from './reinforcement.ts';
@@ -20,17 +17,21 @@ export const RecommendationRequestSchema = z.object({
     timeConstraints: z.enum(['tight', 'moderate', 'flexible']),
     qualityRequirements: z.enum(['high', 'medium', 'low', 'critical']),
   }),
-  preferences: z.object({
-    riskTolerance: z.enum(['low', 'medium', 'high']).default('medium'),
-    performancePriority: z.number().min(0).max(1).default(0.7),
-    maintainabilityPriority: z.number().min(0).max(1).default(0.8),
-    maxRecommendations: z.number().min(1).max(20).default(5),
-  }).default({}),
-  userHistory: z.object({
-    recentPatterns: z.array(z.string()).default([]),
-    successfulPatterns: z.array(z.string()).default([]),
-    rejectedPatterns: z.array(z.string()).default([]),
-  }).default({}),
+  preferences: z
+    .object({
+      riskTolerance: z.enum(['low', 'medium', 'high']).default('medium'),
+      performancePriority: z.number().min(0).max(1).default(0.7),
+      maintainabilityPriority: z.number().min(0).max(1).default(0.8),
+      maxRecommendations: z.number().min(1).max(20).default(5),
+    })
+    .default({}),
+  userHistory: z
+    .object({
+      recentPatterns: z.array(z.string()).default([]),
+      successfulPatterns: z.array(z.string()).default([]),
+      rejectedPatterns: z.array(z.string()).default([]),
+    })
+    .default({}),
   currentTask: z.object({
     description: z.string(),
     files: z.array(z.string()),
@@ -137,11 +138,11 @@ export class PatternRecommendationEngine {
   private readonly rlManager: ReinforcementLearningManager;
   private readonly nlpAnalyzer: NLPAnalyzer;
   private readonly effectivenessScorer: PatternEffectivenessScorer;
-  
+
   // Pattern database
   private readonly patternDatabase = new Map<string, PatternFeatureVector>();
   private readonly patternMetadata = new Map<string, any>();
-  
+
   // Caching system
   private readonly cache = new Map<string, CacheEntry>();
 
@@ -197,11 +198,11 @@ export class PatternRecommendationEngine {
    */
   async getRecommendations(request: unknown): Promise<RecommendationResponse> {
     const startTime = Date.now();
-    
+
     try {
       // Validate request
       const validatedRequest = RecommendationRequestSchema.parse(request);
-      
+
       // Check cache first
       if (this.config.caching.enableCaching) {
         const cached = this.getCachedRecommendation(validatedRequest);
@@ -218,16 +219,20 @@ export class PatternRecommendationEngine {
 
       // Analyze context using NLP
       const contextAnalysis = await this.analyzeContext(validatedRequest);
-      
+
       // Get candidate patterns
       const candidates = await this.getCandidatePatterns(validatedRequest, contextAnalysis);
-      
+
       // Score and rank patterns
-      const scoredPatterns = await this.scorePatterns(candidates, validatedRequest, contextAnalysis);
-      
+      const scoredPatterns = await this.scorePatterns(
+        candidates,
+        validatedRequest,
+        contextAnalysis
+      );
+
       // Apply reinforcement learning optimization
       const optimizedPatterns = await this.applyRLOptimization(scoredPatterns, validatedRequest);
-      
+
       // Generate final recommendations
       const recommendations = this.generateRecommendations(
         optimizedPatterns,
@@ -259,7 +264,9 @@ export class PatternRecommendationEngine {
 
       return response;
     } catch (error) {
-      throw new Error(`Recommendation generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Recommendation generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -302,7 +309,7 @@ export class PatternRecommendationEngine {
     contextAnalysis: { complexity: number; domain: string[]; intent: string; embedding: number[] }
   ): Promise<PatternFeatureVector[]> {
     const candidates: PatternFeatureVector[] = [];
-    
+
     // Create a feature vector for the context
     const contextVector: PatternFeatureVector = {
       patternId: 'context',
@@ -320,10 +327,7 @@ export class PatternRecommendationEngine {
 
     // Find similar patterns using similarity detection
     for (const [patternId, pattern] of this.patternDatabase) {
-      const similarity = await this.similarityDetector.calculateSimilarity(
-        contextVector,
-        pattern
-      );
+      const similarity = await this.similarityDetector.calculateSimilarity(contextVector, pattern);
 
       if (similarity.similarity >= this.config.similarity.similarityThreshold) {
         candidates.push(pattern);
@@ -362,8 +366,14 @@ export class PatternRecommendationEngine {
     candidates: PatternFeatureVector[],
     request: RecommendationRequest,
     contextAnalysis: { complexity: number; domain: string[]; intent: string; embedding: number[] }
-  ): Promise<Array<{ pattern: PatternFeatureVector; score: number; effectiveness: EffectivenessScore }>> {
-    const scoredPatterns: Array<{ pattern: PatternFeatureVector; score: number; effectiveness: EffectivenessScore }> = [];
+  ): Promise<
+    Array<{ pattern: PatternFeatureVector; score: number; effectiveness: EffectivenessScore }>
+  > {
+    const scoredPatterns: Array<{
+      pattern: PatternFeatureVector;
+      score: number;
+      effectiveness: EffectivenessScore;
+    }> = [];
 
     for (const pattern of candidates) {
       let score = 0;
@@ -431,9 +441,15 @@ export class PatternRecommendationEngine {
    * Apply reinforcement learning optimization
    */
   private async applyRLOptimization(
-    scoredPatterns: Array<{ pattern: PatternFeatureVector; score: number; effectiveness: EffectivenessScore }>,
+    scoredPatterns: Array<{
+      pattern: PatternFeatureVector;
+      score: number;
+      effectiveness: EffectivenessScore;
+    }>,
     request: RecommendationRequest
-  ): Promise<Array<{ pattern: PatternFeatureVector; score: number; effectiveness: EffectivenessScore }>> {
+  ): Promise<
+    Array<{ pattern: PatternFeatureVector; score: number; effectiveness: EffectivenessScore }>
+  > {
     if (!this.config.reinforcementLearning.enableRLOptimization) {
       return scoredPatterns;
     }
@@ -446,9 +462,12 @@ export class PatternRecommendationEngine {
         codebaseComplexity: request.context.codebaseComplexity,
         teamExperience: request.context.teamExperience,
         timeConstraints: request.context.timeConstraints,
-        qualityRequirements: request.context.qualityRequirements === 'medium' ? 'standard' :
-                           request.context.qualityRequirements === 'low' ? 'basic' :
-                           request.context.qualityRequirements,
+        qualityRequirements:
+          request.context.qualityRequirements === 'medium'
+            ? 'standard'
+            : request.context.qualityRequirements === 'low'
+              ? 'basic'
+              : request.context.qualityRequirements,
       },
       currentMetrics: {
         patternId: 'recommendation-context',
@@ -467,7 +486,15 @@ export class PatternRecommendationEngine {
         },
         trendDirection: 'stable' as const,
       },
-      availableActions: ['increase_priority', 'decrease_priority', 'modify_pattern', 'combine_patterns', 'split_pattern', 'deprecate_pattern', 'promote_pattern'],
+      availableActions: [
+        'increase_priority',
+        'decrease_priority',
+        'modify_pattern',
+        'combine_patterns',
+        'split_pattern',
+        'deprecate_pattern',
+        'promote_pattern',
+      ],
     };
 
     // Get RL recommendations - using selectAction as the available method
@@ -476,7 +503,7 @@ export class PatternRecommendationEngine {
 
     // Adjust scores based on RL recommendations
     for (const scored of scoredPatterns) {
-      if (rlRecommendations.some(rec => rec.action === 'promote_pattern')) {
+      if (rlRecommendations.some((rec) => rec.action === 'promote_pattern')) {
         scored.score *= 1.2; // Boost RL-recommended patterns
       }
     }
@@ -488,13 +515,17 @@ export class PatternRecommendationEngine {
    * Generate final recommendations
    */
   private generateRecommendations(
-    scoredPatterns: Array<{ pattern: PatternFeatureVector; score: number; effectiveness: EffectivenessScore }>,
+    scoredPatterns: Array<{
+      pattern: PatternFeatureVector;
+      score: number;
+      effectiveness: EffectivenessScore;
+    }>,
     request: RecommendationRequest,
     contextAnalysis: { complexity: number; domain: string[]; intent: string; embedding: number[] }
   ): PatternRecommendation[] {
     return scoredPatterns.map(({ pattern, score, effectiveness }) => {
       const metadata = this.patternMetadata.get(pattern.patternId) || {};
-      
+
       return {
         patternId: pattern.patternId,
         confidence: score,
@@ -524,19 +555,19 @@ export class PatternRecommendationEngine {
     effectiveness: EffectivenessScore
   ): string {
     const reasons: string[] = [];
-    
+
     if (score > 0.8) {
       reasons.push('High similarity to current context');
     }
-    
+
     if (effectiveness.overallScore > 0.7) {
       reasons.push('Strong historical effectiveness');
     }
-    
+
     if (pattern.metadata.successRate > 0.8) {
       reasons.push('High success rate in similar projects');
     }
-    
+
     return reasons.length > 0 ? reasons.join(', ') : 'General applicability to the context';
   }
 
@@ -548,19 +579,19 @@ export class PatternRecommendationEngine {
     effectiveness: EffectivenessScore
   ): string[] {
     const benefits: string[] = [];
-    
+
     if (effectiveness.breakdown.performance.score > 0.7) {
       benefits.push('Improved performance');
     }
-    
+
     if (effectiveness.breakdown.maintainability.score > 0.7) {
       benefits.push('Better maintainability');
     }
-    
+
     if (effectiveness.breakdown.complexity.score > 0.7) {
       benefits.push('Reduced complexity');
     }
-    
+
     return benefits.length > 0 ? benefits : ['Code quality improvement'];
   }
 
@@ -569,15 +600,15 @@ export class PatternRecommendationEngine {
    */
   private generatePotentialRisks(pattern: PatternFeatureVector): string[] {
     const risks: string[] = [];
-    
+
     if (pattern.metadata.riskLevel === 'high') {
       risks.push('May require significant refactoring');
     }
-    
+
     if (pattern.metadata.complexity > 7) {
       risks.push('High implementation complexity');
     }
-    
+
     return risks.length > 0 ? risks : ['Minimal risk'];
   }
 
@@ -595,8 +626,9 @@ export class PatternRecommendationEngine {
    */
   private calculateOverallConfidence(recommendations: PatternRecommendation[]): number {
     if (recommendations.length === 0) return 0;
-    
-    const avgConfidence = recommendations.reduce((sum, rec) => sum + rec.confidence, 0) / recommendations.length;
+
+    const avgConfidence =
+      recommendations.reduce((sum, rec) => sum + rec.confidence, 0) / recommendations.length;
     return Math.min(1, avgConfidence);
   }
 
@@ -610,7 +642,7 @@ export class PatternRecommendationEngine {
     if (recommendations.length === 0) {
       return 'No suitable patterns found for the given context';
     }
-    
+
     const topRec = recommendations[0];
     if (!topRec) {
       return 'No suitable patterns found for the given context';
@@ -623,19 +655,19 @@ export class PatternRecommendationEngine {
    */
   private getUsedAlgorithms(): string[] {
     const algorithms = ['similarity-detection'];
-    
+
     if (this.config.effectiveness.enableEffectivenessScoring) {
       algorithms.push('effectiveness-scoring');
     }
-    
+
     if (this.config.reinforcementLearning.enableRLOptimization) {
       algorithms.push('reinforcement-learning');
     }
-    
+
     if (this.config.nlp.enableContextAnalysis) {
       algorithms.push('nlp-analysis');
     }
-    
+
     return algorithms;
   }
 
@@ -645,33 +677,36 @@ export class PatternRecommendationEngine {
   private getCachedRecommendation(request: RecommendationRequest): RecommendationResponse | null {
     const key = this.generateCacheKey(request);
     const entry = this.cache.get(key);
-    
+
     if (!entry) return null;
-    
+
     // Check if cache entry is still valid
     const now = Date.now();
     if (now - entry.timestamp > this.config.caching.cacheTTL) {
       this.cache.delete(key);
       return null;
     }
-    
+
     // Update access count
     entry.accessCount++;
-    
+
     return entry.response;
   }
 
   /**
    * Cache recommendation result
    */
-  private setCachedRecommendation(request: RecommendationRequest, response: RecommendationResponse): void {
+  private setCachedRecommendation(
+    request: RecommendationRequest,
+    response: RecommendationResponse
+  ): void {
     const key = this.generateCacheKey(request);
-    
+
     // Clean up old entries if cache is full
     if (this.cache.size >= this.config.caching.cacheSize) {
       this.cleanupCache();
     }
-    
+
     this.cache.set(key, {
       request,
       response,
@@ -690,7 +725,7 @@ export class PatternRecommendationEngine {
       preferences: request.preferences,
       userHistory: request.userHistory,
     };
-    
+
     return JSON.stringify(keyData);
   }
 
@@ -699,7 +734,7 @@ export class PatternRecommendationEngine {
    */
   private cleanupCache(): void {
     const entries = Array.from(this.cache.entries());
-    
+
     // Sort by access count and timestamp (least used first)
     entries.sort(([, a], [, b]) => {
       if (a.accessCount !== b.accessCount) {
@@ -707,7 +742,7 @@ export class PatternRecommendationEngine {
       }
       return a.timestamp - b.timestamp;
     });
-    
+
     // Remove oldest 25% of entries
     const toRemove = Math.floor(entries.length * 0.25);
     for (let i = 0; i < toRemove; i++) {
@@ -758,15 +793,15 @@ export class PatternRecommendationEngine {
     const totalPatterns = this.patternDatabase.size;
     const languageDistribution: Record<string, number> = {};
     const categoryDistribution: Record<string, number> = {};
-    
+
     for (const metadata of this.patternMetadata.values()) {
       const language = metadata.language || 'unknown';
       const category = metadata.category || 'unknown';
-      
+
       languageDistribution[language] = (languageDistribution[language] || 0) + 1;
       categoryDistribution[category] = (categoryDistribution[category] || 0) + 1;
     }
-    
+
     return {
       totalPatterns,
       languageDistribution,

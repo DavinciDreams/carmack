@@ -295,30 +295,34 @@ export const EnhancedTransformationContextSchema = z.object({
   projectType: z.string().default('typescript'),
   framework: z.string().optional(),
   dependencies: z.array(z.string()).default([]),
-  
+
   // Code analysis context
   complexity: ComplexityMetricsSchema.optional(),
   patterns: z.array(AstPatternSchema).default([]),
   codebaseSize: z.number().default(0),
-  
+
   // Multi-file context
   relatedFiles: z.array(z.string()).default([]),
   dependencyGraph: z.record(z.array(z.string())).default({}),
   importMap: z.record(z.array(z.string())).default({}),
-  
+
   // Transformation history
-  previousTransformations: z.array(z.object({
-    id: z.string(),
-    type: TransformationModeSchema,
-    timestamp: TimestampSchema,
-    success: z.boolean(),
-    patterns: z.array(z.string()),
-  })).default([]),
-  
+  previousTransformations: z
+    .array(
+      z.object({
+        id: z.string(),
+        type: TransformationModeSchema,
+        timestamp: TimestampSchema,
+        success: z.boolean(),
+        patterns: z.array(z.string()),
+      })
+    )
+    .default([]),
+
   // Quality metrics
   qualityScore: z.number().min(0).max(1).optional(),
   testCoverage: z.number().min(0).max(1).optional(),
-  
+
   // User preferences
   priority: z.enum(['low', 'normal', 'high', 'critical']).default('normal'),
   riskTolerance: z.enum(['conservative', 'moderate', 'aggressive']).default('moderate'),
@@ -330,38 +334,48 @@ export const EnhancedTransformationRequestSchema = z.object({
   // Basic transformation info
   targetFiles: z.array(FilePathSchema),
   transformationType: z.enum(['template', 'ast', 'llm', 'hybrid', 'auto']).default('auto'),
-  
+
   // Enhanced prompt and context
   prompt: z.string().optional(),
   systemPrompt: z.string().optional(),
-  examples: z.array(z.object({
-    before: z.string(),
-    after: z.string(),
-    explanation: z.string(),
-  })).default([]),
-  
+  examples: z
+    .array(
+      z.object({
+        before: z.string(),
+        after: z.string(),
+        explanation: z.string(),
+      })
+    )
+    .default([]),
+
   // Advanced options
   maxComplexity: z.number().int().min(1).default(15),
   dryRun: z.boolean().default(false),
   incrementalMode: z.boolean().default(false),
   rollbackOnFailure: z.boolean().default(true),
-  
+
   // Multi-stage transformation
-  stages: z.array(z.object({
-    type: TransformationModeSchema,
-    patterns: z.array(AstPatternSchema).optional(),
-    prompt: z.string().optional(),
-    condition: z.string().optional(), // JavaScript expression for conditional execution
-  })).optional(),
-  
+  stages: z
+    .array(
+      z.object({
+        type: TransformationModeSchema,
+        patterns: z.array(AstPatternSchema).optional(),
+        prompt: z.string().optional(),
+        condition: z.string().optional(), // JavaScript expression for conditional execution
+      })
+    )
+    .optional(),
+
   // Context and constraints
   context: EnhancedTransformationContextSchema.optional(),
-  constraints: z.object({
-    maxExecutionTime: z.number().default(300000), // 5 minutes
-    maxMemoryUsage: z.number().default(512 * 1024 * 1024), // 512MB
-    maxTokens: z.number().default(8000),
-    costLimit: z.number().default(1.0), // $1 limit
-  }).default({}),
+  constraints: z
+    .object({
+      maxExecutionTime: z.number().default(300000), // 5 minutes
+      maxMemoryUsage: z.number().default(512 * 1024 * 1024), // 512MB
+      maxTokens: z.number().default(8000),
+      costLimit: z.number().default(1.0), // $1 limit
+    })
+    .default({}),
 });
 
 // Enhanced transformation result schema
@@ -371,73 +385,85 @@ export const EnhancedTransformationResultSchema = z.object({
   request: EnhancedTransformationRequestSchema,
   status: TransformationStatusSchema,
   mode: z.enum(['template', 'ast', 'llm', 'hybrid']),
-  
+
   // Timing and performance
   startTime: TimestampSchema,
   endTime: TimestampSchema.optional(),
   executionTime: z.number().optional(),
   stageTimings: z.record(z.number()).default({}),
-  
+
   // Results and changes
   filesModified: z.array(FilePathSchema),
-  transformationsApplied: z.array(z.object({
-    type: TransformationModeSchema,
-    patternId: z.string(),
-    confidence: z.number().min(0).max(1),
-    changes: z.number(),
-    executionTime: z.number(),
-  })),
-  
+  transformationsApplied: z.array(
+    z.object({
+      type: TransformationModeSchema,
+      patternId: z.string(),
+      confidence: z.number().min(0).max(1),
+      changes: z.number(),
+      executionTime: z.number(),
+    })
+  ),
+
   // Quality and validation
   complexity: ComplexityMetricsSchema.optional(),
   validation: ValidationResultSchema.optional(),
   qualityImprovement: z.number().optional(),
-  
+
   // Context and metadata
   checkpoint: GitCheckpointSchema.optional(),
-  rollbackInfo: z.object({
-    available: z.boolean(),
-    checkpointId: z.string().optional(),
-    backupPath: z.string().optional(),
-  }).optional(),
-  
+  rollbackInfo: z
+    .object({
+      available: z.boolean(),
+      checkpointId: z.string().optional(),
+      backupPath: z.string().optional(),
+    })
+    .optional(),
+
   // Enhanced error handling
   errors: z.array(ErrorInfoSchema),
   warnings: z.array(ErrorInfoSchema),
   suggestions: z.array(z.string()).default([]),
-  
+
   // Performance metrics
-  performance: z.object({
-    memoryUsage: z.number(),
-    tokenUsage: z.number().optional(),
-    cost: z.number().optional(),
-    cacheHits: z.number().default(0),
-    cacheMisses: z.number().default(0),
-  }).optional(),
-  
+  performance: z
+    .object({
+      memoryUsage: z.number(),
+      tokenUsage: z.number().optional(),
+      cost: z.number().optional(),
+      cacheHits: z.number().default(0),
+      cacheMisses: z.number().default(0),
+    })
+    .optional(),
+
   // Learning and feedback
-  learningData: z.object({
-    patternsDiscovered: z.array(z.string()),
-    effectivenessScore: z.number().min(0).max(1),
-    userFeedback: z.number().min(1).max(5).optional(),
-    recommendations: z.array(z.string()),
-  }).optional(),
+  learningData: z
+    .object({
+      patternsDiscovered: z.array(z.string()),
+      effectivenessScore: z.number().min(0).max(1),
+      userFeedback: z.number().min(1).max(5).optional(),
+      recommendations: z.array(z.string()),
+    })
+    .optional(),
 });
 
 // Context-aware prompt schema
 export const ContextAwarePromptSchema = z.object({
   basePrompt: z.string(),
-  contextualizations: z.array(z.object({
-    condition: z.string(), // JavaScript expression
-    promptModification: z.string(),
-    priority: z.number().default(1),
-  })),
-  examples: z.array(z.object({
-    context: z.record(z.any()),
-    input: z.string(),
-    output: z.string(),
-    explanation: z.string(),
-  })),
+  contextualizations: z.array(
+    z.object({
+      condition: z.string(), // JavaScript expression
+      promptModification: z.string(),
+      priority: z.number().default(1),
+    })
+  ),
+  examples: z.array(
+    z.object({
+      context: z.record(z.any()),
+      input: z.string(),
+      output: z.string(),
+      explanation: z.string(),
+    })
+  ),
   metadata: z.object({
     language: z.string(),
     framework: z.string().optional(),
@@ -449,21 +475,27 @@ export const ContextAwarePromptSchema = z.object({
 // Multi-file transformation context schema
 export const MultiFileContextSchema = z.object({
   primaryFile: z.string(),
-  relatedFiles: z.array(z.object({
-    path: z.string(),
-    relationship: z.enum(['import', 'export', 'test', 'config', 'dependency']),
-    relevanceScore: z.number().min(0).max(1),
-  })),
-  crossFilePatterns: z.array(z.object({
-    patternId: z.string(),
-    affectedFiles: z.array(z.string()),
-    dependencies: z.array(z.string()),
-  })),
-  consistencyRules: z.array(z.object({
-    rule: z.string(),
-    scope: z.enum(['file', 'module', 'project']),
-    enforcement: z.enum(['strict', 'warning', 'suggestion']),
-  })),
+  relatedFiles: z.array(
+    z.object({
+      path: z.string(),
+      relationship: z.enum(['import', 'export', 'test', 'config', 'dependency']),
+      relevanceScore: z.number().min(0).max(1),
+    })
+  ),
+  crossFilePatterns: z.array(
+    z.object({
+      patternId: z.string(),
+      affectedFiles: z.array(z.string()),
+      dependencies: z.array(z.string()),
+    })
+  ),
+  consistencyRules: z.array(
+    z.object({
+      rule: z.string(),
+      scope: z.enum(['file', 'module', 'project']),
+      enforcement: z.enum(['strict', 'warning', 'suggestion']),
+    })
+  ),
 });
 
 // Rollback information schema
@@ -519,7 +551,9 @@ export const validateTransformationRequest = (data: unknown): TransformationRequ
   return TransformationRequestSchema.parse(data);
 };
 
-export const validateEnhancedTransformationRequest = (data: unknown): EnhancedTransformationRequest => {
+export const validateEnhancedTransformationRequest = (
+  data: unknown
+): EnhancedTransformationRequest => {
   return EnhancedTransformationRequestSchema.parse(data);
 };
 
@@ -544,6 +578,8 @@ export const isTransformationMode = (mode: unknown): mode is TransformationMode 
   return TransformationModeSchema.safeParse(mode).success;
 };
 
-export const isEnhancedTransformationRequest = (data: unknown): data is EnhancedTransformationRequest => {
+export const isEnhancedTransformationRequest = (
+  data: unknown
+): data is EnhancedTransformationRequest => {
   return EnhancedTransformationRequestSchema.safeParse(data).success;
 };

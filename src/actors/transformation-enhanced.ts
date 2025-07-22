@@ -1,21 +1,19 @@
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
-import { js, ts } from '@ast-grep/napi';
+import { readFile, mkdir } from 'node:fs/promises';
+import { join } from 'node:path';
 import { fromPromise, createActor } from 'xstate';
 import { z } from 'zod';
-import type { ASTGrepNode } from '../docs/ast-analyzer.js';
 import { createEnhancedLLMTransformer } from './llm-transformation-enhanced.ts';
 import { astGrepTransformationActor } from './ast-grep-transformation.ts';
 import { templateEngineActor } from './template-engine.ts';
 import { complexityActor } from './complexity.ts';
 import { validationActor } from './validation.ts';
-import type { 
-  ComplexityMetrics, 
+import type {
+  ComplexityMetrics,
   AstGrepResult,
   TemplateEngineResult,
   LLMTransformationResult,
   ValidationActorResult,
-  AstPattern
+  AstPattern,
 } from '../types.ts';
 
 // ===== ENHANCED TRANSFORMATION ORCHESTRATOR =====
@@ -75,18 +73,22 @@ const EnhancedOrchestratorRequestSchema = z.object({
   patterns: z.array(z.any()).default([]), // Use existing AstPattern from types
   maxComplexity: z.number().default(15),
   dryRun: z.boolean().default(false),
-  context: z.object({
-    projectType: z.string().default('typescript'),
-    priority: z.enum(['low', 'normal', 'high', 'critical']).default('normal'),
-    enableRollback: z.boolean().default(true),
-    enableMonitoring: z.boolean().default(true),
-  }).optional(),
-  config: z.object({
-    enableContextAwareness: z.boolean().default(true),
-    enableMultiFileAnalysis: z.boolean().default(true),
-    enableCaching: z.boolean().default(true),
-    maxExecutionTime: z.number().default(300000), // 5 minutes
-  }).optional(),
+  context: z
+    .object({
+      projectType: z.string().default('typescript'),
+      priority: z.enum(['low', 'normal', 'high', 'critical']).default('normal'),
+      enableRollback: z.boolean().default(true),
+      enableMonitoring: z.boolean().default(true),
+    })
+    .optional(),
+  config: z
+    .object({
+      enableContextAwareness: z.boolean().default(true),
+      enableMultiFileAnalysis: z.boolean().default(true),
+      enableCaching: z.boolean().default(true),
+      maxExecutionTime: z.number().default(300000), // 5 minutes
+    })
+    .optional(),
 });
 
 export type EnhancedOrchestratorRequest = z.infer<typeof EnhancedOrchestratorRequestSchema>;
@@ -140,7 +142,11 @@ async function invokeActorWithTimeout<T>(
  * Coordinates all transformation systems with intelligent planning and execution
  */
 export const enhancedTransformationOrchestratorActor = fromPromise(
-  async ({ input }: { input: EnhancedOrchestratorRequest }): Promise<EnhancedTransformationOrchestratorResult> => {
+  async ({
+    input,
+  }: {
+    input: EnhancedOrchestratorRequest;
+  }): Promise<EnhancedTransformationOrchestratorResult> => {
     const startTime = Date.now();
     const transformationId = `enhanced_transform_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -149,7 +155,7 @@ export const enhancedTransformationOrchestratorActor = fromPromise(
     try {
       // Validate and parse input
       const validated = EnhancedOrchestratorRequestSchema.parse(input);
-      
+
       // Initialize orchestrator state
       const orchestratorState = {
         transformationId,
@@ -178,9 +184,10 @@ export const enhancedTransformationOrchestratorActor = fromPromise(
       // Execute orchestration stages
       const result = await executeEnhancedOrchestrationStages(validated, orchestratorState);
 
-      console.log(`✅ Enhanced Orchestrator completed: ${transformationId} in ${Date.now() - startTime}ms`);
+      console.log(
+        `✅ Enhanced Orchestrator completed: ${transformationId} in ${Date.now() - startTime}ms`
+      );
       return result;
-
     } catch (error) {
       console.error(`❌ Enhanced Orchestrator failed: ${transformationId}`, error);
 
@@ -201,13 +208,15 @@ export const enhancedTransformationOrchestratorActor = fromPromise(
           stageTimings: {},
           resourceUsage: { memory: 0, cpu: 0 },
         },
-        errors: [{
-          stage: 'initialization',
-          error: error instanceof Error ? error.message : String(error),
-          message: error instanceof Error ? error.message : String(error),
-          severity: 'critical',
-          recoverable: false,
-        }],
+        errors: [
+          {
+            stage: 'initialization',
+            error: error instanceof Error ? error.message : String(error),
+            message: error instanceof Error ? error.message : String(error),
+            severity: 'critical',
+            recoverable: false,
+          },
+        ],
         recommendations: ['Check input parameters and system configuration'],
       };
     }
@@ -221,7 +230,6 @@ async function executeEnhancedOrchestrationStages(
   request: EnhancedOrchestratorRequest,
   state: any
 ): Promise<EnhancedTransformationOrchestratorResult> {
-  
   const stages = [
     { name: 'pre-analysis', fn: preAnalysisStage },
     { name: 'dependency-analysis', fn: dependencyAnalysisStage },
@@ -241,8 +249,9 @@ async function executeEnhancedOrchestrationStages(
 
       const elapsed = Date.now() - stageStart;
       state.stageTimings[stage.name] = Math.max(elapsed, 1);
-      console.log(`✅ Enhanced stage completed: ${stage.name} (${state.stageTimings[stage.name]}ms)`);
-
+      console.log(
+        `✅ Enhanced stage completed: ${stage.name} (${state.stageTimings[stage.name]}ms)`
+      );
     } catch (error) {
       const elapsed = Date.now() - stageStart;
       state.stageTimings[stage.name] = Math.max(elapsed, 1);
@@ -256,7 +265,10 @@ async function executeEnhancedOrchestrationStages(
       };
 
       state.errors.push(errorInfo);
-      console.warn(`⚠️ Enhanced stage failed: ${stage.name} (${state.stageTimings[stage.name]}ms)`, error);
+      console.warn(
+        `⚠️ Enhanced stage failed: ${stage.name} (${state.stageTimings[stage.name]}ms)`,
+        error
+      );
 
       // Continue with next stage unless critical failure
       if (!errorInfo.recoverable) {
@@ -276,14 +288,12 @@ async function preAnalysisStage(request: EnhancedOrchestratorRequest, state: any
 
   // Analyze complexity of target files
   try {
-    const complexityMetrics = await invokeActorWithTimeout<ComplexityMetrics>(
-      complexityActor,
-      { files: request.targetFiles }
-    );
+    const complexityMetrics = await invokeActorWithTimeout<ComplexityMetrics>(complexityActor, {
+      files: request.targetFiles,
+    });
 
     state.complexityBefore = complexityMetrics.cyclomaticComplexity;
     console.log(`📊 Initial complexity: ${state.complexityBefore}`);
-
   } catch (error) {
     console.warn('⚠️ Complexity analysis failed, using default values');
     state.complexityBefore = 5; // Default baseline
@@ -302,25 +312,27 @@ async function preAnalysisStage(request: EnhancedOrchestratorRequest, state: any
 /**
  * Stage 2: Dependency Analysis - Analyze cross-file dependencies
  */
-async function dependencyAnalysisStage(request: EnhancedOrchestratorRequest, state: any): Promise<void> {
+async function dependencyAnalysisStage(
+  request: EnhancedOrchestratorRequest,
+  state: any
+): Promise<void> {
   console.log('🔗 Dependency Analysis: Analyzing file relationships...');
 
   // Build dependency graph for multi-file transformations
   const dependencyGraph: Record<string, string[]> = {};
-  
+
   for (const filePath of request.targetFiles) {
     try {
       const content = await readFile(filePath, 'utf-8');
-      
+
       // Simple import/export analysis
       const imports = content.match(/import.*from\s+['"]([^'"]+)['"]/g) || [];
       const relatedFiles = imports
-        .map(imp => imp.match(/['"]([^'"]+)['"]/)?.[1])
+        .map((imp) => imp.match(/['"]([^'"]+)['"]/)?.[1])
         .filter(Boolean)
-        .map(imp => imp as string);
+        .map((imp) => imp as string);
 
       dependencyGraph[filePath] = relatedFiles;
-      
     } catch (error) {
       console.warn(`⚠️ Failed to analyze dependencies for ${filePath}`);
       dependencyGraph[filePath] = [];
@@ -328,19 +340,25 @@ async function dependencyAnalysisStage(request: EnhancedOrchestratorRequest, sta
   }
 
   state.dependencyGraph = dependencyGraph;
-  console.log(`📊 Dependency analysis completed: ${Object.keys(dependencyGraph).length} files analyzed`);
+  console.log(
+    `📊 Dependency analysis completed: ${Object.keys(dependencyGraph).length} files analyzed`
+  );
 }
 
 /**
  * Stage 3: Transformation Planning - Plan intelligent transformation strategy
  */
-async function transformationPlanningStage(request: EnhancedOrchestratorRequest, state: any): Promise<void> {
+async function transformationPlanningStage(
+  request: EnhancedOrchestratorRequest,
+  state: any
+): Promise<void> {
   console.log('🎯 Transformation Planning: Creating execution strategy...');
 
   // Determine optimal transformation order based on Carmack's hierarchy
-  const transformationOrder = request.transformationType === 'auto' 
-    ? ['template', 'ast', 'llm'] as const
-    : [request.transformationType as 'template' | 'ast' | 'llm'];
+  const transformationOrder =
+    request.transformationType === 'auto'
+      ? (['template', 'ast', 'llm'] as const)
+      : [request.transformationType as 'template' | 'ast' | 'llm'];
 
   // Plan transformation stages with intelligent prioritization
   state.transformationPlan = {
@@ -356,11 +374,14 @@ async function transformationPlanningStage(request: EnhancedOrchestratorRequest,
 /**
  * Stage 4: Transformation Execution - Execute planned transformations
  */
-async function transformationExecutionStage(request: EnhancedOrchestratorRequest, state: any): Promise<void> {
+async function transformationExecutionStage(
+  request: EnhancedOrchestratorRequest,
+  state: any
+): Promise<void> {
   console.log('⚡ Transformation Execution: Applying transformations...');
 
   const { transformationPlan } = state;
-  
+
   for (const transformationType of transformationPlan.order) {
     try {
       console.log(`🔄 Executing ${transformationType} transformation...`);
@@ -369,22 +390,25 @@ async function transformationExecutionStage(request: EnhancedOrchestratorRequest
       if (result.success) {
         state.transformationsApplied.push(result);
         result.filesModified.forEach((file: string) => state.filesModified.add(file));
-        
-        console.log(`✅ ${transformationType} transformation completed: ${result.filesModified.length} files modified`);
+
+        console.log(
+          `✅ ${transformationType} transformation completed: ${result.filesModified.length} files modified`
+        );
       } else {
         console.log(`⚠️ ${transformationType} transformation had no effect`);
       }
-
     } catch (error) {
       console.warn(`❌ ${transformationType} transformation failed:`, error);
-      
+
       if (!transformationPlan.fallbackEnabled) {
         throw error;
       }
     }
   }
 
-  console.log(`🎉 Transformation execution completed: ${state.filesModified.size} total files modified`);
+  console.log(
+    `🎉 Transformation execution completed: ${state.filesModified.size} total files modified`
+  );
 }
 
 /**
@@ -434,21 +458,18 @@ async function executeEnhancedTransformation(
     }
 
     case 'ast': {
-      const astResult = await invokeActorWithTimeout<AstGrepResult>(
-        astGrepTransformationActor,
-        {
-          targetFiles: request.targetFiles,
-          patterns: request.patterns.filter((p: any) => p.mode === 'ast'),
-          options: {
-            dryRun: request.dryRun,
-            maxComplexity: request.maxComplexity,
-            enableBatching: true,
-            skipConflicts: true,
-            preserveFormatting: true,
-            maxMatchesPerPattern: 1000,
-          },
-        }
-      );
+      const astResult = await invokeActorWithTimeout<AstGrepResult>(astGrepTransformationActor, {
+        targetFiles: request.targetFiles,
+        patterns: request.patterns.filter((p: any) => p.mode === 'ast'),
+        options: {
+          dryRun: request.dryRun,
+          maxComplexity: request.maxComplexity,
+          enableBatching: true,
+          skipConflicts: true,
+          preserveFormatting: true,
+          maxMatchesPerPattern: 1000,
+        },
+      });
 
       return {
         type: 'ast',
@@ -504,9 +525,9 @@ async function executeEnhancedTransformation(
         patternsUsed: [],
         executionTime: Date.now() - startTime,
         confidence: llmResult.averageConfidence || 0.7,
-        metadata: { 
+        metadata: {
           transformationsApplied: llmResult.transformationsApplied,
-          tokenUsage: llmResult.totalTokensUsed 
+          tokenUsage: llmResult.totalTokensUsed,
         },
       };
     }
@@ -519,11 +540,14 @@ async function executeEnhancedTransformation(
 /**
  * Stage 5: Quality Validation - Validate transformation results
  */
-async function qualityValidationStage(request: EnhancedOrchestratorRequest, state: any): Promise<void> {
+async function qualityValidationStage(
+  request: EnhancedOrchestratorRequest,
+  state: any
+): Promise<void> {
   console.log('🔍 Quality Validation: Validating transformation results...');
 
   const modifiedFiles = Array.from(state.filesModified);
-  
+
   if (modifiedFiles.length === 0) {
     console.log('⏭️ No files modified, skipping quality validation');
     return;
@@ -531,17 +555,13 @@ async function qualityValidationStage(request: EnhancedOrchestratorRequest, stat
 
   // Run validation checks
   try {
-    const validationResult = await invokeActorWithTimeout<ValidationActorResult>(
-      validationActor,
-      {
-        type: 'quality',
-        files: modifiedFiles,
-      }
-    );
+    const validationResult = await invokeActorWithTimeout<ValidationActorResult>(validationActor, {
+      type: 'quality',
+      files: modifiedFiles,
+    });
 
     state.typeErrors = validationResult.errors?.length || 0;
     state.formatIssues = validationResult.warnings?.length || 0;
-
   } catch (error) {
     console.warn('⚠️ Quality validation failed:', error);
     state.typeErrors = 0;
@@ -550,14 +570,12 @@ async function qualityValidationStage(request: EnhancedOrchestratorRequest, stat
 
   // Analyze final complexity
   try {
-    const finalComplexity = await invokeActorWithTimeout<ComplexityMetrics>(
-      complexityActor,
-      { files: modifiedFiles }
-    );
+    const finalComplexity = await invokeActorWithTimeout<ComplexityMetrics>(complexityActor, {
+      files: modifiedFiles,
+    });
 
     state.complexityAfter = finalComplexity.cyclomaticComplexity;
     console.log(`📊 Final complexity: ${state.complexityAfter}`);
-
   } catch (error) {
     console.warn('⚠️ Final complexity analysis failed');
     state.complexityAfter = state.complexityBefore;
@@ -567,7 +585,10 @@ async function qualityValidationStage(request: EnhancedOrchestratorRequest, stat
 /**
  * Stage 6: Rollback Preparation - Prepare rollback capabilities
  */
-async function rollbackPreparationStage(request: EnhancedOrchestratorRequest, state: any): Promise<void> {
+async function rollbackPreparationStage(
+  request: EnhancedOrchestratorRequest,
+  state: any
+): Promise<void> {
   if (!request.context?.enableRollback) {
     console.log('⏭️ Rollback disabled, skipping preparation');
     return;
@@ -577,10 +598,10 @@ async function rollbackPreparationStage(request: EnhancedOrchestratorRequest, st
 
   // Create backup directory
   const backupDir = join(process.cwd(), '.carmack-backups', state.transformationId);
-  
+
   try {
     await mkdir(backupDir, { recursive: true });
-    
+
     state.rollbackInfo = {
       available: true,
       checkpointId: state.transformationId,
@@ -588,7 +609,6 @@ async function rollbackPreparationStage(request: EnhancedOrchestratorRequest, st
     };
 
     console.log(`✅ Rollback prepared: ${backupDir}`);
-
   } catch (error) {
     console.warn('⚠️ Rollback preparation failed:', error);
     state.rollbackInfo = { available: false };
@@ -598,7 +618,10 @@ async function rollbackPreparationStage(request: EnhancedOrchestratorRequest, st
 /**
  * Stage 7: Monitoring Collection - Collect metrics and monitoring data
  */
-async function monitoringCollectionStage(request: EnhancedOrchestratorRequest, state: any): Promise<void> {
+async function monitoringCollectionStage(
+  request: EnhancedOrchestratorRequest,
+  state: any
+): Promise<void> {
   if (!request.context?.enableMonitoring) {
     console.log('⏭️ Monitoring disabled, skipping collection');
     return;
@@ -623,13 +646,13 @@ function buildEnhancedOrchestratorResult(
   request: EnhancedOrchestratorRequest,
   state: any
 ): EnhancedTransformationOrchestratorResult {
-  
   const qualityImprovement = calculateQualityImprovement(state);
   const recommendations = generateEnhancedRecommendations(state);
 
   return {
-    success: state.transformationsApplied.length > 0 && 
-             state.errors.filter((e: any) => e.severity === 'critical').length === 0,
+    success:
+      state.transformationsApplied.length > 0 &&
+      state.errors.filter((e: any) => e.severity === 'critical').length === 0,
     transformationId: state.transformationId,
     filesModified: Array.from(state.filesModified),
     transformationsApplied: state.transformationsApplied,
@@ -658,9 +681,10 @@ function buildEnhancedOrchestratorResult(
  * Calculate quality improvement score
  */
 function calculateQualityImprovement(state: any): number {
-  const complexityImprovement = state.complexityBefore > 0 
-    ? (state.complexityBefore - state.complexityAfter) / state.complexityBefore
-    : 0;
+  const complexityImprovement =
+    state.complexityBefore > 0
+      ? (state.complexityBefore - state.complexityAfter) / state.complexityBefore
+      : 0;
 
   const errorReduction = (state.typeErrors || 0) === 0 ? 0.2 : -0.1;
   const transformationSuccess = state.transformationsApplied.length > 0 ? 0.3 : -0.2;
@@ -683,7 +707,9 @@ function generateEnhancedRecommendations(state: any): string[] {
   }
 
   if (state.transformationsApplied.length === 0) {
-    recommendations.push('No transformations were applied - consider adjusting patterns or criteria');
+    recommendations.push(
+      'No transformations were applied - consider adjusting patterns or criteria'
+    );
   }
 
   if (state.transformationsApplied.some((t: any) => t.confidence < 0.7)) {

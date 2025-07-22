@@ -1,6 +1,6 @@
 /**
  * Real LLM Provider Integration System
- * 
+ *
  * This module provides production-ready LLM provider integrations with:
  * - Multiple provider support (OpenAI, Anthropic, OpenRouter, Ollama)
  * - Rate limiting and cost tracking
@@ -35,35 +35,43 @@ export const LLMConfigSchema = z.object({
 export const LLMRequestSchema = z.object({
   prompt: z.string(),
   systemPrompt: z.string().optional(),
-  context: z.object({
-    language: z.string().default('typescript'),
-    framework: z.string().optional(),
-    complexity: z.number().default(5),
-    codeLength: z.number().default(0),
-  }).optional(),
-  options: z.object({
-    stream: z.boolean().default(false),
-    jsonMode: z.boolean().default(true),
-    maxRetries: z.number().default(3),
-    priority: z.enum(['low', 'normal', 'high']).default('normal'),
-  }).optional(),
+  context: z
+    .object({
+      language: z.string().default('typescript'),
+      framework: z.string().optional(),
+      complexity: z.number().default(5),
+      codeLength: z.number().default(0),
+    })
+    .optional(),
+  options: z
+    .object({
+      stream: z.boolean().default(false),
+      jsonMode: z.boolean().default(true),
+      maxRetries: z.number().default(3),
+      priority: z.enum(['low', 'normal', 'high']).default('normal'),
+    })
+    .optional(),
 });
 
 export const LLMResponseSchema = z.object({
   content: z.string(),
-  usage: z.object({
-    promptTokens: z.number(),
-    completionTokens: z.number(),
-    totalTokens: z.number(),
-    cost: z.number().optional(),
-  }).optional(),
+  usage: z
+    .object({
+      promptTokens: z.number(),
+      completionTokens: z.number(),
+      totalTokens: z.number(),
+      cost: z.number().optional(),
+    })
+    .optional(),
   model: z.string(),
   provider: LLMProviderSchema,
-  metadata: z.object({
-    requestId: z.string().optional(),
-    processingTime: z.number().optional(),
-    retryCount: z.number().default(0),
-  }).optional(),
+  metadata: z
+    .object({
+      requestId: z.string().optional(),
+      processingTime: z.number().optional(),
+      retryCount: z.number().default(0),
+    })
+    .optional(),
 });
 
 export type LLMProvider = z.infer<typeof LLMProviderSchema>;
@@ -84,10 +92,14 @@ interface RateLimitState {
 class RateLimiter {
   private state: Map<string, RateLimitState> = new Map();
 
-  async checkRateLimit(provider: string, config: LLMConfig, estimatedTokens: number): Promise<boolean> {
+  async checkRateLimit(
+    provider: string,
+    config: LLMConfig,
+    estimatedTokens: number
+  ): Promise<boolean> {
     const now = Date.now();
     const key = `${provider}-${config.model}`;
-    
+
     if (!this.state.has(key)) {
       this.state.set(key, {
         requests: [],
@@ -97,28 +109,33 @@ class RateLimiter {
     }
 
     const state = this.state.get(key)!;
-    
+
     // Clean old requests (older than 1 minute)
-    state.requests = state.requests.filter(req => now - req.timestamp < 60000);
-    
+    state.requests = state.requests.filter((req) => now - req.timestamp < 60000);
+
     // Check RPM limit
     if (state.requests.length >= config.rateLimitRpm) {
       return false;
     }
-    
+
     // Check TPM limit
     const totalTokens = state.requests.reduce((sum, req) => sum + req.tokens, 0);
     if (totalTokens + estimatedTokens > config.rateLimitTpm) {
       return false;
     }
-    
+
     return true;
   }
 
-  async recordRequest(provider: string, config: LLMConfig, tokens: number, cost: number): Promise<void> {
+  async recordRequest(
+    provider: string,
+    config: LLMConfig,
+    tokens: number,
+    cost: number
+  ): Promise<void> {
     const key = `${provider}-${config.model}`;
     const state = this.state.get(key)!;
-    
+
     state.requests.push({
       timestamp: Date.now(),
       tokens,
@@ -160,7 +177,7 @@ abstract class BaseLLMProvider {
       // Calculate wait time based on oldest request
       const waitTime = Math.min(60000, 5000); // Max 1 minute, min 5 seconds
       console.log(`⏳ Rate limit reached, waiting ${waitTime}ms...`);
-      await new Promise(resolve => setTimeout(resolve, waitTime));
+      await new Promise((resolve) => setTimeout(resolve, waitTime));
       return this.waitForRateLimit(estimatedTokens);
     }
   }
@@ -183,7 +200,7 @@ export class OpenAIProvider extends BaseLLMProvider {
   async makeRequest(request: LLMRequest): Promise<LLMResponse> {
     const validatedRequest = LLMRequestSchema.parse(request);
     const estimatedTokens = this.estimateTokens(validatedRequest.prompt);
-    
+
     await this.waitForRateLimit(estimatedTokens);
 
     if (!this.config.apiKey) {
@@ -199,16 +216,20 @@ export class OpenAIProvider extends BaseLLMProvider {
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${this.config.apiKey}`,
+            Authorization: `Bearer ${this.config.apiKey}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             model: this.config.model,
             messages: [
-              ...(validatedRequest.systemPrompt ? [{
-                role: 'system',
-                content: validatedRequest.systemPrompt,
-              }] : []),
+              ...(validatedRequest.systemPrompt
+                ? [
+                    {
+                      role: 'system',
+                      content: validatedRequest.systemPrompt,
+                    },
+                  ]
+                : []),
               {
                 role: 'user',
                 content: validatedRequest.prompt,
@@ -225,7 +246,9 @@ export class OpenAIProvider extends BaseLLMProvider {
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(`OpenAI API error: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`);
+          throw new Error(
+            `OpenAI API error: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`
+          );
         }
 
         const data = await response.json();
@@ -257,16 +280,17 @@ export class OpenAIProvider extends BaseLLMProvider {
             retryCount,
           },
         });
-
       } catch (error) {
         retryCount++;
         if (retryCount > maxRetries) {
           throw error;
         }
-        
+
         const delay = Math.min(1000 * Math.pow(2, retryCount), 10000);
-        console.warn(`OpenAI request failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        console.warn(
+          `OpenAI request failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms...`
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
 
@@ -282,7 +306,7 @@ export class AnthropicProvider extends BaseLLMProvider {
   async makeRequest(request: LLMRequest): Promise<LLMResponse> {
     const validatedRequest = LLMRequestSchema.parse(request);
     const estimatedTokens = this.estimateTokens(validatedRequest.prompt);
-    
+
     await this.waitForRateLimit(estimatedTokens);
 
     if (!this.config.apiKey) {
@@ -306,18 +330,23 @@ export class AnthropicProvider extends BaseLLMProvider {
             model: this.config.model || 'claude-3-5-sonnet-20241022',
             max_tokens: this.config.maxTokens,
             temperature: this.config.temperature,
-            system: validatedRequest.systemPrompt || 'You are an expert code transformation assistant.',
-            messages: [{
-              role: 'user',
-              content: validatedRequest.prompt,
-            }],
+            system:
+              validatedRequest.systemPrompt || 'You are an expert code transformation assistant.',
+            messages: [
+              {
+                role: 'user',
+                content: validatedRequest.prompt,
+              },
+            ],
           }),
           signal: AbortSignal.timeout(this.config.timeout),
         });
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(`Anthropic API error: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`);
+          throw new Error(
+            `Anthropic API error: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`
+          );
         }
 
         const data = await response.json();
@@ -349,16 +378,17 @@ export class AnthropicProvider extends BaseLLMProvider {
             retryCount,
           },
         });
-
       } catch (error) {
         retryCount++;
         if (retryCount > maxRetries) {
           throw error;
         }
-        
+
         const delay = Math.min(1000 * Math.pow(2, retryCount), 10000);
-        console.warn(`Anthropic request failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        console.warn(
+          `Anthropic request failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms...`
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
 
@@ -374,7 +404,7 @@ export class OpenRouterProvider extends BaseLLMProvider {
   async makeRequest(request: LLMRequest): Promise<LLMResponse> {
     const validatedRequest = LLMRequestSchema.parse(request);
     const estimatedTokens = this.estimateTokens(validatedRequest.prompt);
-    
+
     await this.waitForRateLimit(estimatedTokens);
 
     if (!this.config.apiKey) {
@@ -391,7 +421,7 @@ export class OpenRouterProvider extends BaseLLMProvider {
         const response = await fetch(`${baseURL}/chat/completions`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${this.config.apiKey}`,
+            Authorization: `Bearer ${this.config.apiKey}`,
             'Content-Type': 'application/json',
             'HTTP-Referer': 'https://github.com/DavinciDreams/carmack',
             'X-Title': 'Carmack Coder',
@@ -399,10 +429,14 @@ export class OpenRouterProvider extends BaseLLMProvider {
           body: JSON.stringify({
             model: this.config.model || 'anthropic/claude-3.5-sonnet',
             messages: [
-              ...(validatedRequest.systemPrompt ? [{
-                role: 'system',
-                content: validatedRequest.systemPrompt,
-              }] : []),
+              ...(validatedRequest.systemPrompt
+                ? [
+                    {
+                      role: 'system',
+                      content: validatedRequest.systemPrompt,
+                    },
+                  ]
+                : []),
               {
                 role: 'user',
                 content: validatedRequest.prompt,
@@ -417,7 +451,9 @@ export class OpenRouterProvider extends BaseLLMProvider {
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(`OpenRouter API error: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`);
+          throw new Error(
+            `OpenRouter API error: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`
+          );
         }
 
         const data = await response.json();
@@ -449,16 +485,17 @@ export class OpenRouterProvider extends BaseLLMProvider {
             retryCount,
           },
         });
-
       } catch (error) {
         retryCount++;
         if (retryCount > maxRetries) {
           throw error;
         }
-        
+
         const delay = Math.min(1000 * Math.pow(2, retryCount), 10000);
-        console.warn(`OpenRouter request failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        console.warn(
+          `OpenRouter request failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms...`
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
 
@@ -474,7 +511,7 @@ export class OllamaProvider extends BaseLLMProvider {
   async makeRequest(request: LLMRequest): Promise<LLMResponse> {
     const validatedRequest = LLMRequestSchema.parse(request);
     const estimatedTokens = this.estimateTokens(validatedRequest.prompt);
-    
+
     const baseURL = this.config.baseURL || 'http://localhost:11434';
     const startTime = Date.now();
     let retryCount = 0;
@@ -483,12 +520,12 @@ export class OllamaProvider extends BaseLLMProvider {
     while (retryCount <= maxRetries) {
       try {
         // Check if Ollama is running
-        await fetch(`${baseURL}/api/tags`, { 
+        await fetch(`${baseURL}/api/tags`, {
           method: 'GET',
           signal: AbortSignal.timeout(5000),
         });
 
-        const prompt = validatedRequest.systemPrompt 
+        const prompt = validatedRequest.systemPrompt
           ? `${validatedRequest.systemPrompt}\n\n${validatedRequest.prompt}`
           : validatedRequest.prompt;
 
@@ -532,16 +569,19 @@ export class OllamaProvider extends BaseLLMProvider {
             retryCount,
           },
         });
-
       } catch (error) {
         retryCount++;
         if (retryCount > maxRetries) {
-          throw new Error(`Ollama connection failed: ${error instanceof Error ? error.message : String(error)}. Make sure Ollama is running at ${baseURL}`);
+          throw new Error(
+            `Ollama connection failed: ${error instanceof Error ? error.message : String(error)}. Make sure Ollama is running at ${baseURL}`
+          );
         }
-        
+
         const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
-        console.warn(`Ollama request failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        console.warn(
+          `Ollama request failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms...`
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
 
@@ -594,8 +634,8 @@ export class LLMProviderManager {
     config?: Partial<LLMConfig>
   ): Promise<LLMResponse> {
     const env = getEnvironmentConfig();
-    const providers = preferredProvider 
-      ? [preferredProvider, ...this.fallbackOrder.filter(p => p !== preferredProvider)]
+    const providers = preferredProvider
+      ? [preferredProvider, ...this.fallbackOrder.filter((p) => p !== preferredProvider)]
       : this.fallbackOrder;
 
     let lastError: Error | null = null;
@@ -611,11 +651,10 @@ export class LLMProviderManager {
 
         const provider = this.getProvider(providerName, config);
         console.log(`🤖 Attempting LLM request with ${providerName}...`);
-        
+
         const response = await provider.makeRequest(request);
         console.log(`✅ LLM request successful with ${providerName}`);
         return response;
-
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
         console.warn(`❌ LLM request failed with ${providerName}:`, lastError.message);
@@ -623,16 +662,18 @@ export class LLMProviderManager {
       }
     }
 
-    throw new Error(`All LLM providers failed. Last error: ${lastError?.message || 'Unknown error'}`);
+    throw new Error(
+      `All LLM providers failed. Last error: ${lastError?.message || 'Unknown error'}`
+    );
   }
 
   getTotalCost(): Record<string, number> {
     const costs: Record<string, number> = {};
-    
+
     for (const provider of this.fallbackOrder) {
       costs[provider] = globalRateLimiter.getTotalCost(provider, 'all-models');
     }
-    
+
     return costs;
   }
 }
@@ -649,9 +690,14 @@ export function getLLMProviderManager(): LLMProviderManager {
     globalProviderManager = new LLMProviderManager({
       provider: env.LLM_PROVIDER as LLMProvider,
       model: env.LLM_MODEL,
-      apiKey: env.LLM_PROVIDER === 'openai' ? env.OPENAI_API_KEY :
-              env.LLM_PROVIDER === 'anthropic' ? env.ANTHROPIC_API_KEY :
-              env.LLM_PROVIDER === 'openrouter' ? env.OPENROUTER_API_KEY : undefined,
+      apiKey:
+        env.LLM_PROVIDER === 'openai'
+          ? env.OPENAI_API_KEY
+          : env.LLM_PROVIDER === 'anthropic'
+            ? env.ANTHROPIC_API_KEY
+            : env.LLM_PROVIDER === 'openrouter'
+              ? env.OPENROUTER_API_KEY
+              : undefined,
       baseURL: env.LLM_PROVIDER === 'local' ? env.LOCAL_LLM_URL : undefined,
       temperature: env.LLM_TEMPERATURE,
       maxTokens: env.LLM_MAX_TOKENS,

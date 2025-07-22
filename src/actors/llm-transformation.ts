@@ -2,7 +2,8 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
 import type { AstPattern, ComplexityMetrics, TransformationRequest } from '../types.js';
-import { getLLMProviderManager, type LLMRequest, type LLMResponse } from '../providers/llm-providers.js';
+import { getLLMProviderManager } from '../providers/llm-providers.js';
+import type { LLMResponse as ProviderLLMResponse } from '../providers/llm-providers.js';
 
 /**
  * Comprehensive LLM Transformation System
@@ -47,8 +48,8 @@ const LLMTransformationInputSchema = z.object({
     .optional(),
 });
 
-// LLM Response schema
-const LLMResponseSchema = z.object({
+// LLM Response schema for internal transformation results
+const LLMTransformationResponseSchema = z.object({
   transformedCode: z.string(),
   explanation: z.string(),
   confidence: z.number().min(0).max(1),
@@ -67,29 +68,10 @@ const LLMTransformationResultSchema = z.object({
   warnings: z.array(z.string()).optional(),
 });
 
-// Define proper API response types
-interface OpenAIResponse {
-  choices?: Array<{
-    message?: {
-      content?: string;
-    };
-  }>;
-}
-
-interface AnthropicResponse {
-  content?: Array<{
-    text?: string;
-  }>;
-}
-
-interface LocalModelResponse {
-  response?: string;
-}
-
 export type LLMProvider = z.infer<typeof LLMProviderSchema>;
 export type LLMConfig = z.infer<typeof LLMConfigSchema>;
 export type LLMTransformationInput = z.infer<typeof LLMTransformationInputSchema>;
-export type LLMResponse = z.infer<typeof LLMResponseSchema>;
+export type LLMTransformationResponse = z.infer<typeof LLMTransformationResponseSchema>;
 export type LLMTransformationResult = z.infer<typeof LLMTransformationResultSchema>;
 
 /**
@@ -111,7 +93,7 @@ export const llmTransformationActor = fromPromise(
  */
 export class LLMTransformer {
   private config: LLMConfig;
-  private cache: Map<string, LLMResponse> = new Map();
+  private cache: Map<string, LLMTransformationResponse> = new Map();
   private tokenUsage = 0;
 
   constructor(config?: Partial<LLMConfig>) {
@@ -233,13 +215,6 @@ export class LLMTransformer {
       // Apply the transformation if it's different
       if (originalContent !== llmResponse.transformedCode) {
         console.log(`📝 Writing transformed code to ${filePath}`);
-        console.log(
-          `📏 Original length: ${originalContent.length}, New length: ${llmResponse.transformedCode.length}`
-        );
-        console.log(
-          `🔍 First 100 chars of transformed code: ${llmResponse.transformedCode.substring(0, 100)}...`
-        );
-
         console.log(
           `📏 Original length: ${originalContent.length}, New length: ${llmResponse.transformedCode.length}`
         );
@@ -439,7 +414,10 @@ Respond in this JSON format:
   /**
    * Call LLM API with retry logic
    */
-  private async callLLMAPI(prompt: string, originalCode: string): Promise<LLMResponse> {
+  private async callLLMAPI(
+    prompt: string,
+    originalCode: string
+  ): Promise<LLMTransformationResponse> {
     let lastError: Error | null = null;
 
     for (let attempt = 1; attempt <= this.config.retries; attempt++) {
@@ -452,7 +430,7 @@ Respond in this JSON format:
         console.log(`🔍 Raw API response: ${response.substring(0, 200)}...`);
         const parsedResponse = this.parseAPIResponse(response);
         console.log(`📋 Parsed response keys: ${Object.keys(parsedResponse)}`);
-        const validatedResponse = LLMResponseSchema.parse(parsedResponse);
+        const validatedResponse = LLMTransformationResponseSchema.parse(parsedResponse);
         console.log(
           `✅ Validated response with transformedCode length: ${validatedResponse.transformedCode.length}`
         );
@@ -479,192 +457,47 @@ Respond in this JSON format:
   }
 
   /**
-   * Make the actual API call based on provider
+   * Make the actual API call using the LLM provider manager
    */
   private async makeAPICall(prompt: string): Promise<string> {
-    switch (this.config.provider) {
-      case 'openai':
-        return await this.callOpenAI(prompt);
-      case 'anthropic':
-        return await this.callAnthropic(prompt);
-      case 'openrouter':
-        return await this.callOpenRouter(prompt);
-      case 'local':
-        return await this.callLocalModel(prompt);
-      default:
-        return await this.callMockAPI(prompt);
-    }
-  }
+    try {
+      const providerManager = getLLMProviderManager();
 
-  /**
-   * Call OpenAI API
-   */
-  private async callOpenAI(prompt: string): Promise<string> {
-    if (!this.config.apiKey) {
-      throw new Error('OpenAI API key not provided');
-    }
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${this.config.apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: this.config.model,
-        messages: [
-          {
-            role: 'system',
-            content:
-              'You are an expert code transformation assistant. Always respond with valid JSON.',
-          },
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-        max_tokens: this.config.maxTokens,
-        temperature: this.config.temperature,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
-    }
-
-    const data = (await response.json()) as OpenAIResponse;
-    return data.choices?.[0]?.message?.content || '';
-  }
-
-  /**
-   * Call Anthropic API
-   */
-  private async callAnthropic(prompt: string): Promise<string> {
-    if (!this.config.apiKey) {
-      throw new Error('Anthropic API key not provided');
-    }
-
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': this.config.apiKey,
-        'Content-Type': 'application/json',
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: this.config.model || 'claude-3-5-sonnet-20241022',
-        max_tokens: this.config.maxTokens,
-        temperature: this.config.temperature,
-        system:
-          'You are an expert code transformation assistant. Transform the provided code to improve its quality, maintainability, and follow modern best practices. Focus on: type safety, performance, readability, and modern JavaScript/TypeScript patterns.',
-        messages: [
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      let errorMessage = `Anthropic API error: ${response.status} ${response.statusText}`;
-      try {
-        const errorData = (await response.json()) as { error?: { message?: string } };
-        if (errorData.error) {
-          errorMessage += ` - ${errorData.error.message || JSON.stringify(errorData.error)}`;
-        }
-      } catch {
-        // If can't parse error JSON, use status text only
-      }
-      throw new Error(errorMessage);
-    }
-
-    const data = (await response.json()) as AnthropicResponse;
-    return data.content?.[0]?.text || '';
-  }
-
-  /**
-   * Call OpenRouter API (OpenAI-compatible)
-   */
-  private async callOpenRouter(prompt: string): Promise<string> {
-    if (!this.config.apiKey) {
-      throw new Error('OpenRouter API key not provided');
-    }
-
-    const baseURL = this.config.baseURL || 'https://openrouter.ai/api/v1';
-
-    const response = await fetch(`${baseURL}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${this.config.apiKey}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://github.com/DavinciDreams/carmack', // Optional: for better rate limits
-        'X-Title': 'Carmack Coder', // Optional: for analytics
-      },
-      body: JSON.stringify({
-        model: this.config.model || 'nvidia/llama-3.1-nemotron-ultra-253b-v1:free',
-        messages: [
-          {
-            role: 'system',
-            content:
-              'You are an expert code transformation assistant. Transform the provided code to improve its quality, maintainability, and follow modern best practices. Focus on: type safety, performance, readability, and modern JavaScript/TypeScript patterns.',
-          },
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-        max_tokens: this.config.maxTokens,
-        temperature: this.config.temperature,
-        stream: false,
-      }),
-    });
-
-    if (!response.ok) {
-      let errorMessage = `OpenRouter API error: ${response.status} ${response.statusText}`;
-      try {
-        const errorData = (await response.json()) as { error?: { message?: string } };
-        if (errorData.error) {
-          errorMessage += ` - ${errorData.error.message || JSON.stringify(errorData.error)}`;
-        }
-      } catch {
-        // If can't parse error JSON, use status text only
-      }
-      throw new Error(errorMessage);
-    }
-
-    const data = (await response.json()) as OpenAIResponse;
-    return data.choices?.[0]?.message?.content || '';
-  }
-
-  /**
-   * Call local model API
-   */
-  private async callLocalModel(prompt: string): Promise<string> {
-    const baseURL = this.config.baseURL || 'http://localhost:11434';
-
-    const response = await fetch(`${baseURL}/api/generate`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: this.config.model || 'codellama',
-        prompt: prompt,
-        stream: false,
-        options: {
-          temperature: this.config.temperature,
-          num_predict: this.config.maxTokens,
+      const request = {
+        prompt,
+        systemPrompt:
+          'You are an expert code transformation assistant. Transform the provided code to improve its quality, maintainability, and follow modern best practices. Always respond with valid JSON in the specified format.',
+        context: {
+          language: 'typescript',
+          complexity: 5,
+          codeLength: prompt.length,
         },
-      }),
-    });
+        options: {
+          stream: false,
+          jsonMode: true,
+          maxRetries: this.config.retries,
+          priority: 'normal' as const,
+        },
+      };
 
-    if (!response.ok) {
-      throw new Error(`Local model API error: ${response.status} ${response.statusText}`);
+      const response = await providerManager.makeRequestWithFallback(
+        request,
+        this.config.provider,
+        {
+          model: this.config.model,
+          maxTokens: this.config.maxTokens,
+          temperature: this.config.temperature,
+          timeout: this.config.timeout,
+          retries: this.config.retries,
+        }
+      );
+
+      return response.content;
+    } catch (error) {
+      // Fallback to mock API if provider fails
+      console.warn('LLM provider failed, falling back to mock API:', error);
+      return await this.callMockAPI(prompt);
     }
-
-    const data = (await response.json()) as LocalModelResponse;
-    return data.response || '';
   }
 
   /**
@@ -789,7 +622,10 @@ Respond in this JSON format:
   /**
    * Create fallback response when LLM fails
    */
-  private createFallbackResponse(originalCode: string, error: Error | null): LLMResponse {
+  private createFallbackResponse(
+    originalCode: string,
+    error: Error | null
+  ): LLMTransformationResponse {
     return {
       transformedCode: originalCode, // Return original code unchanged
       explanation: `LLM transformation failed: ${error?.message || 'Unknown error'}. Returning original code.`,

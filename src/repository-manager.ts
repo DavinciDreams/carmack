@@ -109,7 +109,7 @@ export class RepositoryManager {
   async acquireRepository(config: RepositoryConfig): Promise<RepositoryState> {
     const validatedConfig = RepositoryConfigSchema.parse(config);
     const repositoryId = crypto.randomUUID();
-    
+
     console.log(`🔄 Acquiring repository: ${validatedConfig.url}`);
 
     // Create initial repository state
@@ -147,7 +147,7 @@ export class RepositoryManager {
           description: `Repository acquisition: ${validatedConfig.url}`,
         },
       });
-      
+
       try {
         gitActorInstance.start();
         await new Promise((resolve, reject) => {
@@ -172,11 +172,12 @@ export class RepositoryManager {
 
       console.log(`✅ Repository acquired: ${repoState.id} (${analysis.analyzedFiles} files)`);
       return repoState;
-
     } catch (error) {
       repoState.status = 'error';
       console.error(`❌ Failed to acquire repository: ${error}`);
-      throw new Error(`Repository acquisition failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Repository acquisition failed: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -205,7 +206,9 @@ export class RepositoryManager {
       console.log(`✅ Repository released: ${repositoryId}`);
     } catch (error) {
       console.error(`❌ Failed to release repository ${repositoryId}:`, error);
-      throw new Error(`Repository release failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Repository release failed: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -230,7 +233,7 @@ export class RepositoryManager {
       if (existsSync('./patterns.json')) {
         const content = await readFile('./patterns.json', 'utf-8');
         const data = JSON.parse(content);
-        
+
         if (data.patterns && Array.isArray(data.patterns)) {
           for (const pattern of data.patterns) {
             try {
@@ -252,7 +255,7 @@ export class RepositoryManager {
           if (existsSync(filePath)) {
             const content = await readFile(filePath, 'utf-8');
             const data = JSON.parse(content);
-            
+
             if (data.patterns && Array.isArray(data.patterns)) {
               for (const pattern of data.patterns) {
                 try {
@@ -305,26 +308,31 @@ export class RepositoryManager {
       const { writeFile } = await import('node:fs/promises');
       await writeFile(
         './patterns-consolidated.json',
-        JSON.stringify({
-          patterns: consolidatedPatterns,
-          metadata: {
-            totalPatterns: consolidatedPatterns.length,
-            lastUpdated: new Date().toISOString(),
-            sources: {
-              basePatterns: sources?.patternFiles?.length || 0,
-              learnedPatterns: sources?.learnedPatterns?.length || 0,
-              repositoryPatterns: sources?.repositoryPatterns?.length || 0,
+        JSON.stringify(
+          {
+            patterns: consolidatedPatterns,
+            metadata: {
+              totalPatterns: consolidatedPatterns.length,
+              lastUpdated: new Date().toISOString(),
+              sources: {
+                basePatterns: sources?.patternFiles?.length || 0,
+                learnedPatterns: sources?.learnedPatterns?.length || 0,
+                repositoryPatterns: sources?.repositoryPatterns?.length || 0,
+              },
             },
           },
-        }, null, 2)
+          null,
+          2
+        )
       );
 
       console.log(`✅ Consolidated ${consolidatedPatterns.length} patterns`);
       return consolidatedPatterns;
-
     } catch (error) {
       console.error('❌ Pattern consolidation failed:', error);
-      throw new Error(`Pattern consolidation failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Pattern consolidation failed: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -755,7 +763,7 @@ export class RepositoryManager {
     try {
       // Discover target files for this pattern
       const targetFiles = await this.discoverTargetFiles(clonePath, pattern);
-      
+
       if (targetFiles.length === 0) {
         console.log(`   ⏭️ No target files found for pattern ${pattern.id}`);
         return null;
@@ -788,7 +796,6 @@ export class RepositoryManager {
 
       console.log(`   ✅ Pattern ${pattern.id} would apply to ${targetFiles.length} files`);
       return mockResult;
-
     } catch (error) {
       console.error(`❌ Failed to apply pattern ${pattern.id}:`, error);
       return null;
@@ -803,7 +810,7 @@ export class RepositoryManager {
     const { join, extname } = await import('node:path');
 
     const targetFiles: string[] = [];
-    
+
     // Map language to file extensions
     const languageExtensions: Record<string, string[]> = {
       typescript: ['.ts', '.tsx'],
@@ -888,7 +895,7 @@ export class RepositoryManager {
             validation: transformationResult.validation,
             startTime: transformationResult.startTime,
             endTime: transformationResult.endTime,
-            errors: transformationResult.errors.map(e => e.message),
+            errors: transformationResult.errors.map((e) => e.message),
             summary: transformationResult.summary,
           },
           patterns: transformationResult.request.patterns,
@@ -900,7 +907,8 @@ export class RepositoryManager {
             },
             environment: {
               performance: {
-                transformationTime: (transformationResult.endTime || Date.now()) - transformationResult.startTime,
+                transformationTime:
+                  (transformationResult.endTime || Date.now()) - transformationResult.startTime,
               },
               success: transformationResult.status === 'completed',
             },
@@ -909,7 +917,7 @@ export class RepositoryManager {
       });
 
       patternLearningActorInstance.start();
-      
+
       const learningResult = await new Promise<LearningResult>((resolve, reject) => {
         const timeout = setTimeout(() => {
           patternLearningActorInstance.stop();
@@ -929,7 +937,9 @@ export class RepositoryManager {
         });
       });
 
-      console.log(`   ✅ Pattern learning completed: ${learningResult.metrics.patternsDiscovered} patterns discovered`);
+      console.log(
+        `   ✅ Pattern learning completed: ${learningResult.metrics.patternsDiscovered} patterns discovered`
+      );
 
       // Update repository metadata with learned patterns
       const repoState = this.activeRepositories.get(repositoryId);
@@ -937,7 +947,6 @@ export class RepositoryManager {
         repoState.metadata.patterns.push(...learningResult.newPatterns);
         repoState.lastAccessed = Date.now();
       }
-
     } catch (error) {
       console.warn(`Failed to learn from transformation ${transformationResult.id}:`, error);
     }

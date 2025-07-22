@@ -733,7 +733,7 @@ export class DocumentationGenerator {
   ): Promise<string> {
     const css = this.generateDocumentationCSS();
     const searchScript = this.generateSearchScript();
-    
+
     let html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -783,10 +783,10 @@ export class DocumentationGenerator {
         html += `<div class="section">
                     <h3 class="section-title">⚡ Functions</h3>
                     <div class="items-grid">`;
-        
+
         for (const func of module.exports.functions) {
           if (!request.includePrivate && !func.isExported) continue;
-          
+
           html += `<div class="item-card function-card" data-searchable="${func.name.toLowerCase()} ${func.signature.toLowerCase()}">
                         <div class="item-header">
                             <h4 class="item-name">${func.name}</h4>
@@ -852,7 +852,11 @@ export class DocumentationGenerator {
    * Helper method to sanitize IDs for HTML
    */
   private sanitizeId(text: string): string {
-    return text.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    return text
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
   }
 
   /**
@@ -1258,7 +1262,7 @@ export class DocumentationGenerator {
    */
   private async generateArchitectureHTML(architecture: ArchitectureDoc): Promise<string> {
     const css = this.generateDocumentationCSS();
-    
+
     let html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1364,7 +1368,7 @@ export class DocumentationGenerator {
   private async generatePatternHTML(patterns: PatternDoc[]): Promise<string> {
     const css = this.generateDocumentationCSS();
     const searchScript = this.generateSearchScript();
-    
+
     let html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1387,11 +1391,11 @@ export class DocumentationGenerator {
         <main class="content">`;
 
     // Group patterns by category
-    const categories = [...new Set(patterns.map(p => p.category))];
+    const categories = [...new Set(patterns.map((p) => p.category))];
 
     for (const category of categories) {
-      const categoryPatterns = patterns.filter(p => p.category === category);
-      
+      const categoryPatterns = patterns.filter((p) => p.category === category);
+
       html += `<section class="category-section">
                 <h2 class="category-title">📁 ${category.charAt(0).toUpperCase() + category.slice(1)}</h2>
                 <div class="patterns-grid">`;
@@ -1472,7 +1476,7 @@ export class DocumentationGenerator {
     for (const filePath of sourceFiles) {
       try {
         const content = await this.readFile(filePath);
-        
+
         // Extract function calls and their context
         const functionCalls = await this.extractFunctionCalls(content, filePath);
         examples.push(...functionCalls);
@@ -1484,7 +1488,6 @@ export class DocumentationGenerator {
         // Extract import usage patterns
         const importUsages = await this.extractImportUsages(content, filePath);
         examples.push(...importUsages);
-
       } catch (error) {
         console.warn(`Failed to extract usage examples from ${filePath}:`, error);
       }
@@ -1523,7 +1526,7 @@ export class DocumentationGenerator {
 
     for (const [functionName, functionExamples] of groupedExamples) {
       markdown += `## ${functionName}\n\n`;
-      
+
       for (const example of functionExamples) {
         markdown += `### Usage in \`${example.filePath}\`\n\n`;
         markdown += `${example.context}\n\n`;
@@ -1544,7 +1547,7 @@ export class DocumentationGenerator {
   private async generateUsageHTML(examples: UsageExample[]): Promise<string> {
     const css = this.generateDocumentationCSS();
     const searchScript = this.generateSearchScript();
-    
+
     let html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1623,7 +1626,7 @@ export class DocumentationGenerator {
     try {
       // Try to get Git history for each file
       const { execSync } = await import('node:child_process');
-      
+
       for (const filePath of sourceFiles) {
         try {
           // Get recent commits for this file
@@ -1632,27 +1635,37 @@ export class DocumentationGenerator {
             { encoding: 'utf-8', cwd: process.cwd() }
           );
 
-          const commits = gitLog.trim().split('\n').filter(line => line.trim());
-          
-          for (const commit of commits.slice(0, 10)) { // Last 10 commits
+          const commits = gitLog
+            .trim()
+            .split('\n')
+            .filter((line) => line.trim());
+
+          for (const commit of commits.slice(0, 10)) {
+            // Last 10 commits
             const [hash, ...messageParts] = commit.split(' ');
             const message = messageParts.join(' ');
-            
+
             // Get commit details
             try {
               const commitDetails = execSync(
                 `git show --stat --format="%ai" ${hash} -- "${filePath}"`,
                 { encoding: 'utf-8', cwd: process.cwd() }
               );
-              
+
               const lines = commitDetails.split('\n');
               const timestamp = lines[0] || new Date().toISOString();
-              
+
               // Determine change type from commit message
               let changeType: 'added' | 'modified' | 'deleted' = 'modified';
-              if (message.toLowerCase().includes('add') || message.toLowerCase().includes('create')) {
+              if (
+                message.toLowerCase().includes('add') ||
+                message.toLowerCase().includes('create')
+              ) {
                 changeType = 'added';
-              } else if (message.toLowerCase().includes('delete') || message.toLowerCase().includes('remove')) {
+              } else if (
+                message.toLowerCase().includes('delete') ||
+                message.toLowerCase().includes('remove')
+              ) {
                 changeType = 'deleted';
               }
 
@@ -1673,10 +1686,10 @@ export class DocumentationGenerator {
       }
     } catch (error) {
       console.warn('Git not available, using file modification times');
-      
+
       // Fallback: use file modification times
       const { stat } = await import('node:fs/promises');
-      
+
       for (const filePath of sourceFiles) {
         try {
           const stats = await stat(filePath);
@@ -1693,7 +1706,9 @@ export class DocumentationGenerator {
     }
 
     // Sort by timestamp (newest first)
-    return changes.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    return changes.sort(
+      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
   }
 
   /**
@@ -1722,11 +1737,11 @@ export class DocumentationGenerator {
 
     for (const [date, dayChanges] of changesByDate) {
       markdown += `## ${date}\n\n`;
-      
+
       // Group by change type
-      const added = dayChanges.filter(c => c.changeType === 'added');
-      const modified = dayChanges.filter(c => c.changeType === 'modified');
-      const deleted = dayChanges.filter(c => c.changeType === 'deleted');
+      const added = dayChanges.filter((c) => c.changeType === 'added');
+      const modified = dayChanges.filter((c) => c.changeType === 'modified');
+      const deleted = dayChanges.filter((c) => c.changeType === 'deleted');
 
       if (added.length > 0) {
         markdown += '### ✅ Added\n\n';
@@ -1763,7 +1778,7 @@ export class DocumentationGenerator {
    */
   private async generateChangelogHTML(changes: ChangeAnalysis[]): Promise<string> {
     const css = this.generateDocumentationCSS();
-    
+
     let html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1804,9 +1819,9 @@ export class DocumentationGenerator {
                     <h2 class="date-title">📅 ${date}</h2>`;
 
         // Group by change type
-        const added = dayChanges.filter(c => c.changeType === 'added');
-        const modified = dayChanges.filter(c => c.changeType === 'modified');
-        const deleted = dayChanges.filter(c => c.changeType === 'deleted');
+        const added = dayChanges.filter((c) => c.changeType === 'added');
+        const modified = dayChanges.filter((c) => c.changeType === 'modified');
+        const deleted = dayChanges.filter((c) => c.changeType === 'deleted');
 
         if (added.length > 0) {
           html += `<div class="change-group added">
@@ -1859,14 +1874,14 @@ export class DocumentationGenerator {
 
     // Simple regex patterns for function calls
     const functionCallPattern = /(\w+)\s*\(/g;
-    
+
     let match: RegExpExecArray | null;
     // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex exec pattern
     while ((match = functionCallPattern.exec(content)) !== null) {
       const functionName = match[1];
       const lineIndex = content.substring(0, match.index).split('\n').length - 1;
       const line = lines[lineIndex];
-      
+
       if (line && !line.trim().startsWith('//') && !line.trim().startsWith('*') && functionName) {
         examples.push({
           filePath,
@@ -1889,14 +1904,14 @@ export class DocumentationGenerator {
 
     // Pattern for 'new ClassName()'
     const classInstantiationPattern = /new\s+(\w+)\s*\(/g;
-    
+
     let match: RegExpExecArray | null;
     // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex exec pattern
     while ((match = classInstantiationPattern.exec(content)) !== null) {
       const className = match[1];
       const lineIndex = content.substring(0, match.index).split('\n').length - 1;
       const line = lines[lineIndex];
-      
+
       if (line && !line.trim().startsWith('//') && !line.trim().startsWith('*') && className) {
         examples.push({
           filePath,
@@ -1918,15 +1933,15 @@ export class DocumentationGenerator {
 
     // Pattern for import statements
     const importPattern = /import\s+(?:\{([^}]+)\}|(\w+))\s+from\s+['"]([^'"]+)['"]/g;
-    
+
     let match: RegExpExecArray | null;
     // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex exec pattern
     while ((match = importPattern.exec(content)) !== null) {
       const [fullMatch, namedImports, defaultImport, module] = match;
       const lineIndex = content.substring(0, match.index).split('\n').length - 1;
-      
+
       const importName = namedImports || defaultImport || module;
-      
+
       if (importName) {
         examples.push({
           filePath,

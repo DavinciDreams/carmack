@@ -2,7 +2,7 @@ import type { EffectivenessMetrics, PatternFeatureVector, Vector } from './types
 
 /**
  * Statistical Analysis Tools for Pattern Metrics
- * 
+ *
  * This module provides real statistical algorithms for analyzing pattern effectiveness,
  * performance metrics, and learning insights in the Carmack Coder system.
  */
@@ -125,7 +125,7 @@ export class StatisticalAnalyzer {
    */
   static calculateMode(data: number[]): number[] {
     const frequency = new Map<number, number>();
-    
+
     for (const value of data) {
       frequency.set(value, (frequency.get(value) || 0) + 1);
     }
@@ -141,7 +141,7 @@ export class StatisticalAnalyzer {
    */
   static calculateVariance(data: number[], mean?: number): number {
     const avg = mean ?? this.calculateMean(data);
-    const squaredDiffs = data.map(value => Math.pow(value - avg, 2));
+    const squaredDiffs = data.map((value) => Math.pow(value - avg, 2));
     return this.calculateMean(squaredDiffs);
   }
 
@@ -150,11 +150,11 @@ export class StatisticalAnalyzer {
    */
   static calculateQuartiles(sortedData: number[]): StatisticalSummary['quartiles'] {
     const n = sortedData.length;
-    
+
     const q1Index = Math.floor(n * 0.25);
     const q2Index = Math.floor(n * 0.5);
     const q3Index = Math.floor(n * 0.75);
-    
+
     const q1 = sortedData[q1Index] ?? 0;
     const q2 = sortedData[q2Index] ?? 0;
     const q3 = sortedData[q3Index] ?? 0;
@@ -168,12 +168,12 @@ export class StatisticalAnalyzer {
    */
   static calculateSkewness(data: number[], mean: number, stdDev: number): number {
     if (stdDev === 0) return 0;
-    
+
     const n = data.length;
     const skewSum = data.reduce((sum, value) => {
       return sum + Math.pow((value - mean) / stdDev, 3);
     }, 0);
-    
+
     return (n / ((n - 1) * (n - 2))) * skewSum;
   }
 
@@ -182,15 +182,15 @@ export class StatisticalAnalyzer {
    */
   static calculateKurtosis(data: number[], mean: number, stdDev: number): number {
     if (stdDev === 0) return 0;
-    
+
     const n = data.length;
     const kurtSum = data.reduce((sum, value) => {
       return sum + Math.pow((value - mean) / stdDev, 4);
     }, 0);
-    
-    const kurtosis = (n * (n + 1) / ((n - 1) * (n - 2) * (n - 3))) * kurtSum;
-    const correction = 3 * Math.pow(n - 1, 2) / ((n - 2) * (n - 3));
-    
+
+    const kurtosis = ((n * (n + 1)) / ((n - 1) * (n - 2) * (n - 3))) * kurtSum;
+    const correction = (3 * Math.pow(n - 1, 2)) / ((n - 2) * (n - 3));
+
     return kurtosis - correction; // Excess kurtosis
   }
 
@@ -201,8 +201,8 @@ export class StatisticalAnalyzer {
     const { q1, q3, iqr } = quartiles;
     const lowerBound = q1 - 1.5 * iqr;
     const upperBound = q3 + 1.5 * iqr;
-    
-    return data.filter(value => value < lowerBound || value > upperBound);
+
+    return data.filter((value) => value < lowerBound || value > upperBound);
   }
 
   /**
@@ -220,16 +220,16 @@ export class StatisticalAnalyzer {
 
     // Pearson correlation
     const pearsonCorrelation = this.calculatePearsonCorrelation(x, y);
-    
+
     // Spearman correlation (rank-based)
     const spearmanCorrelation = this.calculateSpearmanCorrelation(x, y);
-    
+
     // Kendall's Tau
     const kendallTau = this.calculateKendallTau(x, y);
-    
+
     // Statistical significance (t-test for Pearson)
     const significance = this.calculateCorrelationSignificance(pearsonCorrelation, n);
-    
+
     // Confidence interval for Pearson correlation
     const confidenceInterval = this.calculateCorrelationConfidenceInterval(pearsonCorrelation, n);
 
@@ -249,20 +249,20 @@ export class StatisticalAnalyzer {
     const n = x.length;
     const meanX = this.calculateMean(x);
     const meanY = this.calculateMean(y);
-    
+
     let numerator = 0;
     let sumXSquared = 0;
     let sumYSquared = 0;
-    
+
     for (let i = 0; i < n; i++) {
       const deltaX = (x[i] ?? 0) - meanX;
       const deltaY = (y[i] ?? 0) - meanY;
-      
+
       numerator += deltaX * deltaY;
       sumXSquared += deltaX * deltaX;
       sumYSquared += deltaY * deltaY;
     }
-    
+
     const denominator = Math.sqrt(sumXSquared * sumYSquared);
     return denominator === 0 ? 0 : numerator / denominator;
   }
@@ -282,7 +282,7 @@ export class StatisticalAnalyzer {
   static calculateRanks(data: number[]): number[] {
     const indexed = data.map((value, index) => ({ value, index }));
     indexed.sort((a, b) => a.value - b.value);
-    
+
     const ranks = new Array(data.length);
     for (let i = 0; i < indexed.length; i++) {
       const item = indexed[i];
@@ -290,7 +290,7 @@ export class StatisticalAnalyzer {
         ranks[item.index] = i + 1;
       }
     }
-    
+
     return ranks;
   }
 
@@ -301,12 +301,12 @@ export class StatisticalAnalyzer {
     const n = x.length;
     let concordant = 0;
     let discordant = 0;
-    
+
     for (let i = 0; i < n - 1; i++) {
       for (let j = i + 1; j < n; j++) {
         const signX = Math.sign((x[j] ?? 0) - (x[i] ?? 0));
         const signY = Math.sign((y[j] ?? 0) - (y[i] ?? 0));
-        
+
         if (signX * signY > 0) {
           concordant++;
         } else if (signX * signY < 0) {
@@ -314,7 +314,7 @@ export class StatisticalAnalyzer {
         }
       }
     }
-    
+
     const totalPairs = (n * (n - 1)) / 2;
     return (concordant - discordant) / totalPairs;
   }
@@ -324,10 +324,10 @@ export class StatisticalAnalyzer {
    */
   static calculateCorrelationSignificance(correlation: number, n: number): number {
     if (n <= 2) return 1;
-    
+
     const t = correlation * Math.sqrt((n - 2) / (1 - correlation * correlation));
     const df = n - 2;
-    
+
     // Approximate p-value using t-distribution
     return this.tTestPValue(Math.abs(t), df);
   }
@@ -336,26 +336,26 @@ export class StatisticalAnalyzer {
    * Calculate confidence interval for correlation
    */
   static calculateCorrelationConfidenceInterval(
-    correlation: number, 
-    n: number, 
+    correlation: number,
+    n: number,
     confidence: number = 0.95
   ): CorrelationAnalysis['confidenceInterval'] {
     if (n <= 3) {
       return { lower: -1, upper: 1, confidence };
     }
-    
+
     // Fisher's z-transformation
     const z = 0.5 * Math.log((1 + correlation) / (1 - correlation));
     const se = 1 / Math.sqrt(n - 3);
     const zCritical = this.getZCritical(confidence);
-    
+
     const zLower = z - zCritical * se;
     const zUpper = z + zCritical * se;
-    
+
     // Transform back to correlation scale
     const lower = (Math.exp(2 * zLower) - 1) / (Math.exp(2 * zLower) + 1);
     const upper = (Math.exp(2 * zUpper) - 1) / (Math.exp(2 * zUpper) + 1);
-    
+
     return { lower, upper, confidence };
   }
 
@@ -365,21 +365,21 @@ export class StatisticalAnalyzer {
   static analyzeTrend(data: number[], timePoints?: number[]): TrendAnalysis {
     const n = data.length;
     const x = timePoints || Array.from({ length: n }, (_, i) => i);
-    
+
     if (x.length !== n) {
       throw new Error('Time points must match data length');
     }
 
     // Linear regression for trend
     const { slope, rSquared } = this.calculateLinearRegression(x, data);
-    
+
     // Determine trend direction
     const trend = this.determineTrend(slope, rSquared);
-    
+
     // Simple forecast (linear extrapolation)
     const forecastSteps = Math.min(5, Math.floor(n * 0.2)); // Forecast 20% ahead or 5 steps
     const forecast = this.generateForecast(x, data, slope, forecastSteps);
-    
+
     // Basic seasonality detection
     const seasonality = this.detectSeasonality(data);
 
@@ -395,36 +395,39 @@ export class StatisticalAnalyzer {
   /**
    * Calculate linear regression
    */
-  static calculateLinearRegression(x: number[], y: number[]): { slope: number; intercept: number; rSquared: number } {
+  static calculateLinearRegression(
+    x: number[],
+    y: number[]
+  ): { slope: number; intercept: number; rSquared: number } {
     const n = x.length;
     const meanX = this.calculateMean(x);
     const meanY = this.calculateMean(y);
-    
+
     let numerator = 0;
     let denominator = 0;
-    
+
     for (let i = 0; i < n; i++) {
       const deltaX = (x[i] ?? 0) - meanX;
       const deltaY = (y[i] ?? 0) - meanY;
       numerator += deltaX * deltaY;
       denominator += deltaX * deltaX;
     }
-    
+
     const slope = denominator === 0 ? 0 : numerator / denominator;
     const intercept = meanY - slope * meanX;
-    
+
     // Calculate R-squared
     let ssRes = 0; // Sum of squares of residuals
     let ssTot = 0; // Total sum of squares
-    
+
     for (let i = 0; i < n; i++) {
       const predicted = slope * (x[i] ?? 0) + intercept;
       ssRes += Math.pow((y[i] ?? 0) - predicted, 2);
       ssTot += Math.pow((y[i] ?? 0) - meanY, 2);
     }
-    
-    const rSquared = ssTot === 0 ? 1 : 1 - (ssRes / ssTot);
-    
+
+    const rSquared = ssTot === 0 ? 1 : 1 - ssRes / ssTot;
+
     return { slope, intercept, rSquared };
   }
 
@@ -434,15 +437,15 @@ export class StatisticalAnalyzer {
   static determineTrend(slope: number, rSquared: number): TrendAnalysis['trend'] {
     const slopeThreshold = 0.01;
     const rSquaredThreshold = 0.3;
-    
+
     if (rSquared < rSquaredThreshold) {
       return 'volatile';
     }
-    
+
     if (Math.abs(slope) < slopeThreshold) {
       return 'stable';
     }
-    
+
     return slope > 0 ? 'increasing' : 'decreasing';
   }
 
@@ -454,14 +457,14 @@ export class StatisticalAnalyzer {
     const meanY = this.calculateMean(y);
     const meanX = this.calculateMean(x);
     const intercept = meanY - slope * meanX;
-    
+
     const forecast: number[] = [];
     for (let i = 1; i <= steps; i++) {
       const futureX = lastX + i;
       const futureY = slope * futureX + intercept;
       forecast.push(futureY);
     }
-    
+
     return forecast;
   }
 
@@ -473,11 +476,11 @@ export class StatisticalAnalyzer {
     if (n < 12) {
       return { detected: false };
     }
-    
+
     const maxLag = Math.min(Math.floor(n / 3), 24);
     let maxCorrelation = 0;
     let bestPeriod = 0;
-    
+
     for (let lag = 2; lag <= maxLag; lag++) {
       const correlation = this.calculateAutocorrelation(data, lag);
       if (correlation > maxCorrelation) {
@@ -485,7 +488,7 @@ export class StatisticalAnalyzer {
         bestPeriod = lag;
       }
     }
-    
+
     const threshold = 0.3; // Minimum correlation for seasonality detection
     if (maxCorrelation > threshold) {
       return {
@@ -494,7 +497,7 @@ export class StatisticalAnalyzer {
         strength: maxCorrelation,
       };
     }
-    
+
     return { detected: false };
   }
 
@@ -504,10 +507,10 @@ export class StatisticalAnalyzer {
   static calculateAutocorrelation(data: number[], lag: number): number {
     const n = data.length;
     if (lag >= n) return 0;
-    
+
     const x = data.slice(0, n - lag);
     const y = data.slice(lag);
-    
+
     return Math.abs(this.calculatePearsonCorrelation(x, y));
   }
 
@@ -527,11 +530,11 @@ export class StatisticalAnalyzer {
   static getZCritical(confidence: number): number {
     // Common z-values for confidence intervals
     const zValues: Record<number, number> = {
-      0.90: 1.645,
+      0.9: 1.645,
       0.95: 1.96,
       0.99: 2.576,
     };
-    
+
     return zValues[confidence] || 1.96; // Default to 95%
   }
 
@@ -542,7 +545,7 @@ export class StatisticalAnalyzer {
     // Very simplified approximation - in production, use a proper implementation
     if (x <= 0) return 0;
     if (x >= 1) return 1;
-    
+
     // Rough approximation for common cases
     return Math.pow(x, a) * Math.pow(1 - x, b);
   }
@@ -567,10 +570,10 @@ export class PatternStatistics {
       throw new Error('No metrics provided for analysis');
     }
 
-    const successRates = metrics.map(m => m.successRate);
-    const performances = metrics.map(m => m.averageExecutionTime);
-    const complexityReductions = metrics.map(m => m.complexityReduction);
-    const userSatisfactions = metrics.map(m => m.userSatisfaction);
+    const successRates = metrics.map((m) => m.successRate);
+    const performances = metrics.map((m) => m.averageExecutionTime);
+    const complexityReductions = metrics.map((m) => m.complexityReduction);
+    const userSatisfactions = metrics.map((m) => m.userSatisfaction);
 
     // Statistical summary of success rates
     const summary = StatisticalAnalyzer.calculateSummary(successRates);
@@ -622,12 +625,16 @@ export class PatternStatistics {
 
     // Variability insights
     if (summary.standardDeviation > 0.3) {
-      insights.push('High variability in pattern effectiveness suggests need for pattern optimization');
+      insights.push(
+        'High variability in pattern effectiveness suggests need for pattern optimization'
+      );
     }
 
     // Performance correlation insights
     if (correlations.successRateVsPerformance.pearsonCorrelation < -0.5) {
-      insights.push('Strong negative correlation between success rate and execution time - faster patterns tend to be more successful');
+      insights.push(
+        'Strong negative correlation between success rate and execution time - faster patterns tend to be more successful'
+      );
     }
 
     // Complexity insights
@@ -637,22 +644,26 @@ export class PatternStatistics {
 
     // Outlier insights
     if (summary.outliers.length > 0) {
-      insights.push(`${summary.outliers.length} patterns show unusual effectiveness metrics and may need review`);
+      insights.push(
+        `${summary.outliers.length} patterns show unusual effectiveness metrics and may need review`
+      );
     }
 
     // Trend insights
     const recentMetrics = metrics
       .sort((a, b) => b.lastUpdated - a.lastUpdated)
       .slice(0, Math.min(10, metrics.length));
-    
+
     if (recentMetrics.length > 3) {
-      const recentSuccessRates = recentMetrics.map(m => m.successRate);
+      const recentSuccessRates = recentMetrics.map((m) => m.successRate);
       const trend = StatisticalAnalyzer.analyzeTrend(recentSuccessRates);
-      
+
       if (trend.trend === 'increasing') {
         insights.push('Recent pattern effectiveness shows improving trend');
       } else if (trend.trend === 'decreasing') {
-        insights.push('Recent pattern effectiveness shows declining trend - investigation recommended');
+        insights.push(
+          'Recent pattern effectiveness shows declining trend - investigation recommended'
+        );
       }
     }
 
@@ -680,7 +691,7 @@ export class PatternStatistics {
 
     // Analyze each feature dimension
     for (let dim = 0; dim < dimensionality; dim++) {
-      const featureValues = patterns.map(p => p.features[dim] ?? 0);
+      const featureValues = patterns.map((p) => p.features[dim] ?? 0);
       featureStatistics.push(StatisticalAnalyzer.calculateSummary(featureValues));
     }
 
@@ -705,22 +716,24 @@ export class PatternStatistics {
     explained_variance: number[];
     cumulative_variance: number[];
   } {
-    const features = patterns.map(p => p.features);
+    const features = patterns.map((p) => p.features);
     const dimensionality = features[0]?.length ?? 0;
-    
+
     // Calculate variance for each dimension as a simple approximation
     const explained_variance: number[] = [];
-    
+
     for (let dim = 0; dim < dimensionality; dim++) {
-      const values = features.map(f => f[dim] ?? 0);
+      const values = features.map((f) => f[dim] ?? 0);
       const variance = StatisticalAnalyzer.calculateVariance(values);
       explained_variance.push(variance);
     }
-    
+
     // Normalize to get explained variance ratios
     const totalVariance = explained_variance.reduce((sum, v) => sum + v, 0);
-    const normalizedVariance = explained_variance.map(v => totalVariance > 0 ? v / totalVariance : 0);
-    
+    const normalizedVariance = explained_variance.map((v) =>
+      totalVariance > 0 ? v / totalVariance : 0
+    );
+
     // Calculate cumulative variance
     const cumulative_variance: number[] = [];
     let cumSum = 0;
@@ -728,7 +741,7 @@ export class PatternStatistics {
       cumSum += variance;
       cumulative_variance.push(cumSum);
     }
-    
+
     return {
       explained_variance: normalizedVariance,
       cumulative_variance,
@@ -745,23 +758,27 @@ export class PatternStatistics {
     const insights: string[] = [];
 
     // Dimensionality insights
-    const effectiveDimensions = pca.cumulative_variance.findIndex(cv => cv >= 0.95) + 1;
+    const effectiveDimensions = pca.cumulative_variance.findIndex((cv) => cv >= 0.95) + 1;
     if (effectiveDimensions < featureStats.length) {
-      insights.push(`${effectiveDimensions} dimensions explain 95% of variance - dimensionality reduction possible`);
+      insights.push(
+        `${effectiveDimensions} dimensions explain 95% of variance - dimensionality reduction possible`
+      );
     }
 
     // Feature distribution insights
     const highVarianceFeatures = featureStats
       .map((stat, index) => ({ index, variance: stat.variance }))
-      .filter(f => f.variance > featureStats.reduce((sum, s) => sum + s.variance, 0) / featureStats.length)
-      .length;
+      .filter(
+        (f) =>
+          f.variance > featureStats.reduce((sum, s) => sum + s.variance, 0) / featureStats.length
+      ).length;
 
     if (highVarianceFeatures > featureStats.length * 0.3) {
       insights.push('High feature variance suggests diverse pattern characteristics');
     }
 
     // Skewness insights
-    const skewedFeatures = featureStats.filter(stat => Math.abs(stat.skewness) > 1).length;
+    const skewedFeatures = featureStats.filter((stat) => Math.abs(stat.skewness) > 1).length;
     if (skewedFeatures > featureStats.length * 0.2) {
       insights.push('Some features show significant skewness - consider normalization');
     }

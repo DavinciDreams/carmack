@@ -1,43 +1,42 @@
 import { z } from 'zod';
-import type {
-  RLState,
-  RLAction,
-  RLReward,
-  EffectivenessMetrics,
-} from './types.ts';
+import type { RLState, RLAction, RLReward, EffectivenessMetrics } from './types.ts';
 
 /**
  * Reinforcement Learning System for Pattern Optimization
- * 
+ *
  * Implements Q-learning and policy gradient methods to optimize pattern selection
  * and recommendation based on historical effectiveness and context.
  */
 
 // RL Configuration Schema
-const RLConfigSchema = z.object({
-  algorithm: z.enum(['q-learning', 'policy-gradient', 'actor-critic']).default('q-learning'),
-  learningRate: z.number().min(0).max(1).default(0.1),
-  discountFactor: z.number().min(0).max(1).default(0.9),
-  explorationRate: z.number().min(0).max(1).default(0.1),
-  explorationDecay: z.number().min(0).max(1).default(0.995),
-  minExplorationRate: z.number().min(0).max(1).default(0.01),
-  rewardFunction: z.enum(['linear', 'exponential', 'logarithmic']).default('linear'),
-  memorySize: z.number().int().positive().default(10000),
-  batchSize: z.number().int().positive().default(32),
-  updateFrequency: z.number().int().positive().default(100),
-}).strict();
+const RLConfigSchema = z
+  .object({
+    algorithm: z.enum(['q-learning', 'policy-gradient', 'actor-critic']).default('q-learning'),
+    learningRate: z.number().min(0).max(1).default(0.1),
+    discountFactor: z.number().min(0).max(1).default(0.9),
+    explorationRate: z.number().min(0).max(1).default(0.1),
+    explorationDecay: z.number().min(0).max(1).default(0.995),
+    minExplorationRate: z.number().min(0).max(1).default(0.01),
+    rewardFunction: z.enum(['linear', 'exponential', 'logarithmic']).default('linear'),
+    memorySize: z.number().int().positive().default(10000),
+    batchSize: z.number().int().positive().default(32),
+    updateFrequency: z.number().int().positive().default(100),
+  })
+  .strict();
 
 export type RLConfig = z.infer<typeof RLConfigSchema>;
 
 // Experience replay memory entry
-const ExperienceSchema = z.object({
-  state: z.any(), // RLState but allowing flexibility
-  action: z.any(), // RLAction
-  reward: z.number(),
-  nextState: z.any(), // RLState
-  done: z.boolean(),
-  timestamp: z.number(),
-}).strict();
+const ExperienceSchema = z
+  .object({
+    state: z.any(), // RLState but allowing flexibility
+    action: z.any(), // RLAction
+    reward: z.number(),
+    nextState: z.any(), // RLState
+    done: z.boolean(),
+    timestamp: z.number(),
+  })
+  .strict();
 
 export type Experience = z.infer<typeof ExperienceSchema>;
 
@@ -60,7 +59,7 @@ export class QLearningAgent {
    */
   selectAction(state: RLState): RLAction {
     const stateKey = this.getStateKey(state);
-    
+
     // Exploration vs exploitation
     if (Math.random() < this.explorationRate) {
       // Explore: select random action
@@ -158,7 +157,7 @@ export class QLearningAgent {
     for (const action of availableActions) {
       const actionKey = this.getActionKey({ action, confidence: 1.0 });
       const value = stateActions.get(actionKey) || 0;
-      
+
       if (value > bestValue) {
         bestValue = value;
         bestAction = action;
@@ -195,7 +194,7 @@ export class QLearningAgent {
     const data = {
       qTable: Array.from(this.qTable.entries()).map(([state, actions]) => [
         state,
-        Array.from(actions.entries())
+        Array.from(actions.entries()),
       ]),
       config: this.config,
       explorationRate: this.explorationRate,
@@ -212,7 +211,7 @@ export class QLearningAgent {
       this.qTable = new Map(
         parsed.qTable.map(([state, actions]: [string, [string, number][]]) => [
           state,
-          new Map(actions)
+          new Map(actions),
         ])
       );
       this.explorationRate = parsed.explorationRate || this.config.explorationRate;
@@ -277,15 +276,16 @@ export class PolicyGradientAgent {
     // Normalize rewards
     const mean = discountedRewards.reduce((sum, r) => sum + r, 0) / discountedRewards.length;
     const std = Math.sqrt(
-      discountedRewards.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / discountedRewards.length
+      discountedRewards.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) /
+        discountedRewards.length
     );
-    const normalizedRewards = discountedRewards.map(r => (r - mean) / (std + 1e-8));
+    const normalizedRewards = discountedRewards.map((r) => (r - mean) / (std + 1e-8));
 
     // Update policy parameters
     for (let i = 0; i < this.episodeHistory.length; i++) {
       const experience = this.episodeHistory[i]!;
       const advantage = normalizedRewards[i]!;
-      
+
       this.updatePolicyParameters(experience.state, experience.action, advantage);
     }
 
@@ -299,7 +299,8 @@ export class PolicyGradientAgent {
 
     // Calculate discounted rewards backwards
     for (let i = this.episodeHistory.length - 1; i >= 0; i--) {
-      discountedReward = this.episodeHistory[i]!.reward + this.config.discountFactor * discountedReward;
+      discountedReward =
+        this.episodeHistory[i]!.reward + this.config.discountFactor * discountedReward;
       rewards.unshift(discountedReward);
     }
 
@@ -322,9 +323,12 @@ export class PolicyGradientAgent {
     statePolicy.set(actionKey, currentLogit + gradient);
   }
 
-  private getActionProbabilities(stateKey: string, availableActions: RLAction['action'][]): Map<string, number> {
+  private getActionProbabilities(
+    stateKey: string,
+    availableActions: RLAction['action'][]
+  ): Map<string, number> {
     const probs = new Map<string, number>();
-    
+
     if (!this.policy.has(stateKey)) {
       // Uniform distribution for unseen states
       const uniformProb = 1.0 / availableActions.length;
@@ -335,11 +339,11 @@ export class PolicyGradientAgent {
     }
 
     const statePolicy = this.policy.get(stateKey)!;
-    
+
     // Convert logits to probabilities using softmax
-    const logits = availableActions.map(action => statePolicy.get(action) || 0);
+    const logits = availableActions.map((action) => statePolicy.get(action) || 0);
     const maxLogit = Math.max(...logits);
-    const expLogits = logits.map(logit => Math.exp(logit - maxLogit));
+    const expLogits = logits.map((logit) => Math.exp(logit - maxLogit));
     const sumExp = expLogits.reduce((sum, exp) => sum + exp, 0);
 
     for (let i = 0; i < availableActions.length; i++) {
@@ -351,7 +355,10 @@ export class PolicyGradientAgent {
     return probs;
   }
 
-  private sampleAction(actionProbs: Map<string, number>, availableActions: RLAction['action'][]): RLAction {
+  private sampleAction(
+    actionProbs: Map<string, number>,
+    availableActions: RLAction['action'][]
+  ): RLAction {
     const random = Math.random();
     let cumulative = 0;
 
@@ -478,8 +485,8 @@ export class RewardCalculator {
 
     // Apply context-based weights
     const weights = this.getContextWeights(context);
-    
-    const immediate = 
+
+    const immediate =
       components.successRateImprovement * weights.success +
       components.performanceGain * weights.performance +
       components.userSatisfactionDelta * weights.satisfaction +
@@ -495,22 +502,35 @@ export class RewardCalculator {
     };
   }
 
-  private calculateSuccessRateReward(before: EffectivenessMetrics, after: EffectivenessMetrics): number {
+  private calculateSuccessRateReward(
+    before: EffectivenessMetrics,
+    after: EffectivenessMetrics
+  ): number {
     const improvement = after.successRate - before.successRate;
     return Math.tanh(improvement * 10); // Bounded between -1 and 1
   }
 
-  private calculatePerformanceReward(before: EffectivenessMetrics, after: EffectivenessMetrics): number {
-    const timeImprovement = (before.averageExecutionTime - after.averageExecutionTime) / before.averageExecutionTime;
+  private calculatePerformanceReward(
+    before: EffectivenessMetrics,
+    after: EffectivenessMetrics
+  ): number {
+    const timeImprovement =
+      (before.averageExecutionTime - after.averageExecutionTime) / before.averageExecutionTime;
     return Math.tanh(timeImprovement * 5);
   }
 
-  private calculateUserSatisfactionReward(before: EffectivenessMetrics, after: EffectivenessMetrics): number {
+  private calculateUserSatisfactionReward(
+    before: EffectivenessMetrics,
+    after: EffectivenessMetrics
+  ): number {
     const improvement = (after.userSatisfaction - before.userSatisfaction) / 10; // Normalize to 0-1
     return Math.tanh(improvement * 10);
   }
 
-  private calculateComplexityReward(before: EffectivenessMetrics, after: EffectivenessMetrics): number {
+  private calculateComplexityReward(
+    before: EffectivenessMetrics,
+    after: EffectivenessMetrics
+  ): number {
     const reduction = before.complexityReduction - after.complexityReduction;
     return Math.tanh(reduction * 0.1);
   }
@@ -601,7 +621,11 @@ export class ReinforcementLearningManager {
     context: { timeConstraints: string; qualityRequirements: string }
   ): void {
     // Calculate reward
-    const rewardResult = this.rewardCalculator.calculateReward(beforeMetrics, afterMetrics, context);
+    const rewardResult = this.rewardCalculator.calculateReward(
+      beforeMetrics,
+      afterMetrics,
+      context
+    );
     const reward = rewardResult.total;
 
     // Store experience
@@ -653,7 +677,7 @@ export class ReinforcementLearningManager {
     }
 
     const batch = this.replayBuffer.sample(this.config.batchSize);
-    
+
     for (const experience of batch) {
       if (this.config.algorithm === 'q-learning' || this.config.algorithm === 'actor-critic') {
         this.qAgent.updateQValue(
@@ -710,7 +734,7 @@ export class ReinforcementLearningManager {
   loadModels(models: { qModel: string; pgModel: string }): void {
     try {
       this.qAgent.loadModel(models.qModel);
-      
+
       const pgData = JSON.parse(models.pgModel);
       (this.pgAgent as any).policy = new Map(pgData.policy);
     } catch (error) {
@@ -728,6 +752,8 @@ export class ReinforcementLearningManager {
 }
 
 // Export factory function for easy instantiation
-export function createReinforcementLearningManager(config?: Partial<RLConfig>): ReinforcementLearningManager {
+export function createReinforcementLearningManager(
+  config?: Partial<RLConfig>
+): ReinforcementLearningManager {
   return new ReinforcementLearningManager(config);
 }

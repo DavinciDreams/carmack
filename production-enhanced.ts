@@ -191,12 +191,13 @@ export class CarmackPipelineOrchestrator {
         timeout: 300000, // 5 minutes
       });
 
-      console.log(`   📊 Repository acquired: ${repoState.metadata.fileCount} files, complexity: ${repoState.metadata.complexity || 'unknown'}`);
+      console.log(
+        `   📊 Repository acquired: ${repoState.metadata.fileCount} files, complexity: ${repoState.metadata.complexity || 'unknown'}`
+      );
       return repoState;
-
     } catch (error) {
       console.error(`   ❌ Failed to acquire repository: ${error}`);
-      
+
       // Fallback to current directory for testing
       console.log('   🔄 Falling back to current directory');
       return {
@@ -239,10 +240,9 @@ export class CarmackPipelineOrchestrator {
       // Use the real repository manager to consolidate patterns
       const consolidatedPatterns = await this.repoManager.consolidatePatterns(sources);
       console.log(`   ✅ Consolidated ${consolidatedPatterns.length} patterns`);
-
     } catch (error) {
       console.error(`   ❌ Pattern consolidation failed: ${error}`);
-      
+
       // Fallback to basic pattern file creation
       const patternPath = './patterns-consolidated.json';
       if (!existsSync(patternPath)) {

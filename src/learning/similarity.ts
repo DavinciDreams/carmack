@@ -9,7 +9,7 @@ import { VectorUtils, PatternSimilarityConfigSchema } from './types.ts';
 
 /**
  * Pattern Similarity Detection System
- * 
+ *
  * Implements multiple similarity algorithms for pattern comparison:
  * - Cosine similarity for feature vectors
  * - Semantic similarity using embeddings
@@ -39,7 +39,9 @@ class CosineSimilarityCalculator {
    */
   calculateSimilarityMatrix(vectors: PatternFeatureVector[]): number[][] {
     const n = vectors.length;
-    const matrix: number[][] = Array(n).fill(null).map(() => Array(n).fill(0));
+    const matrix: number[][] = Array(n)
+      .fill(null)
+      .map(() => Array(n).fill(0));
 
     for (let i = 0; i < n; i++) {
       for (let j = i; j < n; j++) {
@@ -105,10 +107,10 @@ class SemanticSimilarityCalculator {
 
     // Generate embedding (simplified implementation using text features)
     const embedding = this.generateTextEmbedding(text);
-    
+
     // Cache the result
     this.embeddingCache.set(cacheKey, embedding);
-    
+
     return embedding;
   }
 
@@ -131,14 +133,36 @@ class SemanticSimilarityCalculator {
     features.push(Math.min(avgWordLength / 10, 1.0));
 
     // Feature 4-13: Common programming keywords
-    const keywords = ['function', 'class', 'const', 'let', 'var', 'if', 'for', 'while', 'return', 'import'];
+    const keywords = [
+      'function',
+      'class',
+      'const',
+      'let',
+      'var',
+      'if',
+      'for',
+      'while',
+      'return',
+      'import',
+    ];
     for (const keyword of keywords) {
       const count = (text.match(new RegExp(keyword, 'gi')) || []).length;
       features.push(Math.min(count / 10, 1.0));
     }
 
     // Feature 14-23: Code patterns
-    const patterns = [/\{[^}]*\}/g, /\([^)]*\)/g, /\[[^\]]*\]/g, /=>/g, /\./g, /;/g, /:/g, /,/g, /\+/g, /-/g];
+    const patterns = [
+      /\{[^}]*\}/g,
+      /\([^)]*\)/g,
+      /\[[^\]]*\]/g,
+      /=>/g,
+      /\./g,
+      /;/g,
+      /:/g,
+      /,/g,
+      /\+/g,
+      /-/g,
+    ];
     for (const pattern of patterns) {
       const count = (text.match(pattern) || []).length;
       features.push(Math.min(count / 20, 1.0));
@@ -156,7 +180,7 @@ class SemanticSimilarityCalculator {
     let hash = 0;
     for (let i = 0; i < text.length; i++) {
       const char = text.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return hash.toString();
@@ -177,11 +201,13 @@ class BehavioralSimilarityCalculator {
   ): number {
     // Normalize metrics to [0, 1] range
     const successSim = 1 - Math.abs(pattern1Metrics.successRate - pattern2Metrics.successRate);
-    const improvementSim = 1 - Math.abs(pattern1Metrics.avgImprovement - pattern2Metrics.avgImprovement);
-    const complexitySim = 1 - Math.abs(pattern1Metrics.complexity - pattern2Metrics.complexity) / 100;
+    const improvementSim =
+      1 - Math.abs(pattern1Metrics.avgImprovement - pattern2Metrics.avgImprovement);
+    const complexitySim =
+      1 - Math.abs(pattern1Metrics.complexity - pattern2Metrics.complexity) / 100;
 
     // Weighted combination
-    return (successSim * 0.4 + improvementSim * 0.4 + complexitySim * 0.2);
+    return successSim * 0.4 + improvementSim * 0.4 + complexitySim * 0.2;
   }
 
   /**
@@ -193,13 +219,13 @@ class BehavioralSimilarityCalculator {
   ): number {
     // Frequency similarity
     const maxFreq = Math.max(pattern1Usage.frequency, pattern2Usage.frequency);
-    const freqSim = maxFreq > 0 ? 
-      1 - Math.abs(pattern1Usage.frequency - pattern2Usage.frequency) / maxFreq : 1;
+    const freqSim =
+      maxFreq > 0 ? 1 - Math.abs(pattern1Usage.frequency - pattern2Usage.frequency) / maxFreq : 1;
 
     // Context overlap
     const contexts1 = new Set(pattern1Usage.contexts);
     const contexts2 = new Set(pattern2Usage.contexts);
-    const intersection = new Set([...contexts1].filter(x => contexts2.has(x)));
+    const intersection = new Set([...contexts1].filter((x) => contexts2.has(x)));
     const union = new Set([...contexts1, ...contexts2]);
     const contextSim = union.size > 0 ? intersection.size / union.size : 1;
 
@@ -209,7 +235,7 @@ class BehavioralSimilarityCalculator {
       pattern2Usage.outcomes
     );
 
-    return (freqSim * 0.3 + contextSim * 0.4 + outcomeSim * 0.3);
+    return freqSim * 0.3 + contextSim * 0.4 + outcomeSim * 0.3;
   }
 
   private calculateOutcomeCorrelation(outcomes1: number[], outcomes2: number[]): number {
@@ -255,16 +281,10 @@ class StructuralSimilarityCalculator {
     pattern2: { astPattern: string; nodeTypes: string[] }
   ): number {
     // Pattern string similarity
-    const patternSim = this.calculateStringEditDistance(
-      pattern1.astPattern,
-      pattern2.astPattern
-    );
+    const patternSim = this.calculateStringEditDistance(pattern1.astPattern, pattern2.astPattern);
 
     // Node type overlap
-    const nodeTypeSim = this.calculateNodeTypeOverlap(
-      pattern1.nodeTypes,
-      pattern2.nodeTypes
-    );
+    const nodeTypeSim = this.calculateNodeTypeOverlap(pattern1.nodeTypes, pattern2.nodeTypes);
 
     // Structural complexity similarity
     const complexitySim = this.calculateComplexitySimilarity(
@@ -272,7 +292,7 @@ class StructuralSimilarityCalculator {
       pattern2.astPattern
     );
 
-    return (patternSim * 0.4 + nodeTypeSim * 0.3 + complexitySim * 0.3);
+    return patternSim * 0.4 + nodeTypeSim * 0.3 + complexitySim * 0.3;
   }
 
   private calculateStringEditDistance(str1: string, str2: string): number {
@@ -280,7 +300,7 @@ class StructuralSimilarityCalculator {
     if (maxLength === 0) return 1.0;
 
     const distance = this.levenshteinDistance(str1, str2);
-    return 1 - (distance / maxLength);
+    return 1 - distance / maxLength;
   }
 
   private levenshteinDistance(str1: string, str2: string): number {
@@ -300,9 +320,9 @@ class StructuralSimilarityCalculator {
           matrix[i]![j] = matrix[i - 1]![j - 1]!;
         } else {
           matrix[i]![j] = Math.min(
-            (matrix[i - 1]![j - 1]!) + 1, // substitution
-            (matrix[i]![j - 1]!) + 1,     // insertion
-            (matrix[i - 1]![j]!) + 1      // deletion
+            matrix[i - 1]![j - 1]! + 1, // substitution
+            matrix[i]![j - 1]! + 1, // insertion
+            matrix[i - 1]![j]! + 1 // deletion
           );
         }
       }
@@ -314,7 +334,7 @@ class StructuralSimilarityCalculator {
   private calculateNodeTypeOverlap(types1: string[], types2: string[]): number {
     const set1 = new Set(types1);
     const set2 = new Set(types2);
-    const intersection = new Set([...set1].filter(x => set2.has(x)));
+    const intersection = new Set([...set1].filter((x) => set2.has(x)));
     const union = new Set([...set1, ...set2]);
 
     return union.size > 0 ? intersection.size / union.size : 1;
@@ -325,8 +345,7 @@ class StructuralSimilarityCalculator {
     const complexity2 = this.calculatePatternComplexity(pattern2);
     const maxComplexity = Math.max(complexity1, complexity2);
 
-    return maxComplexity > 0 ? 
-      1 - Math.abs(complexity1 - complexity2) / maxComplexity : 1;
+    return maxComplexity > 0 ? 1 - Math.abs(complexity1 - complexity2) / maxComplexity : 1;
   }
 
   private calculatePatternComplexity(pattern: string): number {
@@ -366,7 +385,7 @@ export class PatternSimilarityDetector {
     options: { includeMetrics?: boolean } = {}
   ): Promise<SimilarityResult> {
     const cacheKey = this.generateCacheKey(pattern1, pattern2);
-    
+
     // Check cache if enabled
     if (this.config.enableCaching && this.similarityCache.has(cacheKey)) {
       return this.similarityCache.get(cacheKey)!;
@@ -411,11 +430,11 @@ export class PatternSimilarityDetector {
 
     // Calculate weighted overall similarity
     const weights = this.config.weights || {};
-    const overallSimilarity = 
-      (metrics.cosine * (weights.cosine || 0.3)) +
-      (metrics.semantic * (weights.semantic || 0.3)) +
-      (metrics.behavioral * (weights.behavioral || 0.2)) +
-      (metrics.structural * (weights.structural || 0.2));
+    const overallSimilarity =
+      metrics.cosine * (weights.cosine || 0.3) +
+      metrics.semantic * (weights.semantic || 0.3) +
+      metrics.behavioral * (weights.behavioral || 0.2) +
+      metrics.structural * (weights.structural || 0.2);
 
     const result: SimilarityResult = {
       similarity: overallSimilarity,
@@ -448,7 +467,7 @@ export class PatternSimilarityDetector {
 
     for (const candidate of candidatePatterns) {
       const similarity = await this.calculateSimilarity(targetPattern, candidate);
-      
+
       if (similarity.similarity >= threshold) {
         similarities.push({ pattern: candidate, similarity });
       }
@@ -465,7 +484,9 @@ export class PatternSimilarityDetector {
    */
   async calculateSimilarityMatrix(patterns: any[]): Promise<number[][]> {
     const n = patterns.length;
-    const matrix: number[][] = Array(n).fill(null).map(() => Array(n).fill(0));
+    const matrix: number[][] = Array(n)
+      .fill(null)
+      .map(() => Array(n).fill(0));
 
     for (let i = 0; i < n; i++) {
       for (let j = i; j < n; j++) {
@@ -489,17 +510,18 @@ export class PatternSimilarityDetector {
   private calculateConfidence(metrics: SimilarityMetrics): number {
     // Calculate confidence based on consistency of metrics
     const values = [metrics.cosine, metrics.semantic, metrics.behavioral, metrics.structural];
-    const validValues = values.filter(v => v > 0);
-    
+    const validValues = values.filter((v) => v > 0);
+
     if (validValues.length === 0) return 0;
     if (validValues.length === 1) return 0.5;
 
     const mean = validValues.reduce((sum, val) => sum + val, 0) / validValues.length;
-    const variance = validValues.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / validValues.length;
+    const variance =
+      validValues.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / validValues.length;
     const stdDev = Math.sqrt(variance);
 
     // Lower standard deviation = higher confidence
-    return Math.max(0, 1 - (stdDev * 2));
+    return Math.max(0, 1 - stdDev * 2);
   }
 
   private generateCacheKey(pattern1: any, pattern2: any): string {
@@ -510,7 +532,7 @@ export class PatternSimilarityDetector {
 
   private cacheResult(key: string, result: SimilarityResult): void {
     const maxSize = this.config.maxCacheSize || 1000;
-    
+
     if (this.similarityCache.size >= maxSize) {
       // Remove oldest entry (simple LRU)
       const firstKey = this.similarityCache.keys().next().value;
@@ -518,7 +540,7 @@ export class PatternSimilarityDetector {
         this.similarityCache.delete(firstKey);
       }
     }
-    
+
     this.similarityCache.set(key, result);
   }
 
@@ -541,7 +563,9 @@ export class PatternSimilarityDetector {
 }
 
 // Export factory function for easy instantiation
-export function createPatternSimilarityDetector(config?: PatternSimilarityConfig): PatternSimilarityDetector {
+export function createPatternSimilarityDetector(
+  config?: PatternSimilarityConfig
+): PatternSimilarityDetector {
   return new PatternSimilarityDetector(config);
 }
 

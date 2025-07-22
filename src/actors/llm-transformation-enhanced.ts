@@ -17,7 +17,7 @@ import type {
   ContextAwarePrompt,
   MultiFileContext,
   RollbackInfo,
-  PerformanceOptimization
+  PerformanceOptimization,
 } from '../types.js';
 import { getLLMProviderManager, type LLMRequest } from '../providers/llm-providers.js';
 
@@ -45,20 +45,22 @@ const EnhancedLLMConfigSchema = z.object({
   retries: z.number().default(3),
   enableFallback: z.boolean().default(true),
   costLimit: z.number().default(2.0), // Increased for enhanced features
-  
+
   // Advanced features
   enableContextAwareness: z.boolean().default(true),
   enableMultiFileAnalysis: z.boolean().default(true),
   enableIncrementalTransformation: z.boolean().default(true),
   enableRollback: z.boolean().default(true),
-  
+
   // Performance optimizations
-  performance: z.object({
-    enableCaching: z.boolean().default(true),
-    enableBatching: z.boolean().default(true),
-    maxBatchSize: z.number().default(5),
-    cacheStrategy: z.enum(['memory', 'disk', 'hybrid']).default('hybrid'),
-  }).default({}),
+  performance: z
+    .object({
+      enableCaching: z.boolean().default(true),
+      enableBatching: z.boolean().default(true),
+      maxBatchSize: z.number().default(5),
+      cacheStrategy: z.enum(['memory', 'disk', 'hybrid']).default('hybrid'),
+    })
+    .default({}),
 });
 
 const EnhancedLLMTransformationInputSchema = z.object({
@@ -66,7 +68,7 @@ const EnhancedLLMTransformationInputSchema = z.object({
   request: z.custom<EnhancedTransformationRequest>().optional(),
   config: EnhancedLLMConfigSchema.optional(),
   context: z.custom<EnhancedTransformationContext>().optional(),
-  
+
   // Advanced options
   multiFileContext: z.custom<MultiFileContext>().optional(),
   contextAwarePrompts: z.array(z.custom<ContextAwarePrompt>()).optional(),
@@ -78,49 +80,57 @@ const EnhancedLLMTransformationResultSchema = z.object({
   filesModified: z.array(z.string()),
   transformationsApplied: z.number(),
   mode: z.literal('llm'),
-  
+
   // Enhanced metrics
   totalTokensUsed: z.number().optional(),
   totalCost: z.number().optional(),
   averageConfidence: z.number().optional(),
   providersUsed: z.array(z.string()).optional(),
-  
+
   // Context awareness results
-  contextAnalysis: z.object({
-    projectComplexity: z.number(),
-    frameworkDetected: z.string().optional(),
-    dependenciesAnalyzed: z.number(),
-    crossFilePatterns: z.number(),
-  }).optional(),
-  
+  contextAnalysis: z
+    .object({
+      projectComplexity: z.number(),
+      frameworkDetected: z.string().optional(),
+      dependenciesAnalyzed: z.number(),
+      crossFilePatterns: z.number(),
+    })
+    .optional(),
+
   // Quality metrics
-  qualityImprovement: z.object({
-    complexityReduction: z.number(),
-    codeQualityScore: z.number(),
-    maintainabilityIndex: z.number(),
-  }).optional(),
-  
+  qualityImprovement: z
+    .object({
+      complexityReduction: z.number(),
+      codeQualityScore: z.number(),
+      maintainabilityIndex: z.number(),
+    })
+    .optional(),
+
   // Performance data
-  performance: z.object({
-    totalTime: z.number(),
-    averageTimePerFile: z.number(),
-    successRate: z.number(),
-    cacheHitRate: z.number(),
-    batchingEfficiency: z.number(),
-  }).optional(),
-  
+  performance: z
+    .object({
+      totalTime: z.number(),
+      averageTimePerFile: z.number(),
+      successRate: z.number(),
+      cacheHitRate: z.number(),
+      batchingEfficiency: z.number(),
+    })
+    .optional(),
+
   // Error handling and rollback
   errors: z.array(z.string()).optional(),
   warnings: z.array(z.string()).optional(),
   rollbackAvailable: z.boolean().default(false),
   rollbackPath: z.string().optional(),
-  
+
   // Learning and recommendations
-  learningData: z.object({
-    patternsDiscovered: z.array(z.string()),
-    recommendations: z.array(z.string()),
-    effectivenessScore: z.number(),
-  }).optional(),
+  learningData: z
+    .object({
+      patternsDiscovered: z.array(z.string()),
+      recommendations: z.array(z.string()),
+      effectivenessScore: z.number(),
+    })
+    .optional(),
 });
 
 export type EnhancedLLMConfig = z.infer<typeof EnhancedLLMConfigSchema>;
@@ -134,9 +144,9 @@ export type EnhancedLLMTransformationResult = z.infer<typeof EnhancedLLMTransfor
 export const enhancedLLMTransformationActor = fromPromise(
   async ({ input }: { input: EnhancedLLMTransformationInput }) => {
     const validatedInput = EnhancedLLMTransformationInputSchema.parse(input);
-    
+
     console.log(`🤖 Starting enhanced LLM transformations on ${validatedInput.files.length} files`);
-    
+
     const transformer = new EnhancedLLMTransformer(validatedInput.config);
     return await transformer.transformFiles(validatedInput);
   }
@@ -166,7 +176,9 @@ export class EnhancedLLMTransformer {
   /**
    * Transform multiple files using enhanced LLM system
    */
-  async transformFiles(input: EnhancedLLMTransformationInput): Promise<EnhancedLLMTransformationResult> {
+  async transformFiles(
+    input: EnhancedLLMTransformationInput
+  ): Promise<EnhancedLLMTransformationResult> {
     const startTime = Date.now();
     const filesModified: string[] = [];
     const errors: string[] = [];
@@ -179,22 +191,24 @@ export class EnhancedLLMTransformer {
     for (const filePath of input.files) {
       try {
         const result = await this.transformSingleFile(filePath, input);
-        
+
         if (result.success) {
           successCount++;
           filesModified.push(filePath);
           totalTransformations += result.transformationCount;
-          
+
           if (result.confidence !== undefined) {
             totalConfidence += result.confidence;
             confidenceCount++;
           }
-          
+
           if (result.warnings) {
             warnings.push(...result.warnings);
           }
-          
-          console.log(`✅ Enhanced LLM transformed ${filePath} (confidence: ${result.confidence?.toFixed(2) || 'N/A'})`);
+
+          console.log(
+            `✅ Enhanced LLM transformed ${filePath} (confidence: ${result.confidence?.toFixed(2) || 'N/A'})`
+          );
         } else {
           const errorMsg = `Failed to transform ${filePath}: ${result.error}`;
           errors.push(errorMsg);
@@ -248,22 +262,26 @@ export class EnhancedLLMTransformer {
     try {
       // Read file content
       const originalContent = await readFile(filePath, 'utf-8');
-      
+
       // Analyze file context
       const fileContext = await this.analyzeFileContext(originalContent, filePath, input.context);
-      
+
       // Generate transformation prompt
-      const prompt = this.generateEnhancedTransformationPrompt(originalContent, fileContext, input.request as TransformationRequest);
-      
+      const prompt = this.generateEnhancedTransformationPrompt(
+        originalContent,
+        fileContext,
+        input.request as TransformationRequest
+      );
+
       // Check cache first
       const cacheKey = this.generateCacheKey(originalContent, prompt);
       let cachedResult = this.cache.get(cacheKey);
-      
+
       if (cachedResult) {
         console.log(`📋 Using cached result for ${filePath}`);
         return cachedResult;
       }
-      
+
       // Make LLM request with fallback
       const llmRequest: LLMRequest = {
         prompt,
@@ -277,11 +295,12 @@ export class EnhancedLLMTransformer {
         options: {
           stream: false,
           jsonMode: true,
-          priority: (input.context?.priority === 'critical' ? 'high' : input.context?.priority) || 'normal',
+          priority:
+            (input.context?.priority === 'critical' ? 'high' : input.context?.priority) || 'normal',
           maxRetries: this.config.retries,
         },
       };
-      
+
       const llmResponse = await this.providerManager.makeRequestWithFallback(
         llmRequest,
         this.config.provider,
@@ -293,24 +312,27 @@ export class EnhancedLLMTransformer {
           retries: this.config.retries,
         }
       );
-      
+
       // Update statistics
       if (llmResponse.usage) {
         this.stats.totalTokens += llmResponse.usage.totalTokens;
         this.stats.totalCost += llmResponse.usage.cost || 0;
       }
       this.stats.providersUsed.add(llmResponse.provider);
-      
+
       // Parse the LLM response
-      const transformationResult = this.parseTransformationResponse(llmResponse.content, originalContent);
-      
+      const transformationResult = this.parseTransformationResponse(
+        llmResponse.content,
+        originalContent
+      );
+
       // Validate the transformation
       const validationResult = await this.validateTransformation(
         originalContent,
         transformationResult.transformedCode || originalContent,
         filePath
       );
-      
+
       if (!validationResult.isValid) {
         return {
           success: false,
@@ -318,36 +340,35 @@ export class EnhancedLLMTransformer {
           error: `Validation failed: ${validationResult.errors.join(', ')}`,
         };
       }
-      
+
       // Apply the transformation if it's different
       const finalTransformedCode = transformationResult.transformedCode || originalContent;
       if (originalContent !== finalTransformedCode) {
         console.log(`📝 Writing enhanced transformed code to ${filePath}`);
         await writeFile(filePath, finalTransformedCode, 'utf-8');
-        
+
         const result = {
           success: true,
           transformationCount: transformationResult.appliedTransformations.length,
           confidence: transformationResult.confidence,
           warnings: transformationResult.warnings,
         };
-        
+
         // Cache the result
         this.cache.set(cacheKey, result);
         return result;
       }
-      
+
       const result = {
         success: true,
         transformationCount: 0,
         confidence: transformationResult.confidence,
         warnings: ['No changes needed'],
       };
-      
+
       // Cache the result
       this.cache.set(cacheKey, result);
       return result;
-      
     } catch (error) {
       return {
         success: false,
@@ -380,16 +401,16 @@ export class EnhancedLLMTransformer {
     const exports = this.extractExports(content);
     const functions = (content.match(/function\s+\w+|const\s+\w+\s*=\s*\(/g) || []).length;
     const classes = (content.match(/class\s+\w+/g) || []).length;
-    
+
     // Enhanced complexity calculation
     const complexity = this.calculateEnhancedComplexity(content);
-    
+
     // Detect code patterns and issues
     const patterns = this.detectCodePatterns(content);
     const issues = this.detectCodeIssues(content);
-    
+
     const detectedFramework = context?.framework || this.detectFramework(imports);
-    
+
     const result: {
       language: string;
       framework?: string;
@@ -427,7 +448,7 @@ export class EnhancedLLMTransformer {
     request?: TransformationRequest
   ): string {
     const customPrompt = request?.prompt || this.getDefaultLLMTransformationGoals(context);
-    
+
     return `You are an expert code transformation assistant specializing in complex transformations that require semantic understanding and type inference. This code has already been processed by template and AST transformations - you should focus on intelligent, context-aware improvements.
 
 COMPLEX TRANSFORMATION GOALS:
@@ -484,11 +505,14 @@ Focus on modern best practices and clean code principles.`;
   /**
    * Parse LLM response into structured transformation result using Zod validation
    */
-  private parseTransformationResponse(response: string, originalCode: string): LLMTransformationResponse {
+  private parseTransformationResponse(
+    response: string,
+    originalCode: string
+  ): LLMTransformationResponse {
     try {
       // Try to parse as JSON first
       const rawParsed = JSON.parse(response);
-      
+
       // Use Zod to validate and provide defaults
       const validatedResponse = LLMTransformationResponseSchema.parse({
         transformedCode: rawParsed.transformedCode || originalCode,
@@ -497,13 +521,13 @@ Focus on modern best practices and clean code principles.`;
         warnings: rawParsed.warnings,
         appliedTransformations: rawParsed.appliedTransformations,
       });
-      
+
       return validatedResponse;
     } catch (parseError) {
       // If not JSON, try to extract code from markdown blocks
       const codeMatch = response.match(/```[\w]*\n([\s\S]*?)\n```/);
       const extractedCode = codeMatch?.[1]?.trim() || null;
-      
+
       // Use Zod to create a valid response with defaults
       const fallbackResponse = LLMTransformationResponseSchema.parse({
         transformedCode: extractedCode || originalCode,
@@ -512,7 +536,7 @@ Focus on modern best practices and clean code principles.`;
         warnings: ['Could not parse structured JSON response'],
         appliedTransformations: extractedCode ? ['markdown-extraction'] : ['no-transformation'],
       });
-      
+
       return fallbackResponse;
     }
   }
@@ -522,7 +546,7 @@ Focus on modern best practices and clean code principles.`;
    */
   private calculateEnhancedComplexity(content: string): number {
     let complexity = 1;
-    
+
     const complexityPatterns = [
       { pattern: /\bif\b/g, weight: 1 },
       { pattern: /\belse\b/g, weight: 1 },
@@ -539,12 +563,12 @@ Focus on modern best practices and clean code principles.`;
       { pattern: /async\s+function/g, weight: 2 },
       { pattern: /await\s+/g, weight: 1 },
     ];
-    
+
     complexityPatterns.forEach(({ pattern, weight }) => {
       const matches = content.match(pattern);
       if (matches) complexity += matches.length * weight;
     });
-    
+
     return Math.min(complexity, 25);
   }
 
@@ -553,7 +577,7 @@ Focus on modern best practices and clean code principles.`;
    */
   private detectCodeIssues(content: string): string[] {
     const issues: string[] = [];
-    
+
     if (content.includes('var ')) issues.push('var-declarations');
     if (content.includes('==') && !content.includes('===')) issues.push('loose-equality');
     if (content.includes('!=') && !content.includes('!==')) issues.push('loose-inequality');
@@ -561,7 +585,7 @@ Focus on modern best practices and clean code principles.`;
     if (content.includes(': any')) issues.push('any-types');
     if (content.match(/function\s*\([^)]*\)\s*\{/)) issues.push('function-declarations');
     if (content.includes('.indexOf(') && content.includes('!== -1')) issues.push('indexOf-usage');
-    
+
     return issues;
   }
 
@@ -574,54 +598,56 @@ Focus on modern best practices and clean code principles.`;
     filePath: string
   ): Promise<{ isValid: boolean; errors: string[] }> {
     const errors: string[] = [];
-    
+
     try {
       // Basic syntax validation
-      if (filePath.endsWith('.ts') || filePath.endsWith('.tsx') || 
-          filePath.endsWith('.js') || filePath.endsWith('.jsx')) {
-        
+      if (
+        filePath.endsWith('.ts') ||
+        filePath.endsWith('.tsx') ||
+        filePath.endsWith('.js') ||
+        filePath.endsWith('.jsx')
+      ) {
         // Check for balanced braces and parentheses
         const openBraces = (transformedCode.match(/\{/g) || []).length;
         const closeBraces = (transformedCode.match(/\}/g) || []).length;
         if (openBraces !== closeBraces) {
           errors.push('Unbalanced braces in transformed code');
         }
-        
+
         const openParens = (transformedCode.match(/\(/g) || []).length;
         const closeParens = (transformedCode.match(/\)/g) || []).length;
         if (openParens !== closeParens) {
           errors.push('Unbalanced parentheses in transformed code');
         }
-        
+
         // Check for syntax errors
         if (transformedCode.includes(';;')) {
           errors.push('Double semicolons detected');
         }
-        
+
         // Ensure imports/exports are preserved
         const originalImports = this.extractImports(originalCode);
         const transformedImports = this.extractImports(transformedCode);
-        
+
         if (originalImports.length > 0 && transformedImports.length === 0) {
           errors.push('All imports were removed during transformation');
         }
       }
-      
+
       // Check that the code is not empty
       if (transformedCode.trim().length === 0) {
         errors.push('Transformed code is empty');
       }
-      
+
       // Check similarity to prevent hallucination
       const similarity = this.calculateSimilarity(originalCode, transformedCode);
       if (similarity < 0.2) {
         errors.push('Transformed code is too different from original (possible hallucination)');
       }
-      
     } catch (error) {
       errors.push(`Validation error: ${error instanceof Error ? error.message : String(error)}`);
     }
-    
+
     return {
       isValid: errors.length === 0,
       errors,
@@ -657,7 +683,10 @@ Focus on modern best practices and clean code principles.`;
   }
 
   private extractExports(content: string): string[] {
-    const exports = content.match(/export\s+(?:default\s+)?(?:function|class|interface|type|const|let|var)\s+\w+/g) || [];
+    const exports =
+      content.match(
+        /export\s+(?:default\s+)?(?:function|class|interface|type|const|let|var)\s+\w+/g
+      ) || [];
     return exports.map((exp) => exp.trim());
   }
 
@@ -673,7 +702,7 @@ Focus on modern best practices and clean code principles.`;
 
   private detectCodePatterns(content: string): string[] {
     const patterns: string[] = [];
-    
+
     if (content.includes('var ')) patterns.push('var-declarations');
     if (content.includes('==') && !content.includes('===')) patterns.push('loose-equality');
     if (content.includes('function(')) patterns.push('function-declarations');
@@ -682,7 +711,7 @@ Focus on modern best practices and clean code principles.`;
     if (content.includes('class ')) patterns.push('classes');
     if (content.includes('async ')) patterns.push('async-functions');
     if (content.includes('await ')) patterns.push('await-expressions');
-    
+
     return patterns;
   }
 
@@ -691,33 +720,34 @@ Focus on modern best practices and clean code principles.`;
    */
   private getDefaultLLMTransformationGoals(context: any): string {
     const goals: string[] = [];
-    
+
     // Focus on complex transformations that require semantic understanding
     if (context.issues?.some((issue: string) => issue.includes('any') || issue.includes('type'))) {
       goals.push('- Infer proper types to replace any types and resolve type issues');
     }
-    
+
     if (context.complexity > 15) {
       goals.push('- Apply intelligent refactoring to reduce algorithmic complexity');
     }
-    
+
     if (context.language === 'typescript') {
       goals.push('- Perform advanced TypeScript type inference and generic optimization');
     }
-    
+
     if (context.framework) {
-      goals.push(`- Apply advanced ${context.framework} architectural patterns requiring semantic analysis`);
+      goals.push(
+        `- Apply advanced ${context.framework} architectural patterns requiring semantic analysis`
+      );
     }
-    
+
     // LLM-specific goals that require understanding code semantics
     goals.push('- Optimize complex algorithms and data structures');
     goals.push('- Apply design patterns that require understanding code intent');
     goals.push('- Resolve cross-file dependencies and import optimizations');
     goals.push('- Perform intelligent code restructuring based on usage patterns');
-    
+
     return goals.join('\n');
   }
-
 
   private generateCacheKey(content: string, prompt: string): string {
     const combined = `${content}|${prompt}`;
@@ -733,7 +763,7 @@ Focus on modern best practices and clean code principles.`;
   private calculateSimilarity(str1: string, str2: string): number {
     const set1 = new Set(str1.split(/\s+/));
     const set2 = new Set(str2.split(/\s+/));
-    const intersection = new Set([...set1].filter(x => set2.has(x)));
+    const intersection = new Set([...set1].filter((x) => set2.has(x)));
     const union = new Set([...set1, ...set2]);
     return intersection.size / union.size;
   }
@@ -742,6 +772,8 @@ Focus on modern best practices and clean code principles.`;
 /**
  * Convenience function to create enhanced LLM transformer
  */
-export function createEnhancedLLMTransformer(config?: Partial<EnhancedLLMConfig>): EnhancedLLMTransformer {
+export function createEnhancedLLMTransformer(
+  config?: Partial<EnhancedLLMConfig>
+): EnhancedLLMTransformer {
   return new EnhancedLLMTransformer(config);
 }

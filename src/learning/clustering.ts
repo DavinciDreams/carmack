@@ -3,7 +3,7 @@ import { VectorUtils } from './types.js';
 
 /**
  * Clustering Algorithms for Pattern Categorization
- * 
+ *
  * This module implements real clustering algorithms for intelligent pattern grouping
  * and categorization in the Carmack Coder system.
  */
@@ -20,7 +20,7 @@ export interface ClusteringConfig {
 
 /**
  * K-Means Clustering Algorithm
- * 
+ *
  * Groups patterns into k clusters using iterative centroid optimization.
  * Optimized for speed and memory efficiency.
  */
@@ -55,8 +55,8 @@ export class KMeansClusterer {
       }));
     }
 
-    const vectors = patterns.map(p => p.features);
-    const patternIds = patterns.map(p => p.patternId);
+    const vectors = patterns.map((p) => p.features);
+    const patternIds = patterns.map((p) => p.patternId);
 
     // Initialize centroids using k-means++ algorithm for better initial placement
     const centroids = this.initializeCentroidsKMeansPlusPlus(vectors);
@@ -66,9 +66,7 @@ export class KMeansClusterer {
 
     while (!converged && iteration < this.config.maxIterations) {
       // Assign each point to the nearest centroid
-      const newAssignments = vectors.map(vector => 
-        this.findNearestCentroid(vector, centroids)
-      );
+      const newAssignments = vectors.map((vector) => this.findNearestCentroid(vector, centroids));
 
       // Check for convergence
       converged = this.hasConverged(assignments, newAssignments);
@@ -106,19 +104,19 @@ export class KMeansClusterer {
 
     // Choose remaining centroids with probability proportional to squared distance
     for (let i = 1; i < this.config.k; i++) {
-      const distances = vectors.map(vector => {
-        const minDistance = Math.min(...centroids.map(centroid => 
-          VectorUtils.euclideanDistance(vector, centroid)
-        ));
+      const distances = vectors.map((vector) => {
+        const minDistance = Math.min(
+          ...centroids.map((centroid) => VectorUtils.euclideanDistance(vector, centroid))
+        );
         return minDistance * minDistance;
       });
 
       const totalDistance = distances.reduce((sum, d) => sum + d, 0);
       const threshold = Math.random() * totalDistance;
-      
+
       let cumulativeDistance = 0;
       let selectedIndex = 0;
-      
+
       for (let j = 0; j < distances.length; j++) {
         cumulativeDistance += distances[j] ?? 0;
         if (cumulativeDistance >= threshold) {
@@ -186,7 +184,7 @@ export class KMeansClusterer {
       const vector = vectors[i];
       if (clusterId !== undefined && vector) {
         clusterCounts[clusterId]++;
-        
+
         for (let j = 0; j < vector.length; j++) {
           const clusterSum = clusterSums[clusterId];
           if (clusterSum) {
@@ -212,9 +210,9 @@ export class KMeansClusterer {
    * Build final cluster results
    */
   private buildClusterResults(
-    vectors: Vector[], 
-    patternIds: string[], 
-    assignments: number[], 
+    vectors: Vector[],
+    patternIds: string[],
+    assignments: number[],
     centroids: Vector[]
   ): ClusterResult[] {
     const clusters: ClusterResult[] = [];
@@ -238,7 +236,7 @@ export class KMeansClusterer {
         const centroid = centroids[i];
         if (centroid) {
           const cohesion = this.calculateCohesion(clusterVectors, centroid);
-          
+
           clusters.push({
             clusterId: i,
             centroid,
@@ -262,9 +260,9 @@ export class KMeansClusterer {
       return 0;
     }
 
-    const distances = vectors.map(vector => VectorUtils.euclideanDistance(vector, centroid));
+    const distances = vectors.map((vector) => VectorUtils.euclideanDistance(vector, centroid));
     const avgDistance = distances.reduce((sum, d) => sum + d, 0) / distances.length;
-    
+
     // Convert to cohesion score (0-1, where 1 is most cohesive)
     // Using exponential decay to map distance to cohesion
     return Math.exp(-avgDistance);
@@ -273,7 +271,7 @@ export class KMeansClusterer {
 
 /**
  * DBSCAN Clustering Algorithm
- * 
+ *
  * Density-based clustering that can find clusters of arbitrary shape
  * and automatically determines the number of clusters.
  */
@@ -295,8 +293,8 @@ export class DBSCANClusterer {
       return [];
     }
 
-    const vectors = patterns.map(p => p.features);
-    const patternIds = patterns.map(p => p.patternId);
+    const vectors = patterns.map((p) => p.features);
+    const patternIds = patterns.map((p) => p.patternId);
     const labels = new Array(vectors.length).fill(-1); // -1 = unvisited, -2 = noise
     let clusterId = 0;
 
@@ -304,7 +302,7 @@ export class DBSCANClusterer {
       if (labels[i] !== -1) continue; // Already processed
 
       const neighbors = this.findNeighbors(i, vectors);
-      
+
       if (neighbors.length < this.config.minPts) {
         labels[i] = -2; // Mark as noise
       } else {
@@ -353,16 +351,16 @@ export class DBSCANClusterer {
 
     while (queue.length > 0) {
       const currentIndex = queue.shift()!;
-      
+
       if (labels[currentIndex] === -2) {
         labels[currentIndex] = clusterId; // Change noise to border point
       }
-      
+
       if (labels[currentIndex] !== -1) continue; // Already processed
-      
+
       labels[currentIndex] = clusterId;
       const currentNeighbors = this.findNeighbors(currentIndex, vectors);
-      
+
       if (currentNeighbors.length >= this.config.minPts) {
         queue.push(...currentNeighbors);
       }
@@ -384,8 +382,9 @@ export class DBSCANClusterer {
       const label = labels[i];
       const patternId = patternIds[i];
       const vector = vectors[i];
-      
-      if (label !== undefined && label >= 0 && patternId && vector) { // Ignore noise points (-2)
+
+      if (label !== undefined && label >= 0 && patternId && vector) {
+        // Ignore noise points (-2)
         if (!clusterMap.has(label)) {
           clusterMap.set(label, { patterns: [], vectors: [] });
         }
@@ -421,18 +420,18 @@ export class DBSCANClusterer {
       return 0;
     }
 
-    const distances = vectors.map(vector => VectorUtils.euclideanDistance(vector, centroid));
+    const distances = vectors.map((vector) => VectorUtils.euclideanDistance(vector, centroid));
     const maxDistance = Math.max(...distances);
     const avgDistance = distances.reduce((sum, d) => sum + d, 0) / distances.length;
-    
+
     // Cohesion based on how much smaller average distance is compared to eps
-    return Math.max(0, 1 - (avgDistance / this.config.eps));
+    return Math.max(0, 1 - avgDistance / this.config.eps);
   }
 }
 
 /**
  * Hierarchical Clustering Algorithm
- * 
+ *
  * Creates a hierarchy of clusters using agglomerative (bottom-up) approach.
  * Useful for understanding pattern relationships at different granularities.
  */
@@ -465,8 +464,8 @@ export class HierarchicalClusterer {
       }));
     }
 
-    const vectors = patterns.map(p => p.features);
-    const patternIds = patterns.map(p => p.patternId);
+    const vectors = patterns.map((p) => p.features);
+    const patternIds = patterns.map((p) => p.patternId);
 
     // Initialize each point as its own cluster
     let clusters = vectors.map((vector, index) => ({
@@ -479,7 +478,7 @@ export class HierarchicalClusterer {
     // Merge clusters until we reach the target number
     while (clusters.length > targetClusters) {
       const { cluster1Index, cluster2Index } = this.findClosestClusters(clusters);
-      
+
       // Merge the two closest clusters
       const newCluster = this.mergeClusters(
         clusters[cluster1Index],
@@ -488,9 +487,7 @@ export class HierarchicalClusterer {
       );
 
       // Remove the merged clusters and add the new one
-      clusters = clusters.filter((_, index) => 
-        index !== cluster1Index && index !== cluster2Index
-      );
+      clusters = clusters.filter((_, index) => index !== cluster1Index && index !== cluster2Index);
       clusters.push(newCluster);
     }
 
@@ -547,14 +544,14 @@ export class HierarchicalClusterer {
    */
   private singleLinkage(vectors1: Vector[], vectors2: Vector[]): number {
     let minDistance = Infinity;
-    
+
     for (const v1 of vectors1) {
       for (const v2 of vectors2) {
         const distance = VectorUtils.euclideanDistance(v1, v2);
         minDistance = Math.min(minDistance, distance);
       }
     }
-    
+
     return minDistance;
   }
 
@@ -563,14 +560,14 @@ export class HierarchicalClusterer {
    */
   private completeLinkage(vectors1: Vector[], vectors2: Vector[]): number {
     let maxDistance = 0;
-    
+
     for (const v1 of vectors1) {
       for (const v2 of vectors2) {
         const distance = VectorUtils.euclideanDistance(v1, v2);
         maxDistance = Math.max(maxDistance, distance);
       }
     }
-    
+
     return maxDistance;
   }
 
@@ -580,14 +577,14 @@ export class HierarchicalClusterer {
   private averageLinkage(vectors1: Vector[], vectors2: Vector[]): number {
     let totalDistance = 0;
     let count = 0;
-    
+
     for (const v1 of vectors1) {
       for (const v2 of vectors2) {
         totalDistance += VectorUtils.euclideanDistance(v1, v2);
         count++;
       }
     }
-    
+
     return count > 0 ? totalDistance / count : 0;
   }
 
@@ -615,12 +612,12 @@ export class HierarchicalClusterer {
       return 0;
     }
 
-    const distances = vectors.map(vector => VectorUtils.euclideanDistance(vector, centroid));
+    const distances = vectors.map((vector) => VectorUtils.euclideanDistance(vector, centroid));
     const avgDistance = distances.reduce((sum, d) => sum + d, 0) / distances.length;
     const maxDistance = Math.max(...distances);
-    
+
     // Cohesion based on how uniform the distances are
-    return maxDistance > 0 ? 1 - (avgDistance / maxDistance) : 1;
+    return maxDistance > 0 ? 1 - avgDistance / maxDistance : 1;
   }
 }
 
@@ -631,10 +628,7 @@ export class PatternClusterer {
   /**
    * Cluster patterns using the specified algorithm
    */
-  static cluster(
-    patterns: PatternFeatureVector[],
-    config: ClusteringConfig
-  ): ClusterResult[] {
+  static cluster(patterns: PatternFeatureVector[], config: ClusteringConfig): ClusterResult[] {
     switch (config.algorithm) {
       case 'kmeans': {
         const clusterer = new KMeansClusterer({
@@ -644,7 +638,7 @@ export class PatternClusterer {
         });
         return clusterer.cluster(patterns);
       }
-      
+
       case 'dbscan': {
         const clusterer = new DBSCANClusterer({
           eps: config.eps ?? 0.5,
@@ -652,14 +646,14 @@ export class PatternClusterer {
         });
         return clusterer.cluster(patterns);
       }
-      
+
       case 'hierarchical': {
         const clusterer = new HierarchicalClusterer({
           linkage: config.linkage ?? 'average',
         });
         return clusterer.cluster(patterns, config.k ?? 5);
       }
-      
+
       default:
         throw new Error(`Unknown clustering algorithm: ${config.algorithm}`);
     }
