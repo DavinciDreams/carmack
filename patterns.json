@@ -331,6 +331,56 @@
       "complexity": 1,
       "riskLevel": "low",
       "mode": "template"
+    },
+    {
+      "id": "llm-complex-refactoring",
+      "language": "typescript",
+      "pattern": "complex function refactoring",
+      "replacement": "AI-guided refactoring",
+      "description": "Use LLM to refactor complex functions with multiple responsibilities",
+      "complexity": 8,
+      "riskLevel": "medium",
+      "mode": "llm"
+    },
+    {
+      "id": "llm-architectural-improvement",
+      "language": "typescript",
+      "pattern": "architectural improvement",
+      "replacement": "AI-guided architecture",
+      "description": "Use LLM to suggest and implement architectural improvements",
+      "complexity": 9,
+      "riskLevel": "high",
+      "mode": "llm"
+    },
+    {
+      "id": "llm-code-documentation",
+      "language": "typescript",
+      "pattern": "documentation generation",
+      "replacement": "AI-generated documentation",
+      "description": "Use LLM to generate comprehensive code documentation",
+      "complexity": 6,
+      "riskLevel": "low",
+      "mode": "llm"
+    },
+    {
+      "id": "llm-error-handling-improvement",
+      "language": "typescript",
+      "pattern": "error handling improvement",
+      "replacement": "AI-improved error handling",
+      "description": "Use LLM to improve error handling patterns and add proper error boundaries",
+      "complexity": 7,
+      "riskLevel": "medium",
+      "mode": "llm"
+    },
+    {
+      "id": "llm-performance-optimization",
+      "language": "typescript",
+      "pattern": "performance optimization",
+      "replacement": "AI-optimized performance",
+      "description": "Use LLM to identify and fix performance bottlenecks",
+      "complexity": 8,
+      "riskLevel": "medium",
+      "mode": "llm"
     }
   ],
   "categories": {

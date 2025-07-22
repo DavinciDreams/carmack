@@ -35,8 +35,8 @@
     "usageCount": 1,
     "lifecycle": "experimental"
   },
-  "promise-to-async-await": {
-    "patternId": "promise-to-async-await",
+  "array-includes-instead-of-indexof": {
+    "patternId": "array-includes-instead-of-indexof",
     "successRate": 0,
     "averagePerformance": 0,
     "complexityReduction": 0,
@@ -59,8 +59,8 @@
     "usageCount": 1,
     "lifecycle": "experimental"
   },
-  "array-includes-instead-of-indexof": {
-    "patternId": "array-includes-instead-of-indexof",
+  "remove-unnecessary-returns": {
+    "patternId": "remove-unnecessary-returns",
     "successRate": 0,
     "averagePerformance": 0,
     "complexityReduction": 0,
@@ -83,6 +83,18 @@
     "usageCount": 1,
     "lifecycle": "experimental"
   },
+  "promise-to-async-await": {
+    "patternId": "promise-to-async-await",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1752924870148,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
   "template-literal-conversion": {
     "patternId": "template-literal-conversion",
     "successRate": 0,
@@ -95,15 +107,147 @@
     "usageCount": 1,
     "lifecycle": "experimental"
   },
-  "remove-unnecessary-returns": {
-    "patternId": "remove-unnecessary-returns",
+  "null-coalescing-operator": {
+    "patternId": "null-coalescing-operator",
     "successRate": 0,
     "averagePerformance": 0,
     "complexityReduction": 0,
     "errorRate": 0.1,
     "userSatisfaction": 5,
     "applicabilityScore": 0.5,
-    "lastUpdated": 1752924870148,
+    "lastUpdated": 1753227862434,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "optional-chaining": {
+    "patternId": "optional-chaining",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753227862434,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "cpp-modern-cast": {
+    "patternId": "cpp-modern-cast",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1752924941097,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "array-destructuring": {
+    "patternId": "array-destructuring",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753227862434,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "object-destructuring": {
+    "patternId": "object-destructuring",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753227862434,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "spread-operator-arrays": {
+    "patternId": "spread-operator-arrays",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753227862434,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "async-await-pattern": {
+    "patternId": "async-await-pattern",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753227862434,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "type-assertion-improvement": {
+    "patternId": "type-assertion-improvement",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753227862434,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "prefer-const-assertions": {
+    "patternId": "prefer-const-assertions",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753227862434,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "remove-unused-imports": {
+    "patternId": "remove-unused-imports",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753227862434,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "prefer-readonly-arrays": {
+    "patternId": "prefer-readonly-arrays",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753227862434,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "error-handling-improvement": {
+    "patternId": "error-handling-improvement",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753227862434,
     "usageCount": 1,
     "lifecycle": "experimental"
   },
@@ -181,18 +325,6 @@
   },
   "cpp-std-namespace": {
     "patternId": "cpp-std-namespace",
-    "successRate": 0,
-    "averagePerformance": 0,
-    "complexityReduction": 0,
-    "errorRate": 0.1,
-    "userSatisfaction": 5,
-    "applicabilityScore": 0.5,
-    "lastUpdated": 1752924941097,
-    "usageCount": 1,
-    "lifecycle": "experimental"
-  },
-  "cpp-modern-cast": {
-    "patternId": "cpp-modern-cast",
     "successRate": 0,
     "averagePerformance": 0,
     "complexityReduction": 0,
