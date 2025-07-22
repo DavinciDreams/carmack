@@ -648,12 +648,14 @@ async function transformationStage(input: PipelineRequest, state: PipelineState)
 
       if (result.success) {
         state.transformationsApplied.push(result);
-        
+
         // Track cumulative file modifications
-        result.filesModified.forEach(file => cumulativeFilesModified.add(file));
+        result.filesModified.forEach((file) => cumulativeFilesModified.add(file));
         transformationSuccessful = true;
 
-        console.log(`✅ ${transformationType} transformation completed: ${result.filesModified.length} files modified`);
+        console.log(
+          `✅ ${transformationType} transformation completed: ${result.filesModified.length} files modified`
+        );
 
         // For sequential mode, continue to next transformation even after success
         // This allows template → AST → LLM to build upon each other
@@ -681,7 +683,9 @@ async function transformationStage(input: PipelineRequest, state: PipelineState)
     throw new Error('All transformation methods failed');
   }
 
-  console.log(`🎉 Transformation stage completed: ${state.filesModified.length} total files modified`);
+  console.log(
+    `🎉 Transformation stage completed: ${state.filesModified.length} total files modified`
+  );
 }
 
 /**
@@ -859,12 +863,13 @@ async function validationStage(input: PipelineRequest, state: PipelineState): Pr
       complexityMetrics = await invokeActor<ComplexityMetrics>(complexityActor, {
         files: state.filesModified,
       });
-      
+
       // Check if complexity increased beyond threshold
       const maxComplexityIncrease = input.config.quality.maxComplexityIncrease;
       const baselineComplexity = 5; // Simplified baseline - in production this would be stored
-      const complexityIncrease = (complexityMetrics.cyclomaticComplexity - baselineComplexity) / baselineComplexity;
-      
+      const complexityIncrease =
+        (complexityMetrics.cyclomaticComplexity - baselineComplexity) / baselineComplexity;
+
       if (complexityIncrease > maxComplexityIncrease) {
         state.errors.push({
           stage: 'validation',
@@ -874,8 +879,10 @@ async function validationStage(input: PipelineRequest, state: PipelineState): Pr
           recoverable: true,
         });
       }
-      
-      console.log(`✅ Complexity analysis completed: cyclomatic=${complexityMetrics.cyclomaticComplexity}, cognitive=${complexityMetrics.cognitiveComplexity}`);
+
+      console.log(
+        `✅ Complexity analysis completed: cyclomatic=${complexityMetrics.cyclomaticComplexity}, cognitive=${complexityMetrics.cognitiveComplexity}`
+      );
     } catch (error) {
       console.warn('⚠️ Complexity analysis failed:', error);
       state.errors.push({
