@@ -12,31 +12,28 @@
  * - Natural language processing for pattern analysis
  */
 
-// Export core types first
-export * from './types.ts';
-
 // Export clustering functionality (excluding conflicting ClusteringConfig)
 export {
-  KMeansClusterer,
   DBSCANClusterer,
   HierarchicalClusterer,
+  KMeansClusterer,
   PatternClusterer,
 } from './clustering.ts';
-
-// Export other modules without conflicts
-export * from './statistics.ts';
-export * from './similarity.ts';
-export * from './reinforcement.ts';
-export * from './nlp.ts';
 export * from './effectiveness-scorer.ts';
-
+export * from './nlp.ts';
 // Export recommendation engine (excluding conflicting types)
 export {
-  PatternRecommendationEngine,
   createPatternRecommendationEngine,
-  RecommendationRequestSchema,
-  RecommendationResponseSchema,
-  type RecommendationRequest,
-  type RecommendationResponse,
+  PatternRecommendationEngine,
   type RecommendationEngineConfig,
+  type RecommendationRequest,
+  RecommendationRequestSchema,
+  type RecommendationResponse,
+  RecommendationResponseSchema,
 } from './recommendation-engine.ts';
+export * from './reinforcement.ts';
+export * from './similarity.ts';
+// Export other modules without conflicts
+export * from './statistics.ts';
+// Export core types first
+export * from './types.ts';

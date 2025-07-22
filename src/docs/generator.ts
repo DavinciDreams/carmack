@@ -807,7 +807,7 @@ export class DocumentationGenerator {
             for (const param of func.parameters) {
               html += `<li><code>${param.name}</code> (${param.type})${param.optional ? ' <em>optional</em>' : ''}${param.description ? ` - ${param.description}` : ''}</li>`;
             }
-            html += `</ul></div>`;
+            html += '</ul></div>';
           }
 
           if (func.returnType) {
@@ -818,12 +818,12 @@ export class DocumentationGenerator {
                         </div>`;
           }
 
-          html += `</div>`;
+          html += '</div>';
         }
-        html += `</div></div>`;
+        html += '</div></div>';
       }
 
-      html += `</section>`;
+      html += '</section>';
     }
 
     html += `</main>
@@ -1299,7 +1299,7 @@ export class DocumentationGenerator {
       for (const component of layer.components) {
         html += `<li><a href="#component-${this.sanitizeId(component)}">${component}</a></li>`;
       }
-      html += `</ul></div></div>`;
+      html += '</ul></div></div>';
     }
 
     html += `</div>
@@ -1325,10 +1325,10 @@ export class DocumentationGenerator {
         for (const dep of component.dependencies) {
           html += `<li>${dep}</li>`;
         }
-        html += `</ul></div>`;
+        html += '</ul></div>';
       }
 
-      html += `</div>`;
+      html += '</div>';
     }
 
     html += `</div>
@@ -1441,7 +1441,7 @@ export class DocumentationGenerator {
                             </div>
                         </div>`;
           }
-          html += `</div>`;
+          html += '</div>';
         }
 
         if (pattern.performance) {
@@ -1452,10 +1452,10 @@ export class DocumentationGenerator {
                     </div>`;
         }
 
-        html += `</div>`;
+        html += '</div>';
       }
 
-      html += `</div></section>`;
+      html += '</div></section>';
     }
 
     html += `</main>
@@ -1604,7 +1604,7 @@ export class DocumentationGenerator {
                     </div>`;
         }
 
-        html += `</div></section>`;
+        html += '</div></section>';
       }
     }
 
@@ -1830,7 +1830,7 @@ export class DocumentationGenerator {
           for (const change of added) {
             html += `<li><strong>${change.filePath}</strong>: ${change.description}</li>`;
           }
-          html += `</ul></div>`;
+          html += '</ul></div>';
         }
 
         if (modified.length > 0) {
@@ -1840,7 +1840,7 @@ export class DocumentationGenerator {
           for (const change of modified) {
             html += `<li><strong>${change.filePath}</strong>: ${change.description}</li>`;
           }
-          html += `</ul></div>`;
+          html += '</ul></div>';
         }
 
         if (deleted.length > 0) {
@@ -1850,10 +1850,10 @@ export class DocumentationGenerator {
           for (const change of deleted) {
             html += `<li><strong>${change.filePath}</strong>: ${change.description}</li>`;
           }
-          html += `</ul></div>`;
+          html += '</ul></div>';
         }
 
-        html += `</section>`;
+        html += '</section>';
       }
     }
 
