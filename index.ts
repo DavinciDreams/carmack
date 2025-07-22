@@ -2,7 +2,12 @@
 
 import { createActor } from 'xstate';
 import { carmackCoderMachine } from './src/machine.js';
-import type { MachineEvent, AstPattern, TransformationMode, TransformationRequest } from './src/types.js';
+import type {
+  MachineEvent,
+  AstPattern,
+  TransformationMode,
+  TransformationRequest,
+} from './src/types.js';
 import { loadPatterns } from './src/utils/index.js';
 
 /**
@@ -265,7 +270,7 @@ async function main() {
     options: CliOptions
   ): Promise<void> {
     // Create and start the state machine actor
-    const actor = createActor(carmackCoderMachine);
+    const actor = createActor(carmackCoderMachine as import('xstate').AnyActorLogic);
 
     // Subscribe to state changes for debugging
     if (options.verbose) {
@@ -292,14 +297,14 @@ async function main() {
       console.log('🎛️ Transformation Request:', JSON.stringify(transformationRequest, null, 2));
     }
 
-  // Send transformation request
-  // Send transformation request with proper typing
-  const startEvent: Extract<MachineEvent, { type: 'START_TRANSFORMATION' }> = {
-    type: 'START_TRANSFORMATION',
-    request: transformationRequest,
-  };
+    // Send transformation request
+    // Send transformation request with proper typing
+    const startEvent: Extract<MachineEvent, { type: 'START_TRANSFORMATION' }> = {
+      type: 'START_TRANSFORMATION',
+      request: transformationRequest,
+    };
 
-  actor.send(startEvent);
+    actor.send(startEvent);
 
     // Wait for completion
     await new Promise<void>((resolve, reject) => {

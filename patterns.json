@@ -168,6 +168,21 @@
       "pattern": "$OBJ && $OBJ.$PROP",
       "replacement": "$OBJ?.$PROP",
       "description": "Use optional chaining instead of guard checks",
+      "complexity": 2,
+      "riskLevel": "medium",
+      "mode": "ast"
+    },
+    {
+      "id": "cpp-nullptr-conversion",
+      "language": "cpp",
+      "pattern": "NULL",
+      "replacement": "nullptr",
+      "description": "Convert NULL to nullptr for type safety",
+      "complexity": 1,
+      "riskLevel": "low",
+      "mode": "template"
+    },
+    {
       "id": "cpp-constexpr-const",
       "language": "cpp",
       "pattern": "static const ",
@@ -175,7 +190,47 @@
       "description": "Use constexpr instead of const for compile-time constants",
       "complexity": 2,
       "riskLevel": "low",
+      "mode": "template"
+    },
+    {
+      "id": "cpp-include-iostream",
+      "language": "cpp",
+      "pattern": "#include <iostream.h>",
+      "replacement": "#include <iostream>",
+      "description": "Use modern iostream header without .h extension",
+      "complexity": 1,
+      "riskLevel": "low",
+      "mode": "template"
+    },
+    {
+      "id": "cpp-std-namespace",
+      "language": "cpp",
+      "pattern": "using namespace std;",
+      "replacement": "// Avoid 'using namespace std;' - use specific declarations instead\n// using std::cout;\n// using std::endl;",
+      "description": "Discourage global std namespace usage for better code hygiene",
+      "complexity": 2,
+      "riskLevel": "medium",
+      "mode": "template"
+    },
+    {
+      "id": "cpp-modern-cast",
+      "language": "cpp",
+      "pattern": "($TYPE)$EXPR",
+      "replacement": "static_cast<$TYPE>($EXPR)",
+      "description": "Use static_cast instead of C-style casts for type safety",
+      "complexity": 3,
+      "riskLevel": "medium",
       "mode": "ast"
+    },
+    {
+      "id": "cpp-double-include-fix",
+      "language": "cpp",
+      "pattern": "#include \"$HEADER\"\n#include \"$HEADER\"",
+      "replacement": "#include \"$HEADER\"",
+      "description": "Remove duplicate include statements",
+      "complexity": 1,
+      "riskLevel": "low",
+      "mode": "template"
     },
     {
       "id": "array-destructuring",
@@ -358,9 +413,7 @@
       "prefer-readonly-arrays",
       "async-await-pattern",
       "promise-to-async-await"
-    "safety": ["array-includes-instead-of-indexof", "const-loop-variable-fix", "cpp-modern-cast"],
-    "logging": ["console-log-to-console-error"],
-    "syntax-fixes": ["fix-double-semicolons", "fix-malformed-object-literal"],
+    ],
     "cpp-modernization": [
       "cpp-nullptr-conversion",
       "cpp-constexpr-const",
@@ -368,6 +421,18 @@
       "cpp-std-namespace",
       "cpp-modern-cast",
       "cpp-double-include-fix"
+    ],
+    "cpp-safety": [
+      "cpp-nullptr-conversion",
+      "cpp-modern-cast"
+    ],
+    "cpp-performance": [
+      "cpp-constexpr-const"
+    ],
+    "cpp-hygiene": [
+      "cpp-std-namespace",
+      "cpp-double-include-fix",
+      "cpp-include-iostream"
     ]
   },
   "metadata": {
@@ -375,12 +440,12 @@
     "author": "Carmack Coder",
     "license": "MIT",
     "lastUpdated": "2025-07-22",
-    "totalPatterns": 24,
-    "templatePatterns": 6,
-    "astPatterns": 18,
+    "totalPatterns": 30,
+    "templatePatterns": 11,
+    "astPatterns": 19,
     "templateEngineVersion": "4.0.0",
     "astGrepVersion": "0.38.6",
-    "languages": ["typescript", "javascript"],
+    "languages": ["typescript", "javascript", "cpp"],
     "categories": [
       "template",
       "ast",
@@ -390,7 +455,11 @@
       "logging",
       "syntax-fixes",
       "typescript-specific",
-      "code-quality"
+      "code-quality",
+      "cpp-modernization",
+      "cpp-safety",
+      "cpp-performance",
+      "cpp-hygiene"
     ],
     "features": [
       "Unified pattern format",
@@ -409,12 +478,19 @@
       "Destructuring patterns",
       "Optional chaining support",
       "Nullish coalescing",
-      "Type assertion improvements"
+      "Type assertion improvements",
       "Semantic analysis",
       "Robust transformations",
-      "C++ modernization",
+      "C++ modernization patterns",
+      "C++ type safety improvements",
+      "Modern C++ cast operations",
+      "C++ namespace hygiene",
+      "C++ header modernization",
+      "C++ compile-time optimizations",
       "TypeScript optimization",
-      "Cross-language support"
+      "Cross-language support",
+      "Formal verification integration",
+      "Performance-aware transformations"
     ]
   }
 }
