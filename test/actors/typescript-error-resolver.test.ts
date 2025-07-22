@@ -60,9 +60,10 @@ function calculate(a, b) {
     });
 
     expect(result).toBeDefined();
-    expect(result.success).toBe(true);
-    expect(result.errorsFixed).toBeGreaterThan(0);
-    expect(result.filesModified).toContain(testFile);
+    const typedResult = result as TypeScriptFixResult;
+    expect(typedResult.success).toBe(true);
+    expect(typedResult.errorsFixed).toBeGreaterThan(0);
+    expect(typedResult.filesModified).toContain(testFile);
   });
 
   test('should handle files with no errors', async () => {
@@ -101,10 +102,11 @@ export const calculate = (a: number, b: number): number => {
     });
 
     expect(result).toBeDefined();
-    expect(result.success).toBe(true);
-    expect(result.errorsFound).toBe(0);
-    expect(result.errorsFixed).toBe(0);
-    expect(result.summary).toContain('No TypeScript errors found');
+    const typedResult = result as TypeScriptFixResult;
+    expect(typedResult.success).toBe(true);
+    expect(typedResult.errorsFound).toBe(0);
+    expect(typedResult.errorsFixed).toBe(0);
+    expect(typedResult.summary).toContain('No TypeScript errors found');
   });
 
   test('should respect risk level limits', async () => {
@@ -138,8 +140,9 @@ console.log(obj.nonExistentProperty);
     });
 
     expect(result).toBeDefined();
+    const typedResult = result as TypeScriptFixResult;
     // Should have warnings about unfixed errors due to risk level
-    expect(result.warnings.length).toBeGreaterThan(0);
+    expect(typedResult.warnings.length).toBeGreaterThan(0);
   });
 
   test('should work in dry run mode', async () => {
@@ -210,7 +213,8 @@ function test(param) {
     });
 
     expect(result).toBeDefined();
-    expect(result.filesModified.length).toBeGreaterThanOrEqual(0);
+    const typedResult = result as TypeScriptFixResult;
+    expect(typedResult.filesModified.length).toBeGreaterThanOrEqual(0);
   });
 
   test('should generate type suggestions', async () => {
@@ -248,7 +252,8 @@ function processData(data) {
     });
 
     expect(result).toBeDefined();
-    expect(result.fixesApplied.length).toBeGreaterThanOrEqual(0);
+    const typedResult = result as TypeScriptFixResult;
+    expect(typedResult.fixesApplied.length).toBeGreaterThanOrEqual(0);
   });
 
   test('should handle error cases gracefully', async () => {
@@ -277,7 +282,8 @@ function processData(data) {
 
     expect(result).toBeDefined();
     // Should handle gracefully without crashing
-    expect(result.success).toBeDefined();
+    const typedResult = result as TypeScriptFixResult;
+    expect(typedResult.success).toBeDefined();
   });
 
   test('should validate input schema', async () => {
