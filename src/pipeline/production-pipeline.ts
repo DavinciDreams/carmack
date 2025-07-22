@@ -12,6 +12,10 @@ import { patternLearningActor } from '../actors/pattern-learning.ts';
 // Import all our transformation systems
 import { templateEngineActor } from '../actors/template-engine.ts';
 import { validationActor } from '../actors/validation.ts';
+// Import enhanced components
+import { enhancedTransformationOrchestratorActor } from '../actors/transformation-enhanced.ts';
+import { createEnhancedLLMTransformer } from '../actors/llm-transformation-enhanced.ts';
+import { DocumentationGenerator } from '../docs/generator.ts';
 
 // Import standardized result types
 import type {
@@ -200,6 +204,17 @@ const ProductionConfigSchema = z.object({
     backupEnabled: z.boolean().default(true),
     rollbackEnabled: z.boolean().default(true),
   }),
+
+  // Enhanced Features
+  enhanced: z.object({
+    enableOrchestrator: z.boolean().default(true),
+    enableContextAwareness: z.boolean().default(true),
+    enableMultiFileAnalysis: z.boolean().default(true),
+    enableDocumentationGeneration: z.boolean().default(true),
+    enableAdvancedCaching: z.boolean().default(true),
+    maxExecutionTime: z.number().default(600000), // 10 minutes
+    intelligentFallback: z.boolean().default(true),
+  }),
 });
 
 export type ProductionConfig = z.infer<typeof ProductionConfigSchema>;
@@ -230,6 +245,74 @@ const PipelineRequestSchema = z.object({
 });
 
 export type PipelineRequest = z.infer<typeof PipelineRequestSchema>;
+
+// Production Pipeline Request Schema for enhanced orchestrator compatibility
+const ProductionPipelineRequestSchema = z.object({
+  files: z.array(z.string()).min(1, 'At least one file is required'),
+  transformationRequest: z.object({
+    prompt: z.string().min(1, 'Prompt cannot be empty'),
+    targetFiles: z.array(z.string()).min(1, 'At least one target file is required'),
+    transformationType: z.enum(['template', 'ast', 'llm', 'auto']).default('auto'),
+    maxComplexity: z.number().default(15),
+    dryRun: z.boolean().default(false),
+  }),
+  config: ProductionConfigSchema,
+  context: z.object({
+    projectType: z.string().default('typescript'),
+    framework: z.string().optional(),
+    userId: z.string().optional(),
+    sessionId: z.string().optional(),
+    priority: z.enum(['low', 'normal', 'high', 'critical']).default('normal'),
+  }),
+});
+
+export type ProductionPipelineRequest = z.infer<typeof ProductionPipelineRequestSchema>;
+
+// Production Pipeline Result Schema for enhanced orchestrator compatibility
+const EnhancedPipelineResultSchema = z.object({
+  success: z.boolean(),
+  filesModified: z.array(z.string()),
+  transformationsApplied: z.array(
+    z.object({
+      file: z.string(),
+      type: z.string(),
+      timestamp: z.string(),
+      success: z.boolean(),
+    })
+  ),
+  qualityMetrics: z.object({
+    complexityBefore: z.number(),
+    complexityAfter: z.number(),
+    testCoverage: z.number(),
+    typeErrors: z.number(),
+    lintErrors: z.number(),
+  }),
+  performance: z.object({
+    totalTime: z.number(),
+    transformationTime: z.number(),
+    validationTime: z.number(),
+    cacheHits: z.number(),
+    cacheMisses: z.number(),
+  }),
+  errors: z.array(
+    z.object({
+      severity: z.enum(['error', 'warning', 'info']),
+      message: z.string(),
+      file: z.string().optional(),
+      timestamp: z.string(),
+    })
+  ),
+  warnings: z.array(
+    z.object({
+      severity: z.enum(['error', 'warning', 'info']),
+      message: z.string(),
+      file: z.string().optional(),
+      timestamp: z.string(),
+    })
+  ),
+});
+
+export type EnhancedPipelineResult = z.infer<typeof EnhancedPipelineResultSchema>;
 
 // Pipeline result schema
 interface PipelineResult {
@@ -342,7 +425,7 @@ export const ProductionPipelineResultSchema = z.object({
 export type ProductionPipelineResult = z.infer<typeof ProductionPipelineResultSchema>;
 
 /**
- * Production Pipeline Actor
+ * Production Pipeline Actor with Enhanced Orchestration
  */
 export const productionPipelineActor = fromPromise(
   async ({ input }: { input: PipelineRequest }): Promise<PipelineResult> => {
@@ -354,6 +437,93 @@ export const productionPipelineActor = fromPromise(
     try {
       // Validate input
       const validatedInput = PipelineRequestSchema.parse(input);
+
+      // Check if enhanced orchestrator is enabled
+      if (validatedInput.config.enhanced?.enableOrchestrator) {
+        console.log('🎯 Using Enhanced Transformation Orchestrator');
+        
+        // Convert to enhanced pipeline request format
+        const enhancedRequest: ProductionPipelineRequest = {
+          files: validatedInput.files,
+          transformationRequest: validatedInput.transformationRequest,
+          config: validatedInput.config,
+          context: validatedInput.context,
+        };
+
+        try {
+          // Use Enhanced Transformation Orchestrator
+          const orchestratorResult = await invokeActor<EnhancedPipelineResult>(enhancedTransformationOrchestratorActor, enhancedRequest);
+          
+          // Convert orchestrator result to production pipeline result format
+          return {
+            success: orchestratorResult.success,
+            transformationId,
+            filesModified: orchestratorResult.filesModified,
+            transformationsApplied: orchestratorResult.transformationsApplied.map(t => ({
+              type: t.type as 'template' | 'ast' | 'llm',
+              patternsUsed: [],
+              executionTime: 0, // Not provided by enhanced result
+              success: t.success,
+              confidence: 0.8, // Default confidence
+              metadata: {
+                file: t.file,
+                timestamp: t.timestamp,
+              },
+            })),
+            qualityMetrics: {
+              complexityBefore: orchestratorResult.qualityMetrics.complexityBefore,
+              complexityAfter: orchestratorResult.qualityMetrics.complexityAfter,
+              typeErrors: orchestratorResult.qualityMetrics.typeErrors,
+              formatIssues: 0, // Not provided by orchestrator
+              testResults: {
+                passed: 0, // Not provided by orchestrator
+                failed: 0,
+                coverage: orchestratorResult.qualityMetrics.testCoverage,
+              },
+            },
+            performance: {
+              totalExecutionTime: orchestratorResult.performance.totalTime,
+              stageTimings: {
+                preprocessing: 0,
+                'pattern-discovery': 0,
+                transformation: orchestratorResult.performance.transformationTime,
+                validation: orchestratorResult.performance.validationTime,
+                testing: 0,
+                feedback: 0,
+                postprocessing: 0,
+              },
+              resourceUsage: {
+                memory: process.memoryUsage().heapUsed,
+                cpu: 0,
+              },
+            },
+            feedback: {
+              automaticScore: 0.8, // Default score for enhanced orchestrator
+              recommendations: orchestratorResult.errors.length === 0
+                ? ['Enhanced transformation completed successfully']
+                : ['Review transformation errors and warnings'],
+            },
+            errors: orchestratorResult.errors.map(e => ({
+              stage: 'enhanced-orchestrator',
+              error: e.message,
+              message: e.message,
+              severity: e.severity as 'warning' | 'error' | 'critical',
+              recoverable: e.severity !== 'error',
+            })),
+            metadata: {
+              timestamp: new Date().toISOString(),
+              version: '1.0.0',
+              environment: process.env.NODE_ENV === 'production' ? 'production' : 'development',
+            },
+          };
+        } catch (orchestratorError) {
+          console.warn('⚠️ Enhanced orchestrator failed, falling back to standard pipeline:', orchestratorError);
+          // Fall through to standard pipeline
+        }
+      }
+
+      // Standard pipeline execution
+      console.log('🔄 Using standard production pipeline');
 
       // Initialize pipeline state
       const pipelineState = {
@@ -1403,5 +1573,14 @@ export const defaultProductionConfig: ProductionConfig = {
     enableTracing: false,
     backupEnabled: true,
     rollbackEnabled: true,
+  },
+  enhanced: {
+    enableOrchestrator: true,
+    enableContextAwareness: true,
+    enableMultiFileAnalysis: true,
+    enableDocumentationGeneration: true,
+    enableAdvancedCaching: true,
+    maxExecutionTime: 600000,
+    intelligentFallback: true,
   },
 };

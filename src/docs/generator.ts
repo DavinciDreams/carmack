@@ -1868,11 +1868,6 @@ export class DocumentationGenerator {
       const line = lines[lineIndex];
       
       if (line && !line.trim().startsWith('//') && !line.trim().startsWith('*') && functionName) {
-        // Get context (surrounding lines)
-        const contextStart = Math.max(0, lineIndex - 2);
-        const contextEnd = Math.min(lines.length, lineIndex + 3);
-        const context = lines.slice(contextStart, contextEnd).join('\n');
-        
         examples.push({
           filePath,
           functionName,
@@ -1920,7 +1915,6 @@ export class DocumentationGenerator {
    */
   private async extractImportUsages(content: string, filePath: string): Promise<UsageExample[]> {
     const examples: UsageExample[] = [];
-    const lines = content.split('\n');
 
     // Pattern for import statements
     const importPattern = /import\s+(?:\{([^}]+)\}|(\w+))\s+from\s+['"]([^'"]+)['"]/g;

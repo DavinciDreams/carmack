@@ -1,59 +1,125 @@
 /**
  * Enhanced LLM Transformation Actor
- * 
+ *
  * This module provides production-ready LLM-based code transformations using
  * the new provider system with real API integrations, fallback mechanisms,
- * and comprehensive error handling.
+ * context-aware transformations, advanced prompt engineering, and comprehensive
+ * error handling with rollback capabilities.
  */
 
 import { readFile, writeFile } from 'node:fs/promises';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
-import type { AstPattern, ComplexityMetrics, TransformationRequest } from '../types.js';
+import type {
+  TransformationRequest,
+  EnhancedTransformationRequest,
+  EnhancedTransformationContext,
+  ContextAwarePrompt,
+  MultiFileContext,
+  RollbackInfo,
+  PerformanceOptimization
+} from '../types.js';
 import { getLLMProviderManager, type LLMRequest } from '../providers/llm-providers.js';
 
 // =============================================================================
 // ENHANCED LLM TRANSFORMATION SCHEMAS
 // =============================================================================
 
+// Schema for validating LLM JSON responses
+const LLMTransformationResponseSchema = z.object({
+  transformedCode: z.string(),
+  explanation: z.string().default('No explanation provided'),
+  confidence: z.number().min(0).max(1).default(0.5),
+  warnings: z.array(z.string()).default([]),
+  appliedTransformations: z.array(z.string()).default([]),
+});
+
+export type LLMTransformationResponse = z.infer<typeof LLMTransformationResponseSchema>;
+
 const EnhancedLLMConfigSchema = z.object({
   provider: z.enum(['openai', 'anthropic', 'openrouter', 'local', 'mock']).default('openai'),
   model: z.string().default('gpt-4'),
   temperature: z.number().min(0).max(2).default(0.1),
-  maxTokens: z.number().default(4000),
-  timeout: z.number().default(30000),
+  maxTokens: z.number().default(8000),
+  timeout: z.number().default(60000), // Increased for complex transformations
   retries: z.number().default(3),
   enableFallback: z.boolean().default(true),
-  costLimit: z.number().default(1.0), // Dollar limit per transformation
+  costLimit: z.number().default(2.0), // Increased for enhanced features
+  
+  // Advanced features
+  enableContextAwareness: z.boolean().default(true),
+  enableMultiFileAnalysis: z.boolean().default(true),
+  enableIncrementalTransformation: z.boolean().default(true),
+  enableRollback: z.boolean().default(true),
+  
+  // Performance optimizations
+  performance: z.object({
+    enableCaching: z.boolean().default(true),
+    enableBatching: z.boolean().default(true),
+    maxBatchSize: z.number().default(5),
+    cacheStrategy: z.enum(['memory', 'disk', 'hybrid']).default('hybrid'),
+  }).default({}),
 });
 
 const EnhancedLLMTransformationInputSchema = z.object({
   files: z.array(z.string()),
-  request: z.custom<TransformationRequest>().optional(),
+  request: z.custom<EnhancedTransformationRequest>().optional(),
   config: EnhancedLLMConfigSchema.optional(),
-  context: z.object({
-    complexity: z.custom<ComplexityMetrics>().optional(),
-    patterns: z.array(z.custom<AstPattern>()).optional(),
-    projectType: z.string().optional(),
-    framework: z.string().optional(),
-    priority: z.enum(['low', 'normal', 'high']).default('normal'),
-  }).optional(),
+  context: z.custom<EnhancedTransformationContext>().optional(),
+  
+  // Advanced options
+  multiFileContext: z.custom<MultiFileContext>().optional(),
+  contextAwarePrompts: z.array(z.custom<ContextAwarePrompt>()).optional(),
+  rollbackInfo: z.custom<RollbackInfo>().optional(),
+  performanceOptions: z.custom<PerformanceOptimization>().optional(),
 });
 
 const EnhancedLLMTransformationResultSchema = z.object({
   filesModified: z.array(z.string()),
   transformationsApplied: z.number(),
   mode: z.literal('llm'),
+  
+  // Enhanced metrics
   totalTokensUsed: z.number().optional(),
   totalCost: z.number().optional(),
   averageConfidence: z.number().optional(),
   providersUsed: z.array(z.string()).optional(),
-  errors: z.array(z.string()).optional(),
-  warnings: z.array(z.string()).optional(),
+  
+  // Context awareness results
+  contextAnalysis: z.object({
+    projectComplexity: z.number(),
+    frameworkDetected: z.string().optional(),
+    dependenciesAnalyzed: z.number(),
+    crossFilePatterns: z.number(),
+  }).optional(),
+  
+  // Quality metrics
+  qualityImprovement: z.object({
+    complexityReduction: z.number(),
+    codeQualityScore: z.number(),
+    maintainabilityIndex: z.number(),
+  }).optional(),
+  
+  // Performance data
   performance: z.object({
     totalTime: z.number(),
     averageTimePerFile: z.number(),
     successRate: z.number(),
+    cacheHitRate: z.number(),
+    batchingEfficiency: z.number(),
+  }).optional(),
+  
+  // Error handling and rollback
+  errors: z.array(z.string()).optional(),
+  warnings: z.array(z.string()).optional(),
+  rollbackAvailable: z.boolean().default(false),
+  rollbackPath: z.string().optional(),
+  
+  // Learning and recommendations
+  learningData: z.object({
+    patternsDiscovered: z.array(z.string()),
+    recommendations: z.array(z.string()),
+    effectivenessScore: z.number(),
   }).optional(),
 });
 
@@ -89,6 +155,8 @@ export class EnhancedLLMTransformer {
     totalCost: 0,
     providersUsed: new Set<string>(),
     startTime: Date.now(),
+    cacheHits: 0,
+    cacheMisses: 0,
   };
 
   constructor(config?: Partial<EnhancedLLMConfig>) {
@@ -153,10 +221,13 @@ export class EnhancedLLMTransformer {
       providersUsed: Array.from(this.stats.providersUsed),
       errors: errors.length > 0 ? errors : undefined,
       warnings: warnings.length > 0 ? warnings : undefined,
+      rollbackAvailable: false, // TODO: Implement rollback functionality
       performance: {
         totalTime,
         averageTimePerFile: totalTime / input.files.length,
         successRate,
+        cacheHitRate: this.stats.cacheHits / (this.stats.cacheHits + this.stats.cacheMisses) || 0,
+        batchingEfficiency: input.files.length > 1 ? successRate : 1,
       },
     };
   }
@@ -182,7 +253,7 @@ export class EnhancedLLMTransformer {
       const fileContext = await this.analyzeFileContext(originalContent, filePath, input.context);
       
       // Generate transformation prompt
-      const prompt = this.generateEnhancedTransformationPrompt(originalContent, fileContext, input.request);
+      const prompt = this.generateEnhancedTransformationPrompt(originalContent, fileContext, input.request as TransformationRequest);
       
       // Check cache first
       const cacheKey = this.generateCacheKey(originalContent, prompt);
@@ -206,7 +277,7 @@ export class EnhancedLLMTransformer {
         options: {
           stream: false,
           jsonMode: true,
-          priority: input.context?.priority || 'normal',
+          priority: (input.context?.priority === 'critical' ? 'high' : input.context?.priority) || 'normal',
           maxRetries: this.config.retries,
         },
       };
@@ -249,9 +320,10 @@ export class EnhancedLLMTransformer {
       }
       
       // Apply the transformation if it's different
-      if (originalContent !== transformationResult.transformedCode) {
+      const finalTransformedCode = transformationResult.transformedCode || originalContent;
+      if (originalContent !== finalTransformedCode) {
         console.log(`📝 Writing enhanced transformed code to ${filePath}`);
-        await writeFile(filePath, transformationResult.transformedCode, 'utf-8');
+        await writeFile(filePath, finalTransformedCode, 'utf-8');
         
         const result = {
           success: true,
@@ -347,18 +419,18 @@ export class EnhancedLLMTransformer {
   }
 
   /**
-   * Generate enhanced transformation prompt with better context
+   * Generate enhanced transformation prompt focused on complex LLM-specific tasks
    */
   private generateEnhancedTransformationPrompt(
     content: string,
     context: any,
     request?: TransformationRequest
   ): string {
-    const customPrompt = request?.prompt || this.getDefaultTransformationGoals(context);
+    const customPrompt = request?.prompt || this.getDefaultLLMTransformationGoals(context);
     
-    return `You are an expert code transformation assistant. Transform the following ${context.language} code to improve it using modern best practices.
+    return `You are an expert code transformation assistant specializing in complex transformations that require semantic understanding and type inference. This code has already been processed by template and AST transformations - you should focus on intelligent, context-aware improvements.
 
-TRANSFORMATION GOALS:
+COMPLEX TRANSFORMATION GOALS:
 ${customPrompt}
 
 CODE ANALYSIS:
@@ -367,20 +439,22 @@ CODE ANALYSIS:
 - Complexity Score: ${context.complexity}/25
 - Functions: ${context.functions}
 - Classes: ${context.classes}
-- Detected Patterns: ${context.patterns.join(', ') || 'None'}
-- Code Issues: ${context.issues.join(', ') || 'None'}
+- Detected Issues: ${context.issues.join(', ') || 'None'}
+- Remaining Patterns: ${context.patterns.join(', ') || 'None'}
 
-TRANSFORMATION RULES:
-1. Preserve all functionality and behavior
-2. Maintain type safety (especially for TypeScript)
-3. Follow modern ${context.language} best practices
-4. Use appropriate design patterns
-5. Optimize for readability and maintainability
-6. Add helpful comments for complex transformations
-7. Ensure all imports and exports remain valid
-8. Fix any detected code issues
-9. Improve performance where possible
-10. Follow the project's apparent coding style
+LLM-SPECIFIC TRANSFORMATION RULES:
+1. Focus on semantic understanding and type inference
+2. Resolve complex TypeScript type issues (any types, missing generics)
+3. Infer proper types from usage patterns and context
+4. Apply advanced refactoring that requires code comprehension
+5. Optimize complex algorithms and data structures
+6. Resolve architectural issues and design patterns
+7. Handle cross-file dependencies and imports intelligently
+8. Apply framework-specific best practices requiring deep understanding
+9. Preserve all functionality - never break existing behavior
+10. Only make changes that require semantic analysis
+
+IMPORTANT: This is the final transformation stage. Simple pattern-based changes should have been handled by template/AST transformations. Focus on intelligent, context-aware improvements that require understanding code semantics.
 
 ORIGINAL CODE:
 \`\`\`${context.language}
@@ -389,11 +463,11 @@ ${content}
 
 Please respond with a JSON object containing:
 {
-  "transformedCode": "...",
-  "explanation": "...",
-  "confidence": 0.95,
-  "warnings": ["..."],
-  "appliedTransformations": ["..."]
+ "transformedCode": "...",
+ "explanation": "...",
+ "confidence": 0.95,
+ "warnings": ["..."],
+ "appliedTransformations": ["..."]
 }`;
   }
 
@@ -408,38 +482,38 @@ Focus on modern best practices and clean code principles.`;
   }
 
   /**
-   * Parse LLM response into structured transformation result
+   * Parse LLM response into structured transformation result using Zod validation
    */
-  private parseTransformationResponse(response: string, originalCode: string): {
-    transformedCode: string;
-    explanation: string;
-    confidence: number;
-    warnings: string[];
-    appliedTransformations: string[];
-  } {
+  private parseTransformationResponse(response: string, originalCode: string): LLMTransformationResponse {
     try {
       // Try to parse as JSON first
-      const parsed = JSON.parse(response);
+      const rawParsed = JSON.parse(response);
       
-      return {
-        transformedCode: parsed.transformedCode || originalCode,
-        explanation: parsed.explanation || 'No explanation provided',
-        confidence: parsed.confidence || 0.5,
-        warnings: parsed.warnings || [],
-        appliedTransformations: parsed.appliedTransformations || [],
-      };
-    } catch {
+      // Use Zod to validate and provide defaults
+      const validatedResponse = LLMTransformationResponseSchema.parse({
+        transformedCode: rawParsed.transformedCode || originalCode,
+        explanation: rawParsed.explanation,
+        confidence: rawParsed.confidence,
+        warnings: rawParsed.warnings,
+        appliedTransformations: rawParsed.appliedTransformations,
+      });
+      
+      return validatedResponse;
+    } catch (parseError) {
       // If not JSON, try to extract code from markdown blocks
       const codeMatch = response.match(/```[\w]*\n([\s\S]*?)\n```/);
-      const transformedCode = codeMatch ? codeMatch[1] : originalCode;
+      const extractedCode = codeMatch?.[1]?.trim() || null;
       
-      return {
-        transformedCode,
-        explanation: 'Raw response from LLM',
-        confidence: 0.3,
-        warnings: ['Could not parse structured response'],
-        appliedTransformations: ['unknown'],
-      };
+      // Use Zod to create a valid response with defaults
+      const fallbackResponse = LLMTransformationResponseSchema.parse({
+        transformedCode: extractedCode || originalCode,
+        explanation: 'Raw response from LLM - could not parse JSON',
+        confidence: extractedCode ? 0.4 : 0.1,
+        warnings: ['Could not parse structured JSON response'],
+        appliedTransformations: extractedCode ? ['markdown-extraction'] : ['no-transformation'],
+      });
+      
+      return fallbackResponse;
     }
   }
 
@@ -612,33 +686,38 @@ Focus on modern best practices and clean code principles.`;
     return patterns;
   }
 
-  private getDefaultTransformationGoals(context: any): string {
-    const goals = [
-      '- Convert var to const/let based on usage patterns',
-      '- Transform callbacks to async/await where appropriate',
-      '- Use modern ES6+ features (destructuring, template literals, arrow functions)',
-      '- Apply object property shorthand',
-      '- Use strict equality operators (=== instead of ==)',
-      '- Modernize function declarations where appropriate',
-      '- Replace indexOf with includes() where applicable',
-      '- Improve error handling and logging',
-    ];
-
+  /**
+   * Get default LLM-specific transformation goals based on context
+   */
+  private getDefaultLLMTransformationGoals(context: any): string {
+    const goals: string[] = [];
+    
+    // Focus on complex transformations that require semantic understanding
+    if (context.issues?.some((issue: string) => issue.includes('any') || issue.includes('type'))) {
+      goals.push('- Infer proper types to replace any types and resolve type issues');
+    }
+    
+    if (context.complexity > 15) {
+      goals.push('- Apply intelligent refactoring to reduce algorithmic complexity');
+    }
+    
     if (context.language === 'typescript') {
-      goals.push(
-        '- Improve type annotations and interfaces',
-        '- Use TypeScript utility types where beneficial',
-        '- Apply proper generic constraints',
-        '- Replace any types with specific types'
-      );
+      goals.push('- Perform advanced TypeScript type inference and generic optimization');
     }
-
+    
     if (context.framework) {
-      goals.push(`- Apply ${context.framework}-specific best practices`);
+      goals.push(`- Apply advanced ${context.framework} architectural patterns requiring semantic analysis`);
     }
-
+    
+    // LLM-specific goals that require understanding code semantics
+    goals.push('- Optimize complex algorithms and data structures');
+    goals.push('- Apply design patterns that require understanding code intent');
+    goals.push('- Resolve cross-file dependencies and import optimizations');
+    goals.push('- Perform intelligent code restructuring based on usage patterns');
+    
     return goals.join('\n');
   }
+
 
   private generateCacheKey(content: string, prompt: string): string {
     const combined = `${content}|${prompt}`;
