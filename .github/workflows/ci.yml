@@ -1,0 +1,56 @@
+name: 'Carmack Coder CI'
+
+on:
+  push:
+    branches: ['main', 'develop', 'fix-*']
+  pull_request:
+    branches: ['main', 'develop']
+
+jobs:
+  test:
+    name: 'Test Suite'
+    runs-on: 'ubuntu-latest'
+    
+    steps:
+      - name: 'Checkout Code'
+        uses: 'actions/checkout@v4'
+        
+      - name: 'Setup Bun'
+        uses: 'oven-sh/setup-bun@v1'
+        with:
+          bun-version: 'latest'
+          
+      - name: 'Install Dependencies'
+        run: 'bun install'
+        
+      - name: 'Run Type Checking'
+        run: 'bun run type-check'
+        
+      - name: 'Run Tests'
+        run: 'bun test'
+        
+      - name: 'Run Linting'
+        run: 'bun run lint'
+        
+      - name: 'Validate Configuration Files'
+        run: 'bun run validate-configs.ts'
+
+  build:
+    name: 'Build Application'
+    runs-on: 'ubuntu-latest'
+    needs: test
+    
+    steps:
+      - name: 'Checkout Code'
+        uses: 'actions/checkout@v4'
+        
+      - name: 'Setup Bun'
+        uses: 'oven-sh/setup-bun@v1'
+        with:
+          bun-version: 'latest'
+          
+      - name: 'Install Dependencies'
+        run: 'bun install'
+        
+      - name: 'Build Application'
+        run: 'bun run build'
