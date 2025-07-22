@@ -286,7 +286,7 @@ export class OpenAIProvider extends BaseLLMProvider {
           throw error;
         }
 
-        const delay = Math.min(1000 * Math.pow(2, retryCount), 10000);
+        const delay = Math.min(1000 * 2 ** retryCount, 10000);
         console.warn(
           `OpenAI request failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms...`
         );
@@ -384,7 +384,7 @@ export class AnthropicProvider extends BaseLLMProvider {
           throw error;
         }
 
-        const delay = Math.min(1000 * Math.pow(2, retryCount), 10000);
+        const delay = Math.min(1000 * 2 ** retryCount, 10000);
         console.warn(
           `Anthropic request failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms...`
         );
@@ -491,7 +491,7 @@ export class OpenRouterProvider extends BaseLLMProvider {
           throw error;
         }
 
-        const delay = Math.min(1000 * Math.pow(2, retryCount), 10000);
+        const delay = Math.min(1000 * 2 ** retryCount, 10000);
         console.warn(
           `OpenRouter request failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms...`
         );
@@ -577,7 +577,7 @@ export class OllamaProvider extends BaseLLMProvider {
           );
         }
 
-        const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
+        const delay = Math.min(1000 * 2 ** retryCount, 5000);
         console.warn(
           `Ollama request failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms...`
         );
@@ -658,7 +658,6 @@ export class LLMProviderManager {
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
         console.warn(`❌ LLM request failed with ${providerName}:`, lastError.message);
-        continue;
       }
     }
 

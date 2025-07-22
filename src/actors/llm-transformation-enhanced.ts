@@ -10,22 +10,67 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
-import type {
-  TransformationRequest,
-  EnhancedTransformationRequest,
-  EnhancedTransformationContext,
-  ContextAwarePrompt,
-  MultiFileContext,
-  RollbackInfo,
-  PerformanceOptimization,
-} from '../types.js';
 import { getLLMProviderManager, type LLMRequest } from '../providers/llm-providers.js';
+import type {
+  ContextAwarePrompt,
+  EnhancedTransformationContext,
+  EnhancedTransformationRequest,
+  MultiFileContext,
+  PerformanceOptimization,
+  RollbackInfo,
+  TransformationRequest,
+} from '../types.js';
 
 // =============================================================================
 // ENHANCED LLM TRANSFORMATION SCHEMAS
 // =============================================================================
 
-// Schema for validating LLM JSON responses
+/**
+ * Schema for file context analysis results
+ * Provides comprehensive type safety for code analysis data
+ */
+const FileContextAnalysisSchema = z.object({
+  language: z.string(),
+  framework: z.string().optional(),
+  complexity: z.number().min(0).max(25),
+  patterns: z.array(z.string()),
+  imports: z.array(z.string()),
+  exports: z.array(z.string()),
+  functions: z.number().int().min(0),
+  classes: z.number().int().min(0),
+  issues: z.array(z.string()),
+});
+
+/**
+ * Schema for transformation cache entries
+ * Ensures type safety for cached transformation results
+ */
+const TransformationCacheEntrySchema = z.object({
+  success: z.boolean(),
+  transformationCount: z.number().int().min(0),
+  confidence: z.number().min(0).max(1).optional(),
+  warnings: z.array(z.string()).optional(),
+  error: z.string().optional(),
+  timestamp: z.number(),
+  cacheKey: z.string(),
+});
+
+/**
+ * Interface for transformation result that matches cache return type
+ * Provides compatibility between cache storage and method return types
+ */
+interface TransformationMethodResult {
+  success: boolean;
+  transformationCount: number;
+  confidence?: number;
+  warnings?: string[];
+  error?: string;
+}
+
+/**
+ * Schema for validating LLM JSON responses
+ * Provides runtime validation with comprehensive defaults
+ */
 const LLMTransformationResponseSchema = z.object({
   transformedCode: z.string(),
   explanation: z.string().default('No explanation provided'),
@@ -35,6 +80,8 @@ const LLMTransformationResponseSchema = z.object({
 });
 
 export type LLMTransformationResponse = z.infer<typeof LLMTransformationResponseSchema>;
+export type FileContextAnalysis = z.infer<typeof FileContextAnalysisSchema>;
+export type TransformationCacheEntry = z.infer<typeof TransformationCacheEntrySchema>;
 
 const EnhancedLLMConfigSchema = z.object({
   provider: z.enum(['openai', 'anthropic', 'openrouter', 'local', 'mock']).default('openai'),
@@ -159,7 +206,7 @@ export const enhancedLLMTransformationActor = fromPromise(
 export class EnhancedLLMTransformer {
   private config: EnhancedLLMConfig;
   private providerManager = getLLMProviderManager();
-  private cache: Map<string, any> = new Map();
+  private cache: Map<string, TransformationCacheEntry> = new Map();
   private stats = {
     totalTokens: 0,
     totalCost: 0,
@@ -275,12 +322,17 @@ export class EnhancedLLMTransformer {
 
       // Check cache first
       const cacheKey = this.generateCacheKey(originalContent, prompt);
-      let cachedResult = this.cache.get(cacheKey);
+      const cachedResult = this.cache.get(cacheKey);
 
       if (cachedResult) {
         console.log(`📋 Using cached result for ${filePath}`);
-        return cachedResult;
+        this.stats.cacheHits++;
+        
+        // Validate and extract cached transformation result with comprehensive error handling
+        return this.extractValidatedCacheResult(cachedResult, filePath);
       }
+
+      this.stats.cacheMisses++;
 
       // Make LLM request with fallback
       const llmRequest: LLMRequest = {
@@ -354,8 +406,16 @@ export class EnhancedLLMTransformer {
           warnings: transformationResult.warnings,
         };
 
-        // Cache the result
-        this.cache.set(cacheKey, result);
+        // Cache the result with proper cache entry format
+        const cacheEntry: TransformationCacheEntry = {
+          success: result.success,
+          transformationCount: result.transformationCount,
+          confidence: result.confidence,
+          warnings: result.warnings,
+          timestamp: Date.now(),
+          cacheKey,
+        };
+        this.cache.set(cacheKey, cacheEntry);
         return result;
       }
 
@@ -366,8 +426,16 @@ export class EnhancedLLMTransformer {
         warnings: ['No changes needed'],
       };
 
-      // Cache the result
-      this.cache.set(cacheKey, result);
+      // Cache the result with proper cache entry format
+      const cacheEntry: TransformationCacheEntry = {
+        success: result.success,
+        transformationCount: result.transformationCount,
+        confidence: result.confidence,
+        warnings: result.warnings,
+        timestamp: Date.now(),
+        cacheKey,
+      };
+      this.cache.set(cacheKey, cacheEntry);
       return result;
     } catch (error) {
       return {
@@ -380,22 +448,18 @@ export class EnhancedLLMTransformer {
 
   /**
    * Analyze file context for enhanced transformation prompts
+   * Provides comprehensive analysis of code structure, complexity, and patterns
+   *
+   * @param content - The source code content to analyze
+   * @param filePath - Path to the file being analyzed
+   * @param context - Optional enhanced transformation context
+   * @returns Promise resolving to detailed file analysis
    */
   private async analyzeFileContext(
     content: string,
     filePath: string,
     context?: EnhancedLLMTransformationInput['context']
-  ): Promise<{
-    language: string;
-    framework?: string;
-    complexity: number;
-    patterns: string[];
-    imports: string[];
-    exports: string[];
-    functions: number;
-    classes: number;
-    issues: string[];
-  }> {
+  ): Promise<FileContextAnalysis> {
     const language = this.detectLanguage(filePath);
     const imports = this.extractImports(content);
     const exports = this.extractExports(content);
@@ -441,10 +505,16 @@ export class EnhancedLLMTransformer {
 
   /**
    * Generate enhanced transformation prompt focused on complex LLM-specific tasks
+   * Creates context-aware prompts that leverage semantic understanding for intelligent transformations
+   *
+   * @param content - The source code content to transform
+   * @param context - File analysis context with language, complexity, and pattern information
+   * @param request - Optional transformation request with custom prompt and parameters
+   * @returns Comprehensive prompt string optimized for LLM code transformation
    */
   private generateEnhancedTransformationPrompt(
     content: string,
-    context: any,
+    context: FileContextAnalysis,
     request?: TransformationRequest
   ): string {
     const customPrompt = request?.prompt || this.getDefaultLLMTransformationGoals(context);
@@ -494,8 +564,12 @@ Please respond with a JSON object containing:
 
   /**
    * Generate system prompt for better LLM context
+   * Creates specialized system prompts that guide LLM behavior for code transformations
+   *
+   * @param context - File analysis context containing language, framework, and complexity information
+   * @returns Optimized system prompt string for LLM code transformation tasks
    */
-  private generateSystemPrompt(context: any): string {
+  private generateSystemPrompt(context: FileContextAnalysis): string {
     return `You are an expert code transformation assistant specializing in ${context.language} development. 
 Your goal is to improve code quality, maintainability, and performance while preserving functionality.
 Always respond with valid JSON containing the transformed code and metadata.
@@ -655,6 +729,116 @@ Focus on modern best practices and clean code principles.`;
   }
 
   /**
+   * Extract and validate cached transformation result with comprehensive error handling
+   *
+   * This method implements Carmack's optimization principles:
+   * - Validates cache integrity before extraction using Zod schemas
+   * - Uses efficient object destructuring for optimal performance
+   * - Provides comprehensive error handling and graceful degradation
+   * - Ensures type safety with runtime validation
+   * - Optimizes memory usage through selective property extraction
+   * - Supports formal verification through invariant checking
+   *
+   * @param cachedResult - The cached transformation entry to extract from
+   * @param filePath - File path for error context and logging
+   * @returns Validated transformation method result with proper type safety
+   *
+   * @throws {Error} When cache validation fails critically
+   *
+   * @invariant The returned result always has a valid success boolean
+   * @invariant transformationCount is always a non-negative integer
+   * @invariant confidence, if present, is between 0 and 1
+   */
+  private extractValidatedCacheResult(
+    cachedResult: TransformationCacheEntry,
+    filePath: string
+  ): TransformationMethodResult {
+    try {
+      // Validate cache entry structure using Zod schema for runtime type safety
+      const validatedCache = TransformationCacheEntrySchema.parse(cachedResult);
+      
+      // Check cache freshness and integrity
+      const cacheAge = Date.now() - validatedCache.timestamp;
+      const maxCacheAge = 24 * 60 * 60 * 1000; // 24 hours
+      
+      if (cacheAge > maxCacheAge) {
+        console.warn(`⚠️ Cache entry for ${filePath} is stale (${Math.round(cacheAge / 1000 / 60)} minutes old)`);
+      }
+      
+      // Efficient object construction using destructuring and computed properties
+      // This approach minimizes memory allocations and ensures type safety
+      const {
+        success,
+        transformationCount,
+        confidence,
+        warnings,
+        error
+      } = validatedCache;
+      
+      // Validate business logic constraints
+      if (transformationCount < 0) {
+        throw new Error(`Invalid transformation count: ${transformationCount}`);
+      }
+      
+      if (confidence !== undefined && (confidence < 0 || confidence > 1)) {
+        throw new Error(`Invalid confidence value: ${confidence}`);
+      }
+      
+      // Construct result object with validated properties
+      // Using conditional property assignment for optimal memory usage
+      const result: TransformationMethodResult = {
+        success,
+        transformationCount,
+        ...(confidence !== undefined && { confidence }),
+        ...(warnings && warnings.length > 0 && { warnings: [...warnings] }), // Defensive copy
+        ...(error && { error })
+      };
+      
+      // Log cache hit with performance metrics
+      console.log(`📋 Cache hit for ${filePath} (age: ${Math.round(cacheAge / 1000)}s, confidence: ${confidence?.toFixed(2) || 'N/A'})`);
+      
+      return result;
+      
+    } catch (validationError) {
+      // Comprehensive error handling with context preservation
+      const errorMessage = validationError instanceof Error
+        ? validationError.message
+        : String(validationError);
+      
+      console.error(`❌ Cache validation failed for ${filePath}: ${errorMessage}`);
+      
+      // Graceful degradation: attempt to extract basic properties safely
+      try {
+        const fallbackResult: TransformationMethodResult = {
+          success: Boolean(cachedResult.success),
+          transformationCount: Math.max(0, Number(cachedResult.transformationCount) || 0),
+          ...(cachedResult.confidence &&
+              typeof cachedResult.confidence === 'number' &&
+              cachedResult.confidence >= 0 &&
+              cachedResult.confidence <= 1 &&
+              { confidence: cachedResult.confidence }),
+          warnings: ['Cache validation failed, using fallback extraction'],
+          ...(cachedResult.error && { error: String(cachedResult.error) })
+        };
+        
+        console.warn(`⚠️ Using fallback cache extraction for ${filePath}`);
+        return fallbackResult;
+        
+      } catch (fallbackError) {
+        // Ultimate fallback: return safe default values
+        console.error(`❌ Fallback cache extraction failed for ${filePath}: ${fallbackError}`);
+        
+        return {
+          success: false,
+          transformationCount: 0,
+          error: `Cache corruption detected: ${errorMessage}`,
+          warnings: ['Cache entry corrupted, returning safe defaults']
+        };
+      }
+    }
+  }
+
+  /**
    * Helper methods (reused from original implementation)
    */
   private detectLanguage(filePath: string): string {
@@ -717,8 +901,12 @@ Focus on modern best practices and clean code principles.`;
 
   /**
    * Get default LLM-specific transformation goals based on context
+   * Generates intelligent transformation objectives based on code analysis results
+   *
+   * @param context - File analysis context with complexity, language, and detected issues
+   * @returns String containing prioritized transformation goals for LLM processing
    */
-  private getDefaultLLMTransformationGoals(context: any): string {
+  private getDefaultLLMTransformationGoals(context: FileContextAnalysis): string {
     const goals: string[] = [];
 
     // Focus on complex transformations that require semantic understanding

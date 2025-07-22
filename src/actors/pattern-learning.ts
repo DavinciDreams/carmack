@@ -1,13 +1,13 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
-import type { AstPattern, ComplexityMetrics } from '../types.js';
 import { PatternClusterer } from '../learning/clustering.ts';
-import { PatternSimilarityDetector } from '../learning/similarity.ts';
-import { StatisticalAnalyzer, PatternStatistics } from '../learning/statistics.ts';
-import { ReinforcementLearningManager } from '../learning/reinforcement.ts';
 import { createNLPAnalyzer } from '../learning/nlp.ts';
-import type { PatternFeatureVector, NLPAnalysis } from '../learning/types.ts';
+import { ReinforcementLearningManager } from '../learning/reinforcement.ts';
+import { PatternSimilarityDetector } from '../learning/similarity.ts';
+import { PatternStatistics, StatisticalAnalyzer } from '../learning/statistics.ts';
+import type { NLPAnalysis, PatternFeatureVector } from '../learning/types.ts';
+import type { AstPattern, ComplexityMetrics } from '../types.js';
 
 // Extended pattern type for learning with confidence
 type LearnedPattern = AstPattern & {
@@ -835,11 +835,14 @@ export class PatternLearner {
     // Generate patterns based on intent and keywords
     if (intent === 'modernize' && keywords.includes('var')) {
       return 'var $NAME = $VALUE';
-    } else if (intent === 'optimize' && keywords.includes('loop')) {
+    }
+    if (intent === 'optimize' && keywords.includes('loop')) {
       return 'for (let $I = 0; $I < $ARRAY.length; $I++)';
-    } else if (intent === 'refactor' && keywords.includes('function')) {
+    }
+    if (intent === 'refactor' && keywords.includes('function')) {
       return 'function $NAME($PARAMS) { $BODY }';
-    } else if (keywords.includes('console')) {
+    }
+    if (keywords.includes('console')) {
       return 'console.log($MESSAGE)';
     }
 
@@ -857,11 +860,14 @@ export class PatternLearner {
     // Generate replacements based on intent and keywords
     if (intent === 'modernize' && keywords.includes('var')) {
       return 'const $NAME = $VALUE';
-    } else if (intent === 'optimize' && keywords.includes('loop')) {
+    }
+    if (intent === 'optimize' && keywords.includes('loop')) {
       return '$ARRAY.forEach(($ITEM, $I) => { /* loop body */ })';
-    } else if (intent === 'refactor' && keywords.includes('function')) {
+    }
+    if (intent === 'refactor' && keywords.includes('function')) {
       return 'const $NAME = ($PARAMS) => { $BODY }';
-    } else if (keywords.includes('console')) {
+    }
+    if (keywords.includes('console')) {
       return '// TODO: Remove debug statement\n// console.log($MESSAGE)';
     }
 
