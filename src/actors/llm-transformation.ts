@@ -2,6 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
 import type { AstPattern, ComplexityMetrics, TransformationRequest } from '../types.js';
+import { getLLMProviderManager, type LLMRequest, type LLMResponse } from '../providers/llm-providers.js';
 
 /**
  * Comprehensive LLM Transformation System

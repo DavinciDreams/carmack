@@ -523,13 +523,15 @@ async function fixTypes(files: string[], errors: ErrorInfo[]): Promise<Validatio
   const warnings: ErrorInfo[] = [];
 
   try {
-    // Import LLM transformation system for type fixing
-    const { LLMTransformer } = await import('./llm-transformation.js');
+    // Import enhanced LLM transformation system for type fixing
+    const { EnhancedLLMTransformer } = await import('./llm-transformation-enhanced.js');
 
-    const llmTransformer = new LLMTransformer({
-      provider: 'mock', // Use mock for now, can be configured for real LLM
+    const llmTransformer = new EnhancedLLMTransformer({
+      provider: 'openai', // Will fallback to mock if no API key
       model: 'gpt-4',
       temperature: 0.1, // Low temperature for deterministic fixes
+      enableFallback: true,
+      retries: 2,
     });
 
     // Group errors by file for efficient processing
@@ -570,6 +572,7 @@ async function fixTypes(files: string[], errors: ErrorInfo[]): Promise<Validatio
             patterns: [],
             projectType: 'typescript',
             framework: detectFramework(originalContent),
+            priority: 'high' as const, // High priority for type fixes
           },
         };
 
@@ -838,82 +841,15 @@ async function validateQuality(files: string[]): Promise<ValidationResult> {
   let fixableIssues = 0;
 
   try {
-    // Try to use ESLint programmatically with timeout
-    const { ESLint } = await import('eslint');
-
-    const eslint = new ESLint({
-      overrideConfigFile: true,
-      overrideConfig: {
-        languageOptions: {
-          ecmaVersion: 'latest',
-          sourceType: 'module',
-        },
-        rules: {
-          // Code quality rules
-          'prefer-const': 'warn',
-          'no-var': 'error',
-          'no-unused-vars': 'warn',
-          eqeqeq: 'error',
-          'no-console': 'warn',
-          complexity: ['warn', { max: 15 }],
-          'max-depth': ['warn', { max: 4 }],
-          'max-lines-per-function': ['warn', { max: 50 }],
-          'no-duplicate-imports': 'error',
-          'prefer-arrow-callback': 'warn',
-          'arrow-spacing': 'warn',
-          'object-shorthand': 'warn',
-          'prefer-template': 'warn',
-        },
-      },
-    });
-
-    // Add timeout wrapper for ESLint operations
-    const lintWithTimeout = (filePath: string): Promise<void> => {
-      return new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error(`ESLint timeout for ${filePath}`));
-        }, 3000); // 3 second timeout per file
-
-        // Run ESLint in an async IIFE to avoid async promise executor
-        (async () => {
-          try {
-            const results = await eslint.lintFiles([filePath]);
-
-            for (const result of results) {
-              for (const message of result.messages) {
-                const errorInfo: ErrorInfo = {
-                  code: message.ruleId || 'ESLINT_ERROR',
-                  message: message.message,
-                  file: result.filePath,
-                  line: message.line,
-                  column: message.column,
-                  severity: message.severity === 2 ? 'error' : 'warning',
-                };
-
-                if (message.severity === 2) {
-                  errors.push(errorInfo);
-                } else {
-                  warnings.push(errorInfo);
-                }
-
-                if (message.fix) {
-                  fixableIssues++;
-                }
-              }
-            }
-            clearTimeout(timeout);
-            resolve();
-          } catch (error) {
-            clearTimeout(timeout);
-            reject(error);
-          }
-        })();
-      });
-    };
-
+    // Process files with ESLint directly using the lint function
     for (const filePath of files) {
       try {
-        await lint(filePath);
+        const result = await lint(filePath);
+        if (!result.isSuccess) {
+          errors.push(...result.errors);
+          warnings.push(...result.warnings);
+          fixableIssues += result.fixableIssues;
+        }
       } catch (error) {
         console.warn(`ESLint failed or timed out for ${filePath}:`, error);
         warnings.push({

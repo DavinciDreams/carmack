@@ -724,44 +724,1226 @@ export class DocumentationGenerator {
     return markdown;
   }
 
-  // Placeholder methods for other documentation types
+  /**
+   * Generate API documentation in HTML format with interactive features
+   */
   private async generateAPIHTML(
-    _modules: ModuleDoc[],
-    _request: DocumentationRequest
+    modules: ModuleDoc[],
+    request: DocumentationRequest
   ): Promise<string> {
-    return '<html><body><h1>API Documentation</h1><p>HTML format not yet implemented</p></body></html>';
+    const css = this.generateDocumentationCSS();
+    const searchScript = this.generateSearchScript();
+    
+    let html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Documentation - Carmack Coder</title>
+    <style>${css}</style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🚀 API Documentation</h1>
+            <p class="subtitle">Generated on ${new Date().toISOString()}</p>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search functions, classes, modules..." />
+                <button onclick="clearSearch()">Clear</button>
+            </div>
+        </header>
+
+        <nav class="sidebar">
+            <h3>📚 Modules</h3>
+            <ul class="module-list">`;
+
+    // Generate navigation
+    for (const module of modules) {
+      html += `<li><a href="#module-${this.sanitizeId(module.name)}" onclick="highlightModule('${this.sanitizeId(module.name)}')">${module.name}</a></li>`;
+    }
+
+    html += `</ul>
+        </nav>
+
+        <main class="content">`;
+
+    // Generate module documentation
+    for (const module of modules) {
+      const moduleId = this.sanitizeId(module.name);
+      html += `
+            <section id="module-${moduleId}" class="module-section" data-searchable="${module.name.toLowerCase()}">
+                <h2 class="module-title">📦 ${module.name}</h2>
+                <div class="module-info">
+                    <p class="file-path"><strong>File:</strong> <code>${module.filePath}</code></p>
+                    ${module.description ? `<p class="description">${module.description}</p>` : ''}
+                </div>`;
+
+      // Functions section
+      if (module.exports.functions.length > 0) {
+        html += `<div class="section">
+                    <h3 class="section-title">⚡ Functions</h3>
+                    <div class="items-grid">`;
+        
+        for (const func of module.exports.functions) {
+          if (!request.includePrivate && !func.isExported) continue;
+          
+          html += `<div class="item-card function-card" data-searchable="${func.name.toLowerCase()} ${func.signature.toLowerCase()}">
+                        <div class="item-header">
+                            <h4 class="item-name">${func.name}</h4>
+                            <div class="badges">
+                                ${func.isAsync ? '<span class="badge async">async</span>' : ''}
+                                ${func.isExported ? '<span class="badge exported">exported</span>' : ''}
+                            </div>
+                        </div>
+                        <div class="signature">
+                            <code>${this.escapeHtml(func.signature)}</code>
+                        </div>
+                        ${func.description ? `<p class="description">${func.description}</p>` : ''}`;
+
+          if (func.parameters.length > 0) {
+            html += `<div class="parameters">
+                            <h5>Parameters:</h5>
+                            <ul>`;
+            for (const param of func.parameters) {
+              html += `<li><code>${param.name}</code> (${param.type})${param.optional ? ' <em>optional</em>' : ''}${param.description ? ` - ${param.description}` : ''}</li>`;
+            }
+            html += `</ul></div>`;
+          }
+
+          if (func.returnType) {
+            html += `<div class="return-type">
+                            <h5>Returns:</h5>
+                            <code>${func.returnType}</code>
+                            ${func.returnDescription ? `<p>${func.returnDescription}</p>` : ''}
+                        </div>`;
+          }
+
+          html += `</div>`;
+        }
+        html += `</div></div>`;
+      }
+
+      html += `</section>`;
+    }
+
+    html += `</main>
+    </div>
+    <script>${searchScript}</script>
+</body>
+</html>`;
+
+    return html;
   }
 
-  private async generateArchitectureHTML(_architecture: ArchitectureDoc): Promise<string> {
-    return '<html><body><h1>Architecture Documentation</h1><p>HTML format not yet implemented</p></body></html>';
+  /**
+   * Helper method to read file content
+   */
+  private async readFile(filePath: string): Promise<string> {
+    try {
+      const { readFile } = await import('node:fs/promises');
+      return await readFile(filePath, 'utf-8');
+    } catch (error) {
+      console.warn(`Failed to read file ${filePath}:`, error);
+      return '';
+    }
   }
 
-  private async generatePatternHTML(_patterns: PatternDoc[]): Promise<string> {
-    return '<html><body><h1>Pattern Documentation</h1><p>HTML format not yet implemented</p></body></html>';
+  /**
+   * Helper method to sanitize IDs for HTML
+   */
+  private sanitizeId(text: string): string {
+    return text.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
   }
 
-  private async extractUsageExamples(_sourceFiles: string[]): Promise<UsageExample[]> {
-    return []; // Placeholder
+  /**
+   * Helper method to escape HTML
+   */
+  private escapeHtml(text: string): string {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 
-  private async generateUsageMarkdown(_examples: UsageExample[]): Promise<string> {
-    return '# Usage Documentation\n\nUsage documentation not yet implemented.';
+  /**
+   * Generate CSS for documentation HTML
+   */
+  private generateDocumentationCSS(): string {
+    return `
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background-color: #f8f9fa;
+      }
+
+      .container {
+        display: grid;
+        grid-template-columns: 250px 1fr;
+        grid-template-rows: auto 1fr;
+        min-height: 100vh;
+        max-width: 1400px;
+        margin: 0 auto;
+        background: white;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+      }
+
+      .header {
+        grid-column: 1 / -1;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        text-align: center;
+      }
+
+      .header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+        font-weight: 700;
+      }
+
+      .subtitle {
+        opacity: 0.9;
+        font-size: 0.9rem;
+      }
+
+      .search-container {
+        margin-top: 1.5rem;
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+      }
+
+      .search-container input {
+        padding: 0.75rem;
+        border: none;
+        border-radius: 8px;
+        width: 300px;
+        font-size: 1rem;
+      }
+
+      .search-container button {
+        padding: 0.75rem 1.5rem;
+        background: rgba(255,255,255,0.2);
+        border: 1px solid rgba(255,255,255,0.3);
+        border-radius: 8px;
+        color: white;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      .search-container button:hover {
+        background: rgba(255,255,255,0.3);
+      }
+
+      .sidebar {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-right: 1px solid #e9ecef;
+        overflow-y: auto;
+      }
+
+      .sidebar h3 {
+        color: #495057;
+        margin-bottom: 1rem;
+        font-size: 1.1rem;
+      }
+
+      .module-list {
+        list-style: none;
+      }
+
+      .module-list li {
+        margin-bottom: 0.5rem;
+      }
+
+      .module-list a {
+        color: #6c757d;
+        text-decoration: none;
+        padding: 0.5rem;
+        display: block;
+        border-radius: 6px;
+        transition: all 0.2s;
+      }
+
+      .module-list a:hover {
+        background: #e9ecef;
+        color: #495057;
+      }
+
+      .content {
+        padding: 2rem;
+        overflow-y: auto;
+      }
+
+      .module-section {
+        margin-bottom: 3rem;
+        padding-bottom: 2rem;
+        border-bottom: 2px solid #e9ecef;
+      }
+
+      .module-title {
+        color: #495057;
+        margin-bottom: 1rem;
+        font-size: 1.8rem;
+      }
+
+      .module-info {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+      }
+
+      .file-path {
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.9rem;
+      }
+
+      .section {
+        margin-bottom: 2rem;
+      }
+
+      .section-title {
+        color: #6c757d;
+        margin-bottom: 1rem;
+        font-size: 1.3rem;
+        border-bottom: 1px solid #e9ecef;
+        padding-bottom: 0.5rem;
+      }
+
+      .items-grid {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      }
+
+      .item-card {
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 1.5rem;
+        transition: all 0.2s;
+      }
+
+      .item-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        border-color: #667eea;
+      }
+
+      .item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+      }
+
+      .item-name {
+        color: #495057;
+        font-size: 1.2rem;
+      }
+
+      .badges {
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 500;
+      }
+
+      .badge.async {
+        background: #e3f2fd;
+        color: #1976d2;
+      }
+
+      .badge.exported {
+        background: #e8f5e8;
+        color: #2e7d32;
+      }
+
+      .badge.complexity {
+        background: #fff3e0;
+        color: #f57c00;
+      }
+
+      .badge.risk-low {
+        background: #e8f5e8;
+        color: #2e7d32;
+      }
+
+      .badge.risk-medium {
+        background: #fff3e0;
+        color: #f57c00;
+      }
+
+      .badge.risk-high {
+        background: #ffebee;
+        color: #d32f2f;
+      }
+
+      .signature {
+        background: #f8f9fa;
+        padding: 0.75rem;
+        border-radius: 6px;
+        margin-bottom: 1rem;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.9rem;
+      }
+
+      .description {
+        color: #6c757d;
+        margin-bottom: 1rem;
+        line-height: 1.6;
+      }
+
+      .parameters, .return-type, .examples-section {
+        margin-top: 1rem;
+      }
+
+      .parameters h5, .return-type h5, .examples-section h4 {
+        color: #495057;
+        margin-bottom: 0.5rem;
+        font-size: 1rem;
+      }
+
+      .parameters ul {
+        list-style: none;
+        padding-left: 1rem;
+      }
+
+      .parameters li {
+        margin-bottom: 0.25rem;
+        color: #6c757d;
+      }
+
+      pre {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 6px;
+        overflow-x: auto;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.9rem;
+        line-height: 1.4;
+      }
+
+      code {
+        background: #f8f9fa;
+        padding: 0.2rem 0.4rem;
+        border-radius: 3px;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.9rem;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: #6c757d;
+      }
+
+      .empty-state h2 {
+        margin-bottom: 1rem;
+      }
+
+      .mermaid-container {
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+        margin: 1rem 0;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          grid-template-columns: 1fr;
+          grid-template-rows: auto auto 1fr;
+        }
+        
+        .sidebar {
+          border-right: none;
+          border-bottom: 1px solid #e9ecef;
+        }
+        
+        .items-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    `;
   }
 
-  private async generateUsageHTML(_examples: UsageExample[]): Promise<string> {
-    return '<html><body><h1>Usage Documentation</h1><p>HTML format not yet implemented</p></body></html>';
+  /**
+   * Generate JavaScript for search functionality
+   */
+  private generateSearchScript(): string {
+    return `
+      function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+          const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+          };
+          clearTimeout(timeout);
+          timeout = setTimeout(later, wait);
+        };
+      }
+
+      function performSearch(query) {
+        const searchableElements = document.querySelectorAll('[data-searchable]');
+        const lowerQuery = query.toLowerCase();
+        
+        searchableElements.forEach(element => {
+          const searchText = element.getAttribute('data-searchable');
+          const isMatch = !query || searchText.includes(lowerQuery);
+          
+          if (isMatch) {
+            element.classList.remove('hidden');
+          } else {
+            element.classList.add('hidden');
+          }
+        });
+      }
+
+      function clearSearch() {
+        document.getElementById('searchInput').value = '';
+        performSearch('');
+      }
+
+      function highlightModule(moduleId) {
+        // Remove existing highlights
+        document.querySelectorAll('.module-section').forEach(section => {
+          section.style.background = '';
+        });
+        
+        // Highlight selected module
+        const module = document.getElementById('module-' + moduleId);
+        if (module) {
+          module.style.background = '#f0f8ff';
+          setTimeout(() => {
+            module.style.background = '';
+          }, 2000);
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+          const debouncedSearch = debounce((e) => {
+            performSearch(e.target.value);
+          }, 300);
+          
+          searchInput.addEventListener('input', debouncedSearch);
+        }
+      });
+    `;
   }
 
-  private async analyzeChanges(_sourceFiles: string[]): Promise<ChangeAnalysis[]> {
-    return []; // Placeholder
+  /**
+   * Generate architecture documentation in HTML format
+   */
+  private async generateArchitectureHTML(architecture: ArchitectureDoc): Promise<string> {
+    const css = this.generateDocumentationCSS();
+    
+    let html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architecture Documentation - Carmack Coder</title>
+    <style>${css}</style>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🏗️ Architecture Documentation</h1>
+            <p class="subtitle">Generated on ${new Date().toISOString()}</p>
+        </header>
+
+        <main class="content">
+            <section class="overview-section">
+                <h2>📋 Overview</h2>
+                <p>This document describes the architectural structure of the Carmack Coder system.</p>
+            </section>
+
+            <section class="layers-section">
+                <h2>🏛️ Architectural Layers</h2>
+                <div class="layers-grid">`;
+
+    for (const layer of architecture.layers) {
+      html += `<div class="layer-card">
+                    <h3>${layer.name}</h3>
+                    <p>${layer.description}</p>
+                    <div class="components-list">
+                        <h4>Components:</h4>
+                        <ul>`;
+      for (const component of layer.components) {
+        html += `<li><a href="#component-${this.sanitizeId(component)}">${component}</a></li>`;
+      }
+      html += `</ul></div></div>`;
+    }
+
+    html += `</div>
+            </section>
+
+            <section class="components-section">
+                <h2>🔧 Components</h2>
+                <div class="components-grid">`;
+
+    for (const component of architecture.components) {
+      html += `<div id="component-${this.sanitizeId(component.name)}" class="component-card ${component.type}">
+                    <div class="component-header">
+                        <h3>${component.name}</h3>
+                        <span class="badge component-type">${component.type}</span>
+                    </div>
+                    <p class="file-path"><strong>File:</strong> <code>${component.filePath}</code></p>
+                    <p class="description">${component.description}</p>`;
+
+      if (component.dependencies.length > 0) {
+        html += `<div class="dependencies">
+                        <h4>Dependencies:</h4>
+                        <ul>`;
+        for (const dep of component.dependencies) {
+          html += `<li>${dep}</li>`;
+        }
+        html += `</ul></div>`;
+      }
+
+      html += `</div>`;
+    }
+
+    html += `</div>
+            </section>
+
+            <section class="dataflow-section">
+                <h2>🔄 Data Flow</h2>
+                <div class="mermaid-container">
+                    <div class="mermaid">
+                        graph TD`;
+
+    for (const flow of architecture.dataFlow) {
+      const fromSafe = flow.from.replace(/[^a-zA-Z0-9]/g, '_');
+      const toSafe = flow.to.replace(/[^a-zA-Z0-9]/g, '_');
+      html += `
+                            ${fromSafe}[${flow.from}] --> ${toSafe}[${flow.to}]`;
+    }
+
+    html += `
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+    </script>
+</body>
+</html>`;
+
+    return html;
   }
 
-  private async generateChangelogMarkdown(_changes: ChangeAnalysis[]): Promise<string> {
-    return '# Changelog\n\nChangelog generation not yet implemented.';
+  /**
+   * Generate pattern documentation in HTML format
+   */
+  private async generatePatternHTML(patterns: PatternDoc[]): Promise<string> {
+    const css = this.generateDocumentationCSS();
+    const searchScript = this.generateSearchScript();
+    
+    let html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pattern Documentation - Carmack Coder</title>
+    <style>${css}</style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🎯 Transformation Patterns</h1>
+            <p class="subtitle">Generated on ${new Date().toISOString()}</p>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search patterns..." />
+                <button onclick="clearSearch()">Clear</button>
+            </div>
+        </header>
+
+        <main class="content">`;
+
+    // Group patterns by category
+    const categories = [...new Set(patterns.map(p => p.category))];
+
+    for (const category of categories) {
+      const categoryPatterns = patterns.filter(p => p.category === category);
+      
+      html += `<section class="category-section">
+                <h2 class="category-title">📁 ${category.charAt(0).toUpperCase() + category.slice(1)}</h2>
+                <div class="patterns-grid">`;
+
+      for (const pattern of categoryPatterns) {
+        const riskClass = `risk-${pattern.riskLevel}`;
+        html += `<div class="pattern-card ${riskClass}" data-searchable="${pattern.name.toLowerCase()} ${pattern.description.toLowerCase()}">
+                    <div class="pattern-header">
+                        <h3>${pattern.name}</h3>
+                        <div class="pattern-meta">
+                            <span class="badge complexity">Complexity: ${pattern.complexity}/10</span>
+                            <span class="badge risk ${riskClass}">${pattern.riskLevel} risk</span>
+                        </div>
+                    </div>
+                    <p class="description">${pattern.description}</p>
+                    
+                    <div class="pattern-code">
+                        <div class="code-section">
+                            <h4>Pattern:</h4>
+                            <pre><code class="language-typescript">${this.escapeHtml(pattern.pattern)}</code></pre>
+                        </div>
+                        <div class="code-section">
+                            <h4>Replacement:</h4>
+                            <pre><code class="language-typescript">${this.escapeHtml(pattern.replacement)}</code></pre>
+                        </div>
+                    </div>`;
+
+        if (pattern.examples.length > 0) {
+          html += `<div class="examples-section">
+                        <h4>Examples:</h4>`;
+          for (const example of pattern.examples) {
+            html += `<div class="example">
+                            <p class="example-description"><em>${example.description}</em></p>
+                            <div class="example-code">
+                                <div class="before">
+                                    <h5>Before:</h5>
+                                    <pre><code class="language-typescript">${this.escapeHtml(example.before)}</code></pre>
+                                </div>
+                                <div class="after">
+                                    <h5>After:</h5>
+                                    <pre><code class="language-typescript">${this.escapeHtml(example.after)}</code></pre>
+                                </div>
+                            </div>
+                        </div>`;
+          }
+          html += `</div>`;
+        }
+
+        if (pattern.performance) {
+          html += `<div class="performance-info">
+                        <h4>Performance:</h4>
+                        <p><strong>Priority:</strong> ${pattern.performance.priority}</p>
+                        <p><strong>Batchable:</strong> ${pattern.performance.batchable ? 'Yes' : 'No'}</p>
+                    </div>`;
+        }
+
+        html += `</div>`;
+      }
+
+      html += `</div></section>`;
+    }
+
+    html += `</main>
+    </div>
+    <script>${searchScript}</script>
+</body>
+</html>`;
+
+    return html;
   }
 
-  private async generateChangelogHTML(_changes: ChangeAnalysis[]): Promise<string> {
-    return '<html><body><h1>Changelog</h1><p>HTML format not yet implemented</p></body></html>';
+  /**
+   * Extract usage examples from source files using AST analysis
+   */
+  private async extractUsageExamples(sourceFiles: string[]): Promise<UsageExample[]> {
+    const examples: UsageExample[] = [];
+
+    for (const filePath of sourceFiles) {
+      try {
+        const content = await this.readFile(filePath);
+        
+        // Extract function calls and their context
+        const functionCalls = await this.extractFunctionCalls(content, filePath);
+        examples.push(...functionCalls);
+
+        // Extract class instantiations
+        const classUsages = await this.extractClassUsages(content, filePath);
+        examples.push(...classUsages);
+
+        // Extract import usage patterns
+        const importUsages = await this.extractImportUsages(content, filePath);
+        examples.push(...importUsages);
+
+      } catch (error) {
+        console.warn(`Failed to extract usage examples from ${filePath}:`, error);
+      }
+    }
+
+    return examples;
+  }
+
+  /**
+   * Generate usage documentation in Markdown format
+   */
+  private async generateUsageMarkdown(examples: UsageExample[]): Promise<string> {
+    let markdown = '# Usage Documentation\n\n';
+    markdown += `Generated on ${new Date().toISOString()}\n\n`;
+
+    if (examples.length === 0) {
+      markdown += 'No usage examples found in the codebase.\n\n';
+      return markdown;
+    }
+
+    // Group examples by function/class name
+    const groupedExamples = new Map<string, UsageExample[]>();
+    for (const example of examples) {
+      const key = example.functionName;
+      if (!groupedExamples.has(key)) {
+        groupedExamples.set(key, []);
+      }
+      groupedExamples.get(key)!.push(example);
+    }
+
+    markdown += '## Table of Contents\n\n';
+    for (const [functionName] of groupedExamples) {
+      markdown += `- [${functionName}](#${functionName.toLowerCase().replace(/[^a-z0-9]/g, '-')})\n`;
+    }
+    markdown += '\n';
+
+    for (const [functionName, functionExamples] of groupedExamples) {
+      markdown += `## ${functionName}\n\n`;
+      
+      for (const example of functionExamples) {
+        markdown += `### Usage in \`${example.filePath}\`\n\n`;
+        markdown += `${example.context}\n\n`;
+        markdown += '```typescript\n';
+        markdown += example.usage;
+        markdown += '\n```\n\n';
+      }
+
+      markdown += '---\n\n';
+    }
+
+    return markdown;
+  }
+
+  /**
+   * Generate usage documentation in HTML format
+   */
+  private async generateUsageHTML(examples: UsageExample[]): Promise<string> {
+    const css = this.generateDocumentationCSS();
+    const searchScript = this.generateSearchScript();
+    
+    let html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usage Documentation - Carmack Coder</title>
+    <style>${css}</style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>📖 Usage Documentation</h1>
+            <p class="subtitle">Generated on ${new Date().toISOString()}</p>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search usage examples..." />
+                <button onclick="clearSearch()">Clear</button>
+            </div>
+        </header>
+
+        <main class="content">`;
+
+    if (examples.length === 0) {
+      html += `<div class="empty-state">
+                <h2>No Usage Examples Found</h2>
+                <p>No usage examples were found in the codebase.</p>
+            </div>`;
+    } else {
+      // Group examples by function name
+      const groupedExamples = new Map<string, UsageExample[]>();
+      for (const example of examples) {
+        const key = example.functionName;
+        if (!groupedExamples.has(key)) {
+          groupedExamples.set(key, []);
+        }
+        groupedExamples.get(key)!.push(example);
+      }
+
+      for (const [functionName, functionExamples] of groupedExamples) {
+        html += `<section class="usage-section" data-searchable="${functionName.toLowerCase()}">
+                    <h2 class="function-title">⚡ ${functionName}</h2>
+                    <div class="examples-grid">`;
+
+        for (const example of functionExamples) {
+          html += `<div class="example-card" data-searchable="${example.filePath.toLowerCase()}">
+                        <div class="example-header">
+                            <h3>Usage in <code>${example.filePath}</code></h3>
+                        </div>
+                        <div class="context">
+                            <p>${example.context}</p>
+                        </div>
+                        <div class="usage-code">
+                            <pre><code class="language-typescript">${this.escapeHtml(example.usage)}</code></pre>
+                        </div>
+                    </div>`;
+        }
+
+        html += `</div></section>`;
+      }
+    }
+
+    html += `</main>
+    </div>
+    <script>${searchScript}</script>
+</body>
+</html>`;
+
+    return html;
+  }
+
+  /**
+   * Analyze changes in source files using Git history
+   */
+  private async analyzeChanges(sourceFiles: string[]): Promise<ChangeAnalysis[]> {
+    const changes: ChangeAnalysis[] = [];
+
+    try {
+      // Try to get Git history for each file
+      const { execSync } = await import('node:child_process');
+      
+      for (const filePath of sourceFiles) {
+        try {
+          // Get recent commits for this file
+          const gitLog = execSync(
+            `git log --oneline --since="30 days ago" --follow -- "${filePath}"`,
+            { encoding: 'utf-8', cwd: process.cwd() }
+          );
+
+          const commits = gitLog.trim().split('\n').filter(line => line.trim());
+          
+          for (const commit of commits.slice(0, 10)) { // Last 10 commits
+            const [hash, ...messageParts] = commit.split(' ');
+            const message = messageParts.join(' ');
+            
+            // Get commit details
+            try {
+              const commitDetails = execSync(
+                `git show --stat --format="%ai" ${hash} -- "${filePath}"`,
+                { encoding: 'utf-8', cwd: process.cwd() }
+              );
+              
+              const lines = commitDetails.split('\n');
+              const timestamp = lines[0] || new Date().toISOString();
+              
+              // Determine change type from commit message
+              let changeType: 'added' | 'modified' | 'deleted' = 'modified';
+              if (message.toLowerCase().includes('add') || message.toLowerCase().includes('create')) {
+                changeType = 'added';
+              } else if (message.toLowerCase().includes('delete') || message.toLowerCase().includes('remove')) {
+                changeType = 'deleted';
+              }
+
+              changes.push({
+                filePath,
+                changeType,
+                description: message,
+                timestamp,
+              });
+            } catch (error) {
+              // Skip if we can't get commit details
+            }
+          }
+        } catch (error) {
+          // File might not be in Git or no recent changes
+          console.warn(`No Git history found for ${filePath}`);
+        }
+      }
+    } catch (error) {
+      console.warn('Git not available, using file modification times');
+      
+      // Fallback: use file modification times
+      const { stat } = await import('node:fs/promises');
+      
+      for (const filePath of sourceFiles) {
+        try {
+          const stats = await stat(filePath);
+          changes.push({
+            filePath,
+            changeType: 'modified',
+            description: 'File modified',
+            timestamp: stats.mtime.toISOString(),
+          });
+        } catch (error) {
+          // Skip files that can't be accessed
+        }
+      }
+    }
+
+    // Sort by timestamp (newest first)
+    return changes.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  }
+
+  /**
+   * Generate changelog documentation in Markdown format
+   */
+  private async generateChangelogMarkdown(changes: ChangeAnalysis[]): Promise<string> {
+    let markdown = '# Changelog\n\n';
+    markdown += `Generated on ${new Date().toISOString()}\n\n`;
+
+    if (changes.length === 0) {
+      markdown += 'No recent changes found.\n\n';
+      return markdown;
+    }
+
+    // Group changes by date
+    const changesByDate = new Map<string, ChangeAnalysis[]>();
+    for (const change of changes) {
+      const date = new Date(change.timestamp).toISOString().split('T')[0];
+      if (date) {
+        if (!changesByDate.has(date)) {
+          changesByDate.set(date, []);
+        }
+        changesByDate.get(date)!.push(change);
+      }
+    }
+
+    for (const [date, dayChanges] of changesByDate) {
+      markdown += `## ${date}\n\n`;
+      
+      // Group by change type
+      const added = dayChanges.filter(c => c.changeType === 'added');
+      const modified = dayChanges.filter(c => c.changeType === 'modified');
+      const deleted = dayChanges.filter(c => c.changeType === 'deleted');
+
+      if (added.length > 0) {
+        markdown += '### ✅ Added\n\n';
+        for (const change of added) {
+          markdown += `- **${change.filePath}**: ${change.description}\n`;
+        }
+        markdown += '\n';
+      }
+
+      if (modified.length > 0) {
+        markdown += '### 🔄 Modified\n\n';
+        for (const change of modified) {
+          markdown += `- **${change.filePath}**: ${change.description}\n`;
+        }
+        markdown += '\n';
+      }
+
+      if (deleted.length > 0) {
+        markdown += '### ❌ Deleted\n\n';
+        for (const change of deleted) {
+          markdown += `- **${change.filePath}**: ${change.description}\n`;
+        }
+        markdown += '\n';
+      }
+
+      markdown += '---\n\n';
+    }
+
+    return markdown;
+  }
+
+  /**
+   * Generate changelog documentation in HTML format
+   */
+  private async generateChangelogHTML(changes: ChangeAnalysis[]): Promise<string> {
+    const css = this.generateDocumentationCSS();
+    
+    let html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Changelog - Carmack Coder</title>
+    <style>${css}</style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>📝 Changelog</h1>
+            <p class="subtitle">Generated on ${new Date().toISOString()}</p>
+        </header>
+
+        <main class="content">`;
+
+    if (changes.length === 0) {
+      html += `<div class="empty-state">
+                <h2>No Recent Changes</h2>
+                <p>No recent changes were found in the codebase.</p>
+            </div>`;
+    } else {
+      // Group changes by date
+      const changesByDate = new Map<string, ChangeAnalysis[]>();
+      for (const change of changes) {
+        const date = new Date(change.timestamp).toISOString().split('T')[0];
+        if (date) {
+          if (!changesByDate.has(date)) {
+            changesByDate.set(date, []);
+          }
+          changesByDate.get(date)!.push(change);
+        }
+      }
+
+      for (const [date, dayChanges] of changesByDate) {
+        html += `<section class="changelog-section">
+                    <h2 class="date-title">📅 ${date}</h2>`;
+
+        // Group by change type
+        const added = dayChanges.filter(c => c.changeType === 'added');
+        const modified = dayChanges.filter(c => c.changeType === 'modified');
+        const deleted = dayChanges.filter(c => c.changeType === 'deleted');
+
+        if (added.length > 0) {
+          html += `<div class="change-group added">
+                        <h3>✅ Added</h3>
+                        <ul>`;
+          for (const change of added) {
+            html += `<li><strong>${change.filePath}</strong>: ${change.description}</li>`;
+          }
+          html += `</ul></div>`;
+        }
+
+        if (modified.length > 0) {
+          html += `<div class="change-group modified">
+                        <h3>🔄 Modified</h3>
+                        <ul>`;
+          for (const change of modified) {
+            html += `<li><strong>${change.filePath}</strong>: ${change.description}</li>`;
+          }
+          html += `</ul></div>`;
+        }
+
+        if (deleted.length > 0) {
+          html += `<div class="change-group deleted">
+                        <h3>❌ Deleted</h3>
+                        <ul>`;
+          for (const change of deleted) {
+            html += `<li><strong>${change.filePath}</strong>: ${change.description}</li>`;
+          }
+          html += `</ul></div>`;
+        }
+
+        html += `</section>`;
+      }
+    }
+
+    html += `</main>
+    </div>
+</body>
+</html>`;
+
+    return html;
+  }
+
+  /**
+   * Extract function calls from source code
+   */
+  private async extractFunctionCalls(content: string, filePath: string): Promise<UsageExample[]> {
+    const examples: UsageExample[] = [];
+    const lines = content.split('\n');
+
+    // Simple regex patterns for function calls
+    const functionCallPattern = /(\w+)\s*\(/g;
+    
+    let match: RegExpExecArray | null;
+    // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex exec pattern
+    while ((match = functionCallPattern.exec(content)) !== null) {
+      const functionName = match[1];
+      const lineIndex = content.substring(0, match.index).split('\n').length - 1;
+      const line = lines[lineIndex];
+      
+      if (line && !line.trim().startsWith('//') && !line.trim().startsWith('*') && functionName) {
+        // Get context (surrounding lines)
+        const contextStart = Math.max(0, lineIndex - 2);
+        const contextEnd = Math.min(lines.length, lineIndex + 3);
+        const context = lines.slice(contextStart, contextEnd).join('\n');
+        
+        examples.push({
+          filePath,
+          functionName,
+          usage: line.trim(),
+          context: `Function call found at line ${lineIndex + 1}`,
+        });
+      }
+    }
+
+    return examples.slice(0, 10); // Limit to first 10 examples per file
+  }
+
+  /**
+   * Extract class instantiations from source code
+   */
+  private async extractClassUsages(content: string, filePath: string): Promise<UsageExample[]> {
+    const examples: UsageExample[] = [];
+    const lines = content.split('\n');
+
+    // Pattern for 'new ClassName()'
+    const classInstantiationPattern = /new\s+(\w+)\s*\(/g;
+    
+    let match: RegExpExecArray | null;
+    // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex exec pattern
+    while ((match = classInstantiationPattern.exec(content)) !== null) {
+      const className = match[1];
+      const lineIndex = content.substring(0, match.index).split('\n').length - 1;
+      const line = lines[lineIndex];
+      
+      if (line && !line.trim().startsWith('//') && !line.trim().startsWith('*') && className) {
+        examples.push({
+          filePath,
+          functionName: className,
+          usage: line.trim(),
+          context: `Class instantiation found at line ${lineIndex + 1}`,
+        });
+      }
+    }
+
+    return examples.slice(0, 5); // Limit to first 5 examples per file
+  }
+
+  /**
+   * Extract import usage patterns from source code
+   */
+  private async extractImportUsages(content: string, filePath: string): Promise<UsageExample[]> {
+    const examples: UsageExample[] = [];
+    const lines = content.split('\n');
+
+    // Pattern for import statements
+    const importPattern = /import\s+(?:\{([^}]+)\}|(\w+))\s+from\s+['"]([^'"]+)['"]/g;
+    
+    let match: RegExpExecArray | null;
+    // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex exec pattern
+    while ((match = importPattern.exec(content)) !== null) {
+      const [fullMatch, namedImports, defaultImport, module] = match;
+      const lineIndex = content.substring(0, match.index).split('\n').length - 1;
+      
+      const importName = namedImports || defaultImport || module;
+      
+      if (importName) {
+        examples.push({
+          filePath,
+          functionName: importName,
+          usage: fullMatch,
+          context: `Import statement found at line ${lineIndex + 1}`,
+        });
+      }
+    }
+
+    return examples.slice(0, 5); // Limit to first 5 examples per file
   }
 }
 

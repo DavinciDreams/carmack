@@ -4,8 +4,8 @@ import { fromPromise } from 'xstate';
 import { z } from 'zod';
 import type { ASTGrepNode } from '../docs/ast-analyzer.js';
 
-// Enhanced transformation result type
-interface EnhancedTransformationResult {
+// Enhanced transformation result type (exported for potential future use)
+export interface EnhancedTransformationResult {
   filesModified: string[];
   transformationsApplied: number;
   appliedPatterns: Array<{ file: string; pattern: string; count: number }>;
