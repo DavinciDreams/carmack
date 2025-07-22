@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
 import { glob } from 'glob';
-import { YAML } from './src/utils/yaml-handler.js';
+import { YAML } from './src/utils/yaml-handler';
 
 async function validateYamlFiles() {
   console.log('🔍 Scanning for YAML files...');
@@ -17,16 +17,13 @@ async function validateYamlFiles() {
 
   for (const file of yamlFiles) {
     try {
-      const data = await YAML.parseFile(file);
+      // Parse file to validate YAML syntax - we don't need the actual data
+      await YAML.parseFile(file);
       console.log(`✅ ${file} - Valid YAML`);
       validCount++;
     } catch (error) {
       console.log(`❌ ${file} - YAML Error:`);
-      if (error instanceof YAML.errors.YamlParseError) {
-        console.log(`   ${error.message}`);
-      } else {
-        console.log(`   ${error.message}`);
-      }
+      console.log(`   ${error instanceof Error ? error.message : 'Unknown error'}`);
       errorCount++;
     }
   }
