@@ -51,7 +51,9 @@ async function validateFile(filePath: string, validatorType: string): Promise<Va
   try {
     // Early validation of validator type with type guard
     if (!isValidValidatorType(validatorType)) {
-      throw new Error(`Unknown validator type: ${validatorType}. Available types: ${Object.keys(VALIDATOR_MAP).join(', ')}`);
+      throw new Error(
+        `Unknown validator type: ${validatorType}. Available types: ${Object.keys(VALIDATOR_MAP).join(', ')}`
+      );
     }
 
     // Type-safe validator lookup with performance optimization
@@ -68,7 +70,7 @@ async function validateFile(filePath: string, validatorType: string): Promise<Va
     // Enhanced error context for debugging
     const errorMessage = error instanceof Error ? error.message : String(error);
     const contextualError = `Validation failed for ${validatorType} validator on file ${filePath}: ${errorMessage}`;
-    
+
     return {
       file: filePath,
       type: validatorType,
