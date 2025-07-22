@@ -1,0 +1,26 @@
+name: 'Carmack Coder Test'
+
+on:
+  pull_request:
+    branches: ['main', 'develop']
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: 'Run Test Suite'
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: 'Checkout Code'
+        uses: 'actions/checkout@v4'
+      - name: 'Setup Bun'
+        uses: 'oven-sh/setup-bun@v1'
+        with:
+          bun-version: 'latest'
+      - name: 'Install Dependencies'
+        run: 'bun install'
+      - name: 'Run Type Checking'
+        run: 'bun run type-check'
+      - name: 'Run Tests'
+        run: 'bun test'
+      - name: 'Run Linting'
+        run: 'bun run lint'

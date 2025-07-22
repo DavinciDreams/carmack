@@ -1,0 +1,24 @@
+name: 'Carmack Coder Deploy'
+
+on:
+  push:
+    branches: ['main']
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: 'Deploy to Production'
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: 'Checkout Code'
+        uses: 'actions/checkout@v4'
+      - name: 'Setup Bun'
+        uses: 'oven-sh/setup-bun@v1'
+        with:
+          bun-version: 'latest'
+      - name: 'Install Dependencies'
+        run: 'bun install'
+      - name: 'Build Application'
+        run: 'bun run build'
+      - name: 'Deploy'
+        run: 'echo "Deploy step goes here"'

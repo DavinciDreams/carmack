@@ -301,6 +301,7 @@ describe('Performance Benchmarks', () => {
         files: ['transform-small.ts'],
         patterns,
         dryRun: false,
+        dryRun: false,
       };
 
       const transformationActorInstance = createActor(transformationActor, {
@@ -329,7 +330,6 @@ describe('Performance Benchmarks', () => {
       await createTestFile('transform-medium.ts', mediumCode);
 
       const startTime = Date.now();
-
       const transformationInput = {
         mode: 'template' as const,
         files: ['transform-medium.ts'],
@@ -400,9 +400,7 @@ describe('Performance Benchmarks', () => {
         await createTestFile(fileName, code);
         files.push(fileName);
       }
-
       const startTime = Date.now();
-
       const transformationInput = {
         mode: 'template' as const,
         files,
@@ -556,10 +554,8 @@ describe('Performance Benchmarks', () => {
       `;
 
       await createTestFile('memory-test.ts', largeCode);
-
       const startTime = Date.now();
       const initialMemory = process.memoryUsage();
-
       const transformationInput = {
         mode: 'template' as const,
         files: ['memory-test.ts'],
@@ -618,6 +614,7 @@ describe('Performance Benchmarks', () => {
     test('should handle concurrent transformations efficiently', async () => {
       const files: string[] = [];
       const promises: Promise<unknown>[] = [];
+      const startTime = Date.now();
 
       // Create multiple files
       for (let i = 0; i < 4; i++) {
@@ -627,9 +624,6 @@ describe('Performance Benchmarks', () => {
         files.push(fileName);
       }
 
-      const startTime = Date.now();
-
-      // Process files concurrently
       for (const file of files) {
         const transformationInput = {
           mode: 'template' as const,

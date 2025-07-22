@@ -1,3 +1,4 @@
+import * as yaml from 'js-yaml';
 import { fromPromise } from 'xstate';
 import type { ASTGrepAnalyzer } from '../docs/ast-analyzer.js';
 import type { ModuleDoc } from '../docs/types.js';
@@ -990,19 +991,70 @@ export class LLMAnnotationAnalyzer {
   }
 
   private toYAML(annotation: LLMAnnotation): string {
-    // Simple YAML conversion - in production, use a proper YAML library
-    return `# LLM Annotation
+    try {
+      // Create a clean object for YAML serialization
+      const yamlData = {
+        id: annotation.id,
+        timestamp: annotation.timestamp,
+        version: annotation.version,
+        metadata: {
+          analyzer: annotation.metadata.analyzer,
+          confidence: annotation.metadata.confidence,
+          processingTime: annotation.metadata.processingTime,
+          sourceFiles: annotation.metadata.sourceFiles,
+          totalLines: annotation.metadata.totalLines,
+        },
+        summary: {
+          overview: annotation.summary.overview,
+          keyFindings: annotation.summary.keyFindings,
+          recommendations: annotation.summary.recommendations,
+          patternsDetected: annotation.patterns.length,
+          opportunitiesFound: annotation.opportunities.length,
+        },
+        patterns: annotation.patterns.map((pattern) => ({
+          name: pattern.name,
+          type: pattern.type,
+          impact: pattern.impact,
+          description: pattern.description,
+          location: {
+            file: pattern.location.file,
+            startLine: pattern.location.startLine,
+            endLine: pattern.location.endLine,
+          },
+          confidence: pattern.confidence,
+        })),
+        opportunities: annotation.opportunities.map((opp) => ({
+          description: opp.description,
+          effort: opp.effort,
+          location: opp.location,
+          benefits: opp.benefits,
+          steps: opp.steps,
+          estimatedImpact: opp.estimatedImpact,
+          risk: opp.risk,
+          title: opp.title,
+          type: opp.type,
+          rationale: opp.rationale,
+        })),
+        architecture: annotation.architecture,
+      };
+
+      return yaml.dump(yamlData, {
+        indent: 2,
+        lineWidth: 120,
+        noRefs: true,
+        sortKeys: true,
+        quotingType: '"',
+        forceQuotes: false,
+      });
+    } catch (error) {
+      // Fallback to simple YAML-like format if serialization fails
+      return `# LLM Annotation (Error in YAML serialization)
 id: ${annotation.id}
 timestamp: ${annotation.timestamp}
 version: ${annotation.version}
-
-summary:
-  overview: "${annotation.summary.overview}"
-  patterns_detected: ${annotation.patterns.length}
-  opportunities: ${annotation.opportunities.length}
-
-# Full annotation data available in JSON format
+error: "Failed to serialize annotation to YAML format"
 `;
+    }
   }
 
   private toMarkdown(annotation: LLMAnnotation): string {

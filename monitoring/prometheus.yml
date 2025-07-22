@@ -3,6 +3,7 @@ global:
   evaluation_interval: 15s
 
 rule_files:
+  - "carmack_alerts.yml"
   # - "first_rules.yml"
   # - "second_rules.yml"
 
@@ -20,8 +21,5 @@ scrape_configs:
 alerting:
   alertmanagers:
     - static_configs:
-        - targets:
+        - targets: []
           # - alertmanager:9093
-
-rule_files:
-  - "carmack_alerts.yml"

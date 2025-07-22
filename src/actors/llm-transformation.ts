@@ -239,6 +239,13 @@ export class LLMTransformer {
           `🔍 First 100 chars of transformed code: ${llmResponse.transformedCode.substring(0, 100)}...`
         );
 
+        console.log(
+          `📏 Original length: ${originalContent.length}, New length: ${llmResponse.transformedCode.length}`
+        );
+        console.log(
+          `🔍 First 100 chars of transformed code: ${llmResponse.transformedCode.substring(0, 100)}...`
+        );
+
         await writeFile(filePath, llmResponse.transformedCode, 'utf-8');
 
         return {

@@ -1,0 +1,18 @@
+architectural: null
+id: annotation-1753067283961
+metadata:
+  analyzer: LLMAnnotationAnalyzer
+opportunities: []
+patterns: []
+summary:
+  keyFindings:
+    - 0 design patterns implemented
+    - 0 anti-patterns requiring attention
+    - "Average complexity: 0.00"
+    - 0 external dependencies
+  opportunitiesFound: 0
+  overview: Analyzed typescript codebase with 0 components, 0 patterns detected, and 0 improvement opportunities identified.
+  patternsDetected: 0
+  recommendations: []
+timestamp: "2025-07-21T03:08:03.961Z"
+version: 1.0.0

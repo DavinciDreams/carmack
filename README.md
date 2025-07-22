@@ -18,6 +18,8 @@ We successfully built a **production-ready code transformation system** with com
 - ✅ **Enterprise-grade testing** with 96+ tests across 7 specialized suites
 - ✅ **Production monitoring** with telemetry, health checks, and alerting
 - ✅ **Formal verification** with Dafny integration and graceful fallback
+- ✅ **Automated error resolution** with intelligent TypeScript error fixing
+- ✅ **Pre-commit automation** with comprehensive quality gates and auto-staging
 
 **[📖 Read the full accomplishment report →](./ACCOMPLISHMENT.md)**
 **[📊 View current system status →](./docs/SYSTEM-STATUS.md)**
@@ -48,6 +50,48 @@ Carmack Coder implements a sophisticated state machine-based approach to automat
 
 **[📚 Pattern Learning System Documentation →](./docs/PATTERN-LEARNING-SYSTEM.md)**
 
+## 🤖 Automated Testing & Error Resolution
+
+Carmack Coder includes a **comprehensive automated system** that continuously improves code quality and prevents errors from reaching the repository:
+
+### ⚡ **Pre-Commit Automation**
+- **Intelligent TypeScript Error Resolution**: Automatically detects and fixes common TypeScript errors
+- **Import Organization**: Sorts imports and removes unused code automatically
+- **Comprehensive Quality Gates**: TypeScript, Biome, Dafny, and security checks
+- **Auto-Staging**: Fixed files are automatically staged back to git
+- **Parallel Execution**: 7 hooks run simultaneously for maximum speed (5-15s typical)
+
+### 🧠 **AI-Enhanced Commit Messages**
+- **Change Analysis**: Automatically analyzes staged files and modifications
+- **Impact Assessment**: Provides detailed risk analysis and quality metrics
+- **Reasoning Inference**: Determines the "why" behind changes
+- **Rich Documentation**: Includes file breakdown, complexity scores, and recommendations
+
+### 🔧 **Error Resolution Capabilities**
+- **TS7006/TS7034**: Implicit `any` parameter and variable types
+- **TS2531/TS2532**: Null/undefined safety violations
+- **TS2322/TS2345**: Type assignment and argument errors
+- **TS2339**: Property access on unknown types
+- **TS2355**: Missing return statements
+- **Import Issues**: Unused imports, organization, and cleanup
+
+### 📋 **Quick Commands**
+```bash
+# Fix TypeScript errors automatically
+bun run fix:types
+
+# Organize imports and remove unused code
+bun run fix:imports
+
+# Run all pre-commit checks manually
+bunx lefthook run pre-commit
+
+# Install git hooks (one-time setup)
+bunx lefthook install
+```
+
+**[📖 Complete Automated Testing Guide →](./AUTOMATED-TESTING-SYSTEM.md)**
+
 ## Project Structure
 
 ```
@@ -62,7 +106,12 @@ src/
 │   ├── validation.ts  # Format, type, and quality validation
 │   ├── git.ts         # Git operations for checkpoints and rollback
 │   ├── complexity.ts  # Code complexity measurement and analysis
-│   └── dafny.ts       # Formal verification with Dafny
+│   ├── dafny.ts       # Formal verification with Dafny
+│   └── typescript-error-resolver.ts # Automated TypeScript error fixing
+├── scripts/           # Pre-commit automation and tooling
+│   ├── pre-commit-typescript.ts # TypeScript error detection and fixing
+│   ├── enhance-commit-message.ts # AI-powered commit message enhancement
+│   └── pre-commit-imports.ts # Import organization and cleanup
 ├── utils/             # Helper utilities and shared functions
 ├── verification/      # Dafny specification files
 └── data/              # Pattern learning data persistence
@@ -85,6 +134,9 @@ bun install
 cp .env.example .env
 # Edit .env with your configuration
 
+# Install automated git hooks (one-time setup)
+bunx lefthook install
+
 # Validate environment setup
 bun run env:validate
 
@@ -94,6 +146,9 @@ bun run type-check
 # Format and lint code
 bun run format
 bun run lint
+
+# Test automated error resolution
+bun run fix:types:dry
 
 # Run the transformation system
 bun run dev
@@ -133,12 +188,14 @@ Carmack Coder features **enterprise-grade testing** with 96+ tests across 7 spec
 
 ### Test Suites Overview
 - **Actor Testing** (`test/actors/`) - Core component validation (63+ tests)
+  - **TypeScript Error Resolver** - Automated error detection and fixing (9 tests)
 - **Performance Testing** (`test/performance/`) - Benchmarks and scalability (28 tests)
 - **Formal Verification** (`test/verification/`) - Mathematical correctness (9 tests)
 - **Telemetry Validation** (`test/telemetry/`) - Monitoring and analytics (13 tests)
 - **Repository Processing** (`test/repository/`) - External repo analysis (20 tests)
 - **Pattern Validation** (`test/patterns/`) - Transformation safety (16 tests)
 - **Deployment Validation** (`test/deployment/`) - Production readiness (14 tests)
+- **Pre-Commit Automation** - Git hooks and error resolution validation
 
 ### Running Tests
 ```bash
@@ -153,6 +210,10 @@ bun run test:telemetry      # Telemetry validation
 bun run test:repository     # Repository processing
 bun run test:patterns       # Pattern validation
 bun run test:deployment     # Deployment validation
+
+# Automated testing system
+bun test test/actors/typescript-error-resolver.test.ts  # TypeScript error resolution tests
+bunx lefthook run pre-commit  # Test pre-commit hooks
 
 # Integration and E2E
 bun run test:integration    # Component integration tests
@@ -283,11 +344,15 @@ const result = transformAST(sourceCode, patterns);
 
 ## Contributing
 
-1. **Run all checks** before committing: `bun run all-checks`
-2. **Test transformations** on real code, not just toy examples
-3. **Preserve type safety** - never use `any` without explicit justification
-4. **Document complexity** - explain non-obvious algorithms and patterns
-5. **Verify formally** - add Dafny specifications for critical transformations
+1. **Install git hooks**: `bunx lefthook install` (one-time setup)
+2. **Run all checks** before committing: `bun run all-checks`
+3. **Test automated fixes**: `bun run fix:types:dry` to preview error resolution
+4. **Test transformations** on real code, not just toy examples
+5. **Preserve type safety** - never use `any` without explicit justification
+6. **Document complexity** - explain non-obvious algorithms and patterns
+7. **Verify formally** - add Dafny specifications for critical transformations
+
+**Note**: The automated system will run pre-commit hooks that automatically fix TypeScript errors, organize imports, and enhance commit messages. Your commits will be automatically improved!
 
 ## License
 

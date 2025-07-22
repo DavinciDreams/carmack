@@ -1,7 +1,37 @@
 {
-  "version": "3.0.0",
-  "description": "Robust transformation patterns with enhanced AST-grep support",
+  "version": "3.1.0",
+  "description": "Backward-compatible transformation patterns with enhanced template support",
   "patterns": [
+    {
+      "id": "console-log-to-console-error",
+      "language": "typescript",
+      "pattern": "console.log('Error:",
+      "replacement": "console.error('Error:",
+      "description": "Convert console.log for errors to console.error",
+      "complexity": 1,
+      "riskLevel": "low",
+      "mode": "template"
+    },
+    {
+      "id": "fix-double-semicolons",
+      "language": "typescript",
+      "pattern": ";;",
+      "replacement": ";",
+      "description": "Remove double semicolons syntax errors",
+      "complexity": 1,
+      "riskLevel": "low",
+      "mode": "template"
+    },
+    {
+      "id": "fix-malformed-object-literal",
+      "language": "typescript",
+      "pattern": "= {;",
+      "replacement": "= {",
+      "description": "Fix malformed object literal with semicolon",
+      "complexity": 1,
+      "riskLevel": "low",
+      "mode": "template"
+    },
     {
       "id": "smart-var-to-const-let",
       "language": "typescript",
@@ -33,23 +63,13 @@
       "mode": "ast"
     },
     {
-      "id": "console-log-to-console-error",
+      "id": "array-includes-instead-of-indexof",
       "language": "typescript",
-      "pattern": "console.log('Error:",
-      "replacement": "console.error('Error:",
-      "description": "Convert console.log for errors to console.error",
-      "complexity": 1,
+      "pattern": "$ARR.indexOf($ITEM) !== -1",
+      "replacement": "$ARR.includes($ITEM)",
+      "description": "Use Array.includes() instead of indexOf() !== -1",
+      "complexity": 2,
       "riskLevel": "low",
-      "mode": "template"
-    },
-    {
-      "id": "promise-to-async-await",
-      "language": "typescript",
-      "pattern": "$PROMISE.then(($RESULT) => { $BODY })",
-      "replacement": "const $RESULT = await $PROMISE;\\n$BODY",
-      "description": "Convert Promise.then() chains to async/await",
-      "complexity": 4,
-      "riskLevel": "medium",
       "mode": "ast"
     },
     {
@@ -63,11 +83,11 @@
       "mode": "ast"
     },
     {
-      "id": "array-includes-instead-of-indexof",
+      "id": "remove-unnecessary-returns",
       "language": "typescript",
-      "pattern": "$ARR.indexOf($ITEM) !== -1",
-      "replacement": "$ARR.includes($ITEM)",
-      "description": "Use Array.includes() instead of indexOf() !== -1",
+      "pattern": "($PARAMS) => { return $EXPR; }",
+      "replacement": "($PARAMS) => $EXPR",
+      "description": "Remove unnecessary return statements from arrow functions",
       "complexity": 2,
       "riskLevel": "low",
       "mode": "ast"
@@ -83,6 +103,16 @@
       "mode": "ast"
     },
     {
+      "id": "promise-to-async-await",
+      "language": "typescript",
+      "pattern": "$PROMISE.then(($RESULT) => { $BODY })",
+      "replacement": "const $RESULT = await $PROMISE;\\n$BODY",
+      "description": "Convert Promise.then() chains to async/await",
+      "complexity": 4,
+      "riskLevel": "medium",
+      "mode": "ast"
+    },
+    {
       "id": "template-literal-conversion",
       "language": "typescript",
       "pattern": "$STR1 + $VAR + $STR2",
@@ -93,46 +123,51 @@
       "mode": "ast"
     },
     {
-      "id": "remove-unnecessary-returns",
+      "id": "remove-console-log",
       "language": "typescript",
-      "pattern": "($PARAMS) => { return $EXPR; }",
-      "replacement": "($PARAMS) => $EXPR",
-      "description": "Remove unnecessary return statements from arrow functions",
-      "complexity": 2,
+      "pattern": "console.log(",
+      "replacement": "// console.log(",
+      "description": "Comment out console.log statements for production",
+      "complexity": 1,
       "riskLevel": "low",
+      "mode": "template"
+    },
+    {
+      "id": "fix-trailing-comma",
+      "language": "typescript",
+      "pattern": ",}",
+      "replacement": "}",
+      "description": "Remove trailing commas before closing braces",
+      "complexity": 1,
+      "riskLevel": "low",
+      "mode": "template"
+    },
+    {
+      "id": "fix-missing-semicolon",
+      "language": "typescript",
+      "pattern": "}\n",
+      "replacement": "};\n",
+      "description": "Add missing semicolons after statements",
+      "complexity": 1,
+      "riskLevel": "low",
+      "mode": "template"
+    },
+    {
+      "id": "null-coalescing-operator",
+      "language": "typescript",
+      "pattern": "$VAR || $DEFAULT",
+      "replacement": "$VAR ?? $DEFAULT",
+      "description": "Use nullish coalescing operator for better null handling",
+      "complexity": 2,
+      "riskLevel": "medium",
       "mode": "ast"
     },
     {
-      "id": "fix-double-semicolons",
+      "id": "optional-chaining",
       "language": "typescript",
-      "pattern": ";;",
-      "replacement": ";",
-      "description": "Remove double semicolons syntax errors",
-      "complexity": 1,
-      "riskLevel": "low",
-      "mode": "template"
-    },
-    {
-      "id": "fix-malformed-object-literal",
-      "language": "typescript",
-      "pattern": "= {;",
-      "replacement": "= {",
-      "description": "Fix malformed object literal with semicolon",
-      "complexity": 1,
-      "riskLevel": "low",
-      "mode": "template"
-    },
-    {
-      "id": "cpp-nullptr-conversion",
-      "language": "cpp",
-      "pattern": "NULL",
-      "replacement": "nullptr",
-      "description": "Replace NULL with modern C++ nullptr",
-      "complexity": 1,
-      "riskLevel": "low",
-      "mode": "template"
-    },
-    {
+      "pattern": "$OBJ && $OBJ.$PROP",
+      "replacement": "$OBJ?.$PROP",
+      "description": "Use optional chaining instead of guard checks",
       "id": "cpp-constexpr-const",
       "language": "cpp",
       "pattern": "static const ",
@@ -140,47 +175,97 @@
       "description": "Use constexpr instead of const for compile-time constants",
       "complexity": 2,
       "riskLevel": "low",
-      "mode": "template"
+      "mode": "ast"
     },
     {
-      "id": "cpp-include-iostream",
-      "language": "cpp",
-      "pattern": "#include <iostream.h>",
-      "replacement": "#include <iostream>",
-      "description": "Replace deprecated iostream.h with modern iostream",
-      "complexity": 1,
+      "id": "array-destructuring",
+      "language": "typescript",
+      "pattern": "const $VAR1 = $ARR[0]; const $VAR2 = $ARR[1];",
+      "replacement": "const [$VAR1, $VAR2] = $ARR;",
+      "description": "Use array destructuring for cleaner code",
+      "complexity": 3,
       "riskLevel": "low",
-      "mode": "template"
+      "mode": "ast"
     },
     {
-      "id": "cpp-std-namespace",
-      "language": "cpp",
-      "pattern": "using namespace std;",
-      "replacement": "// using namespace std; // Consider using specific std:: prefixes instead",
-      "description": "Discourage using namespace std in headers",
-      "complexity": 1,
+      "id": "object-destructuring",
+      "language": "typescript",
+      "pattern": "const $VAR = $OBJ.$PROP;",
+      "replacement": "const { $PROP: $VAR } = $OBJ;",
+      "description": "Use object destructuring for property access",
+      "complexity": 3,
+      "riskLevel": "medium",
+      "mode": "ast"
+    },
+    {
+      "id": "spread-operator-arrays",
+      "language": "typescript",
+      "pattern": "$ARR1.concat($ARR2)",
+      "replacement": "[...$ARR1, ...$ARR2]",
+      "description": "Use spread operator instead of concat for arrays",
+      "complexity": 2,
       "riskLevel": "low",
-      "mode": "template"
+      "mode": "ast"
     },
     {
-      "id": "cpp-modern-cast",
-      "language": "cpp",
-      "pattern": "\\($TYPE\\*\\)$EXPR",
-      "replacement": "static_cast<$TYPE*>($EXPR)",
-      "description": "Replace C-style casts with static_cast",
+      "id": "async-await-pattern",
+      "language": "typescript",
+      "pattern": "return $PROMISE.then($CALLBACK)",
+      "replacement": "return await $PROMISE",
+      "description": "Convert Promise.then to async/await pattern",
+      "complexity": 4,
+      "riskLevel": "medium",
+      "mode": "ast"
+    },
+    {
+      "id": "type-assertion-improvement",
+      "language": "typescript",
+      "pattern": "<$TYPE>$EXPR",
+      "replacement": "$EXPR as $TYPE",
+      "description": "Use 'as' syntax instead of angle bracket type assertions",
+      "complexity": 2,
+      "riskLevel": "low",
+      "mode": "ast"
+    },
+    {
+      "id": "prefer-const-assertions",
+      "language": "typescript",
+      "pattern": "const $VAR = [$ITEMS] as const",
+      "replacement": "const $VAR = [$ITEMS] as const",
+      "description": "Use const assertions for immutable arrays",
+      "complexity": 2,
+      "riskLevel": "low",
+      "mode": "ast"
+    },
+    {
+      "id": "remove-unused-imports",
+      "language": "typescript",
+      "pattern": "import { $UNUSED } from '$MODULE';",
+      "replacement": "",
+      "description": "Remove unused import statements",
+      "complexity": 2,
+      "riskLevel": "low",
+      "mode": "ast"
+    },
+    {
+      "id": "prefer-readonly-arrays",
+      "language": "typescript",
+      "pattern": "$VAR: $TYPE[]",
+      "replacement": "$VAR: readonly $TYPE[]",
+      "description": "Use readonly arrays for immutable data",
+      "complexity": 2,
+      "riskLevel": "low",
+      "mode": "ast"
+    },
+    {
+      "id": "error-handling-improvement",
+      "language": "typescript",
+      "pattern": "catch (e)",
+      "replacement": "catch (error: unknown)",
+      "description": "Use proper error typing in catch blocks",
       "complexity": 2,
       "riskLevel": "medium",
-      "mode": "template"
-    },
-    {
-      "id": "cpp-double-include-fix",
-      "language": "cpp",
-      "pattern": "#include \"",
-      "replacement": "#include \"",
-      "description": "Ensure proper include formatting",
-      "complexity": 1,
-      "riskLevel": "low",
-      "mode": "template"
+      "mode": "ast"
     },
     {
       "id": "cpp-add-comment-mark",
@@ -194,24 +279,85 @@
     }
   ],
   "categories": {
-    "modernization": [
+    "template": [
+      "console-log-to-console-error",
+      "fix-double-semicolons",
+      "fix-malformed-object-literal",
+      "remove-console-log",
+      "fix-trailing-comma",
+      "fix-missing-semicolon"
+    ],
+    "ast": [
       "smart-var-to-const-let",
       "strict-equality",
       "strict-inequality",
+      "array-includes-instead-of-indexof",
+      "object-property-shorthand",
+      "remove-unnecessary-returns",
+      "const-loop-variable-fix",
       "promise-to-async-await",
-      "cpp-nullptr-conversion",
-      "cpp-constexpr-const",
-      "cpp-include-iostream",
-      "cpp-std-namespace"
+      "template-literal-conversion",
+      "null-coalescing-operator",
+      "optional-chaining",
+      "array-destructuring",
+      "object-destructuring",
+      "spread-operator-arrays",
+      "async-await-pattern",
+      "type-assertion-improvement",
+      "prefer-const-assertions",
+      "remove-unused-imports",
+      "prefer-readonly-arrays",
+      "error-handling-improvement"
+    ],
+    "modernization": [
+      "smart-var-to-const-let",
+      "array-includes-instead-of-indexof",
+      "template-literal-conversion",
+      "promise-to-async-await",
+      "null-coalescing-operator",
+      "optional-chaining",
+      "array-destructuring",
+      "object-destructuring",
+      "spread-operator-arrays",
+      "async-await-pattern",
+      "type-assertion-improvement"
     ],
     "optimization": [
       "object-property-shorthand",
       "remove-unnecessary-returns",
-      "template-literal-conversion",
-      "cpp-smart-ptr-make",
-      "cpp-unique-ptr-make",
-      "cpp-emplace-back"
+      "spread-operator-arrays",
+      "array-destructuring",
+      "object-destructuring"
     ],
+    "safety": [
+      "strict-equality",
+      "strict-inequality",
+      "const-loop-variable-fix",
+      "error-handling-improvement",
+      "prefer-readonly-arrays"
+    ],
+    "logging": [
+      "console-log-to-console-error",
+      "remove-console-log"
+    ],
+    "syntax-fixes": [
+      "fix-double-semicolons",
+      "fix-malformed-object-literal",
+      "fix-trailing-comma",
+      "fix-missing-semicolon"
+    ],
+    "typescript-specific": [
+      "type-assertion-improvement",
+      "prefer-const-assertions",
+      "prefer-readonly-arrays",
+      "error-handling-improvement"
+    ],
+    "code-quality": [
+      "remove-unused-imports",
+      "error-handling-improvement",
+      "prefer-readonly-arrays",
+      "async-await-pattern",
+      "promise-to-async-await"
     "safety": ["array-includes-instead-of-indexof", "const-loop-variable-fix", "cpp-modern-cast"],
     "logging": ["console-log-to-console-error"],
     "syntax-fixes": ["fix-double-semicolons", "fix-malformed-object-literal"],
@@ -225,15 +371,45 @@
     ]
   },
   "metadata": {
-    "created": "2025-01-06",
+    "created": "2025-07-22",
     "author": "Carmack Coder",
     "license": "MIT",
-    "lastUpdated": "2025-07-17",
-    "totalPatterns": 18,
+    "lastUpdated": "2025-07-22",
+    "totalPatterns": 24,
+    "templatePatterns": 6,
+    "astPatterns": 18,
+    "templateEngineVersion": "4.0.0",
     "astGrepVersion": "0.38.6",
-    "languages": ["typescript", "javascript", "cpp"],
+    "languages": ["typescript", "javascript"],
+    "categories": [
+      "template",
+      "ast",
+      "modernization",
+      "optimization",
+      "safety",
+      "logging",
+      "syntax-fixes",
+      "typescript-specific",
+      "code-quality"
+    ],
     "features": [
+      "Unified pattern format",
+      "Mode-based organization",
+      "Priority-based execution",
+      "Template → AST → LLM ordering",
       "Enhanced pattern matching",
+      "Conflict resolution",
+      "Format preservation",
+      "Modern ES6+ transformations",
+      "TypeScript-specific improvements",
+      "Production-ready optimizations",
+      "Code quality enforcement",
+      "Error handling improvements",
+      "Async/await modernization",
+      "Destructuring patterns",
+      "Optional chaining support",
+      "Nullish coalescing",
+      "Type assertion improvements"
       "Semantic analysis",
       "Robust transformations",
       "C++ modernization",

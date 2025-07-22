@@ -1,46 +1,162 @@
-# skip_output:
-#   - meta
-#   - summary
+# Lefthook Configuration for Carmack Coder
+# Comprehensive pre-commit automation with error resolution
 
-# pre-commit:
-#   parallel: true
-#   commands:
-#     format:
-#       glob: "*.{js,ts,tsx,json,md}"
-#       run: bun run format
-#     lint:
-#       glob: "*.{js,ts,tsx,json}"
-#       run: bun run lint
-#     # re-enable after fixing unknown type errors
-#     # typecheck:
-#     #   glob: "*.{ts,tsx}"
-#     #   run: bun run type-check
+# Global settings
+colors: true
+no_tty: false
+source_dir: .lefthook
+output:
+  - meta
+  - summary
 
-# # pre-push:
-# #   parallel: true
-# #   commands:
-# #     validate-merge-commits:
-# #       glob: "*"
-# #       run: |
-# #         # Check if this is a merge commit and validate it has PR URL
-# #         if git log -1 --merges --oneline | grep -q "Merge pull request"; then
-# #           COMMIT_MSG=$(git log -1 --pretty=%B)
-# #           if ! echo "$COMMIT_MSG" | grep -qE "PR: https://github\.com/.*/(pull|issues)/[0-9]+"; then
-# #             echo "❌ Merge commit missing PR URL"
-# #             echo "Use 'bun run merge-pr <number>' to merge with proper commit message"
-# #             exit 1
-# #           fi
-# #           echo "✅ Merge commit has proper PR URL"
-# #         fi
+# Pre-commit hooks - run before each commit
+pre-commit:
+  # Parallel execution for speed
+  parallel: true
+  
+  commands:
+    # 1. TypeScript Error Detection and Auto-Fix
+    typescript-check:
+      tags: typescript validation
+      run: |
+        echo "🔍 Checking TypeScript errors..."
+        bun run src/scripts/pre-commit-typescript.ts
+      fail_text: "TypeScript errors detected. Run 'bun run fix:types' to auto-fix."
+      stage_fixed: true
+    
+    # 2. Biome Linting and Formatting
+    biome-check:
+      tags: linting formatting
+      run: |
+        echo "🎨 Running Biome linting and formatting..."
+        bunx biome check --write --unsafe .
+      fail_text: "Biome linting failed. Check output above."
+      stage_fixed: true
+    
+    # 3. Dafny Verification (for critical files)
+    dafny-verify:
+      tags: verification formal
+      glob: "src/verification/*.dfy"
+      run: |
+        echo "🔬 Running Dafny verification..."
+        bun run src/scripts/pre-commit-dafny.ts {staged_files}
+      fail_text: "Dafny verification failed. Check formal specifications."
+    
+    # 4. High-Priority Tests
+    test-critical:
+      tags: testing critical
+      run: |
+        echo "🧪 Running critical tests..."
+        bun run test:high --bail
+      fail_text: "Critical tests failed. Fix before committing."
+    
+    # 5. Import Organization and Unused Code Detection
+    organize-imports:
+      tags: imports cleanup
+      glob: "src/**/*.ts"
+      run: |
+        echo "📦 Organizing imports and removing unused code..."
+        bun run src/scripts/pre-commit-imports.ts {staged_files}
+      stage_fixed: true
+    
+    # 6. Security and Vulnerability Check
+    security-check:
+      tags: security audit
+      run: |
+        echo "🔒 Running security audit..."
+        bun audit --audit-level moderate
+      fail_text: "Security vulnerabilities detected. Run 'bun audit --fix' to resolve."
+    
+    # 7. Performance Regression Detection
+    performance-check:
+      tags: performance regression
+      run: |
+        echo "⚡ Checking for performance regressions..."
+        bun run src/scripts/pre-commit-performance.ts
+      fail_text: "Performance regression detected. Review changes."
 
-# # post-merge:
-# #   commands:
-# #     notify-merge:
-# #       run: |
-# #         # Notify about successful merge with validation
-# #         COMMIT_MSG=$(git log -1 --pretty=%B)
-# #         if echo "$COMMIT_MSG" | grep -qE "PR: https://github\.com/.*/(pull|issues)/[0-9]+"; then
-# #           echo "✅ Successfully merged with PR tracking"
-# #         else
-# #           echo "⚠️  Merge completed but missing PR URL - consider using 'bun run merge-pr' next time"
-# #         fi
+# Prepare commit message - enhance commit messages with AI analysis
+prepare-commit-msg:
+  commands:
+    enhance-commit-message:
+      tags: commit-message ai
+      run: |
+        echo "✨ Enhancing commit message with AI analysis..."
+        bun run src/scripts/enhance-commit-message.ts {1}
+      fail_text: "Failed to enhance commit message."
+
+# Pre-push hooks - run before pushing to remote
+pre-push:
+  commands:
+    # Full test suite before push
+    test-full:
+      tags: testing comprehensive
+      run: |
+        echo "🚀 Running comprehensive test suite..."
+        bun run test:ci
+      fail_text: "Full test suite failed. Fix before pushing."
+    
+    # Build verification
+    build-check:
+      tags: build verification
+      run: |
+        echo "🏗️ Verifying build..."
+        bun run build
+      fail_text: "Build failed. Fix build errors before pushing."
+    
+    # Documentation generation
+    docs-update:
+      tags: documentation
+      run: |
+        echo "📚 Updating documentation..."
+        bun run docs:generate
+      stage_fixed: true
+
+# Post-commit hooks - run after successful commit
+post-commit:
+  commands:
+    # Generate commit analytics
+    commit-analytics:
+      tags: analytics telemetry
+      run: |
+        echo "📊 Generating commit analytics..."
+        bun run src/scripts/post-commit-analytics.ts
+      fail_text: "Analytics generation failed (non-blocking)."
+    
+    # Update pattern learning
+    pattern-learning:
+      tags: learning ai
+      run: |
+        echo "🧠 Updating pattern learning..."
+        bun run src/scripts/post-commit-learning.ts
+      fail_text: "Pattern learning failed (non-blocking)."
+
+# Skip hooks configuration
+skip_output:
+  - meta
+  - skips
+
+# Remote configuration for shared hooks
+remote:
+  git_url: https://github.com/your-org/carmack-hooks.git
+  ref: main
+  config: lefthook-remote.yml
+
+# Environment-specific overrides
+environments:
+  development:
+    skip:
+      - security-check
+      - performance-check
+  
+  ci:
+    skip:
+      - commit-analytics
+      - pattern-learning
+  
+  production:
+    # All hooks enabled in production
+    skip: []
+
+# Execution settings
+execution_timeout: 300 # 5 minutes max per hook
