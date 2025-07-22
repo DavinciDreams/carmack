@@ -67,24 +67,24 @@ export class StatisticalAnalyzer {
     const n = data.length;
 
     // Basic statistics
-    const mean = this.calculateMean(data);
-    const median = this.calculateMedian(sorted);
-    const mode = this.calculateMode(data);
-    const variance = this.calculateVariance(data, mean);
+    const mean = StatisticalAnalyzer.calculateMean(data);
+    const median = StatisticalAnalyzer.calculateMedian(sorted);
+    const mode = StatisticalAnalyzer.calculateMode(data);
+    const variance = StatisticalAnalyzer.calculateVariance(data, mean);
     const standardDeviation = Math.sqrt(variance);
     const min = sorted[0] ?? 0;
     const max = sorted[n - 1] ?? 0;
     const range = max - min;
 
     // Quartiles
-    const quartiles = this.calculateQuartiles(sorted);
+    const quartiles = StatisticalAnalyzer.calculateQuartiles(sorted);
 
     // Higher-order moments
-    const skewness = this.calculateSkewness(data, mean, standardDeviation);
-    const kurtosis = this.calculateKurtosis(data, mean, standardDeviation);
+    const skewness = StatisticalAnalyzer.calculateSkewness(data, mean, standardDeviation);
+    const kurtosis = StatisticalAnalyzer.calculateKurtosis(data, mean, standardDeviation);
 
     // Outliers using IQR method
-    const outliers = this.detectOutliers(data, quartiles);
+    const outliers = StatisticalAnalyzer.detectOutliers(data, quartiles);
 
     return {
       mean,
@@ -140,9 +140,9 @@ export class StatisticalAnalyzer {
    * Calculate variance
    */
   static calculateVariance(data: number[], mean?: number): number {
-    const avg = mean ?? this.calculateMean(data);
-    const squaredDiffs = data.map((value) => Math.pow(value - avg, 2));
-    return this.calculateMean(squaredDiffs);
+    const avg = mean ?? StatisticalAnalyzer.calculateMean(data);
+    const squaredDiffs = data.map((value) => (value - avg) ** 2);
+    return StatisticalAnalyzer.calculateMean(squaredDiffs);
   }
 
   /**
@@ -171,7 +171,7 @@ export class StatisticalAnalyzer {
 
     const n = data.length;
     const skewSum = data.reduce((sum, value) => {
-      return sum + Math.pow((value - mean) / stdDev, 3);
+      return sum + ((value - mean) / stdDev) ** 3;
     }, 0);
 
     return (n / ((n - 1) * (n - 2))) * skewSum;
@@ -185,11 +185,11 @@ export class StatisticalAnalyzer {
 
     const n = data.length;
     const kurtSum = data.reduce((sum, value) => {
-      return sum + Math.pow((value - mean) / stdDev, 4);
+      return sum + ((value - mean) / stdDev) ** 4;
     }, 0);
 
     const kurtosis = ((n * (n + 1)) / ((n - 1) * (n - 2) * (n - 3))) * kurtSum;
-    const correction = (3 * Math.pow(n - 1, 2)) / ((n - 2) * (n - 3));
+    const correction = (3 * (n - 1) ** 2) / ((n - 2) * (n - 3));
 
     return kurtosis - correction; // Excess kurtosis
   }
@@ -219,19 +219,25 @@ export class StatisticalAnalyzer {
     }
 
     // Pearson correlation
-    const pearsonCorrelation = this.calculatePearsonCorrelation(x, y);
+    const pearsonCorrelation = StatisticalAnalyzer.calculatePearsonCorrelation(x, y);
 
     // Spearman correlation (rank-based)
-    const spearmanCorrelation = this.calculateSpearmanCorrelation(x, y);
+    const spearmanCorrelation = StatisticalAnalyzer.calculateSpearmanCorrelation(x, y);
 
     // Kendall's Tau
-    const kendallTau = this.calculateKendallTau(x, y);
+    const kendallTau = StatisticalAnalyzer.calculateKendallTau(x, y);
 
     // Statistical significance (t-test for Pearson)
-    const significance = this.calculateCorrelationSignificance(pearsonCorrelation, n);
+    const significance = StatisticalAnalyzer.calculateCorrelationSignificance(
+      pearsonCorrelation,
+      n
+    );
 
     // Confidence interval for Pearson correlation
-    const confidenceInterval = this.calculateCorrelationConfidenceInterval(pearsonCorrelation, n);
+    const confidenceInterval = StatisticalAnalyzer.calculateCorrelationConfidenceInterval(
+      pearsonCorrelation,
+      n
+    );
 
     return {
       pearsonCorrelation,
@@ -247,8 +253,8 @@ export class StatisticalAnalyzer {
    */
   static calculatePearsonCorrelation(x: number[], y: number[]): number {
     const n = x.length;
-    const meanX = this.calculateMean(x);
-    const meanY = this.calculateMean(y);
+    const meanX = StatisticalAnalyzer.calculateMean(x);
+    const meanY = StatisticalAnalyzer.calculateMean(y);
 
     let numerator = 0;
     let sumXSquared = 0;
@@ -271,9 +277,9 @@ export class StatisticalAnalyzer {
    * Calculate Spearman rank correlation
    */
   static calculateSpearmanCorrelation(x: number[], y: number[]): number {
-    const ranksX = this.calculateRanks(x);
-    const ranksY = this.calculateRanks(y);
-    return this.calculatePearsonCorrelation(ranksX, ranksY);
+    const ranksX = StatisticalAnalyzer.calculateRanks(x);
+    const ranksY = StatisticalAnalyzer.calculateRanks(y);
+    return StatisticalAnalyzer.calculatePearsonCorrelation(ranksX, ranksY);
   }
 
   /**
@@ -329,7 +335,7 @@ export class StatisticalAnalyzer {
     const df = n - 2;
 
     // Approximate p-value using t-distribution
-    return this.tTestPValue(Math.abs(t), df);
+    return StatisticalAnalyzer.tTestPValue(Math.abs(t), df);
   }
 
   /**
@@ -338,7 +344,7 @@ export class StatisticalAnalyzer {
   static calculateCorrelationConfidenceInterval(
     correlation: number,
     n: number,
-    confidence: number = 0.95
+    confidence = 0.95
   ): CorrelationAnalysis['confidenceInterval'] {
     if (n <= 3) {
       return { lower: -1, upper: 1, confidence };
@@ -347,7 +353,7 @@ export class StatisticalAnalyzer {
     // Fisher's z-transformation
     const z = 0.5 * Math.log((1 + correlation) / (1 - correlation));
     const se = 1 / Math.sqrt(n - 3);
-    const zCritical = this.getZCritical(confidence);
+    const zCritical = StatisticalAnalyzer.getZCritical(confidence);
 
     const zLower = z - zCritical * se;
     const zUpper = z + zCritical * se;
@@ -371,17 +377,17 @@ export class StatisticalAnalyzer {
     }
 
     // Linear regression for trend
-    const { slope, rSquared } = this.calculateLinearRegression(x, data);
+    const { slope, rSquared } = StatisticalAnalyzer.calculateLinearRegression(x, data);
 
     // Determine trend direction
-    const trend = this.determineTrend(slope, rSquared);
+    const trend = StatisticalAnalyzer.determineTrend(slope, rSquared);
 
     // Simple forecast (linear extrapolation)
     const forecastSteps = Math.min(5, Math.floor(n * 0.2)); // Forecast 20% ahead or 5 steps
-    const forecast = this.generateForecast(x, data, slope, forecastSteps);
+    const forecast = StatisticalAnalyzer.generateForecast(x, data, slope, forecastSteps);
 
     // Basic seasonality detection
-    const seasonality = this.detectSeasonality(data);
+    const seasonality = StatisticalAnalyzer.detectSeasonality(data);
 
     return {
       trend,
@@ -400,8 +406,8 @@ export class StatisticalAnalyzer {
     y: number[]
   ): { slope: number; intercept: number; rSquared: number } {
     const n = x.length;
-    const meanX = this.calculateMean(x);
-    const meanY = this.calculateMean(y);
+    const meanX = StatisticalAnalyzer.calculateMean(x);
+    const meanY = StatisticalAnalyzer.calculateMean(y);
 
     let numerator = 0;
     let denominator = 0;
@@ -422,8 +428,8 @@ export class StatisticalAnalyzer {
 
     for (let i = 0; i < n; i++) {
       const predicted = slope * (x[i] ?? 0) + intercept;
-      ssRes += Math.pow((y[i] ?? 0) - predicted, 2);
-      ssTot += Math.pow((y[i] ?? 0) - meanY, 2);
+      ssRes += ((y[i] ?? 0) - predicted) ** 2;
+      ssTot += ((y[i] ?? 0) - meanY) ** 2;
     }
 
     const rSquared = ssTot === 0 ? 1 : 1 - ssRes / ssTot;
@@ -454,8 +460,8 @@ export class StatisticalAnalyzer {
    */
   static generateForecast(x: number[], y: number[], slope: number, steps: number): number[] {
     const lastX = x[x.length - 1] ?? 0;
-    const meanY = this.calculateMean(y);
-    const meanX = this.calculateMean(x);
+    const meanY = StatisticalAnalyzer.calculateMean(y);
+    const meanX = StatisticalAnalyzer.calculateMean(x);
     const intercept = meanY - slope * meanX;
 
     const forecast: number[] = [];
@@ -482,7 +488,7 @@ export class StatisticalAnalyzer {
     let bestPeriod = 0;
 
     for (let lag = 2; lag <= maxLag; lag++) {
-      const correlation = this.calculateAutocorrelation(data, lag);
+      const correlation = StatisticalAnalyzer.calculateAutocorrelation(data, lag);
       if (correlation > maxCorrelation) {
         maxCorrelation = correlation;
         bestPeriod = lag;
@@ -511,7 +517,7 @@ export class StatisticalAnalyzer {
     const x = data.slice(0, n - lag);
     const y = data.slice(lag);
 
-    return Math.abs(this.calculatePearsonCorrelation(x, y));
+    return Math.abs(StatisticalAnalyzer.calculatePearsonCorrelation(x, y));
   }
 
   /**
@@ -521,7 +527,7 @@ export class StatisticalAnalyzer {
     // Simplified approximation for p-value
     // In a real implementation, you'd use a proper t-distribution CDF
     const x = df / (df + t * t);
-    return this.betaIncomplete(df / 2, 0.5, x);
+    return StatisticalAnalyzer.betaIncomplete(df / 2, 0.5, x);
   }
 
   /**
@@ -547,7 +553,7 @@ export class StatisticalAnalyzer {
     if (x >= 1) return 1;
 
     // Rough approximation for common cases
-    return Math.pow(x, a) * Math.pow(1 - x, b);
+    return x ** a * (1 - x) ** b;
   }
 }
 
@@ -590,7 +596,7 @@ export class PatternStatistics {
     );
 
     // Generate insights
-    const insights = this.generateEffectivenessInsights(
+    const insights = PatternStatistics.generateEffectivenessInsights(
       summary,
       { successRateVsPerformance, complexityVsEffectiveness },
       metrics
@@ -696,10 +702,13 @@ export class PatternStatistics {
     }
 
     // Simple PCA approximation (eigenvalue estimation)
-    const principalComponents = this.approximatePCA(patterns);
+    const principalComponents = PatternStatistics.approximatePCA(patterns);
 
     // Generate insights
-    const insights = this.generateFeatureInsights(featureStatistics, principalComponents);
+    const insights = PatternStatistics.generateFeatureInsights(
+      featureStatistics,
+      principalComponents
+    );
 
     return {
       dimensionality,
