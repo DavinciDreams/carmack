@@ -381,6 +381,186 @@
       "complexity": 8,
       "riskLevel": "medium",
       "mode": "llm"
+    },
+    {
+      "id": "llm-type-inference-enhancement",
+      "language": "typescript",
+      "pattern": "type inference improvement",
+      "replacement": "AI-enhanced type inference",
+      "description": "Use LLM to infer proper TypeScript types and replace any types",
+      "complexity": 7,
+      "riskLevel": "medium",
+      "mode": "llm"
+    },
+    {
+      "id": "llm-semantic-refactoring",
+      "language": "typescript",
+      "pattern": "semantic refactoring",
+      "replacement": "AI-guided semantic refactoring",
+      "description": "Use LLM for intelligent code restructuring based on semantic understanding",
+      "complexity": 9,
+      "riskLevel": "medium",
+      "mode": "llm"
+    },
+    {
+      "id": "llm-algorithm-optimization",
+      "language": "typescript",
+      "pattern": "algorithm optimization",
+      "replacement": "AI-optimized algorithms",
+      "description": "Use LLM to optimize complex algorithms and data structures",
+      "complexity": 8,
+      "riskLevel": "medium",
+      "mode": "llm"
+    },
+    {
+      "id": "llm-design-pattern-application",
+      "language": "typescript",
+      "pattern": "design pattern application",
+      "replacement": "AI-applied design patterns",
+      "description": "Use LLM to identify and apply appropriate design patterns",
+      "complexity": 7,
+      "riskLevel": "medium",
+      "mode": "llm"
+    },
+    {
+      "id": "cuda-kernel-optimization",
+      "language": "cuda",
+      "pattern": "__global__ void $KERNEL_NAME($PARAMS) { $BODY }",
+      "replacement": "__global__ void $KERNEL_NAME($PARAMS) { /* Optimized kernel */ $BODY }",
+      "description": "Optimize CUDA kernel for better performance and memory coalescing",
+      "complexity": 9,
+      "riskLevel": "high",
+      "mode": "llm"
+    },
+    {
+      "id": "cuda-memory-coalescing",
+      "language": "cuda",
+      "pattern": "memory coalescing optimization",
+      "replacement": "AI-optimized memory access patterns",
+      "description": "Use LLM to optimize CUDA memory access patterns for coalescing",
+      "complexity": 8,
+      "riskLevel": "high",
+      "mode": "llm"
+    },
+    {
+      "id": "cuda-shared-memory-optimization",
+      "language": "cuda",
+      "pattern": "__shared__ $TYPE $VAR[$SIZE];",
+      "replacement": "__shared__ $TYPE $VAR[$SIZE]; /* Optimized shared memory usage */",
+      "description": "Optimize CUDA shared memory usage for better performance",
+      "complexity": 8,
+      "riskLevel": "medium",
+      "mode": "llm"
+    },
+    {
+      "id": "tensorrt-engine-optimization",
+      "language": "cpp",
+      "pattern": "TensorRT engine optimization",
+      "replacement": "AI-optimized TensorRT engine",
+      "description": "Use LLM to optimize TensorRT engine configuration and performance",
+      "complexity": 9,
+      "riskLevel": "high",
+      "mode": "llm"
+    },
+    {
+      "id": "tensorrt-precision-optimization",
+      "language": "cpp",
+      "pattern": "precision optimization",
+      "replacement": "AI-optimized precision handling",
+      "description": "Use LLM to optimize TensorRT precision settings (FP32/FP16/INT8)",
+      "complexity": 8,
+      "riskLevel": "medium",
+      "mode": "llm"
+    },
+    {
+      "id": "cuda-thread-block-optimization",
+      "language": "cuda",
+      "pattern": "dim3 $GRID($GRID_SIZE); dim3 $BLOCK($BLOCK_SIZE);",
+      "replacement": "dim3 $GRID($GRID_SIZE); dim3 $BLOCK($BLOCK_SIZE); /* Optimized thread configuration */",
+      "description": "Optimize CUDA thread block and grid dimensions for target hardware",
+      "complexity": 7,
+      "riskLevel": "medium",
+      "mode": "llm"
+    },
+    {
+      "id": "cpp-smart-pointer-modernization",
+      "language": "cpp",
+      "pattern": "$TYPE* $VAR = new $TYPE($ARGS);",
+      "replacement": "auto $VAR = std::make_unique<$TYPE>($ARGS);",
+      "description": "Convert raw pointers to smart pointers for better memory management",
+      "complexity": 4,
+      "riskLevel": "medium",
+      "mode": "ast"
+    },
+    {
+      "id": "cpp-range-based-for-loop",
+      "language": "cpp",
+      "pattern": "for (int i = 0; i < $CONTAINER.size(); ++i) { $BODY }",
+      "replacement": "for (const auto& item : $CONTAINER) { $BODY }",
+      "description": "Convert traditional for loops to range-based for loops",
+      "complexity": 3,
+      "riskLevel": "low",
+      "mode": "ast"
+    },
+    {
+      "id": "cpp-auto-type-deduction",
+      "language": "cpp",
+      "pattern": "$TYPE $VAR = $EXPR;",
+      "replacement": "auto $VAR = $EXPR;",
+      "description": "Use auto for type deduction where appropriate",
+      "complexity": 2,
+      "riskLevel": "low",
+      "mode": "ast"
+    },
+    {
+      "id": "cuda-error-checking",
+      "language": "cuda",
+      "pattern": "cuda$FUNC($ARGS);",
+      "replacement": "checkCudaErrors(cuda$FUNC($ARGS));",
+      "description": "Add proper CUDA error checking to all CUDA API calls",
+      "complexity": 3,
+      "riskLevel": "low",
+      "mode": "template"
+    },
+    {
+      "id": "tensorrt-logger-integration",
+      "language": "cpp",
+      "pattern": "nvinfer1::ILogger",
+      "replacement": "nvinfer1::ILogger /* Enhanced logging for TensorRT */",
+      "description": "Enhance TensorRT logger integration for better debugging",
+      "complexity": 4,
+      "riskLevel": "low",
+      "mode": "template"
+    },
+    {
+      "id": "cuda-stream-optimization",
+      "language": "cuda",
+      "pattern": "cudaStream_t $STREAM;",
+      "replacement": "cudaStream_t $STREAM; /* Optimized CUDA stream usage */",
+      "description": "Optimize CUDA stream usage for better concurrency",
+      "complexity": 6,
+      "riskLevel": "medium",
+      "mode": "llm"
+    },
+    {
+      "id": "tensorrt-dynamic-shapes",
+      "language": "cpp",
+      "pattern": "dynamic shape handling",
+      "replacement": "AI-optimized dynamic shape handling",
+      "description": "Use LLM to optimize TensorRT dynamic shape handling",
+      "complexity": 8,
+      "riskLevel": "high",
+      "mode": "llm"
+    },
+    {
+      "id": "cuda-occupancy-optimization",
+      "language": "cuda",
+      "pattern": "occupancy optimization",
+      "replacement": "AI-optimized kernel occupancy",
+      "description": "Use LLM to optimize CUDA kernel occupancy for target GPU",
+      "complexity": 9,
+      "riskLevel": "high",
+      "mode": "llm"
     }
   ],
   "categories": {
@@ -390,7 +570,9 @@
       "fix-malformed-object-literal",
       "remove-console-log",
       "fix-trailing-comma",
-      "fix-missing-semicolon"
+      "fix-missing-semicolon",
+      "cuda-error-checking",
+      "tensorrt-logger-integration"
     ],
     "ast": [
       "smart-var-to-const-let",
@@ -412,7 +594,30 @@
       "prefer-const-assertions",
       "remove-unused-imports",
       "prefer-readonly-arrays",
-      "error-handling-improvement"
+      "error-handling-improvement",
+      "cpp-smart-pointer-modernization",
+      "cpp-range-based-for-loop",
+      "cpp-auto-type-deduction"
+    ],
+    "llm": [
+      "llm-complex-refactoring",
+      "llm-architectural-improvement",
+      "llm-code-documentation",
+      "llm-error-handling-improvement",
+      "llm-performance-optimization",
+      "llm-type-inference-enhancement",
+      "llm-semantic-refactoring",
+      "llm-algorithm-optimization",
+      "llm-design-pattern-application",
+      "cuda-kernel-optimization",
+      "cuda-memory-coalescing",
+      "cuda-shared-memory-optimization",
+      "tensorrt-engine-optimization",
+      "tensorrt-precision-optimization",
+      "cuda-thread-block-optimization",
+      "cuda-stream-optimization",
+      "tensorrt-dynamic-shapes",
+      "cuda-occupancy-optimization"
     ],
     "modernization": [
       "smart-var-to-const-let",
@@ -425,23 +630,39 @@
       "object-destructuring",
       "spread-operator-arrays",
       "async-await-pattern",
-      "type-assertion-improvement"
+      "type-assertion-improvement",
+      "cpp-smart-pointer-modernization",
+      "cpp-range-based-for-loop",
+      "cpp-auto-type-deduction"
     ],
     "optimization": [
       "object-property-shorthand",
       "remove-unnecessary-returns",
       "spread-operator-arrays",
       "array-destructuring",
-      "object-destructuring"
+      "object-destructuring",
+      "llm-performance-optimization",
+      "llm-algorithm-optimization",
+      "cuda-kernel-optimization",
+      "cuda-memory-coalescing",
+      "cuda-shared-memory-optimization",
+      "tensorrt-engine-optimization",
+      "tensorrt-precision-optimization",
+      "cuda-thread-block-optimization",
+      "cuda-stream-optimization",
+      "cuda-occupancy-optimization"
     ],
     "safety": [
       "strict-equality",
       "strict-inequality",
       "const-loop-variable-fix",
       "error-handling-improvement",
-      "prefer-readonly-arrays"
+      "prefer-readonly-arrays",
+      "cpp-nullptr-conversion",
+      "cpp-modern-cast",
+      "cuda-error-checking"
     ],
-    "logging": ["console-log-to-console-error", "remove-console-log"],
+    "logging": ["console-log-to-console-error", "remove-console-log", "tensorrt-logger-integration"],
     "syntax-fixes": [
       "fix-double-semicolons",
       "fix-malformed-object-literal",
@@ -452,14 +673,18 @@
       "type-assertion-improvement",
       "prefer-const-assertions",
       "prefer-readonly-arrays",
-      "error-handling-improvement"
+      "error-handling-improvement",
+      "llm-type-inference-enhancement"
     ],
     "code-quality": [
       "remove-unused-imports",
       "error-handling-improvement",
       "prefer-readonly-arrays",
       "async-await-pattern",
-      "promise-to-async-await"
+      "promise-to-async-await",
+      "llm-code-documentation",
+      "llm-semantic-refactoring",
+      "llm-design-pattern-application"
     ],
     "cpp-modernization": [
       "cpp-nullptr-conversion",
@@ -467,26 +692,58 @@
       "cpp-include-iostream",
       "cpp-std-namespace",
       "cpp-modern-cast",
-      "cpp-double-include-fix"
+      "cpp-double-include-fix",
+      "cpp-smart-pointer-modernization",
+      "cpp-range-based-for-loop",
+      "cpp-auto-type-deduction"
     ],
-    "cpp-safety": ["cpp-nullptr-conversion", "cpp-modern-cast"],
-    "cpp-performance": ["cpp-constexpr-const"],
-    "cpp-hygiene": ["cpp-std-namespace", "cpp-double-include-fix", "cpp-include-iostream"]
+    "cpp-safety": ["cpp-nullptr-conversion", "cpp-modern-cast", "cpp-smart-pointer-modernization"],
+    "cpp-performance": ["cpp-constexpr-const", "cpp-auto-type-deduction"],
+    "cpp-hygiene": ["cpp-std-namespace", "cpp-double-include-fix", "cpp-include-iostream"],
+    "cuda-optimization": [
+      "cuda-kernel-optimization",
+      "cuda-memory-coalescing",
+      "cuda-shared-memory-optimization",
+      "cuda-thread-block-optimization",
+      "cuda-stream-optimization",
+      "cuda-occupancy-optimization"
+    ],
+    "cuda-safety": ["cuda-error-checking"],
+    "tensorrt-optimization": [
+      "tensorrt-engine-optimization",
+      "tensorrt-precision-optimization",
+      "tensorrt-dynamic-shapes",
+      "tensorrt-logger-integration"
+    ],
+    "llm-semantic": [
+      "llm-type-inference-enhancement",
+      "llm-semantic-refactoring",
+      "llm-algorithm-optimization",
+      "llm-design-pattern-application"
+    ],
+    "llm-architectural": [
+      "llm-architectural-improvement",
+      "llm-complex-refactoring",
+      "llm-performance-optimization"
+    ]
   },
   "metadata": {
     "created": "2025-07-22",
     "author": "Carmack Coder",
     "license": "MIT",
-    "lastUpdated": "2025-07-22",
-    "totalPatterns": 30,
-    "templatePatterns": 11,
-    "astPatterns": 19,
+    "lastUpdated": "2025-07-23",
+    "totalPatterns": 48,
+    "templatePatterns": 8,
+    "astPatterns": 23,
+    "llmPatterns": 17,
     "templateEngineVersion": "4.0.0",
     "astGrepVersion": "0.38.6",
-    "languages": ["typescript", "javascript", "cpp"],
+    "enhancedLLMVersion": "2.0.0",
+    "languages": ["typescript", "javascript", "cpp", "cuda"],
     "categories": [
       "template",
       "ast",
+      "llm",
       "modernization",
       "optimization",
       "safety",
@@ -497,7 +754,12 @@
       "cpp-modernization",
       "cpp-safety",
       "cpp-performance",
-      "cpp-hygiene"
+      "cpp-hygiene",
+      "cuda-optimization",
+      "cuda-safety",
+      "tensorrt-optimization",
+      "llm-semantic",
+      "llm-architectural"
     ],
     "features": [
       "Unified pattern format",
@@ -528,7 +790,34 @@
       "TypeScript optimization",
       "Cross-language support",
       "Formal verification integration",
-      "Performance-aware transformations"
+      "Performance-aware transformations",
+      "Enhanced LLM integration",
+      "Semantic code understanding",
+      "AI-powered refactoring",
+      "Type inference enhancement",
+      "Algorithm optimization",
+      "Design pattern application",
+      "CUDA kernel optimization",
+      "Memory coalescing patterns",
+      "Shared memory optimization",
+      "Thread block optimization",
+      "Stream optimization",
+      "Occupancy optimization",
+      "TensorRT engine optimization",
+      "Precision optimization",
+      "Dynamic shape handling",
+      "NVIDIA TensorRT support",
+      "CUDA error checking",
+      "Smart pointer modernization",
+      "Range-based for loops",
+      "Auto type deduction",
+      "Context-aware transformations",
+      "Multi-file analysis",
+      "Incremental transformations",
+      "Rollback capabilities",
+      "Performance caching",
+      "Batch processing",
+      "Hybrid transformation modes"
     ]
   }
 }

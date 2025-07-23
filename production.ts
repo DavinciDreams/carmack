@@ -352,7 +352,7 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
   const transformationActor = createActor(carmackCoderMachine, {
     input: {
       targetFiles: eligibleFiles, // Use discovered files instead of directory
-      transformationType: 'ast' as const,
+      transformationType: 'template' as const, // Start with template, will be dynamically upgraded
       patterns: [], // Will be loaded from patterns.json
       maxComplexity: config.transformation.maxComplexityThreshold,
       dryRun: args['dry-run'] || config.transformation.dryRunFirst,
@@ -412,7 +412,7 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
         // Send start event with discovered files
         const transformationRequest: TransformationRequest = validateTransformationRequest({
           targetFiles: eligibleFiles,
-          transformationType: 'ast' as const,
+          transformationType: 'template' as const, // Start with template, will be dynamically upgraded
           patterns: patterns,
           maxComplexity: config.transformation.maxComplexityThreshold,
           dryRun: args['dry-run'] || config.transformation.dryRunFirst,
@@ -430,7 +430,7 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
 
         const fallbackRequest: TransformationRequest = validateTransformationRequest({
           targetFiles: eligibleFiles,
-          transformationType: 'ast' as const,
+          transformationType: 'template' as const, // Start with template, will be dynamically upgraded
           patterns: [],
           maxComplexity: config.transformation.maxComplexityThreshold,
           dryRun: args['dry-run'] || config.transformation.dryRunFirst,
