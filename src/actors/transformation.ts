@@ -78,7 +78,7 @@ export const transformationActor = fromPromise(
       case 'ast':
         return await applyAstTransformation(files, patterns);
       case 'llm':
-        return await applyLlmTransformation(files, request);
+        return await applyLlmTransformation(files, request, patterns);
       default:
         throw new Error(`Unknown transformation mode: ${mode}`);
     }
@@ -97,7 +97,7 @@ async function applyTemplateTransformation(
 
   // Use language-aware pattern filtering for template mode
   console.log('🔍 Applying language-aware pattern filtering for template mode...');
-  const templatePatterns = filterPatternsByLanguageAndMode(patterns, files, 'template', {
+  const filterResult = filterPatternsByLanguageAndMode(patterns, files, 'template', {
     maxComplexity: 3,
     allowedRiskLevels: ['low', 'medium'],
     strictLanguageMatching: true,
@@ -710,7 +710,7 @@ async function applyGenericASTPattern(
   }
 }
 
-async function applyLlmTransformation(files: string[], request?: TransformationRequest) {
+async function applyLlmTransformation(files: string[], request?: TransformationRequest, patterns?: AstPattern[]) {
   console.log('Applying LLM transformations...');
 
   // Debug environment variables
@@ -765,7 +765,7 @@ async function applyLlmTransformation(files: string[], request?: TransformationR
         },
       },
       context: {
-        patterns: patterns,
+        patterns: patterns || [], // Use the patterns parameter passed to the function, fallback to empty array
         dependencies: [],
         codebaseSize: files.length,
         relatedFiles: files,
