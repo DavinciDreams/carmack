@@ -7,6 +7,57 @@ export const DocumentationTypeSchema = z.enum([
   'patterns',
   'usage',
   'changelog',
+  'tensorrt-oracle', // New TensorRT Oracle documentation type
+]);
+
+// TensorRT-specific language types
+export const LanguageTypeSchema = z.enum([
+  'typescript',
+  'javascript',
+  'cuda',
+  'cpp',
+  'c',
+  'python',
+  'unknown',
+]);
+
+// TensorRT entity types for semantic indexing
+export const EntityTypeSchema = z.enum([
+  'function',
+  'class',
+  'interface',
+  'type',
+  'constant',
+  'variable',
+  'kernel',        // CUDA kernel
+  'device_function', // CUDA device function
+  'host_function',   // CUDA host function
+  'template',        // C++ template
+  'namespace',       // C++ namespace
+  'struct',          // C/C++ struct
+  'enum',            // C/C++ enum
+  'macro',           // C/C++ macro
+  'module',          // Python module
+  'decorator',       // Python decorator
+]);
+
+// Domain classification for TensorRT codebase
+export const DomainTypeSchema = z.enum([
+  'inference',
+  'optimization',
+  'memory_management',
+  'kernel_execution',
+  'graph_construction',
+  'serialization',
+  'plugin_system',
+  'builder_api',
+  'runtime_api',
+  'parser',
+  'utilities',
+  'testing',
+  'samples',
+  'documentation',
+  'unknown',
 ]);
 
 export const DocumentationFormatSchema = z.enum(['markdown', 'html', 'json', 'yaml']);
@@ -204,4 +255,138 @@ export const validateDocumentationRequest = (data: unknown): DocumentationReques
 
 export const validateDocumentationResult = (data: unknown): DocumentationResult => {
   return DocumentationResultSchema.parse(data);
+};
+
+// TensorRT-specific schemas for semantic indexing
+export const CodeEntitySchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  type: EntityTypeSchema,
+  language: LanguageTypeSchema,
+  filePath: z.string(),
+  startLine: z.number(),
+  endLine: z.number(),
+  signature: z.string().optional(),
+  description: z.string().optional(),
+  parameters: z.array(z.object({
+    name: z.string(),
+    type: z.string(),
+    description: z.string().optional(),
+  })).optional(),
+  returnType: z.string().optional(),
+  complexity: z.number().optional(),
+  domain: DomainTypeSchema.optional(),
+  keywords: z.array(z.string()).optional(),
+  sourceCode: z.string(),
+  metadata: z.record(z.any()).optional(),
+});
+
+export const SemanticEmbeddingSchema = z.object({
+  entityId: z.string().uuid(),
+  embedding: z.array(z.number()), // 512-dimensional vector
+  model: z.string().default('text-embedding-3-small'),
+  createdAt: z.string().datetime(),
+});
+
+export const KnowledgePatternSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  description: z.string(),
+  category: z.string(),
+  language: LanguageTypeSchema,
+  pattern: z.string(),
+  examples: z.array(z.object({
+    code: z.string(),
+    description: z.string(),
+    filePath: z.string().optional(),
+  })),
+  frequency: z.number().default(0),
+  confidence: z.number().min(0).max(1),
+  domain: DomainTypeSchema.optional(),
+});
+
+export const OracleQuerySchema = z.object({
+  id: z.string().uuid(),
+  query: z.string(),
+  intent: z.enum([
+    'code_search',
+    'pattern_analysis',
+    'architecture_question',
+    'optimization_advice',
+    'api_usage',
+    'debugging_help',
+    'performance_analysis',
+    'general_question',
+  ]),
+  language: LanguageTypeSchema.optional(),
+  domain: DomainTypeSchema.optional(),
+  results: z.array(z.object({
+    entityId: z.string().uuid(),
+    relevanceScore: z.number().min(0).max(1),
+    explanation: z.string().optional(),
+  })),
+  responseTime: z.number(),
+  createdAt: z.string().datetime(),
+});
+
+export const RepositoryAnalysisSchema = z.object({
+  id: z.string().uuid(),
+  repositoryPath: z.string(),
+  name: z.string(),
+  description: z.string().optional(),
+  languages: z.array(LanguageTypeSchema),
+  totalFiles: z.number(),
+  totalEntities: z.number(),
+  domains: z.array(DomainTypeSchema),
+  analysisVersion: z.string(),
+  lastAnalyzed: z.string().datetime(),
+  metadata: z.record(z.any()).optional(),
+});
+
+// Enhanced documentation request for TensorRT Oracle
+export const TensorRTDocumentationRequestSchema = DocumentationRequestSchema.extend({
+  repositoryPath: z.string().optional(),
+  enableSemanticIndexing: z.boolean().default(true),
+  enableOracleQueries: z.boolean().default(true),
+  embeddingModel: z.string().default('text-embedding-3-small'),
+  languages: z.array(LanguageTypeSchema).optional(),
+  domains: z.array(DomainTypeSchema).optional(),
+  maxEntities: z.number().optional(),
+  analysisDepth: z.enum(['shallow', 'medium', 'deep']).default('medium'),
+});
+
+// Type exports for TensorRT Oracle
+export type LanguageType = z.infer<typeof LanguageTypeSchema>;
+export type EntityType = z.infer<typeof EntityTypeSchema>;
+export type DomainType = z.infer<typeof DomainTypeSchema>;
+export type CodeEntity = z.infer<typeof CodeEntitySchema>;
+export type SemanticEmbedding = z.infer<typeof SemanticEmbeddingSchema>;
+export type KnowledgePattern = z.infer<typeof KnowledgePatternSchema>;
+export type OracleQuery = z.infer<typeof OracleQuerySchema>;
+export type RepositoryAnalysis = z.infer<typeof RepositoryAnalysisSchema>;
+export type TensorRTDocumentationRequest = z.infer<typeof TensorRTDocumentationRequestSchema>;
+
+// Validation helpers for TensorRT Oracle
+export const validateCodeEntity = (data: unknown): CodeEntity => {
+  return CodeEntitySchema.parse(data);
+};
+
+export const validateSemanticEmbedding = (data: unknown): SemanticEmbedding => {
+  return SemanticEmbeddingSchema.parse(data);
+};
+
+export const validateKnowledgePattern = (data: unknown): KnowledgePattern => {
+  return KnowledgePatternSchema.parse(data);
+};
+
+export const validateOracleQuery = (data: unknown): OracleQuery => {
+  return OracleQuerySchema.parse(data);
+};
+
+export const validateRepositoryAnalysis = (data: unknown): RepositoryAnalysis => {
+  return RepositoryAnalysisSchema.parse(data);
+};
+
+export const validateTensorRTDocumentationRequest = (data: unknown): TensorRTDocumentationRequest => {
+  return TensorRTDocumentationRequestSchema.parse(data);
 };
