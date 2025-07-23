@@ -1,4 +1,40 @@
 {
+  "console-log-to-console-error": {
+    "patternId": "console-log-to-console-error",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1752924941097,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "fix-double-semicolons": {
+    "patternId": "fix-double-semicolons",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1752924941097,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "fix-malformed-object-literal": {
+    "patternId": "fix-malformed-object-literal",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1752924941097,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
   "smart-var-to-const-let": {
     "patternId": "smart-var-to-const-let",
     "successRate": 0,
@@ -35,8 +71,8 @@
     "usageCount": 1,
     "lifecycle": "experimental"
   },
-  "promise-to-async-await": {
-    "patternId": "promise-to-async-await",
+  "array-includes-instead-of-indexof": {
+    "patternId": "array-includes-instead-of-indexof",
     "successRate": 0,
     "averagePerformance": 0,
     "complexityReduction": 0,
@@ -59,8 +95,8 @@
     "usageCount": 1,
     "lifecycle": "experimental"
   },
-  "array-includes-instead-of-indexof": {
-    "patternId": "array-includes-instead-of-indexof",
+  "remove-unnecessary-returns": {
+    "patternId": "remove-unnecessary-returns",
     "successRate": 0,
     "averagePerformance": 0,
     "complexityReduction": 0,
@@ -83,6 +119,18 @@
     "usageCount": 1,
     "lifecycle": "experimental"
   },
+  "promise-to-async-await": {
+    "patternId": "promise-to-async-await",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1752924870148,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
   "template-literal-conversion": {
     "patternId": "template-literal-conversion",
     "successRate": 0,
@@ -95,51 +143,63 @@
     "usageCount": 1,
     "lifecycle": "experimental"
   },
-  "remove-unnecessary-returns": {
-    "patternId": "remove-unnecessary-returns",
+  "remove-console-log": {
+    "patternId": "remove-console-log",
     "successRate": 0,
     "averagePerformance": 0,
     "complexityReduction": 0,
     "errorRate": 0.1,
     "userSatisfaction": 5,
     "applicabilityScore": 0.5,
-    "lastUpdated": 1752924870148,
+    "lastUpdated": 1753232243763,
     "usageCount": 1,
     "lifecycle": "experimental"
   },
-  "console-log-to-console-error": {
-    "patternId": "console-log-to-console-error",
+  "fix-trailing-comma": {
+    "patternId": "fix-trailing-comma",
     "successRate": 0,
     "averagePerformance": 0,
     "complexityReduction": 0,
     "errorRate": 0.1,
     "userSatisfaction": 5,
     "applicabilityScore": 0.5,
-    "lastUpdated": 1752924941097,
+    "lastUpdated": 1753232243763,
     "usageCount": 1,
     "lifecycle": "experimental"
   },
-  "fix-double-semicolons": {
-    "patternId": "fix-double-semicolons",
+  "fix-missing-semicolon": {
+    "patternId": "fix-missing-semicolon",
     "successRate": 0,
     "averagePerformance": 0,
     "complexityReduction": 0,
     "errorRate": 0.1,
     "userSatisfaction": 5,
     "applicabilityScore": 0.5,
-    "lastUpdated": 1752924941097,
+    "lastUpdated": 1753232243763,
     "usageCount": 1,
     "lifecycle": "experimental"
   },
-  "fix-malformed-object-literal": {
-    "patternId": "fix-malformed-object-literal",
+  "null-coalescing-operator": {
+    "patternId": "null-coalescing-operator",
     "successRate": 0,
     "averagePerformance": 0,
     "complexityReduction": 0,
     "errorRate": 0.1,
     "userSatisfaction": 5,
     "applicabilityScore": 0.5,
-    "lastUpdated": 1752924941097,
+    "lastUpdated": 1753227862434,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "optional-chaining": {
+    "patternId": "optional-chaining",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753227862434,
     "usageCount": 1,
     "lifecycle": "experimental"
   },
@@ -212,6 +272,186 @@
     "userSatisfaction": 5,
     "applicabilityScore": 0.5,
     "lastUpdated": 1752924941097,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "array-destructuring": {
+    "patternId": "array-destructuring",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753227862434,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "object-destructuring": {
+    "patternId": "object-destructuring",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753227862434,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "spread-operator-arrays": {
+    "patternId": "spread-operator-arrays",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753227862434,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "async-await-pattern": {
+    "patternId": "async-await-pattern",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753227862434,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "type-assertion-improvement": {
+    "patternId": "type-assertion-improvement",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753227862434,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "prefer-const-assertions": {
+    "patternId": "prefer-const-assertions",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753227862434,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "remove-unused-imports": {
+    "patternId": "remove-unused-imports",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753227862434,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "prefer-readonly-arrays": {
+    "patternId": "prefer-readonly-arrays",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753227862434,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "error-handling-improvement": {
+    "patternId": "error-handling-improvement",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753227862434,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "cpp-add-comment-mark": {
+    "patternId": "cpp-add-comment-mark",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753232243763,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "llm-complex-refactoring": {
+    "patternId": "llm-complex-refactoring",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753228202558,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "llm-architectural-improvement": {
+    "patternId": "llm-architectural-improvement",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753228202558,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "llm-code-documentation": {
+    "patternId": "llm-code-documentation",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753228202558,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "llm-error-handling-improvement": {
+    "patternId": "llm-error-handling-improvement",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753228202558,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "llm-performance-optimization": {
+    "patternId": "llm-performance-optimization",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753228202558,
     "usageCount": 1,
     "lifecycle": "experimental"
   }

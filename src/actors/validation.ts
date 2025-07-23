@@ -523,13 +523,15 @@ async function fixTypes(files: string[], errors: ErrorInfo[]): Promise<Validatio
   const warnings: ErrorInfo[] = [];
 
   try {
-    // Import LLM transformation system for type fixing
-    const { LLMTransformer } = await import('./llm-transformation.js');
+    // Import enhanced LLM transformation system for type fixing
+    const { EnhancedLLMTransformer } = await import('./llm-transformation-enhanced.js');
 
-    const llmTransformer = new LLMTransformer({
-      provider: 'mock', // Use mock for now, can be configured for real LLM
+    const llmTransformer = new EnhancedLLMTransformer({
+      provider: 'openai', // Will fallback to mock if no API key
       model: 'gpt-4',
       temperature: 0.1, // Low temperature for deterministic fixes
+      enableFallback: true,
+      retries: 2,
     });
 
     // Group errors by file for efficient processing
@@ -559,17 +561,71 @@ async function fixTypes(files: string[], errors: ErrorInfo[]): Promise<Validatio
         const transformationInput = {
           files: [filePath],
           request: {
-            prompt: typeFixPrompt,
+            examples: [],
             targetFiles: [filePath],
             transformationType: 'llm' as const,
             maxComplexity: 15,
             dryRun: false,
+            incrementalMode: false,
+            rollbackOnFailure: true,
+            constraints: {
+              maxTokens: 4000,
+              costLimit: 10.0,
+              maxExecutionTime: 30000,
+              maxMemoryUsage: 512,
+            },
+            prompt: typeFixPrompt,
+          },
+          config: {
+            performance: {
+              enableCaching: true,
+              enableBatching: true,
+              maxBatchSize: 5,
+              cacheStrategy: 'memory' as const,
+            },
+            provider: 'openai' as const,
+            model: 'gpt-4',
+            temperature: 0.1,
+            maxTokens: 4000,
+            timeout: 30000,
+            retries: 3,
+            enableContextAwareness: true,
+            enableMultiFileAnalysis: false,
+            enableIncrementalMode: false,
+            enableValidation: true,
+            enableOptimization: true,
+            enableFallback: true,
+            costLimit: 10.0,
+            enableIncrementalTransformation: false,
+            enableRollback: true,
           },
           context: {
-            complexity: analyzeTypeComplexity(originalContent, fileErrors),
             patterns: [],
+            complexity: analyzeTypeComplexity(originalContent, fileErrors),
             projectType: 'typescript',
             framework: detectFramework(originalContent),
+            priority: 'high' as const, // High priority for type fixes
+            dependencies: [],
+            codebaseSize: originalContent.split('\n').length,
+            relatedFiles: [],
+            dependencyGraph: {},
+            gitContext: {
+              branch: 'main',
+              lastCommit: '',
+              hasUncommittedChanges: false,
+            },
+            performance: {
+              memoryUsage: 0,
+              executionTime: 0,
+            },
+            quality: {
+              codeQuality: 7,
+              maintainabilityIndex: 75,
+            },
+            importMap: {},
+            previousTransformations: [],
+            riskTolerance: 'moderate' as const,
+            preserveFormatting: true,
           },
         };
 
@@ -837,15 +893,16 @@ async function validateQuality(files: string[]): Promise<ValidationResult> {
   const warnings: ErrorInfo[] = [];
   let fixableIssues = 0;
 
-  try {
-    // Run lint and collect results for each file
+  try
+    // Process files with ESLint directly using the lint function
     for (const filePath of files) {
       try {
-        const lintResult = await lint(filePath);
-        if (!lintResult.isSuccess) {
-          errors.push(...lintResult.errors);
-          warnings.push(...lintResult.warnings);
-          fixableIssues += lintResult.fixableIssues;
+        const result = await lint(filePath);
+        if (!result.isSuccess) {
+          errors.push(...result.errors);
+          warnings.push(...result.warnings);
+          fixableIssues += result.fixableIssues;
+
         }
       } catch (error) {
         console.warn(`ESLint failed or timed out for ${filePath}:`, error);

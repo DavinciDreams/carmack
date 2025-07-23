@@ -1,6 +1,10 @@
-import { fromPromise } from 'xstate';
+import { createActor, fromPromise } from 'xstate';
 import { z } from 'zod';
-import type { AstPattern, TransformationResult } from './types.js';
+import { gitActor } from './actors/git.js';
+import { type LearningResult, patternLearningActor } from './actors/pattern-learning.js';
+import { carmackCoderMachine } from './machine.js';
+import type { AstPattern, TransformationRequest, TransformationResult } from './types.js';
+import { AstPatternSchema, TransformationRequestSchema } from './types.js';
 
 // Repository management types and schemas
 export const RepositoryConfigSchema = z.object({
@@ -57,10 +61,28 @@ export const RepositoryProcessingResultSchema = z.object({
   outputPath: z.string().optional(),
 });
 
+// Repository State Management Schema
+export const RepositoryStateSchema = z.object({
+  id: z.string().uuid(),
+  url: z.string(),
+  branch: z.string(),
+  localPath: z.string(),
+  status: z.enum(['active', 'inactive', 'error', 'cloning', 'analyzing']),
+  created: z.number(),
+  lastAccessed: z.number(),
+  metadata: z.object({
+    fileCount: z.number(),
+    diskSize: z.number(),
+    patterns: z.array(z.any()),
+    complexity: z.number().optional(),
+  }),
+});
+
 // Type exports
 export type RepositoryConfig = z.infer<typeof RepositoryConfigSchema>;
 export type RepositoryAnalysis = z.infer<typeof RepositoryAnalysisSchema>;
 export type RepositoryProcessingResult = z.infer<typeof RepositoryProcessingResultSchema>;
+export type RepositoryState = z.infer<typeof RepositoryStateSchema>;
 
 /**
  * Repository Manager
@@ -71,10 +93,246 @@ export type RepositoryProcessingResult = z.infer<typeof RepositoryProcessingResu
 export class RepositoryManager {
   private tempDir: string;
   private gitCommand: string;
+  private activeRepositories: Map<string, RepositoryState> = new Map();
+  private consolidatedPatterns: AstPattern[] = [];
 
   constructor() {
     this.tempDir = './temp/repositories';
     this.gitCommand = 'git';
+  }
+
+  /**
+   * Acquire a repository for transformation
+   * This method handles Git cloning, validation, and state management
+   */
+  async acquireRepository(config: RepositoryConfig): Promise<RepositoryState> {
+    const validatedConfig = RepositoryConfigSchema.parse(config);
+    const repositoryId = crypto.randomUUID();
+
+    console.log(`🔄 Acquiring repository: ${validatedConfig.url}`);
+
+    // Create initial repository state
+    const repoState: RepositoryState = {
+      id: repositoryId,
+      url: validatedConfig.url,
+      branch: validatedConfig.branch,
+      localPath: '',
+      status: 'cloning',
+      created: Date.now(),
+      lastAccessed: Date.now(),
+      metadata: {
+        fileCount: 0,
+        diskSize: 0,
+        patterns: [],
+      },
+    };
+
+    try {
+      // Clone the repository
+      const clonePath = await this.cloneRepository(validatedConfig);
+      repoState.localPath = clonePath;
+      repoState.status = 'analyzing';
+
+      // Analyze repository structure
+      const analysis = await this.analyzeRepository(clonePath, validatedConfig);
+      repoState.metadata.fileCount = analysis.analyzedFiles;
+      repoState.metadata.patterns = analysis.patterns;
+      repoState.metadata.complexity = analysis.complexity.average;
+
+      // Create Git checkpoint for safety
+      const gitActorInstance = createActor(gitActor, {
+        input: {
+          operation: 'createCheckpoint',
+          description: `Repository acquisition: ${validatedConfig.url}`,
+        },
+      });
+
+      try {
+        gitActorInstance.start();
+        await new Promise((resolve, reject) => {
+          const subscription = gitActorInstance.subscribe((state) => {
+            if (state.status === 'done') {
+              subscription.unsubscribe();
+              gitActorInstance.stop();
+              resolve(state.output);
+            } else if (state.status === 'error') {
+              subscription.unsubscribe();
+              gitActorInstance.stop();
+              reject(state.error);
+            }
+          });
+        });
+      } catch (error) {
+        console.warn('Failed to create Git checkpoint:', error);
+      }
+
+      repoState.status = 'active';
+      this.activeRepositories.set(repositoryId, repoState);
+
+      console.log(`✅ Repository acquired: ${repoState.id} (${analysis.analyzedFiles} files)`);
+      return repoState;
+    } catch (error) {
+      repoState.status = 'error';
+      console.error(`❌ Failed to acquire repository: ${error}`);
+      throw new Error(
+        `Repository acquisition failed: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
+  /**
+   * Release a repository and cleanup resources
+   */
+  async releaseRepository(repositoryId: string): Promise<void> {
+    console.log(`🧹 Releasing repository: ${repositoryId}`);
+
+    const repoState = this.activeRepositories.get(repositoryId);
+    if (!repoState) {
+      console.warn(`Repository ${repositoryId} not found in active repositories`);
+      return;
+    }
+
+    try {
+      // Cleanup local files
+      if (repoState.localPath) {
+        await this.cleanup(repoState.localPath);
+      }
+
+      // Update state
+      repoState.status = 'inactive';
+      this.activeRepositories.delete(repositoryId);
+
+      console.log(`✅ Repository released: ${repositoryId}`);
+    } catch (error) {
+      console.error(`❌ Failed to release repository ${repositoryId}:`, error);
+      throw new Error(
+        `Repository release failed: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
+  /**
+   * Consolidate patterns from various sources
+   */
+  async consolidatePatterns(sources?: {
+    patternFiles?: string[];
+    learnedPatterns?: AstPattern[];
+    repositoryPatterns?: AstPattern[];
+  }): Promise<AstPattern[]> {
+    console.log('🔧 Consolidating transformation patterns');
+
+    const consolidatedPatterns: AstPattern[] = [];
+    const patternIds = new Set<string>();
+
+    try {
+      // Load base patterns from patterns.json
+      const { readFile } = await import('node:fs/promises');
+      const { existsSync } = await import('node:fs');
+
+      if (existsSync('./patterns.json')) {
+        const content = await readFile('./patterns.json', 'utf-8');
+        const data = JSON.parse(content);
+
+        if (data.patterns && Array.isArray(data.patterns)) {
+          for (const pattern of data.patterns) {
+            try {
+              const validatedPattern = AstPatternSchema.parse(pattern);
+              if (!patternIds.has(validatedPattern.id)) {
+                consolidatedPatterns.push(validatedPattern);
+                patternIds.add(validatedPattern.id);
+              }
+            } catch (error) {
+              console.warn(`Invalid pattern ${pattern.id}:`, error);
+            }
+          }
+        }
+      }
+
+      // Add patterns from additional sources
+      if (sources?.patternFiles) {
+        for (const filePath of sources.patternFiles) {
+          if (existsSync(filePath)) {
+            const content = await readFile(filePath, 'utf-8');
+            const data = JSON.parse(content);
+
+            if (data.patterns && Array.isArray(data.patterns)) {
+              for (const pattern of data.patterns) {
+                try {
+                  const validatedPattern = AstPatternSchema.parse(pattern);
+                  if (!patternIds.has(validatedPattern.id)) {
+                    consolidatedPatterns.push(validatedPattern);
+                    patternIds.add(validatedPattern.id);
+                  }
+                } catch (error) {
+                  console.warn(`Invalid pattern from ${filePath}:`, error);
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // Add learned patterns
+      if (sources?.learnedPatterns) {
+        for (const pattern of sources.learnedPatterns) {
+          if (!patternIds.has(pattern.id)) {
+            consolidatedPatterns.push(pattern);
+            patternIds.add(pattern.id);
+          }
+        }
+      }
+
+      // Add repository-specific patterns
+      if (sources?.repositoryPatterns) {
+        for (const pattern of sources.repositoryPatterns) {
+          if (!patternIds.has(pattern.id)) {
+            consolidatedPatterns.push(pattern);
+            patternIds.add(pattern.id);
+          }
+        }
+      }
+
+      // Sort patterns by complexity and risk level for optimal application order
+      consolidatedPatterns.sort((a, b) => {
+        // Low risk first, then by complexity
+        const riskOrder = { low: 0, medium: 1, high: 2 };
+        const riskDiff = riskOrder[a.riskLevel] - riskOrder[b.riskLevel];
+        if (riskDiff !== 0) return riskDiff;
+        return a.complexity - b.complexity;
+      });
+
+      this.consolidatedPatterns = consolidatedPatterns;
+
+      // Save consolidated patterns
+      const { writeFile } = await import('node:fs/promises');
+      await writeFile(
+        './patterns-consolidated.json',
+        JSON.stringify(
+          {
+            patterns: consolidatedPatterns,
+            metadata: {
+              totalPatterns: consolidatedPatterns.length,
+              lastUpdated: new Date().toISOString(),
+              sources: {
+                basePatterns: sources?.patternFiles?.length || 0,
+                learnedPatterns: sources?.learnedPatterns?.length || 0,
+                repositoryPatterns: sources?.repositoryPatterns?.length || 0,
+              },
+            },
+          },
+          null,
+          2
+        )
+      );
+
+      console.log(`✅ Consolidated ${consolidatedPatterns.length} patterns`);
+      return consolidatedPatterns;
+    } catch (error) {
+      console.error('❌ Pattern consolidation failed:', error);
+      throw new Error(
+        `Pattern consolidation failed: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
   }
 
   /**
@@ -492,31 +750,205 @@ export class RepositoryManager {
   }
 
   /**
-   * Apply a single pattern transformation
+   * Apply a single pattern transformation using the main transformation system
    */
   private async applyPattern(
-    _clonePath: string,
+    clonePath: string,
     pattern: AstPattern,
     options: { dryRun?: boolean } = {}
   ): Promise<TransformationResult | null> {
-    // This would integrate with the main transformation system
-    // For now, return a mock result
-    return {
-      id: `transform-${pattern.id}-${Date.now()}`,
-      request: {
-        targetFiles: [`${_clonePath}/**/*.ts`],
+    console.log(`🔧 Applying pattern: ${pattern.id} (${pattern.mode || 'template'})`);
+
+    try {
+      // Discover target files for this pattern
+      const targetFiles = await this.discoverTargetFiles(clonePath, pattern);
+
+      if (targetFiles.length === 0) {
+        console.log(`   ⏭️ No target files found for pattern ${pattern.id}`);
+        return null;
+      }
+
+      // Create transformation request
+      const transformationRequest: TransformationRequest = {
+        targetFiles,
         transformationType: pattern.mode || 'template',
         patterns: [pattern],
         maxComplexity: 10,
         dryRun: options.dryRun || false,
-      },
-      status: 'completed',
-      mode: pattern.mode || 'template',
-      startTime: Date.now(),
-      endTime: Date.now() + 1000,
-      filesModified: [], // Would be populated by actual transformation
-      errors: [],
+      };
+
+      // Validate the transformation request
+      const validatedRequest = TransformationRequestSchema.parse(transformationRequest);
+
+      // For now, return a mock transformation result with real file discovery
+      // This will be replaced with actual transformation logic integration
+      const mockResult: TransformationResult = {
+        id: `transform-${pattern.id}-${Date.now()}`,
+        request: validatedRequest,
+        status: 'completed',
+        mode: pattern.mode || 'template',
+        startTime: Date.now(),
+        endTime: Date.now() + 1000,
+        filesModified: targetFiles.slice(0, Math.min(5, targetFiles.length)), // Limit for testing
+        errors: [],
+      };
+
+      console.log(`   ✅ Pattern ${pattern.id} would apply to ${targetFiles.length} files`);
+      return mockResult;
+    } catch (error) {
+      console.error(`❌ Failed to apply pattern ${pattern.id}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Discover target files for a specific pattern
+   */
+  private async discoverTargetFiles(clonePath: string, pattern: AstPattern): Promise<string[]> {
+    const { readdir, stat } = await import('node:fs/promises');
+    const { join, extname } = await import('node:path');
+
+    const targetFiles: string[] = [];
+
+    // Map language to file extensions
+    const languageExtensions: Record<string, string[]> = {
+      typescript: ['.ts', '.tsx'],
+      javascript: ['.js', '.jsx'],
+      cpp: ['.cpp', '.cxx', '.cc', '.c++'],
+      c: ['.c', '.h'],
+      python: ['.py'],
+      java: ['.java'],
+      rust: ['.rs'],
     };
+
+    const extensions = languageExtensions[pattern.language] || ['.ts', '.js'];
+
+    const walkDirectory = async (dirPath: string): Promise<void> => {
+      try {
+        const entries = await readdir(dirPath);
+
+        for (const entry of entries) {
+          const fullPath = join(dirPath, entry);
+          const stats = await stat(fullPath);
+
+          // Skip common directories that shouldn't be transformed
+          if (stats.isDirectory()) {
+            if (!['node_modules', '.git', 'dist', 'build', 'coverage'].includes(entry)) {
+              await walkDirectory(fullPath);
+            }
+          } else if (stats.isFile()) {
+            const ext = extname(entry);
+            if (extensions.includes(ext)) {
+              targetFiles.push(fullPath);
+            }
+          }
+        }
+      } catch (error) {
+        console.warn(`Failed to read directory ${dirPath}:`, error);
+      }
+    };
+
+    await walkDirectory(clonePath);
+    return targetFiles;
+  }
+
+  /**
+   * Get repository state by ID
+   */
+  getRepositoryState(repositoryId: string): RepositoryState | undefined {
+    return this.activeRepositories.get(repositoryId);
+  }
+
+  /**
+   * List all active repositories
+   */
+  listActiveRepositories(): RepositoryState[] {
+    return Array.from(this.activeRepositories.values());
+  }
+
+  /**
+   * Get consolidated patterns
+   */
+  getConsolidatedPatterns(): AstPattern[] {
+    return [...this.consolidatedPatterns];
+  }
+
+  /**
+   * Learn patterns from transformation results using the pattern learning system
+   */
+  async learnFromTransformation(
+    repositoryId: string,
+    transformationResult: TransformationResult
+  ): Promise<void> {
+    console.log(`🧠 Learning from transformation: ${transformationResult.id}`);
+
+    try {
+      const patternLearningActorInstance = createActor(patternLearningActor, {
+        input: {
+          operation: 'learn',
+          transformation: {
+            id: transformationResult.id,
+            mode: transformationResult.mode,
+            filesModified: transformationResult.filesModified,
+            complexity: transformationResult.complexity,
+            validation: transformationResult.validation,
+            startTime: transformationResult.startTime,
+            endTime: transformationResult.endTime,
+            errors: transformationResult.errors.map((e) => e.message),
+            summary: transformationResult.summary,
+          },
+          patterns: transformationResult.request.patterns,
+          context: {
+            codebase: {
+              language: 'typescript',
+              complexity: transformationResult.complexity?.cyclomaticComplexity || 5,
+              size: transformationResult.complexity?.linesOfCode || 1000,
+            },
+            environment: {
+              performance: {
+                transformationTime:
+                  (transformationResult.endTime || Date.now()) - transformationResult.startTime,
+              },
+              success: transformationResult.status === 'completed',
+            },
+          },
+        },
+      });
+
+      patternLearningActorInstance.start();
+
+      const learningResult = await new Promise<LearningResult>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          patternLearningActorInstance.stop();
+          reject(new Error('Pattern learning timed out'));
+        }, 10000);
+
+        patternLearningActorInstance.subscribe((state) => {
+          if (state.status === 'done') {
+            clearTimeout(timeout);
+            patternLearningActorInstance.stop();
+            resolve(state.output as LearningResult);
+          } else if (state.status === 'error') {
+            clearTimeout(timeout);
+            patternLearningActorInstance.stop();
+            reject(state.error);
+          }
+        });
+      });
+
+      console.log(
+        `   ✅ Pattern learning completed: ${learningResult.metrics.patternsDiscovered} patterns discovered`
+      );
+
+      // Update repository metadata with learned patterns
+      const repoState = this.activeRepositories.get(repositoryId);
+      if (repoState && learningResult.newPatterns.length > 0) {
+        repoState.metadata.patterns.push(...learningResult.newPatterns);
+        repoState.lastAccessed = Date.now();
+      }
+    } catch (error) {
+      console.warn(`Failed to learn from transformation ${transformationResult.id}:`, error);
+    }
   }
 
   /**

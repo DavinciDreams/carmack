@@ -485,8 +485,14 @@ function extractVariables(node: SgNode, pattern: AstGrepPattern): Record<string,
     const patternText = pattern.pattern.rule.pattern || '';
     const nodeText = node.text();
 
+    console.log(`🔍 [DEBUG] Extracting variables for pattern: ${pattern.id}`);
+    console.log(`   Pattern text: ${patternText}`);
+    console.log(`   Node text: ${nodeText}`);
+    console.log(`   Node kind: ${node.kind()}`);
+
     // Extract variable names from the pattern
     const variableNames = extractVariableNames(patternText);
+    console.log(`   Variable names found: ${variableNames.join(', ')}`);
 
     for (const varName of variableNames) {
       try {
@@ -495,28 +501,43 @@ function extractVariables(node: SgNode, pattern: AstGrepPattern): Record<string,
           node as unknown as { getMatch?: (name: string) => { text(): string } | null }
         ).getMatch?.(varName);
         if (matchResult && typeof matchResult.text === 'function') {
-          variables[varName] = matchResult.text();
+          const value = matchResult.text();
+          variables[varName] = value;
+          console.log(`   ✅ Variable ${varName} extracted via getMatch(): "${value}"`);
         } else {
           // Fallback to manual extraction if getMatch fails
           const manualValue = extractVariableFromText(nodeText, patternText, varName);
           if (manualValue) {
             variables[varName] = manualValue;
+            console.log(`   ✅ Variable ${varName} extracted manually: "${manualValue}"`);
+          } else {
+            console.log(`   ❌ Variable ${varName} could not be extracted`);
           }
         }
-      } catch (_error) {
+      } catch (error) {
+        console.log(`   ⚠️ Error extracting ${varName} via getMatch: ${error}`);
         // Fallback to manual extraction on any error
         const manualValue = extractVariableFromText(nodeText, patternText, varName);
         if (manualValue) {
           variables[varName] = manualValue;
+          console.log(`   ✅ Variable ${varName} extracted manually (fallback): "${manualValue}"`);
         }
       }
     }
 
     // If no variables were extracted, try pattern-based extraction as final fallback
     if (Object.keys(variables).length === 0) {
+      console.log('   🔄 No variables extracted, trying pattern-based fallback');
       const variableMatches = extractVariablesFromPattern(nodeText, patternText);
       Object.assign(variables, variableMatches);
+      if (Object.keys(variableMatches).length > 0) {
+        console.log(
+          `   ✅ Pattern-based extraction found: ${Object.keys(variableMatches).join(', ')}`
+        );
+      }
     }
+
+    console.log(`   📊 Final variables extracted: ${JSON.stringify(variables)}`);
   } catch (error) {
     console.warn('Error extracting variables from node:', error);
   }
@@ -816,11 +837,11 @@ export const BUILTIN_AST_PATTERNS: AstGrepPattern[] = [
     language: 'typescript',
     pattern: {
       rule: {
-        pattern: 'function $NAME($$$PARAMS) { return $$$BODY }',
+        pattern: 'function $NAME($PARAMS) { return $BODY; }',
       },
     },
     replacement: {
-      template: 'const $NAME = ($$$PARAMS) => $$$BODY',
+      template: 'const $NAME = ($PARAMS) => $BODY',
     },
     description: 'Convert simple functions to arrow functions',
     complexity: 4,
@@ -861,12 +882,11 @@ export const BUILTIN_AST_PATTERNS: AstGrepPattern[] = [
     language: 'typescript',
     pattern: {
       rule: {
-        kind: 'pair',
-        pattern: '$PROP: $PROP',
+        pattern: '$KEY: $KEY',
       },
     },
     replacement: {
-      template: '$PROP',
+      template: '$KEY',
     },
     description: 'Use object property shorthand syntax',
     complexity: 2,
@@ -883,7 +903,7 @@ export const BUILTIN_AST_PATTERNS: AstGrepPattern[] = [
     language: 'typescript',
     pattern: {
       rule: {
-        pattern: '$ARR.includes($ITEM)',
+        pattern: '$ARR.indexOf($ITEM) !== -1',
       },
     },
     replacement: {

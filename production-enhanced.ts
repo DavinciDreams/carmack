@@ -23,13 +23,14 @@ const RepositoryStateSchema = z.object({
   url: z.string(),
   branch: z.string(),
   localPath: z.string(),
-  status: z.enum(['active', 'inactive', 'error']),
+  status: z.enum(['active', 'inactive', 'error', 'cloning', 'analyzing']),
   created: z.number(),
   lastAccessed: z.number(),
   metadata: z.object({
     fileCount: z.number(),
     diskSize: z.number(),
     patterns: z.array(z.any()),
+    complexity: z.number().optional(),
   }),
 });
 
@@ -142,9 +143,13 @@ export class CarmackPipelineOrchestrator {
       await this.generateResultsSummary(repoState, transformationResult, args);
     } finally {
       // STAGE 8: Cleanup (if requested)
-      if (args['cleanup-after']) {
-        // Note: releaseRepository method not implemented in current RepositoryManager
-        console.log('   🧹 Cleanup requested but not implemented');
+      if (args['cleanup-after'] && repoState.url !== 'file://current-directory') {
+        try {
+          await this.repoManager.releaseRepository(repoState.id);
+          console.log('   🧹 Repository cleanup completed');
+        } catch (error) {
+          console.warn(`   ⚠️ Repository cleanup failed: ${error}`);
+        }
       }
     }
   }
@@ -153,8 +158,10 @@ export class CarmackPipelineOrchestrator {
    * STAGE 1: Repository Acquisition with verification
    */
   private async acquireRepository(args: EnhancedCLIArgs): Promise<RepositoryState> {
+    console.log('📥 STAGE 1: Repository Acquisition');
+
     // For testing purposes, use current directory if no repository URL provided
-    if (!args.repository) {
+    if (!args.repository || args.repository === 'file://current-directory') {
       console.log('   🏠 Using current directory for testing');
       // Create a mock repository state for current directory
       return {
@@ -173,29 +180,41 @@ export class CarmackPipelineOrchestrator {
       };
     }
 
-    console.log('📥 STAGE 1: Repository Acquisition');
-    // Note: acquireRepository method not implemented in current RepositoryManager
-    // Using mock repository state for now
-    const repoState: RepositoryState = {
-      id: crypto.randomUUID(),
-      url: args.repository || 'file://current-directory',
-      branch: args.branch,
-      localPath: process.cwd(),
-      status: 'active' as const,
-      created: Date.now(),
-      lastAccessed: Date.now(),
-      metadata: {
-        fileCount: 0,
-        diskSize: 0,
-        patterns: [],
-      },
-    };
+    try {
+      // Use the real repository manager to acquire the repository
+      const repoState = await this.repoManager.acquireRepository({
+        url: args.repository,
+        branch: args.branch,
+        includePatterns: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'],
+        excludePatterns: ['node_modules/**', '**/*.test.*', '**/*.spec.*', 'dist/**', 'build/**'],
+        maxFileSize: 1024 * 1024, // 1MB
+        timeout: 300000, // 5 minutes
+      });
 
-    // Verify repository is suitable for transformation
-    const stats = await this.analyzeRepositoryReadiness(repoState.localPath);
-    console.log(`   📊 Repository Stats: ${stats.fileCount} files, ${stats.complexity} complexity`);
+      console.log(
+        `   📊 Repository acquired: ${repoState.metadata.fileCount} files, complexity: ${repoState.metadata.complexity || 'unknown'}`
+      );
+      return repoState;
+    } catch (error) {
+      console.error(`   ❌ Failed to acquire repository: ${error}`);
 
-    return repoState;
+      // Fallback to current directory for testing
+      console.log('   🔄 Falling back to current directory');
+      return {
+        id: crypto.randomUUID(),
+        url: args.repository,
+        branch: args.branch,
+        localPath: process.cwd(),
+        status: 'error' as const,
+        created: Date.now(),
+        lastAccessed: Date.now(),
+        metadata: {
+          fileCount: 0,
+          diskSize: 0,
+          patterns: [],
+        },
+      };
+    }
   }
 
   /**
@@ -204,24 +223,34 @@ export class CarmackPipelineOrchestrator {
   private async consolidatePatterns(args: EnhancedCLIArgs): Promise<void> {
     console.log('🔧 STAGE 2: Pattern Consolidation');
 
-    // Use custom pattern file if specified
-    if (args['pattern-file']) {
-      console.log(`   Using custom pattern file: ${args['pattern-file']}`);
-      // Copy custom patterns to consolidated location
-    } else {
-      // Note: consolidatePatterns method not implemented in current RepositoryManager
-      console.log('   Using default pattern consolidation');
-    }
+    try {
+      // Prepare pattern sources
+      const sources: {
+        patternFiles?: string[];
+        learnedPatterns?: any[];
+        repositoryPatterns?: any[];
+      } = {};
 
-    // Validate consolidated patterns
-    const patternPath = './patterns-consolidated.json';
-    if (!existsSync(patternPath)) {
-      console.log('   ⚠️ No consolidated patterns found, creating empty file');
-      const { writeFile } = await import('node:fs/promises');
-      await writeFile(patternPath, JSON.stringify({ patterns: [] }, null, 2));
-    }
+      // Use custom pattern file if specified
+      if (args['pattern-file']) {
+        console.log(`   Using custom pattern file: ${args['pattern-file']}`);
+        sources.patternFiles = [args['pattern-file']];
+      }
 
-    console.log('   ✅ Patterns consolidated and validated');
+      // Use the real repository manager to consolidate patterns
+      const consolidatedPatterns = await this.repoManager.consolidatePatterns(sources);
+      console.log(`   ✅ Consolidated ${consolidatedPatterns.length} patterns`);
+    } catch (error) {
+      console.error(`   ❌ Pattern consolidation failed: ${error}`);
+
+      // Fallback to basic pattern file creation
+      const patternPath = './patterns-consolidated.json';
+      if (!existsSync(patternPath)) {
+        console.log('   🔄 Creating fallback pattern file');
+        const { writeFile } = await import('node:fs/promises');
+        await writeFile(patternPath, JSON.stringify({ patterns: [] }, null, 2));
+      }
+    }
   }
 
   /**
