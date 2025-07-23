@@ -893,8 +893,81 @@ async function validateQuality(files: string[]): Promise<ValidationResult> {
   const warnings: ErrorInfo[] = [];
   let fixableIssues = 0;
 
-  try
-    // Process files with ESLint directly using the lint function
+  try {
+    // Try to use ESLint programmatically with timeout
+    const { ESLint } = await import('eslint');
+
+    const eslint = new ESLint({
+      overrideConfigFile: true,
+      overrideConfig: {
+        languageOptions: {
+          ecmaVersion: 'latest',
+          sourceType: 'module',
+        },
+        rules: {
+          // Code quality rules
+          'prefer-const': 'warn',
+          'no-var': 'error',
+          'no-unused-vars': 'warn',
+          eqeqeq: 'error',
+          'no-console': 'warn',
+          complexity: ['warn', { max: 15 }],
+          'max-depth': ['warn', { max: 4 }],
+          'max-lines-per-function': ['warn', { max: 50 }],
+          'no-duplicate-imports': 'error',
+          'prefer-arrow-callback': 'warn',
+          'arrow-spacing': 'warn',
+          'object-shorthand': 'warn',
+          'prefer-template': 'warn',
+        },
+      },
+    });
+
+    // Add timeout wrapper for ESLint operations
+    const lintWithTimeout = (filePath: string): Promise<void> => {
+      return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error(`ESLint timeout for ${filePath}`));
+        }, 3000); // 3 second timeout per file
+
+        // Run ESLint in an async IIFE to avoid async promise executor
+        (async () => {
+          try {
+            const results = await eslint.lintFiles([filePath]);
+
+            for (const result of results) {
+              for (const message of result.messages) {
+                const errorInfo: ErrorInfo = {
+                  code: message.ruleId || 'ESLINT_ERROR',
+                  message: message.message,
+                  file: result.filePath,
+                  line: message.line,
+                  column: message.column,
+                  severity: message.severity === 2 ? 'error' : 'warning',
+                };
+
+                if (message.severity === 2) {
+                  errors.push(errorInfo);
+                } else {
+                  warnings.push(errorInfo);
+                }
+
+                if (message.fix) {
+                  fixableIssues++;
+                }
+              }
+            }
+            clearTimeout(timeout);
+            resolve();
+          } catch (error) {
+            clearTimeout(timeout);
+            reject(error);
+          }
+        })();
+      });
+    };
+
+
     for (const filePath of files) {
       try {
         const result = await lint(filePath);

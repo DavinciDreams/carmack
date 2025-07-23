@@ -300,6 +300,21 @@ export const enhancedTransformationOrchestratorActor = fromPromise(
           console.error('C++ transformation error:', cppError);
           // Continue with main transformation even if C++ fails
         }
+
+      let result: EnhancedTransformationResult;
+
+      switch (validated.transformationType) {
+        case 'template':
+          result = await applyEnhancedTemplateTransformation(validated);
+          break;
+        case 'ast':
+          result = await applyRealASTTransformation(validated);
+          break;
+        case 'llm':
+          result = await applyEnhancedLLMTransformation(validated);
+          break;
+        default:
+          throw new Error(`Unknown transformation type: ${validated.transformationType}`);
       }
 
       return {
@@ -666,6 +681,7 @@ async function qualityValidationStage(
 
   // Run validation checks
   try {
+
     const validationResult = await invokeActorWithTimeout<ValidationActorResult>(validationActor, {
       type: 'quality',
       files: modifiedFiles,
@@ -678,6 +694,52 @@ async function qualityValidationStage(
     state.typeErrors = 0;
     state.formatIssues = 0;
   }
+
+    let modifiedContent = content;
+    let transformCount = 0;
+
+    // Get the root node for searching
+    const rootNode = (root as { root: () => ASTGrepNode }).root();
+
+    // Find all matches using ast-grep - use pattern string
+    const patternString =
+      typeof pattern.astGrep.rule === 'string'
+        ? pattern.astGrep.rule
+        : pattern.astGrep.rule.pattern || '';
+
+    const matches = rootNode.findAll(patternString);
+
+    if (matches && matches.length > 0) {
+      console.log(`🔍 Found ${matches.length} AST matches for pattern ${pattern.id}`);
+
+      // Apply transformations in reverse order to maintain positions
+      const sortedMatches = matches.sort(
+        (a: ASTGrepNode, b: ASTGrepNode) => b.range().start.index - a.range().start.index
+      );
+
+      for (const match of sortedMatches) {
+        try {
+          const range = match.range();
+          const matchText = match.text();
+
+          // Apply the fix transformation
+          let replacement = pattern.astGrep.fix;
+
+          // Handle variable substitutions
+          const variables = match.getMultipleMatches?.();
+          if (variables) {
+            for (const [varName, varMatch] of Object.entries(variables)) {
+              const varText = Array.isArray(varMatch)
+                ? varMatch.map((m: ASTGrepNode) => m.text()).join(', ')
+                : (varMatch as ASTGrepNode).text();
+              replacement = replacement.replace(new RegExp(`\\$${varName}`, 'g'), varText);
+            }
+          }
+
+          // Apply the transformation
+          const before = modifiedContent.substring(0, range.start.index);
+          const after = modifiedContent.substring(range.end.index);
+          modifiedContent = before + replacement + after;
 
   // Analyze final complexity
   try {
