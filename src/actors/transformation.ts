@@ -4,7 +4,9 @@ import { js, ts } from '@ast-grep/napi';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
 import type { AstPattern, TransformationRequest } from '../types.js';
-import { type LLMTransformationInput, LLMTransformer } from './llm-transformation.js';
+import { type EnhancedLLMTransformationInput, EnhancedLLMTransformer } from './llm-transformation-enhanced.js';
+import { filterPatternsByLanguageAndMode, createPatternFilter } from '../utils/pattern-filtering.js';
+import { detectLanguageFromFile } from '../utils/language-detection.js';
 
 // AST-grep language interface
 // (Removed unused AstGrepLanguage interface)
@@ -134,7 +136,7 @@ export const transformationActor = fromPromise(
       case 'ast':
         return await applyAstTransformation(files, patterns);
       case 'llm':
-        return await applyLlmTransformation(files, request);
+        return await applyLlmTransformation(files, request, patterns);
       default:
         throw new Error(`Unknown transformation mode: ${mode}`);
     }
@@ -151,13 +153,24 @@ async function applyTemplateTransformation(
   const filesModified: string[] = [];
   let totalTransformations = 0;
 
-  // Get template-mode patterns (safe transformations with reasonable complexity)
-  const templatePatterns = patterns.filter(
-    (p) =>
-      p.complexity <= 3 &&
-      (p.riskLevel === 'low' || p.riskLevel === 'medium') &&
-      (p.mode === 'template' || !p.mode) // Include patterns without mode (defaults to template)
-  );
+  // Use language-aware pattern filtering for template mode
+  console.log('🔍 Applying language-aware pattern filtering for template mode...');
+  const filterResult = filterPatternsByLanguageAndMode(patterns, files, 'template', {
+    maxComplexity: 3,
+    allowedRiskLevels: ['low', 'medium'],
+    strictLanguageMatching: true,
+  });
+
+  const templatePatterns = filterResult.filteredPatterns;
+  console.log(`📋 Filtered to ${templatePatterns.length} template patterns for ${files.length} files`);
+  
+  if (filterResult.warnings.length > 0) {
+    console.log('⚠️ Pattern filtering warnings:', filterResult.warnings);
+  }
+  
+  if (filterResult.errors.length > 0) {
+    console.log('❌ Pattern filtering errors:', filterResult.errors);
+  }
 
   for (const filePath of files) {
     try {
@@ -761,7 +774,7 @@ async function applyGenericASTPattern(
   }
 }
 
-async function applyLlmTransformation(files: string[], request?: TransformationRequest) {
+async function applyLlmTransformation(files: string[], request?: TransformationRequest, patterns?: AstPattern[]) {
   console.log('Applying LLM transformations...');
 
   // Debug environment variables
@@ -771,51 +784,84 @@ async function applyLlmTransformation(files: string[], request?: TransformationR
   console.log('  OPENROUTER_API_KEY:', process.env.OPENROUTER_API_KEY ? '✅ Set' : '❌ Missing');
 
   try {
-    // Use the new comprehensive LLM transformation system
-    const llmInput: LLMTransformationInput = {
+    // Use the enhanced LLM transformation system
+    const llmInput: EnhancedLLMTransformationInput = {
       files,
-      request,
+      request: request ? {
+        ...request,
+        transformationType: request.transformationType as 'template' | 'ast' | 'llm' | 'hybrid' | 'auto',
+        examples: [
+          {
+            before: 'var x = 1;',
+            after: 'const x = 1;',
+            explanation: 'Convert var to const for immutable values'
+          }
+        ],
+        incrementalMode: false,
+        rollbackOnFailure: true,
+        constraints: {
+          maxExecutionTime: 60000,
+          maxMemoryUsage: 2048,
+          maxTokens: 8000,
+          costLimit: 2.0,
+        },
+      } : undefined,
       config: {
         provider:
-          (process.env.LLM_PROVIDER as 'mock' | 'openai' | 'anthropic' | 'openrouter') ||
+          (process.env.LLM_PROVIDER as 'openai' | 'anthropic' | 'openrouter' | 'local' | 'mock') ||
           'openrouter',
-        apiKey:
-          process.env.LLM_PROVIDER === 'anthropic'
-            ? process.env.ANTHROPIC_API_KEY
-            : process.env.LLM_PROVIDER === 'openai'
-              ? process.env.OPENAI_API_KEY
-              : process.env.LLM_PROVIDER === 'openrouter'
-                ? process.env.OPENROUTER_API_KEY
-                : process.env.LLM_API_KEY,
         model: process.env.LLM_MODEL || 'gpt-4',
-        baseURL:
-          process.env.LLM_PROVIDER === 'anthropic'
-            ? process.env.ANTHROPIC_BASE_URL
-            : process.env.LLM_PROVIDER === 'openai'
-              ? process.env.OPENAI_BASE_URL
-              : process.env.LLM_PROVIDER === 'openrouter'
-                ? process.env.OPENROUTER_BASE_URL
-                : process.env.LLM_BASE_URL,
-        maxTokens: 4000,
         temperature: 0.1, // Low temperature for deterministic code transformations
-        timeout: 30000,
+        maxTokens: 8000, // Increased for enhanced features
+        timeout: 60000, // Increased for complex transformations
         retries: 3,
+        enableFallback: true,
+        costLimit: 2.0,
+        enableContextAwareness: true,
+        enableMultiFileAnalysis: true,
+        enableIncrementalTransformation: true,
+        enableRollback: true,
+        performance: {
+          enableCaching: true,
+          enableBatching: true,
+          maxBatchSize: 5,
+          cacheStrategy: 'hybrid',
+        },
       },
       context: {
+        patterns: patterns || [], // Use the patterns parameter passed to the function, fallback to empty array
+        dependencies: [],
+        codebaseSize: files.length,
+        relatedFiles: files,
         projectType: 'typescript',
         framework: detectProjectFramework(files),
+        priority: 'normal',
+        complexity: {
+          cyclomaticComplexity: 5,
+          cognitiveComplexity: 3,
+          linesOfCode: files.length * 100,
+          nestingDepth: 2,
+          functionCount: 10,
+          classCount: 2,
+        },
+        testCoverage: 0.8,
+        dependencyGraph: {},
+        importMap: {},
+        previousTransformations: [],
+        riskTolerance: 'moderate',
+        preserveFormatting: true,
       },
     };
 
-    console.log('🔧 LLM Config:', {
+    console.log('🔧 Enhanced LLM Config:', {
       provider: llmInput.config?.provider,
       model: llmInput.config?.model,
-      hasApiKey: !!llmInput.config?.apiKey,
-      baseURL: llmInput.config?.baseURL,
+      enableContextAwareness: llmInput.config?.enableContextAwareness,
+      enableMultiFileAnalysis: llmInput.config?.enableMultiFileAnalysis,
     });
 
-    // Call the new LLM transformation system
-    const transformer = new LLMTransformer(llmInput.config);
+    // Call the enhanced LLM transformation system
+    const transformer = new EnhancedLLMTransformer(llmInput.config);
     const result = await transformer.transformFiles(llmInput);
 
     return {

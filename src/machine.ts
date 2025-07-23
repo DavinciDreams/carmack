@@ -8,7 +8,7 @@ import { dafnyActor } from './actors/dafny.ts';
 import { feedbackLoopActor } from './actors/feedback-loop.ts';
 import { gitActor } from './actors/git.ts';
 import { llmTestingFrameworkActor } from './actors/llm-testing-framework.ts';
-import { llmTransformationActor } from './actors/llm-transformation.ts';
+import { enhancedLLMTransformationActor } from './actors/llm-transformation-enhanced.ts';
 import { patternDiscoveryActor } from './actors/pattern-discovery.ts';
 import { patternLearningActor } from './actors/pattern-learning.ts';
 import { type TemplatePattern, templateEngineActor } from './actors/template-engine.ts';
@@ -76,7 +76,7 @@ const _carmackCoderMachine = setup({
     feedbackLoopActor,
     gitActor,
     llmTestingFrameworkActor,
-    llmTransformationActor,
+    enhancedLLMTransformationActor,
     patternDiscoveryActor,
     patternLearningActor,
     templateEngineActor,
@@ -846,5 +846,5 @@ const _carmackCoderMachine = setup({
 });
 
 // Export the machine with proper typing
-// Using unknown for type-safe export while avoiding complex XState generic inference issues
-export const carmackCoderMachine = _carmackCoderMachine as unknown;
+// Using any for production compatibility while maintaining type safety internally
+export const carmackCoderMachine = _carmackCoderMachine as any;
