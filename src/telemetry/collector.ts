@@ -19,6 +19,7 @@ import type {
   TransformationMode,
 } from './types.js';
 import { TelemetryConfigSchema, TelemetryMetricSchema } from './types.js';
+import { FileBasedTelemetryExporter, createFileExporter } from './file-exporter.js';
 
 /**
  * High-performance telemetry event buffer with automatic batching
@@ -183,6 +184,7 @@ export class TelemetryCollector extends EventEmitter {
   private performanceMonitor!: PerformanceMonitor;
   private sessionId!: string;
   private isEnabled: boolean;
+  private fileExporter?: FileBasedTelemetryExporter;
 
   constructor(config?: Partial<TelemetryConfig>) {
     super();
@@ -201,9 +203,37 @@ export class TelemetryCollector extends EventEmitter {
     this.performanceMonitor = new PerformanceMonitor();
     this.buffer = new TelemetryBuffer(this.config, this.handleFlush.bind(this));
 
+    // Initialize file exporter if enabled
+    this.initializeFileExporter();
+
     // Graceful shutdown handling
     process.on('SIGINT', this.shutdown.bind(this));
     process.on('SIGTERM', this.shutdown.bind(this));
+  }
+
+  /**
+   * Initialize file-based telemetry exporter
+   */
+  private async initializeFileExporter(): Promise<void> {
+    // Check if file export is enabled via environment variables
+    const enableFileExport = process.env.OTEL_METRICS_EXPORTER === 'file' || 
+                           process.env.OTEL_LOGS_EXPORTER === 'file' ||
+                           process.env.TELEMETRY_FILE_EXPORT === 'true';
+
+    if (enableFileExport) {
+      try {
+        this.fileExporter = await createFileExporter({
+          outputDir: process.env.TELEMETRY_OUTPUT_DIR || './telemetry',
+          format: process.env.TELEMETRY_FILE_FORMAT === 'json' ? 'json' : 'jsonl',
+          maxFileSize: parseInt(process.env.TELEMETRY_FILE_MAX_SIZE || '10485760'), // 10MB default
+          rotationInterval: parseInt(process.env.TELEMETRY_FILE_ROTATION_INTERVAL || '86400000'), // 24h default
+          includeTimestamp: process.env.TELEMETRY_INCLUDE_TIMESTAMP !== 'false',
+        });
+        console.log('[Telemetry] File exporter enabled');
+      } catch (error) {
+        console.error('[Telemetry] Failed to initialize file exporter:', error);
+      }
+    }
   }
 
   /**
@@ -631,8 +661,17 @@ export class TelemetryCollector extends EventEmitter {
     // For development, emit events for local processing
     this.emit('batchFlush', events);
 
+    // Export to file if file exporter is enabled
+    if (this.fileExporter) {
+      try {
+        await this.fileExporter.export(events);
+      } catch (error) {
+        console.error('[Telemetry] Failed to export events to file:', error);
+      }
+    }
+
     // Example: Log to console in development
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === 'development' && !this.fileExporter) {
       console.log(`[Telemetry] Flushed ${events.length} events`);
     }
   }
@@ -654,6 +693,14 @@ export class TelemetryCollector extends EventEmitter {
     try {
       await this.buffer.flush();
       this.privacyManager.destroy();
+      
+      // Clean up file exporter if present
+      if (this.fileExporter) {
+        // Optionally clean up old files based on retention policy
+        const retentionDays = parseInt(process.env.TELEMETRY_RETENTION_DAYS || '90');
+        await this.fileExporter.cleanup(retentionDays);
+      }
+      
       this.emit('shutdown');
     } catch (error) {
       console.error('Error during telemetry shutdown:', error);

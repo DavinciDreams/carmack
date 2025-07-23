@@ -74,7 +74,9 @@
     "log:analyze": "bun run src/log-analysis/index.ts",
     "log:analyze:verbose": "bun run src/log-analysis/index.ts --verbose",
     "log:analyze:custom": "bun run src/log-analysis/index.ts --claude-dir",
-    "merge-pr": "./scripts/merge-pr.sh"
+    "merge-pr": "./scripts/merge-pr.sh",
+    "log:compact": "bun run src/log-compactor/index.ts",
+    "log:compact:test": "bun run src/log-compactor/index.ts test-sample.jsonl -f xml"
   },
   "engines": {
     "bun": ">=1.0.0"
@@ -86,7 +88,7 @@
     "protobufjs"
   ],
   "devDependencies": {
-    "@anthropic-ai/claude-code": "^1.0.56",
+    "@anthropic-ai/claude-code": "^1.0.57",
     "@biomejs/biome": "^2.1.2",
     "@types/bun": "^1.2.18",
     "@types/chokidar": "^2.1.7",
@@ -115,6 +117,7 @@
     "react": "19.1.0",
     "simple-git": "^3.28.0",
     "xstate": "^5.20.1",
+    "yaml": "^2.8.0",
     "zod": "^3.25.76"
   }
 }
