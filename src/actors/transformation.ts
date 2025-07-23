@@ -5,6 +5,8 @@ import { fromPromise } from 'xstate';
 import { z } from 'zod';
 import type { AstPattern, TransformationRequest } from '../types.js';
 import { type EnhancedLLMTransformationInput, EnhancedLLMTransformer } from './llm-transformation-enhanced.js';
+import { filterPatternsByLanguageAndMode, createPatternFilter } from '../utils/pattern-filtering.js';
+import { detectLanguageFromFile } from '../utils/language-detection.js';
 
 // AST-grep language interface
 // (Removed unused AstGrepLanguage interface)
@@ -93,13 +95,24 @@ async function applyTemplateTransformation(
   const filesModified: string[] = [];
   let totalTransformations = 0;
 
-  // Get template-mode patterns (safe transformations with reasonable complexity)
-  const templatePatterns = patterns.filter(
-    (p) =>
-      p.complexity <= 3 &&
-      (p.riskLevel === 'low' || p.riskLevel === 'medium') &&
-      (p.mode === 'template' || !p.mode) // Include patterns without mode (defaults to template)
-  );
+  // Use language-aware pattern filtering for template mode
+  console.log('🔍 Applying language-aware pattern filtering for template mode...');
+  const templatePatterns = filterPatternsByLanguageAndMode(patterns, files, 'template', {
+    maxComplexity: 3,
+    allowedRiskLevels: ['low', 'medium'],
+    strictLanguageMatching: true,
+  });
+
+  const templatePatterns = filterResult.filteredPatterns;
+  console.log(`📋 Filtered to ${templatePatterns.length} template patterns for ${files.length} files`);
+  
+  if (filterResult.warnings.length > 0) {
+    console.log('⚠️ Pattern filtering warnings:', filterResult.warnings);
+  }
+  
+  if (filterResult.errors.length > 0) {
+    console.log('❌ Pattern filtering errors:', filterResult.errors);
+  }
 
   for (const filePath of files) {
     try {
