@@ -830,5 +830,5 @@ const _carmackCoderMachine = setup({
 });
 
 // Export the machine with proper typing
-// Using unknown for type-safe export while avoiding complex XState generic inference issues
-export const carmackCoderMachine = _carmackCoderMachine as unknown;
+// Using any for production compatibility while maintaining type safety internally
+export const carmackCoderMachine = _carmackCoderMachine as any;

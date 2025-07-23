@@ -331,7 +331,7 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
   }
 
   // Discover eligible files for transformation
-  console.log('� Discovering eligible files...');
+  console.log('🔍 Discovering eligible files...');
   const eligibleFiles = await discoverEligibleFiles(repoDir, config);
   console.log(`📁 Selected ${eligibleFiles.length} files for transformation`);
 
@@ -343,7 +343,7 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
     });
   }
 
-  console.log('�🚀 Starting production transformation...');
+  console.log('🚀 Starting production transformation...');
   console.log(`📁 Working directory: ${repoDir}`);
   console.log(`🎯 Risk level filter: ${config.transformation.riskLevelFilter}`);
   console.log(`🔧 Max files per batch: ${config.transformation.maxFilesPerBatch}`);
