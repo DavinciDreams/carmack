@@ -1,61 +1,37 @@
 {
-  "llm-complex-refactoring": {
-    "patternId": "llm-complex-refactoring",
+  "console-log-to-console-error": {
+    "patternId": "console-log-to-console-error",
     "successRate": 0,
     "averagePerformance": 0,
     "complexityReduction": 0,
     "errorRate": 0.1,
     "userSatisfaction": 5,
     "applicabilityScore": 0.5,
-    "lastUpdated": 1753228202558,
+    "lastUpdated": 1752924941097,
     "usageCount": 1,
     "lifecycle": "experimental"
   },
-  "llm-architectural-improvement": {
-    "patternId": "llm-architectural-improvement",
+  "fix-double-semicolons": {
+    "patternId": "fix-double-semicolons",
     "successRate": 0,
     "averagePerformance": 0,
     "complexityReduction": 0,
     "errorRate": 0.1,
     "userSatisfaction": 5,
     "applicabilityScore": 0.5,
-    "lastUpdated": 1753228202558,
+    "lastUpdated": 1752924941097,
     "usageCount": 1,
     "lifecycle": "experimental"
   },
-  "llm-code-documentation": {
-    "patternId": "llm-code-documentation",
+  "fix-malformed-object-literal": {
+    "patternId": "fix-malformed-object-literal",
     "successRate": 0,
     "averagePerformance": 0,
     "complexityReduction": 0,
     "errorRate": 0.1,
     "userSatisfaction": 5,
     "applicabilityScore": 0.5,
-    "lastUpdated": 1753228202558,
-    "usageCount": 1,
-    "lifecycle": "experimental"
-  },
-  "llm-error-handling-improvement": {
-    "patternId": "llm-error-handling-improvement",
-    "successRate": 0,
-    "averagePerformance": 0,
-    "complexityReduction": 0,
-    "errorRate": 0.1,
-    "userSatisfaction": 5,
-    "applicabilityScore": 0.5,
-    "lastUpdated": 1753228202558,
-    "usageCount": 1,
-    "lifecycle": "experimental"
-  },
-  "llm-performance-optimization": {
-    "patternId": "llm-performance-optimization",
-    "successRate": 0,
-    "averagePerformance": 0,
-    "complexityReduction": 0,
-    "errorRate": 0.1,
-    "userSatisfaction": 5,
-    "applicabilityScore": 0.5,
-    "lastUpdated": 1753228202558,
+    "lastUpdated": 1752924941097,
     "usageCount": 1,
     "lifecycle": "experimental"
   },
@@ -167,6 +143,42 @@
     "usageCount": 1,
     "lifecycle": "experimental"
   },
+  "remove-console-log": {
+    "patternId": "remove-console-log",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753232243763,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "fix-trailing-comma": {
+    "patternId": "fix-trailing-comma",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753232243763,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "fix-missing-semicolon": {
+    "patternId": "fix-missing-semicolon",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753232243763,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
   "null-coalescing-operator": {
     "patternId": "null-coalescing-operator",
     "successRate": 0,
@@ -191,8 +203,68 @@
     "usageCount": 1,
     "lifecycle": "experimental"
   },
+  "cpp-nullptr-conversion": {
+    "patternId": "cpp-nullptr-conversion",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1752924941097,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "cpp-constexpr-const": {
+    "patternId": "cpp-constexpr-const",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1752924941097,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "cpp-include-iostream": {
+    "patternId": "cpp-include-iostream",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1752924941097,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "cpp-std-namespace": {
+    "patternId": "cpp-std-namespace",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1752924941097,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
   "cpp-modern-cast": {
     "patternId": "cpp-modern-cast",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1752924941097,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "cpp-double-include-fix": {
+    "patternId": "cpp-double-include-fix",
     "successRate": 0,
     "averagePerformance": 0,
     "complexityReduction": 0,
@@ -311,99 +383,75 @@
     "usageCount": 1,
     "lifecycle": "experimental"
   },
-  "console-log-to-console-error": {
-    "patternId": "console-log-to-console-error",
+  "cpp-add-comment-mark": {
+    "patternId": "cpp-add-comment-mark",
     "successRate": 0,
     "averagePerformance": 0,
     "complexityReduction": 0,
     "errorRate": 0.1,
     "userSatisfaction": 5,
     "applicabilityScore": 0.5,
-    "lastUpdated": 1752924941097,
+    "lastUpdated": 1753232243763,
     "usageCount": 1,
     "lifecycle": "experimental"
   },
-  "fix-double-semicolons": {
-    "patternId": "fix-double-semicolons",
+  "llm-complex-refactoring": {
+    "patternId": "llm-complex-refactoring",
     "successRate": 0,
     "averagePerformance": 0,
     "complexityReduction": 0,
     "errorRate": 0.1,
     "userSatisfaction": 5,
     "applicabilityScore": 0.5,
-    "lastUpdated": 1752924941097,
+    "lastUpdated": 1753228202558,
     "usageCount": 1,
     "lifecycle": "experimental"
   },
-  "fix-malformed-object-literal": {
-    "patternId": "fix-malformed-object-literal",
+  "llm-architectural-improvement": {
+    "patternId": "llm-architectural-improvement",
     "successRate": 0,
     "averagePerformance": 0,
     "complexityReduction": 0,
     "errorRate": 0.1,
     "userSatisfaction": 5,
     "applicabilityScore": 0.5,
-    "lastUpdated": 1752924941097,
+    "lastUpdated": 1753228202558,
     "usageCount": 1,
     "lifecycle": "experimental"
   },
-  "cpp-nullptr-conversion": {
-    "patternId": "cpp-nullptr-conversion",
+  "llm-code-documentation": {
+    "patternId": "llm-code-documentation",
     "successRate": 0,
     "averagePerformance": 0,
     "complexityReduction": 0,
     "errorRate": 0.1,
     "userSatisfaction": 5,
     "applicabilityScore": 0.5,
-    "lastUpdated": 1752924941097,
+    "lastUpdated": 1753228202558,
     "usageCount": 1,
     "lifecycle": "experimental"
   },
-  "cpp-constexpr-const": {
-    "patternId": "cpp-constexpr-const",
+  "llm-error-handling-improvement": {
+    "patternId": "llm-error-handling-improvement",
     "successRate": 0,
     "averagePerformance": 0,
     "complexityReduction": 0,
     "errorRate": 0.1,
     "userSatisfaction": 5,
     "applicabilityScore": 0.5,
-    "lastUpdated": 1752924941097,
+    "lastUpdated": 1753228202558,
     "usageCount": 1,
     "lifecycle": "experimental"
   },
-  "cpp-include-iostream": {
-    "patternId": "cpp-include-iostream",
+  "llm-performance-optimization": {
+    "patternId": "llm-performance-optimization",
     "successRate": 0,
     "averagePerformance": 0,
     "complexityReduction": 0,
     "errorRate": 0.1,
     "userSatisfaction": 5,
     "applicabilityScore": 0.5,
-    "lastUpdated": 1752924941097,
-    "usageCount": 1,
-    "lifecycle": "experimental"
-  },
-  "cpp-std-namespace": {
-    "patternId": "cpp-std-namespace",
-    "successRate": 0,
-    "averagePerformance": 0,
-    "complexityReduction": 0,
-    "errorRate": 0.1,
-    "userSatisfaction": 5,
-    "applicabilityScore": 0.5,
-    "lastUpdated": 1752924941097,
-    "usageCount": 1,
-    "lifecycle": "experimental"
-  },
-  "cpp-double-include-fix": {
-    "patternId": "cpp-double-include-fix",
-    "successRate": 0,
-    "averagePerformance": 0,
-    "complexityReduction": 0,
-    "errorRate": 0.1,
-    "userSatisfaction": 5,
-    "applicabilityScore": 0.5,
-    "lastUpdated": 1752924941097,
+    "lastUpdated": 1753228202558,
     "usageCount": 1,
     "lifecycle": "experimental"
   }
