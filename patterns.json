@@ -561,6 +561,106 @@
       "complexity": 9,
       "riskLevel": "high",
       "mode": "llm"
+    },
+    {
+      "id": "python-print-to-logging",
+      "language": "python",
+      "pattern": "print(",
+      "replacement": "logging.info(",
+      "description": "Convert print statements to proper logging",
+      "complexity": 2,
+      "riskLevel": "low",
+      "mode": "template"
+    },
+    {
+      "id": "python-string-format-modernization",
+      "language": "python",
+      "pattern": "\"%s\" % $VAR",
+      "replacement": "f\"{$VAR}\"",
+      "description": "Convert old string formatting to f-strings",
+      "complexity": 2,
+      "riskLevel": "low",
+      "mode": "template"
+    },
+    {
+      "id": "python-exception-handling",
+      "language": "python",
+      "pattern": "except:",
+      "replacement": "except Exception as e:",
+      "description": "Add proper exception handling with variable binding",
+      "complexity": 3,
+      "riskLevel": "medium",
+      "mode": "template"
+    },
+    {
+      "id": "python-list-comprehension",
+      "language": "python",
+      "pattern": "list comprehension optimization",
+      "replacement": "AI-optimized list comprehensions",
+      "description": "Use LLM to optimize list comprehensions and loops",
+      "complexity": 6,
+      "riskLevel": "low",
+      "mode": "llm"
+    },
+    {
+      "id": "python-type-hints",
+      "language": "python",
+      "pattern": "def $FUNC($PARAMS):",
+      "replacement": "def $FUNC($PARAMS) -> $RETURN_TYPE:",
+      "description": "Add type hints to function definitions",
+      "complexity": 4,
+      "riskLevel": "low",
+      "mode": "ast"
+    },
+    {
+      "id": "python-pathlib-modernization",
+      "language": "python",
+      "pattern": "os.path.join(",
+      "replacement": "Path(",
+      "description": "Convert os.path operations to pathlib.Path",
+      "complexity": 3,
+      "riskLevel": "low",
+      "mode": "ast"
+    },
+    {
+      "id": "python-numpy-optimization",
+      "language": "python",
+      "pattern": "numpy optimization",
+      "replacement": "AI-optimized numpy operations",
+      "description": "Use LLM to optimize NumPy array operations for better performance",
+      "complexity": 7,
+      "riskLevel": "medium",
+      "mode": "llm"
+    },
+    {
+      "id": "python-tensorflow-optimization",
+      "language": "python",
+      "pattern": "tensorflow optimization",
+      "replacement": "AI-optimized TensorFlow operations",
+      "description": "Use LLM to optimize TensorFlow/Keras model operations",
+      "complexity": 8,
+      "riskLevel": "medium",
+      "mode": "llm"
+    },
+    {
+      "id": "python-pytorch-optimization",
+      "language": "python",
+      "pattern": "pytorch optimization",
+      "replacement": "AI-optimized PyTorch operations",
+      "description": "Use LLM to optimize PyTorch tensor operations and model training",
+      "complexity": 8,
+      "riskLevel": "medium",
+      "mode": "llm"
+    },
+    {
+      "id": "python-async-await-conversion",
+      "language": "python",
+      "pattern": "async/await conversion",
+      "replacement": "AI-converted async operations",
+      "description": "Use LLM to convert synchronous code to async/await patterns",
+      "complexity": 7,
+      "riskLevel": "medium",
+      "mode": "llm"
     }
   ],
   "categories": {
@@ -728,18 +828,18 @@
     ]
   },
   "metadata": {
-    "created": "2025-07-22",
-    "author": "Carmack Coder",
-    "license": "MIT",
-    "lastUpdated": "2025-07-23",
-    "totalPatterns": 48,
-    "templatePatterns": 8,
-    "astPatterns": 23,
-    "llmPatterns": 17,
-    "templateEngineVersion": "4.0.0",
-    "astGrepVersion": "0.38.6",
-    "enhancedLLMVersion": "2.0.0",
-    "languages": ["typescript", "javascript", "cpp", "cuda"],
+  "created": "2025-07-22",
+  "author": "Carmack Coder",
+  "license": "MIT",
+  "lastUpdated": "2025-07-23",
+  "totalPatterns": 58,
+  "templatePatterns": 11,
+  "astPatterns": 25,
+  "llmPatterns": 22,
+  "templateEngineVersion": "4.0.0",
+  "astGrepVersion": "0.38.6",
+  "enhancedLLMVersion": "2.0.0",
+  "languages": ["typescript", "javascript", "cpp", "cuda", "python"],
     "categories": [
       "template",
       "ast",
