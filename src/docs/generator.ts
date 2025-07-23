@@ -118,7 +118,7 @@ export class DocumentationGenerator {
       let relativeSourceFiles = sourceFiles;
       if (validatedRequest.sourceDir) {
         const { relative } = await import('node:path');
-        relativeSourceFiles = sourceFiles.map(f => relative(validatedRequest.sourceDir, f));
+        relativeSourceFiles = sourceFiles.map(f => relative(validatedRequest.sourceDir ?? './src', f));
       }
 
       // Generate documentation based on type
@@ -487,13 +487,15 @@ export class DocumentationGenerator {
   /**
    * Discover source files in the project
    */
-  async discoverSourceFiles(sourceDir: string = './src'): Promise<string[]> {
+  async discoverSourceFiles(sourceDir: string = './workspace/repository'): Promise<string[]> {
     const { readdir, stat } = await import('node:fs/promises');
     const { join } = await import('node:path');
 
     const files: string[] = [];
 
-    async function scanDirectory(dir: string): Promise<void> {
+  // Always use the provided sourceDir, never default to ./src unless undefined
+  if (!sourceDir) sourceDir = './src';
+  async function scanDirectory(dir: string): Promise<void> {
       try {
         const entries = await readdir(dir);
 
@@ -512,8 +514,10 @@ export class DocumentationGenerator {
       }
     }
 
-    await scanDirectory(sourceDir);
-    return files;
+  console.log(`[discoverSourceFiles] Scanning directory: ${sourceDir}`);
+  await scanDirectory(sourceDir);
+  console.log(`[discoverSourceFiles] Files found:`, files.slice(0, 10), `... total: ${files.length}`);
+  return files;
   }
 
   /**
