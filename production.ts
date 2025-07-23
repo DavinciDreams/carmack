@@ -163,14 +163,74 @@ async function cloneRepository(
 async function validateRepository(repoDir: string, config: ProductionConfig): Promise<void> {
   console.log('🔍 Validating repository structure...');
 
-  // Check for package.json or similar project indicators
-  const indicators = ['package.json', 'tsconfig.json', 'pyproject.toml', 'Cargo.toml', 'pom.xml'];
-  const hasProjectFile = indicators.some((file) => existsSync(join(repoDir, file)));
+  // Check for project indicators across multiple languages and build systems
+  const indicators = [
+    // JavaScript/TypeScript/Node.js
+    'package.json',
+    'tsconfig.json',
+    
+    // Python
+    'pyproject.toml',
+    'setup.py',
+    'requirements.txt',
+    
+    // Rust
+    'Cargo.toml',
+    
+    // Java/Maven/Gradle
+    'pom.xml',
+    'build.gradle',
+    'build.gradle.kts',
+    
+    // C++/CUDA/CMake
+    'CMakeLists.txt',
+    'Makefile',
+    'makefile',
+    'configure',
+    'configure.ac',
+    'configure.in',
+    'meson.build',
+    'BUILD',
+    'BUILD.bazel',
+    
+    // C/C++ project files
+    'vcpkg.json',
+    'conanfile.txt',
+    'conanfile.py',
+    
+    // Go
+    'go.mod',
+    
+    // .NET
+    '*.csproj',
+    '*.sln',
+    
+    // Generic project indicators
+    'README.md',
+    'README.txt',
+    'LICENSE'
+  ];
+  
+  const hasProjectFile = indicators.some((file) => {
+    if (file.includes('*')) {
+      // Handle wildcard patterns like *.csproj
+      const pattern = file.replace('*', '');
+      try {
+        const { readdirSync } = require('node:fs');
+        const files = readdirSync(repoDir);
+        return files.some((f: string) => f.endsWith(pattern));
+      } catch {
+        return false;
+      }
+    }
+    return existsSync(join(repoDir, file));
+  });
 
   if (!hasProjectFile) {
     throw new ProductionError('No recognized project structure found', 'INVALID_PROJECT', {
       repoDir,
       checkedFiles: indicators,
+      message: 'Repository must contain at least one project indicator file (CMakeLists.txt, Makefile, package.json, etc.)',
     });
   }
 
@@ -425,9 +485,10 @@ async function main(): Promise<void> {
     const config = await loadConfig(args.config);
 
     // Override config with environment variables first, then CLI arguments
-    if (process.env.CARMACK_REPOSITORY_URL || process.env.REPOSITORY_URL) {
-      config.repository.url =
-        process.env.CARMACK_REPOSITORY_URL || process.env.REPOSITORY_URL || config.repository.url;
+    // REPOSITORY_URL is the target repository (e.g., NVIDIA TensorRT)
+    // CARMACK_REPOSITORY_URL is the Carmack system repository (should not be used for target)
+    if (process.env.REPOSITORY_URL) {
+      config.repository.url = process.env.REPOSITORY_URL;
     }
     if (args.repository) {
       config.repository.url = args.repository;

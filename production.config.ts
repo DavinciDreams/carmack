@@ -106,7 +106,7 @@ export type ProductionConfig = z.infer<typeof ProductionConfigSchema>;
 export const defaultProductionConfig: ProductionConfig = {
   repository: {
     url: process.env.CARMACK_REPOSITORY_URL || process.env.REPOSITORY_URL || CARMACK_REPOSITORY_URL,
-    branch: process.env.CARMACK_BRANCH || process.env.BRANCH || 'main',
+    branch: process.env.BRANCH || 'main',
     workingDirectory:
       process.env.CARMACK_WORKSPACE || process.env.WORKSPACE_DIR || '/tmp/carmack-workspace',
     excludePatterns: [
