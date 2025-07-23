@@ -81,7 +81,23 @@
     "log:analyze": "bun run src/log-analysis/index.ts",
     "log:analyze:verbose": "bun run src/log-analysis/index.ts --verbose",
     "log:analyze:custom": "bun run src/log-analysis/index.ts --claude-dir",
-    "merge-pr": "./scripts/merge-pr.sh"
+    "merge-pr": "./scripts/merge-pr.sh",
+    "demo": "bun run demo/tensorrt-demo.ts",
+    "demo:interactive": "bun run demo/tensorrt-demo.ts",
+    "demo:engineer": "bun run demo/tensorrt-demo.ts --engineer",
+    "demo:researcher": "bun run demo/tensorrt-demo.ts --researcher",
+    "demo:manager": "bun run demo/tensorrt-demo.ts --manager",
+    "demo:all": "bun run demo/tensorrt-demo.ts --all-demos",
+    "demo:architecture": "bun run demo/tensorrt-demo.ts --architecture",
+    "demo:metrics": "bun run demo/metrics-dashboard.ts",
+    "demo:metrics-report": "bun run demo/metrics-dashboard.ts --report",
+    "demo:metrics-once": "bun run demo/metrics-dashboard.ts --once",
+    "demo:package": "bun run demo/package-demo.ts",
+    "demo:package-report": "bun run demo/package-demo.ts --report-only",
+    "oracle": "bun run oracle-cli.ts",
+    "oracle:interactive": "bun run oracle-cli.ts --interactive",
+    "oracle:stats": "bun run oracle-cli.ts --stats",
+    "oracle:simple": "bun run simple-oracle-demo.ts"
   },
   "engines": {
     "bun": ">=1.0.0"
