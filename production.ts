@@ -407,7 +407,7 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
           'template',
           {
             maxComplexity: config.transformation.maxComplexityThreshold,
-            allowedRiskLevels: [config.transformation.riskLevelFilter],
+            allowedRiskLevels: ['low', 'medium'], // Allow both low and medium risk patterns
             strictLanguageMatching: true
           }
         );
