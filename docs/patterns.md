@@ -1,1432 +1,433 @@
-# 🔄 Transformation Patterns
+# Transformation Patterns
 
-## smart-var-to-const-let
+Generated on 2025-07-23T03:16:25.949Z
 
-Smart conversion of var to const/let based on usage analysis
+## Modernization
 
-**File:** `patterns-consolidated.json`
-
-**Details:**
-- **complexity:** 3
-- **riskLevel:** medium
-- **language:** typescript
-
----
-
-## strict-equality
-
-Convert loose equality to strict equality
-
-**File:** `patterns-consolidated.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## strict-inequality
-
-Convert loose inequality to strict inequality
-
-**File:** `patterns-consolidated.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## console-log-to-console-error
-
-Convert console.log for errors to console.error
-
-**File:** `patterns-consolidated.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## promise-to-async-await
-
-Convert Promise.then() chains to async/await
-
-**File:** `patterns-consolidated.json`
-
-**Details:**
-- **complexity:** 4
-- **riskLevel:** medium
-- **language:** typescript
-
----
-
-## object-property-shorthand
-
-Use object property shorthand syntax
-
-**File:** `patterns-consolidated.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## array-includes-instead-of-indexof
-
-Use Array.includes() instead of indexOf() !== -1
-
-**File:** `patterns-consolidated.json`
-
-**Details:**
-- **complexity:** 2
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## const-loop-variable-fix
-
-Fix const loop variables that get reassigned
-
-**File:** `patterns-consolidated.json`
-
-**Details:**
-- **complexity:** 2
-- **riskLevel:** medium
-- **language:** typescript
-
----
-
-## template-literal-conversion
-
-Convert string concatenation to template literals
-
-**File:** `patterns-consolidated.json`
-
-**Details:**
-- **complexity:** 3
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## remove-unnecessary-returns
-
-Remove unnecessary return statements from arrow functions
-
-**File:** `patterns-consolidated.json`
-
-**Details:**
-- **complexity:** 2
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## fix-double-semicolons
-
-Remove double semicolons syntax errors
-
-**File:** `patterns-consolidated.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## fix-malformed-object-literal
-
-Fix malformed object literal with semicolon
-
-**File:** `patterns-consolidated.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## smart-var-to-const-let
-
-Smart conversion of var to const/let based on usage analysis
-
-**File:** `patterns-v3.json`
-
-**Details:**
-- **complexity:** 3
-- **riskLevel:** medium
-- **language:** typescript
-
----
-
-## strict-equality
-
-Convert loose equality to strict equality
-
-**File:** `patterns-v3.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## strict-inequality
-
-Convert loose inequality to strict inequality
-
-**File:** `patterns-v3.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## console-log-to-console-error
-
-Convert console.log for errors to console.error
-
-**File:** `patterns-v3.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## promise-to-async-await
-
-Convert Promise.then() chains to async/await
-
-**File:** `patterns-v3.json`
-
-**Details:**
-- **complexity:** 4
-- **riskLevel:** medium
-- **language:** typescript
-
----
-
-## object-property-shorthand
-
-Use object property shorthand syntax
-
-**File:** `patterns-v3.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## array-includes-instead-of-indexof
-
-Use Array.includes() instead of indexOf() !== -1
-
-**File:** `patterns-v3.json`
-
-**Details:**
-- **complexity:** 2
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## const-loop-variable-fix
-
-Fix const loop variables that get reassigned
-
-**File:** `patterns-v3.json`
-
-**Details:**
-- **complexity:** 2
-- **riskLevel:** medium
-- **language:** typescript
-
----
-
-## template-literal-conversion
-
-Convert string concatenation to template literals
-
-**File:** `patterns-v3.json`
-
-**Details:**
-- **complexity:** 3
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## remove-unnecessary-returns
-
-Remove unnecessary return statements from arrow functions
-
-**File:** `patterns-v3.json`
-
-**Details:**
-- **complexity:** 2
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## smart-var-to-const-let
-
-Smart conversion of var to const/let based on usage analysis
-
-**File:** `patterns.json`
-
-**Details:**
-- **complexity:** 3
-- **riskLevel:** medium
-- **language:** typescript
-
----
-
-## strict-equality
-
-Convert loose equality to strict equality
-
-**File:** `patterns.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## strict-inequality
-
-Convert loose inequality to strict inequality
-
-**File:** `patterns.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## console-log-to-console-error
-
-Convert console.log for errors to console.error
-
-**File:** `patterns.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## promise-to-async-await
-
-Convert Promise.then() chains to async/await
-
-**File:** `patterns.json`
-
-**Details:**
-- **complexity:** 4
-- **riskLevel:** medium
-- **language:** typescript
-
----
-
-## object-property-shorthand
-
-Use object property shorthand syntax
-
-**File:** `patterns.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## array-includes-instead-of-indexof
-
-Use Array.includes() instead of indexOf() !== -1
-
-**File:** `patterns.json`
-
-**Details:**
-- **complexity:** 2
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## const-loop-variable-fix
-
-Fix const loop variables that get reassigned
-
-**File:** `patterns.json`
-
-**Details:**
-- **complexity:** 2
-- **riskLevel:** medium
-- **language:** typescript
-
----
-
-## template-literal-conversion
-
-Convert string concatenation to template literals
-
-**File:** `patterns.json`
-
-**Details:**
-- **complexity:** 3
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## remove-unnecessary-returns
-
-Remove unnecessary return statements from arrow functions
-
-**File:** `patterns.json`
-
-**Details:**
-- **complexity:** 2
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## fix-double-semicolons
-
-Remove double semicolons syntax errors
-
-**File:** `patterns.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## fix-malformed-object-literal
-
-Fix malformed object literal with semicolon
-
-**File:** `patterns.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## smart-var-to-const-let
+### Smart Var To Const Let
 
 Smart conversion of var to const/let based on value analysis
 
-**File:** `src\patterns\enhanced-templates.json`
+**Complexity:** 2/10
 
-**Details:**
-- **complexity:** 2
-- **riskLevel:** low
-- **language:** typescript
+**Risk Level:** low
+
+**Pattern:**
+```typescript
+var $IDENTIFIER = $VALUE
+```
+
+**Replacement:**
+```typescript
+const $IDENTIFIER = $VALUE
+```
+
+**Examples:**
+
+*Simple string literal should use const*
+
+Before:
+```typescript
+var name = 'John';
+```
+
+After:
+```typescript
+const name = 'John';
+```
+
+*Expression with operator should use let*
+
+Before:
+```typescript
+var counter = i + 1;
+```
+
+After:
+```typescript
+let counter = i + 1;
+```
 
 ---
 
-## strict-equality-comprehensive
-
-Convert loose equality to strict equality
-
-**File:** `src\patterns\enhanced-templates.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## strict-inequality-comprehensive
-
-Convert loose inequality to strict inequality
-
-**File:** `src\patterns\enhanced-templates.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## template-literal-advanced
+### Template Literal Advanced
 
 Convert string concatenation to template literals with smart quote handling
 
-**File:** `src\patterns\enhanced-templates.json`
+**Complexity:** 3/10
 
-**Details:**
-- **complexity:** 3
-- **riskLevel:** low
-- **language:** typescript
+**Risk Level:** low
 
----
+**Pattern:**
+```typescript
+$STRING + $IDENTIFIER + $STRING
+```
 
-## object-shorthand-enhanced
+**Replacement:**
+```typescript
+`${$STRING.slice(1, -1)}${$IDENTIFIER}${$STRING.slice(1, -1)}`
+```
 
-Use object property shorthand syntax
+**Examples:**
 
-**File:** `src\patterns\enhanced-templates.json`
+*Basic string concatenation with variables*
 
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
+Before:
+```typescript
+'Hello ' + name + '!'
+```
 
----
-
-## arrow-function-optimization
-
-Remove unnecessary return from arrow functions
-
-**File:** `src\patterns\enhanced-templates.json`
-
-**Details:**
-- **complexity:** 2
-- **riskLevel:** low
-- **language:** typescript
+After:
+```typescript
+`Hello ${name}!`
+```
 
 ---
 
-## array-includes-modernization
+### Array Includes Modernization
 
 Use Array.includes() instead of indexOf() !== -1
 
-**File:** `src\patterns\enhanced-templates.json`
+**Complexity:** 2/10
 
-**Details:**
-- **complexity:** 2
-- **riskLevel:** low
-- **language:** typescript
+**Risk Level:** low
 
----
+**Pattern:**
+```typescript
+$ARRAY.indexOf($ITEM) !== -1
+```
 
-## console-error-conversion
+**Replacement:**
+```typescript
+$ARRAY.includes($ITEM)
+```
 
-Convert console.log to console.error for error messages
+**Examples:**
 
-**File:** `src\patterns\enhanced-templates.json`
+*Basic indexOf to includes conversion*
 
-**Details:**
-- **complexity:** 2
-- **riskLevel:** low
-- **language:** typescript
+Before:
+```typescript
+if (items.indexOf('test') !== -1) { console.log('found'); }
+```
 
----
-
-## const-to-let-loops
-
-Fix const loop variables that need reassignment
-
-**File:** `src\patterns\enhanced-templates.json`
-
-**Details:**
-- **complexity:** 2
-- **riskLevel:** medium
-- **language:** typescript
+After:
+```typescript
+if (items.includes('test')) { console.log('found'); }
+```
 
 ---
 
-## null-coalescing-opportunity
+### Null Coalescing Opportunity
 
 Use nullish coalescing operator for null/undefined checks
 
-**File:** `src\patterns\enhanced-templates.json`
+**Complexity:** 3/10
 
-**Details:**
-- **complexity:** 3
-- **riskLevel:** medium
-- **language:** typescript
+**Risk Level:** medium
+
+**Pattern:**
+```typescript
+$VARIABLE || $DEFAULT
+```
+
+**Replacement:**
+```typescript
+$VARIABLE ?? $DEFAULT
+```
+
+**Examples:**
+
+*Null coalescing conversion*
+
+Before:
+```typescript
+const value = input || 'default';
+```
+
+After:
+```typescript
+const value = input ?? 'default';
+```
 
 ---
 
-## destructuring-opportunity
+### Destructuring Opportunity
 
 Convert multiple property access to destructuring
 
-**File:** `src\patterns\enhanced-templates.json`
+**Complexity:** 4/10
 
-**Details:**
-- **complexity:** 4
-- **riskLevel:** medium
-- **language:** typescript
+**Risk Level:** medium
+
+**Pattern:**
+```typescript
+const $VAR1 = $OBJECT.$PROP1;\nconst $VAR2 = $OBJECT.$PROP2;
+```
+
+**Replacement:**
+```typescript
+const { $PROP1: $VAR1, $PROP2: $VAR2 } = $OBJECT;
+```
+
+**Examples:**
+
+*Basic destructuring opportunity*
+
+Before:
+```typescript
+const name = user.name;
+const age = user.age;
+```
+
+After:
+```typescript
+const { name, age } = user;
+```
 
 ---
 
-## optional-chaining-opportunity
+### Optional Chaining Opportunity
 
 Use optional chaining instead of guard checks
 
-**File:** `src\patterns\enhanced-templates.json`
+**Complexity:** 3/10
 
-**Details:**
-- **complexity:** 3
-- **riskLevel:** medium
-- **language:** typescript
+**Risk Level:** medium
+
+**Pattern:**
+```typescript
+$OBJECT && $OBJECT.$PROPERTY
+```
+
+**Replacement:**
+```typescript
+$OBJECT?.$PROPERTY
+```
+
+**Examples:**
+
+*Nested optional chaining*
+
+Before:
+```typescript
+user && user.profile && user.profile.name
+```
+
+After:
+```typescript
+user?.profile?.name
+```
 
 ---
 
-## smart-var-to-const-let
+## Safety
 
-Smart conversion of var to const/let based on usage analysis
-
-**File:** `workspace\85f64c2b-0050-4636-815e-9f73bc93c7c4\repository\patterns-v3.json`
-
-**Details:**
-- **complexity:** 3
-- **riskLevel:** medium
-- **language:** typescript
-
----
-
-## strict-equality
+### Strict Equality Comprehensive
 
 Convert loose equality to strict equality
 
-**File:** `workspace\85f64c2b-0050-4636-815e-9f73bc93c7c4\repository\patterns-v3.json`
+**Complexity:** 1/10
 
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
+**Risk Level:** low
+
+**Pattern:**
+```typescript
+$LEFT == $RIGHT
+```
+
+**Replacement:**
+```typescript
+$LEFT === $RIGHT
+```
+
+**Examples:**
+
+*Basic equality check*
+
+Before:
+```typescript
+if (a == b) return true;
+```
+
+After:
+```typescript
+if (a === b) return true;
+```
 
 ---
 
-## strict-inequality
+### Strict Inequality Comprehensive
 
 Convert loose inequality to strict inequality
 
-**File:** `workspace\85f64c2b-0050-4636-815e-9f73bc93c7c4\repository\patterns-v3.json`
+**Complexity:** 1/10
 
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
+**Risk Level:** low
 
----
+**Pattern:**
+```typescript
+$LEFT != $RIGHT
+```
 
-## console-log-to-console-error
+**Replacement:**
+```typescript
+$LEFT !== $RIGHT
+```
 
-Convert console.log for errors to console.error
+**Examples:**
 
-**File:** `workspace\85f64c2b-0050-4636-815e-9f73bc93c7c4\repository\patterns-v3.json`
+*Basic inequality check*
 
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
+Before:
+```typescript
+if (a != null) return true;
+```
 
----
-
-## promise-to-async-await
-
-Convert Promise.then() chains to async/await
-
-**File:** `workspace\85f64c2b-0050-4636-815e-9f73bc93c7c4\repository\patterns-v3.json`
-
-**Details:**
-- **complexity:** 4
-- **riskLevel:** medium
-- **language:** typescript
+After:
+```typescript
+if (a !== null) return true;
+```
 
 ---
 
-## object-property-shorthand
-
-Use object property shorthand syntax
-
-**File:** `workspace\85f64c2b-0050-4636-815e-9f73bc93c7c4\repository\patterns-v3.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## array-includes-instead-of-indexof
-
-Use Array.includes() instead of indexOf() !== -1
-
-**File:** `workspace\85f64c2b-0050-4636-815e-9f73bc93c7c4\repository\patterns-v3.json`
-
-**Details:**
-- **complexity:** 2
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## const-loop-variable-fix
-
-Fix const loop variables that get reassigned
-
-**File:** `workspace\85f64c2b-0050-4636-815e-9f73bc93c7c4\repository\patterns-v3.json`
-
-**Details:**
-- **complexity:** 2
-- **riskLevel:** medium
-- **language:** typescript
-
----
-
-## template-literal-conversion
-
-Convert string concatenation to template literals
-
-**File:** `workspace\85f64c2b-0050-4636-815e-9f73bc93c7c4\repository\patterns-v3.json`
-
-**Details:**
-- **complexity:** 3
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## remove-unnecessary-returns
-
-Remove unnecessary return statements from arrow functions
-
-**File:** `workspace\85f64c2b-0050-4636-815e-9f73bc93c7c4\repository\patterns-v3.json`
-
-**Details:**
-- **complexity:** 2
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## smart-var-to-const-let
-
-Smart conversion of var to const/let based on usage analysis
-
-**File:** `workspace\85f64c2b-0050-4636-815e-9f73bc93c7c4\repository\patterns.json`
-
-**Details:**
-- **complexity:** 3
-- **riskLevel:** medium
-- **language:** typescript
-
----
-
-## strict-equality
-
-Convert loose equality to strict equality
-
-**File:** `workspace\85f64c2b-0050-4636-815e-9f73bc93c7c4\repository\patterns.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## strict-inequality
-
-Convert loose inequality to strict inequality
-
-**File:** `workspace\85f64c2b-0050-4636-815e-9f73bc93c7c4\repository\patterns.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## console-log-to-console-error
-
-Convert console.log for errors to console.error
-
-**File:** `workspace\85f64c2b-0050-4636-815e-9f73bc93c7c4\repository\patterns.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## promise-to-async-await
-
-Convert Promise.then() chains to async/await
-
-**File:** `workspace\85f64c2b-0050-4636-815e-9f73bc93c7c4\repository\patterns.json`
-
-**Details:**
-- **complexity:** 4
-- **riskLevel:** medium
-- **language:** typescript
-
----
-
-## object-property-shorthand
-
-Use object property shorthand syntax
-
-**File:** `workspace\85f64c2b-0050-4636-815e-9f73bc93c7c4\repository\patterns.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## array-includes-instead-of-indexof
-
-Use Array.includes() instead of indexOf() !== -1
-
-**File:** `workspace\85f64c2b-0050-4636-815e-9f73bc93c7c4\repository\patterns.json`
-
-**Details:**
-- **complexity:** 2
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## const-loop-variable-fix
-
-Fix const loop variables that get reassigned
-
-**File:** `workspace\85f64c2b-0050-4636-815e-9f73bc93c7c4\repository\patterns.json`
-
-**Details:**
-- **complexity:** 2
-- **riskLevel:** medium
-- **language:** typescript
-
----
-
-## template-literal-conversion
-
-Convert string concatenation to template literals
-
-**File:** `workspace\85f64c2b-0050-4636-815e-9f73bc93c7c4\repository\patterns.json`
-
-**Details:**
-- **complexity:** 3
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## remove-unnecessary-returns
-
-Remove unnecessary return statements from arrow functions
-
-**File:** `workspace\85f64c2b-0050-4636-815e-9f73bc93c7c4\repository\patterns.json`
-
-**Details:**
-- **complexity:** 2
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## smart-var-to-const-let
-
-Smart conversion of var to const/let based on value analysis
-
-**File:** `workspace\85f64c2b-0050-4636-815e-9f73bc93c7c4\repository\src\patterns\enhanced-templates.json`
-
-**Details:**
-- **complexity:** 2
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## strict-equality-comprehensive
-
-Convert loose equality to strict equality
-
-**File:** `workspace\85f64c2b-0050-4636-815e-9f73bc93c7c4\repository\src\patterns\enhanced-templates.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## strict-inequality-comprehensive
-
-Convert loose inequality to strict inequality
-
-**File:** `workspace\85f64c2b-0050-4636-815e-9f73bc93c7c4\repository\src\patterns\enhanced-templates.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## template-literal-advanced
-
-Convert string concatenation to template literals with smart quote handling
-
-**File:** `workspace\85f64c2b-0050-4636-815e-9f73bc93c7c4\repository\src\patterns\enhanced-templates.json`
-
-**Details:**
-- **complexity:** 3
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## object-shorthand-enhanced
-
-Use object property shorthand syntax
-
-**File:** `workspace\85f64c2b-0050-4636-815e-9f73bc93c7c4\repository\src\patterns\enhanced-templates.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## arrow-function-optimization
-
-Remove unnecessary return from arrow functions
-
-**File:** `workspace\85f64c2b-0050-4636-815e-9f73bc93c7c4\repository\src\patterns\enhanced-templates.json`
-
-**Details:**
-- **complexity:** 2
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## array-includes-modernization
-
-Use Array.includes() instead of indexOf() !== -1
-
-**File:** `workspace\85f64c2b-0050-4636-815e-9f73bc93c7c4\repository\src\patterns\enhanced-templates.json`
-
-**Details:**
-- **complexity:** 2
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## console-error-conversion
-
-Convert console.log to console.error for error messages
-
-**File:** `workspace\85f64c2b-0050-4636-815e-9f73bc93c7c4\repository\src\patterns\enhanced-templates.json`
-
-**Details:**
-- **complexity:** 2
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## const-to-let-loops
+### Const To Let Loops
 
 Fix const loop variables that need reassignment
 
-**File:** `workspace\85f64c2b-0050-4636-815e-9f73bc93c7c4\repository\src\patterns\enhanced-templates.json`
+**Complexity:** 2/10
 
-**Details:**
-- **complexity:** 2
-- **riskLevel:** medium
-- **language:** typescript
+**Risk Level:** medium
 
----
+**Pattern:**
+```typescript
+for (const $VARIABLE = $INIT; $CONDITION; $UPDATE)
+```
 
-## null-coalescing-opportunity
+**Replacement:**
+```typescript
+for (let $VARIABLE = $INIT; $CONDITION; $UPDATE)
+```
 
-Use nullish coalescing operator for null/undefined checks
+**Examples:**
 
-**File:** `workspace\85f64c2b-0050-4636-815e-9f73bc93c7c4\repository\src\patterns\enhanced-templates.json`
+*Basic for loop with const variable*
 
-**Details:**
-- **complexity:** 3
-- **riskLevel:** medium
-- **language:** typescript
+Before:
+```typescript
+for (const i = 0; i < 10; i++) { console.log(i); }
+```
 
----
-
-## destructuring-opportunity
-
-Convert multiple property access to destructuring
-
-**File:** `workspace\85f64c2b-0050-4636-815e-9f73bc93c7c4\repository\src\patterns\enhanced-templates.json`
-
-**Details:**
-- **complexity:** 4
-- **riskLevel:** medium
-- **language:** typescript
+After:
+```typescript
+for (let i = 0; i < 10; i++) { console.log(i); }
+```
 
 ---
 
-## optional-chaining-opportunity
+## Optimization
 
-Use optional chaining instead of guard checks
-
-**File:** `workspace\85f64c2b-0050-4636-815e-9f73bc93c7c4\repository\src\patterns\enhanced-templates.json`
-
-**Details:**
-- **complexity:** 3
-- **riskLevel:** medium
-- **language:** typescript
-
----
-
-## smart-var-to-const-let
-
-Smart conversion of var to const/let based on usage analysis
-
-**File:** `workspace\e86c897a-b176-4d6b-8fc7-e93216cc8062\repository\patterns-v3.json`
-
-**Details:**
-- **complexity:** 3
-- **riskLevel:** medium
-- **language:** typescript
-
----
-
-## strict-equality
-
-Convert loose equality to strict equality
-
-**File:** `workspace\e86c897a-b176-4d6b-8fc7-e93216cc8062\repository\patterns-v3.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## strict-inequality
-
-Convert loose inequality to strict inequality
-
-**File:** `workspace\e86c897a-b176-4d6b-8fc7-e93216cc8062\repository\patterns-v3.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## console-log-to-console-error
-
-Convert console.log for errors to console.error
-
-**File:** `workspace\e86c897a-b176-4d6b-8fc7-e93216cc8062\repository\patterns-v3.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## promise-to-async-await
-
-Convert Promise.then() chains to async/await
-
-**File:** `workspace\e86c897a-b176-4d6b-8fc7-e93216cc8062\repository\patterns-v3.json`
-
-**Details:**
-- **complexity:** 4
-- **riskLevel:** medium
-- **language:** typescript
-
----
-
-## object-property-shorthand
+### Object Shorthand Enhanced
 
 Use object property shorthand syntax
 
-**File:** `workspace\e86c897a-b176-4d6b-8fc7-e93216cc8062\repository\patterns-v3.json`
+**Complexity:** 1/10
 
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
+**Risk Level:** low
 
----
+**Pattern:**
+```typescript
+{ $KEY: $KEY }
+```
 
-## array-includes-instead-of-indexof
+**Replacement:**
+```typescript
+{ $KEY }
+```
 
-Use Array.includes() instead of indexOf() !== -1
+**Examples:**
 
-**File:** `workspace\e86c897a-b176-4d6b-8fc7-e93216cc8062\repository\patterns-v3.json`
+*Multiple property shorthand*
 
-**Details:**
-- **complexity:** 2
-- **riskLevel:** low
-- **language:** typescript
+Before:
+```typescript
+const obj = { name: name, age: age };
+```
 
----
-
-## const-loop-variable-fix
-
-Fix const loop variables that get reassigned
-
-**File:** `workspace\e86c897a-b176-4d6b-8fc7-e93216cc8062\repository\patterns-v3.json`
-
-**Details:**
-- **complexity:** 2
-- **riskLevel:** medium
-- **language:** typescript
+After:
+```typescript
+const obj = { name, age };
+```
 
 ---
 
-## template-literal-conversion
-
-Convert string concatenation to template literals
-
-**File:** `workspace\e86c897a-b176-4d6b-8fc7-e93216cc8062\repository\patterns-v3.json`
-
-**Details:**
-- **complexity:** 3
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## remove-unnecessary-returns
-
-Remove unnecessary return statements from arrow functions
-
-**File:** `workspace\e86c897a-b176-4d6b-8fc7-e93216cc8062\repository\patterns-v3.json`
-
-**Details:**
-- **complexity:** 2
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## smart-var-to-const-let
-
-Smart conversion of var to const/let based on usage analysis
-
-**File:** `workspace\e86c897a-b176-4d6b-8fc7-e93216cc8062\repository\patterns.json`
-
-**Details:**
-- **complexity:** 3
-- **riskLevel:** medium
-- **language:** typescript
-
----
-
-## strict-equality
-
-Convert loose equality to strict equality
-
-**File:** `workspace\e86c897a-b176-4d6b-8fc7-e93216cc8062\repository\patterns.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## strict-inequality
-
-Convert loose inequality to strict inequality
-
-**File:** `workspace\e86c897a-b176-4d6b-8fc7-e93216cc8062\repository\patterns.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## console-log-to-console-error
-
-Convert console.log for errors to console.error
-
-**File:** `workspace\e86c897a-b176-4d6b-8fc7-e93216cc8062\repository\patterns.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## promise-to-async-await
-
-Convert Promise.then() chains to async/await
-
-**File:** `workspace\e86c897a-b176-4d6b-8fc7-e93216cc8062\repository\patterns.json`
-
-**Details:**
-- **complexity:** 4
-- **riskLevel:** medium
-- **language:** typescript
-
----
-
-## object-property-shorthand
-
-Use object property shorthand syntax
-
-**File:** `workspace\e86c897a-b176-4d6b-8fc7-e93216cc8062\repository\patterns.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## array-includes-instead-of-indexof
-
-Use Array.includes() instead of indexOf() !== -1
-
-**File:** `workspace\e86c897a-b176-4d6b-8fc7-e93216cc8062\repository\patterns.json`
-
-**Details:**
-- **complexity:** 2
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## const-loop-variable-fix
-
-Fix const loop variables that get reassigned
-
-**File:** `workspace\e86c897a-b176-4d6b-8fc7-e93216cc8062\repository\patterns.json`
-
-**Details:**
-- **complexity:** 2
-- **riskLevel:** medium
-- **language:** typescript
-
----
-
-## template-literal-conversion
-
-Convert string concatenation to template literals
-
-**File:** `workspace\e86c897a-b176-4d6b-8fc7-e93216cc8062\repository\patterns.json`
-
-**Details:**
-- **complexity:** 3
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## remove-unnecessary-returns
-
-Remove unnecessary return statements from arrow functions
-
-**File:** `workspace\e86c897a-b176-4d6b-8fc7-e93216cc8062\repository\patterns.json`
-
-**Details:**
-- **complexity:** 2
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## smart-var-to-const-let
-
-Smart conversion of var to const/let based on value analysis
-
-**File:** `workspace\e86c897a-b176-4d6b-8fc7-e93216cc8062\repository\src\patterns\enhanced-templates.json`
-
-**Details:**
-- **complexity:** 2
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## strict-equality-comprehensive
-
-Convert loose equality to strict equality
-
-**File:** `workspace\e86c897a-b176-4d6b-8fc7-e93216cc8062\repository\src\patterns\enhanced-templates.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## strict-inequality-comprehensive
-
-Convert loose inequality to strict inequality
-
-**File:** `workspace\e86c897a-b176-4d6b-8fc7-e93216cc8062\repository\src\patterns\enhanced-templates.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## template-literal-advanced
-
-Convert string concatenation to template literals with smart quote handling
-
-**File:** `workspace\e86c897a-b176-4d6b-8fc7-e93216cc8062\repository\src\patterns\enhanced-templates.json`
-
-**Details:**
-- **complexity:** 3
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## object-shorthand-enhanced
-
-Use object property shorthand syntax
-
-**File:** `workspace\e86c897a-b176-4d6b-8fc7-e93216cc8062\repository\src\patterns\enhanced-templates.json`
-
-**Details:**
-- **complexity:** 1
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## arrow-function-optimization
+### Arrow Function Optimization
 
 Remove unnecessary return from arrow functions
 
-**File:** `workspace\e86c897a-b176-4d6b-8fc7-e93216cc8062\repository\src\patterns\enhanced-templates.json`
+**Complexity:** 2/10
 
-**Details:**
-- **complexity:** 2
-- **riskLevel:** low
-- **language:** typescript
+**Risk Level:** low
+
+**Pattern:**
+```typescript
+($PARAMS) => { return $EXPRESSION; }
+```
+
+**Replacement:**
+```typescript
+($PARAMS) => $EXPRESSION
+```
+
+**Examples:**
+
+*Simple expression return*
+
+Before:
+```typescript
+const double = (x) => { return x * 2; };
+```
+
+After:
+```typescript
+const double = (x) => x * 2;
+```
 
 ---
 
-## array-includes-modernization
+## Logging
 
-Use Array.includes() instead of indexOf() !== -1
-
-**File:** `workspace\e86c897a-b176-4d6b-8fc7-e93216cc8062\repository\src\patterns\enhanced-templates.json`
-
-**Details:**
-- **complexity:** 2
-- **riskLevel:** low
-- **language:** typescript
-
----
-
-## console-error-conversion
+### Console Error Conversion
 
 Convert console.log to console.error for error messages
 
-**File:** `workspace\e86c897a-b176-4d6b-8fc7-e93216cc8062\repository\src\patterns\enhanced-templates.json`
+**Complexity:** 2/10
 
-**Details:**
-- **complexity:** 2
-- **riskLevel:** low
-- **language:** typescript
+**Risk Level:** low
 
----
+**Pattern:**
+```typescript
+console.log($ERROR_MSG)
+```
 
-## const-to-let-loops
+**Replacement:**
+```typescript
+console.error($ERROR_MSG)
+```
 
-Fix const loop variables that need reassignment
+**Examples:**
 
-**File:** `workspace\e86c897a-b176-4d6b-8fc7-e93216cc8062\repository\src\patterns\enhanced-templates.json`
+*Error message detection*
 
-**Details:**
-- **complexity:** 2
-- **riskLevel:** medium
-- **language:** typescript
+Before:
+```typescript
+console.log('Error: something went wrong');
+```
 
----
-
-## null-coalescing-opportunity
-
-Use nullish coalescing operator for null/undefined checks
-
-**File:** `workspace\e86c897a-b176-4d6b-8fc7-e93216cc8062\repository\src\patterns\enhanced-templates.json`
-
-**Details:**
-- **complexity:** 3
-- **riskLevel:** medium
-- **language:** typescript
-
----
-
-## destructuring-opportunity
-
-Convert multiple property access to destructuring
-
-**File:** `workspace\e86c897a-b176-4d6b-8fc7-e93216cc8062\repository\src\patterns\enhanced-templates.json`
-
-**Details:**
-- **complexity:** 4
-- **riskLevel:** medium
-- **language:** typescript
-
----
-
-## optional-chaining-opportunity
-
-Use optional chaining instead of guard checks
-
-**File:** `workspace\e86c897a-b176-4d6b-8fc7-e93216cc8062\repository\src\patterns\enhanced-templates.json`
-
-**Details:**
-- **complexity:** 3
-- **riskLevel:** medium
-- **language:** typescript
+After:
+```typescript
+console.error('Error: something went wrong');
+```
 
 ---
 

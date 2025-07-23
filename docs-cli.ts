@@ -7,7 +7,7 @@
  * using the enhanced CLI implementation with watch mode support.
  */
 
-import { runDocsCLI } from './src/docs/cli.js';
+import { runDocsCLI } from './src/docs/cli.ts';
 
 runDocsCLI().catch((error) => {
   console.error('Documentation generation failed:', error);

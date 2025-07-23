@@ -39,8 +39,8 @@ export class DocumentationCLI {
         return;
       }
 
-      const sourceDir = parsed.sourceDir || './src';
-      const outputDir = parsed.outputDir || './docs';
+      const sourceDir = parsed.sourceDir || './workspace/repository';
+      const outputDir = parsed.outputDir || './workspace/generateddocs';
       const formats = (parsed.formats as string[]) || ['markdown'];
 
       // Validate source directory exists
