@@ -31,6 +31,8 @@ export class DocumentationSystem {
       format?: 'markdown' | 'html' | 'json';
       includePrivate?: boolean;
       includeTests?: boolean;
+      sourceFiles?: string[];
+      sourceDir?: string;
     } = {}
   ): Promise<DocumentationResult> {
     const request: DocumentationRequest = {
@@ -40,6 +42,8 @@ export class DocumentationSystem {
       includePrivate: options.includePrivate || false,
       includeTests: options.includeTests || false,
       includeExamples: true,
+      sourceDir: options.sourceDir,
+      sourceFiles: options.sourceFiles,
     };
 
     return await this.generator.generateDocumentation(request);
@@ -49,7 +53,7 @@ export class DocumentationSystem {
    * Generate architecture documentation
    */
   async generateArchitectureDocumentation(
-    options: { outputPath?: string; format?: 'markdown' | 'html' | 'json' } = {}
+    options: { outputPath?: string; format?: 'markdown' | 'html' | 'json'; sourceFiles?: string[]; sourceDir?: string } = {}
   ): Promise<DocumentationResult> {
     const request: DocumentationRequest = {
       type: 'architecture',
@@ -58,6 +62,8 @@ export class DocumentationSystem {
       includePrivate: false,
       includeTests: false,
       includeExamples: true,
+      sourceDir: options.sourceDir,
+      sourceFiles: options.sourceFiles,
     };
 
     return await this.generator.generateDocumentation(request);
@@ -67,7 +73,7 @@ export class DocumentationSystem {
    * Generate pattern documentation
    */
   async generatePatternDocumentation(
-    options: { outputPath?: string; format?: 'markdown' | 'html' | 'json' } = {}
+    options: { outputPath?: string; format?: 'markdown' | 'html' | 'json'; sourceFiles?: string[]; sourceDir?: string } = {}
   ): Promise<DocumentationResult> {
     const request: DocumentationRequest = {
       type: 'patterns',
@@ -76,6 +82,8 @@ export class DocumentationSystem {
       includePrivate: false,
       includeTests: false,
       includeExamples: true,
+      sourceDir: options.sourceDir,
+      sourceFiles: options.sourceFiles,
     };
 
     return await this.generator.generateDocumentation(request);
@@ -85,7 +93,7 @@ export class DocumentationSystem {
    * Generate usage documentation
    */
   async generateUsageDocumentation(
-    options: { outputPath?: string; format?: 'markdown' | 'html' | 'json' } = {}
+    options: { outputPath?: string; format?: 'markdown' | 'html' | 'json'; sourceFiles?: string[]; sourceDir?: string } = {}
   ): Promise<DocumentationResult> {
     const request: DocumentationRequest = {
       type: 'usage',
@@ -94,6 +102,8 @@ export class DocumentationSystem {
       includePrivate: false,
       includeTests: false,
       includeExamples: true,
+      sourceDir: options.sourceDir,
+      sourceFiles: options.sourceFiles,
     };
 
     return await this.generator.generateDocumentation(request);
@@ -108,11 +118,16 @@ export class DocumentationSystem {
       format?: 'markdown' | 'html' | 'json';
       includePrivate?: boolean;
       includeTests?: boolean;
+      sourceDir?: string;
     } = {}
   ): Promise<DocumentationResult[]> {
     const outputDir = options.outputDir || './docs';
     const format = options.format || 'markdown';
     const ext = format === 'markdown' ? 'md' : format === 'html' ? 'html' : 'json';
+
+    // Discover source files from sourceDir
+    const sourceDir = options.sourceDir || './src';
+    const sourceFiles = await this.generator.discoverSourceFiles(sourceDir);
 
     const results = await Promise.all([
       this.generateAPIDocumentation({
@@ -120,18 +135,25 @@ export class DocumentationSystem {
         format,
         includePrivate: options.includePrivate ?? false,
         includeTests: options.includeTests ?? false,
+        sourceFiles,
+        sourceDir,
       }),
       this.generateArchitectureDocumentation({
         outputPath: `${outputDir}/architecture.${ext}`,
         format,
+        sourceFiles,
+        sourceDir,
       }),
       this.generatePatternDocumentation({
         outputPath: `${outputDir}/patterns.${ext}`,
         format,
+        sourceDir,
       }),
       this.generateUsageDocumentation({
         outputPath: `${outputDir}/usage.${ext}`,
         format,
+        sourceFiles,
+        sourceDir,
       }),
     ]);
 
@@ -167,6 +189,7 @@ export class DocumentationSystem {
       format?: 'markdown' | 'html' | 'json';
       includePrivate?: boolean;
       includeTests?: boolean;
+      sourceDir?: string;
     } = {}
   ): Promise<void> {
     console.log('🚀 Generating comprehensive documentation...');

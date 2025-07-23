@@ -112,36 +112,43 @@ export class DocumentationGenerator {
 
     try {
       // Discover source files if not provided
-      const sourceFiles = validatedRequest.sourceFiles || (await this.discoverSourceFiles());
+      const sourceFiles = validatedRequest.sourceFiles || (await this.discoverSourceFiles(validatedRequest.sourceDir || './src'));
+
+      // Compute relative paths from sourceDir if provided
+      let relativeSourceFiles = sourceFiles;
+      if (validatedRequest.sourceDir) {
+        const { relative } = await import('node:path');
+        relativeSourceFiles = sourceFiles.map(f => relative(validatedRequest.sourceDir, f));
+      }
 
       // Generate documentation based on type
       let content: string;
       // Validate metadata using Zod schema
       const metadata = GeneratorMetadataSchema.parse({
         generatedAt: new Date().toISOString(),
-        sourceFiles,
+        sourceFiles: relativeSourceFiles,
         totalFunctions: 0,
         totalClasses: 0,
-        totalModules: sourceFiles.length,
+        totalModules: relativeSourceFiles.length,
         totalPatterns: 0,
         generationTime: 0,
       });
 
       switch (validatedRequest.type) {
         case 'api':
-          content = await this.generateAPIDocumentation(sourceFiles, validatedRequest);
+          content = await this.generateAPIDocumentation(relativeSourceFiles, validatedRequest);
           break;
         case 'architecture':
-          content = await this.generateArchitectureDocumentation(sourceFiles, validatedRequest);
+          content = await this.generateArchitectureDocumentation(relativeSourceFiles, validatedRequest);
           break;
         case 'patterns':
           content = await this.generatePatternDocumentation(validatedRequest);
           break;
         case 'usage':
-          content = await this.generateUsageDocumentation(sourceFiles, validatedRequest);
+          content = await this.generateUsageDocumentation(relativeSourceFiles, validatedRequest);
           break;
         case 'changelog':
-          content = await this.generateChangelogDocumentation(sourceFiles, validatedRequest);
+          content = await this.generateChangelogDocumentation(relativeSourceFiles, validatedRequest);
           break;
         default:
           throw new Error(`Unsupported documentation type: ${validatedRequest.type}`);
@@ -191,7 +198,9 @@ export class DocumentationGenerator {
 
     for (const filePath of sourceFiles) {
       try {
+        const repoRelativePath = filePath.replace(/\\/g, '/');
         const moduleDoc = await this.analyzer.analyzeFile(filePath);
+        moduleDoc.filePath = repoRelativePath;
         modules.push(moduleDoc);
       } catch (error) {
         console.warn(`Failed to analyze ${filePath}:`, error);
@@ -478,7 +487,7 @@ export class DocumentationGenerator {
   /**
    * Discover source files in the project
    */
-  private async discoverSourceFiles(): Promise<string[]> {
+  async discoverSourceFiles(sourceDir: string = './src'): Promise<string[]> {
     const { readdir, stat } = await import('node:fs/promises');
     const { join } = await import('node:path');
 
@@ -494,7 +503,7 @@ export class DocumentationGenerator {
 
           if (stats.isDirectory() && !entry.startsWith('.') && entry !== 'node_modules') {
             await scanDirectory(fullPath);
-          } else if (stats.isFile() && /\.(ts|js)$/.test(entry)) {
+          } else if (stats.isFile() && /\.(ts|js|cpp|cxx|cc|c\+\+|c|h|hpp|cu|cuh|py)$/.test(entry)) {
             files.push(fullPath);
           }
         }
@@ -503,7 +512,7 @@ export class DocumentationGenerator {
       }
     }
 
-    await scanDirectory('./src');
+    await scanDirectory(sourceDir);
     return files;
   }
 
@@ -516,20 +525,19 @@ export class DocumentationGenerator {
 
     for (const filePath of sourceFiles) {
       try {
+        const repoRelativePath = filePath.replace(/\\/g, '/');
         const moduleDoc = await this.analyzer.analyzeFile(filePath);
-
-        // Determine component type
         let type: 'actor' | 'utility' | 'type' | 'pattern' | 'config' = 'utility';
-        if (filePath.includes('/actors/')) type = 'actor';
-        else if (filePath.includes('/types')) type = 'type';
-        else if (filePath.includes('/patterns/')) type = 'pattern';
-        else if (filePath.includes('config')) type = 'config';
+        if (repoRelativePath.includes('actors')) type = 'actor';
+        else if (repoRelativePath.includes('types')) type = 'type';
+        else if (repoRelativePath.includes('patterns')) type = 'pattern';
+        else if (repoRelativePath.includes('config')) type = 'config';
 
         components.push({
           name: moduleDoc.name,
           type,
           description: moduleDoc.description || `${type} component`,
-          filePath,
+          filePath: repoRelativePath,
           dependencies: moduleDoc.dependencies,
           dependents: [], // Would need reverse dependency analysis
         });

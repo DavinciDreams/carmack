@@ -159,9 +159,10 @@ export const DocumentationRequestSchema = z.object({
   outputPath: z.string().optional(),
   includePrivate: z.boolean().default(false),
   includeTests: z.boolean().default(false),
-  includeExamples: z.boolean().default(true),
-  sourceFiles: z.array(z.string()).optional(), // If not provided, scan all files
-  templatePath: z.string().optional(),
+    includeExamples: z.boolean().default(true),
+    sourceFiles: z.array(z.string()).optional(), // If not provided, scan all files
+    sourceDir: z.string().optional(),
+    templatePath: z.string().optional(),
   options: z.record(z.any()).optional(),
 });
 

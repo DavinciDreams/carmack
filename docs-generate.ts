@@ -15,6 +15,7 @@ interface CLIOptions {
   includePrivate?: boolean;
   includeTests?: boolean;
   help?: boolean;
+  sourceDir?: string;
 }
 
 function parseArgs(args: string[]): CLIOptions {
@@ -39,6 +40,10 @@ function parseArgs(args: string[]): CLIOptions {
         }
         break;
       }
+      case '--source-dir':
+      case '-s':
+        options.sourceDir = args[++i];
+        break;
       case '--include-private':
         options.includePrivate = true;
         break;
@@ -73,6 +78,7 @@ OPTIONS:
   -f, --format <format>      Output format: markdown, html, json (default: markdown)
   --include-private          Include private/internal functions and classes
   --include-tests           Include test files in analysis
+  -s, --source-dir <dir>    Source directory to analyze (default: ./src)
   -h, --help                Show this help message
 
 EXAMPLES:
@@ -136,6 +142,7 @@ async function main() {
       format: options.format || 'markdown',
       includePrivate: options.includePrivate || false,
       includeTests: options.includeTests || false,
+      sourceDir: options.sourceDir || './src',
     });
 
     const duration = Date.now() - startTime;
