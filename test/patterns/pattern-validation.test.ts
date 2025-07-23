@@ -485,7 +485,7 @@ describe('Pattern Validation System', () => {
       const invalidPattern = {
         // Missing required fields
         id: '',
-        language: '',
+        language: 'typescript' as const,
         pattern: '',
         replacement: '',
         description: '',
@@ -875,6 +875,154 @@ describe('Pattern Validation System', () => {
       }
 
       console.log('   ✅ Common transformation patterns validated');
+    });
+
+    test('should validate C++ modernization patterns', async () => {
+      console.log('🔬 Testing validation of C++ modernization patterns');
+
+      const cppPatterns = [
+        MockDataGenerator.createAstPattern({
+          id: 'cpp-nullptr-conversion',
+          language: 'cpp',
+          pattern: 'NULL',
+          replacement: 'nullptr',
+          description: 'Convert NULL to nullptr for type safety',
+          mode: 'template',
+          riskLevel: 'low',
+        }),
+        MockDataGenerator.createAstPattern({
+          id: 'cpp-constexpr-const',
+          language: 'cpp',
+          pattern: 'static const ',
+          replacement: 'static constexpr ',
+          description: 'Use constexpr instead of const for compile-time constants',
+          mode: 'template',
+          riskLevel: 'low',
+        }),
+        MockDataGenerator.createAstPattern({
+          id: 'cpp-modern-cast',
+          language: 'cpp',
+          pattern: '\\((\\w+)\\)\\s*(\\w+)',
+          replacement: 'static_cast<$1>($2)',
+          description: 'Use static_cast instead of C-style casts for type safety',
+          mode: 'template',
+          riskLevel: 'medium',
+        }),
+        MockDataGenerator.createAstPattern({
+          id: 'cpp-include-iostream',
+          language: 'cpp',
+          pattern: '#include <iostream\\.h>',
+          replacement: '#include <iostream>',
+          description: 'Use modern iostream header without .h extension',
+          mode: 'template',
+          riskLevel: 'low',
+        }),
+        MockDataGenerator.createAstPattern({
+          id: 'cpp-std-namespace',
+          language: 'cpp',
+          pattern: 'using namespace std;',
+          replacement: '// Avoid \'using namespace std;\' - use specific declarations instead',
+          description: 'Discourage global std namespace usage for better code hygiene',
+          mode: 'template',
+          riskLevel: 'medium',
+        }),
+        MockDataGenerator.createAstPattern({
+          id: 'cpp-double-include-fix',
+          language: 'cpp',
+          pattern: '#include "(.+)"\\n#include "\\1"',
+          replacement: '#include "$1"',
+          description: 'Remove duplicate include statements',
+          mode: 'template',
+          riskLevel: 'low',
+        }),
+      ];
+
+      for (const pattern of cppPatterns) {
+        const result = await validator.validatePattern(pattern);
+
+        expect(result).toBeDefined();
+        expect(typeof result.isValid).toBe('boolean');
+        expect(Array.isArray(result.errors)).toBe(true);
+        expect(Array.isArray(result.warnings)).toBe(true);
+        expect(['low', 'medium', 'high'].includes(result.riskLevel)).toBe(true);
+
+        // C++ patterns should be valid
+        expect(result.isValid).toBe(true);
+        expect(result.errors.length).toBe(0);
+
+        console.log(`   🔧 C++ Pattern: ${pattern.id}`);
+        console.log(`     Language: ${pattern.language}`);
+        console.log(`     Valid: ${result.isValid}`);
+        console.log(`     Risk: ${result.riskLevel}`);
+        console.log(`     Errors: ${result.errors.length}`);
+        console.log(`     Warnings: ${result.warnings.length}`);
+      }
+
+      console.log('   ✅ C++ modernization patterns validated');
+    });
+
+    test('should validate C++ pattern categories and safety', async () => {
+      console.log('🔬 Testing C++ pattern categories and safety assessment');
+
+      const safetyPatterns = [
+        {
+          pattern: MockDataGenerator.createAstPattern({
+            id: 'cpp-nullptr-safety',
+            language: 'cpp',
+            pattern: 'NULL',
+            replacement: 'nullptr',
+            description: 'Type-safe null pointer conversion',
+            mode: 'template',
+            riskLevel: 'low',
+          }),
+          expectedSafety: true,
+          category: 'safety',
+        },
+        {
+          pattern: MockDataGenerator.createAstPattern({
+            id: 'cpp-performance-constexpr',
+            language: 'cpp',
+            pattern: 'static const int',
+            replacement: 'static constexpr int',
+            description: 'Compile-time optimization',
+            mode: 'template',
+            riskLevel: 'low',
+          }),
+          expectedSafety: true,
+          category: 'performance',
+        },
+        {
+          pattern: MockDataGenerator.createAstPattern({
+            id: 'cpp-hygiene-namespace',
+            language: 'cpp',
+            pattern: 'using namespace std;',
+            replacement: '// Use specific std:: declarations',
+            description: 'Namespace pollution prevention',
+            mode: 'template',
+            riskLevel: 'medium',
+          }),
+          expectedSafety: false, // Semantic change
+          category: 'hygiene',
+        },
+      ];
+
+      for (const testCase of safetyPatterns) {
+        const result = await validator.validatePattern(testCase.pattern);
+
+        expect(result.isValid).toBe(true);
+        
+        if (testCase.expectedSafety) {
+          expect(result.safety.preservesSemantics).toBe(true);
+          expect(result.safety.breakingChanges.length).toBe(0);
+        }
+
+        console.log(`   🛡️ ${testCase.category.toUpperCase()} Pattern: ${testCase.pattern.id}`);
+        console.log(`     Preserves semantics: ${result.safety.preservesSemantics}`);
+        console.log(`     Breaking changes: ${result.safety.breakingChanges.length}`);
+        console.log(`     Side effects: ${result.safety.sideEffects.length}`);
+      }
+
+      console.log('   ✅ C++ pattern safety assessment completed');
     });
 
     test('should provide comprehensive validation reports', async () => {
