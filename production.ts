@@ -390,11 +390,34 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
 
   // Wait for completion
   return new Promise<void>((resolve, reject) => {
-    // Load transformation patterns from patterns.json
-    import('./patterns.json')
-      .then((patternsModule) => {
-        const patterns = patternsModule.default?.patterns || [];
-        console.log(`📋 Loaded ${patterns.length} transformation patterns for production`);
+    // Load and filter transformation patterns using language-aware filtering
+    Promise.all([
+      import('./src/utils/index.ts').then(m => m.loadAllPatterns('./patterns.json', './src/patterns/enhanced-templates.json')),
+      import('./src/utils/pattern-filtering.ts')
+    ])
+      .then(([allPatterns, filteringModule]) => {
+        const { filterPatternsByLanguageAndMode } = filteringModule;
+        
+        console.log(`📋 Loaded ${allPatterns.length} total transformation patterns`);
+        
+        // Apply language-aware pattern filtering
+        const filterResult = filterPatternsByLanguageAndMode(
+          allPatterns,
+          eligibleFiles,
+          'template',
+          {
+            maxComplexity: config.transformation.maxComplexityThreshold,
+            allowedRiskLevels: [config.transformation.riskLevelFilter],
+            strictLanguageMatching: true
+          }
+        );
+        
+        console.log(`🎯 Filtered to ${filterResult.filteredCount}/${filterResult.totalPatterns} patterns for target languages: ${filterResult.filterCriteria.targetLanguages.join(', ')}`);
+        
+        if (filterResult.warnings.length > 0) {
+          console.log('⚠️  Pattern filtering warnings:');
+          filterResult.warnings.forEach(warning => console.log(`   - ${warning}`));
+        }
 
         transformationActor.subscribe((state) => {
           if (state.matches('succeeded')) {
@@ -409,11 +432,11 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
           }
         });
 
-        // Send start event with discovered files
+        // Send start event with language-filtered patterns
         const transformationRequest: TransformationRequest = validateTransformationRequest({
           targetFiles: eligibleFiles,
           transformationType: 'template' as const, // Start with template, will be dynamically upgraded
-          patterns: patterns,
+          patterns: filterResult.filteredPatterns,
           maxComplexity: config.transformation.maxComplexityThreshold,
           dryRun: args['dry-run'] || config.transformation.dryRunFirst,
         });
@@ -426,7 +449,7 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
         transformationActor.send(startEvent);
       })
       .catch((error) => {
-        console.warn('Failed to load patterns, using empty array:', error);
+        console.warn('Failed to load and filter patterns, using empty array:', error);
 
         const fallbackRequest: TransformationRequest = validateTransformationRequest({
           targetFiles: eligibleFiles,
