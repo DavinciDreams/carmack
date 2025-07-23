@@ -710,7 +710,23 @@ const _carmackCoderMachine = setup({
           target: 'generatingSummary',
           actions: assign(({ context, event }) => ({
             ...context,
-            patterns: [...context.patterns, ...(event.output.newPatterns || [])],
+            patterns: [
+              ...context.patterns,
+              ...(event.output.newPatterns || []).filter(
+                (p: any): p is AstPattern =>
+                  typeof p.id === 'string' &&
+                  (p.language === 'typescript' ||
+                    p.language === 'javascript' ||
+                    p.language === 'cpp' ||
+                    p.language === 'c') &&
+                  typeof p.pattern === 'string' &&
+                  typeof p.replacement === 'string' &&
+                  typeof p.description === 'string' &&
+                  typeof p.complexity === 'number' &&
+                  (p.riskLevel === 'low' || p.riskLevel === 'medium' || p.riskLevel === 'high') &&
+                  typeof p.mode === 'string'
+              ),
+            ],
           })),
         },
         onError: {

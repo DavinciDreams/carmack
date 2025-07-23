@@ -893,7 +893,7 @@ async function validateQuality(files: string[]): Promise<ValidationResult> {
   const warnings: ErrorInfo[] = [];
   let fixableIssues = 0;
 
-  try {
+  try
     // Process files with ESLint directly using the lint function
     for (const filePath of files) {
       try {
@@ -902,6 +902,7 @@ async function validateQuality(files: string[]): Promise<ValidationResult> {
           errors.push(...result.errors);
           warnings.push(...result.warnings);
           fixableIssues += result.fixableIssues;
+
         }
       } catch (error) {
         console.warn(`ESLint failed or timed out for ${filePath}:`, error);

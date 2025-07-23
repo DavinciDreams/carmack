@@ -1,5 +1,6 @@
 import { mkdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { js, ts } from '@ast-grep/napi';
 import { createActor, fromPromise } from 'xstate';
 import { z } from 'zod';
 import type {
@@ -82,7 +83,41 @@ const EnhancedOrchestratorRequestSchema = z.object({
     })
     .optional(),
   config: z
-    .object({
+
+import { BUILTIN_CPP_PATTERNS, cppTransformationActor } from './cpp-transformation.js';
+
+// Enhanced pattern schema with full AST-grep support
+const EnhancedPatternSchema = z.object({
+  id: z.string(),
+  language: z.enum(['typescript', 'javascript', 'cpp', 'c']),
+  mode: z.enum(['template', 'ast']).default('template'),
+  pattern: z.union([
+    z.string(), // Template pattern
+    z.object({
+      // AST pattern
+      rule: z.object({
+        pattern: z.string(),
+        kind: z.string().optional(),
+        inside: z
+          .object({
+            pattern: z.string(),
+            kind: z.string().optional(),
+          })
+          .optional(),
+        has: z
+          .object({
+            pattern: z.string(),
+            kind: z.string().optional(),
+          })
+          .optional(),
+      }),
+    }),
+  ]),
+  replacement: z.string(),
+  description: z.string(),
+  complexity: z.number().min(1).max(10),
+  riskLevel: z.enum(['low', 'medium', 'high']),
+  astGrep: z.object({
       enableContextAwareness: z.boolean().default(true),
       enableMultiFileAnalysis: z.boolean().default(true),
       enableCaching: z.boolean().default(true),
@@ -190,6 +225,82 @@ export const enhancedTransformationOrchestratorActor = fromPromise(
       return result;
     } catch (error) {
       console.error(`❌ Enhanced Orchestrator failed: ${transformationId}`, error);
+
+      // Handle C++ files with specialized transformation
+      const cppFiles = validated.targetFiles.filter(
+        (file) =>
+          file.endsWith('.cpp') ||
+          file.endsWith('.cxx') ||
+          file.endsWith('.cc') ||
+          file.endsWith('.c++') ||
+          file.endsWith('.hpp') ||
+          file.endsWith('.hxx') ||
+          file.endsWith('.h++') ||
+          file.endsWith('.h')
+      );
+
+      if (cppFiles.length > 0) {
+        console.log(`🔧 Applying specialized C++ transformations to ${cppFiles.length} files`);
+
+        // Convert patterns to C++ format and apply C++ transformations
+        const cppPatterns = BUILTIN_CPP_PATTERNS.filter(
+          (p) => p.complexity <= validated.maxComplexity
+        );
+
+        const cppRequest = {
+          targetFiles: cppFiles,
+          patterns: cppPatterns,
+          options: {
+            dryRun: validated.dryRun,
+            maxComplexity: validated.maxComplexity,
+            enableBatching: true,
+            skipConflicts: true,
+            preserveFormatting: true,
+            enableVerification: true,
+            maxMatchesPerPattern: 1000,
+          },
+        };
+
+        try {
+          const cppActor = createActor(cppTransformationActor, { input: cppRequest });
+          cppActor.start();
+          const cppResult = await new Promise((resolve, reject) => {
+            const subscription = cppActor.subscribe((state) => {
+              if (state.status === 'done') {
+                subscription.unsubscribe();
+                cppActor.stop();
+                resolve(state.output);
+              } else if (state.status === 'error') {
+                subscription.unsubscribe();
+                cppActor.stop();
+                reject(state.error);
+              }
+            });
+          });
+
+          // Merge C++ results with main results
+          if (typeof result === 'object' && result !== null) {
+            const mainResult = result as any;
+            const cppResultTyped = cppResult as any;
+            mainResult.filesModified = [
+              ...(mainResult.filesModified || []),
+              ...(cppResultTyped.filesModified || []),
+            ];
+            mainResult.transformationsApplied =
+              (mainResult.transformationsApplied || 0) +
+              (cppResultTyped.transformationsApplied || 0);
+            mainResult.appliedPatterns = [
+              ...(mainResult.appliedPatterns || []),
+              ...(cppResultTyped.appliedPatterns || []),
+            ];
+            mainResult.cppVerificationResults = cppResultTyped.verificationResults;
+            mainResult.cppPerformanceMetrics = cppResultTyped.performanceMetrics;
+          }
+        } catch (cppError) {
+          console.error('C++ transformation error:', cppError);
+          // Continue with main transformation even if C++ fails
+        }
+      }
 
       return {
         success: false,

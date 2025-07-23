@@ -257,8 +257,9 @@ async function main(): Promise<void> {
       console.log('\n✅ All TypeScript errors resolved successfully!');
       process.exit(0);
     }
-  } catch (error: any) {
-    console.error('\n❌ Pre-commit TypeScript check failed:', error.message);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('\n❌ Pre-commit TypeScript check failed:', errorMessage);
     console.error('🔧 Try running: bun run type-check');
     process.exit(1);
   }
