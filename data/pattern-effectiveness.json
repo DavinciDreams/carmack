@@ -1,4 +1,64 @@
 {
+  "llm-complex-refactoring": {
+    "patternId": "llm-complex-refactoring",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753228202558,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "llm-architectural-improvement": {
+    "patternId": "llm-architectural-improvement",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753228202558,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "llm-code-documentation": {
+    "patternId": "llm-code-documentation",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753228202558,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "llm-error-handling-improvement": {
+    "patternId": "llm-error-handling-improvement",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753228202558,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
+  "llm-performance-optimization": {
+    "patternId": "llm-performance-optimization",
+    "successRate": 0,
+    "averagePerformance": 0,
+    "complexityReduction": 0,
+    "errorRate": 0.1,
+    "userSatisfaction": 5,
+    "applicabilityScore": 0.5,
+    "lastUpdated": 1753228202558,
+    "usageCount": 1,
+    "lifecycle": "experimental"
+  },
   "smart-var-to-const-let": {
     "patternId": "smart-var-to-const-let",
     "successRate": 0,
