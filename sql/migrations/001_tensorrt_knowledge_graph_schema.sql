@@ -168,51 +168,6 @@ CREATE TABLE IF NOT EXISTS intermediates (
 -- HISTORICAL CODE ANALYSIS TABLES
 -- =============================================================================
 
--- Commits table for git commit metadata with author, date, message, diff
-CREATE TABLE IF NOT EXISTS commits (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    commit_hash VARCHAR(40) UNIQUE NOT NULL,
-    repository_url TEXT NOT NULL,
-    
-    -- Commit metadata
-    author_name VARCHAR(255) NOT NULL,
-    author_email VARCHAR(255) NOT NULL,
-    committer_name VARCHAR(255),
-    committer_email VARCHAR(255),
-    commit_date TIMESTAMP WITH TIME ZONE NOT NULL,
-    
-    -- Commit content
-    message TEXT NOT NULL,
-    message_subject VARCHAR(500),
-    message_body TEXT,
-    
-    -- Diff information
-    diff_text TEXT,
-    files_changed INTEGER DEFAULT 0,
-    lines_added INTEGER DEFAULT 0,
-    lines_deleted INTEGER DEFAULT 0,
-    
-    -- Relationships
-    parent_hashes VARCHAR(40)[],
-    branch_name VARCHAR(255),
-    tag_names VARCHAR(255)[],
-    
-    -- Optional PR link
-    pr_id UUID REFERENCES prs(id),
-    
-    -- Analysis results
-    complexity_delta FLOAT DEFAULT 0,
-    risk_score FLOAT DEFAULT 0 CHECK (risk_score >= 0 AND risk_score <= 1),
-    impact_score FLOAT DEFAULT 0 CHECK (impact_score >= 0 AND impact_score <= 1),
-    
-    -- Metadata
-    metadata JSONB DEFAULT '{}',
-    
-    -- Audit fields
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
 -- PRs table for GitHub PR information with state, creation/merge dates
 CREATE TABLE IF NOT EXISTS prs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -268,6 +223,51 @@ CREATE TABLE IF NOT EXISTS prs (
     
     -- Constraints
     CONSTRAINT unique_pr_per_repo UNIQUE (repository_url, pr_number)
+);
+
+-- Commits table for git commit metadata with author, date, message, diff
+CREATE TABLE IF NOT EXISTS commits (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    commit_hash VARCHAR(40) UNIQUE NOT NULL,
+    repository_url TEXT NOT NULL,
+    
+    -- Commit metadata
+    author_name VARCHAR(255) NOT NULL,
+    author_email VARCHAR(255) NOT NULL,
+    committer_name VARCHAR(255),
+    committer_email VARCHAR(255),
+    commit_date TIMESTAMP WITH TIME ZONE NOT NULL,
+    
+    -- Commit content
+    message TEXT NOT NULL,
+    message_subject VARCHAR(500),
+    message_body TEXT,
+    
+    -- Diff information
+    diff_text TEXT,
+    files_changed INTEGER DEFAULT 0,
+    lines_added INTEGER DEFAULT 0,
+    lines_deleted INTEGER DEFAULT 0,
+    
+    -- Relationships
+    parent_hashes VARCHAR(40)[],
+    branch_name VARCHAR(255),
+    tag_names VARCHAR(255)[],
+    
+    -- Optional PR link (now properly referenced after prs table creation)
+    pr_id UUID REFERENCES prs(id),
+    
+    -- Analysis results
+    complexity_delta FLOAT DEFAULT 0,
+    risk_score FLOAT DEFAULT 0 CHECK (risk_score >= 0 AND risk_score <= 1),
+    impact_score FLOAT DEFAULT 0 CHECK (impact_score >= 0 AND impact_score <= 1),
+    
+    -- Metadata
+    metadata JSONB DEFAULT '{}',
+    
+    -- Audit fields
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- CST nodes table for Concrete Syntax Tree structures from ast-grep
@@ -502,6 +502,70 @@ INSERT INTO schema_migrations (version, description) VALUES
 ON CONFLICT (version) DO NOTHING;
 
 -- =============================================================================
+-- ORIGINAL DEMO COMPATIBILITY TABLES
+-- =============================================================================
+
+-- Knowledge patterns table for pattern discovery and learning
+CREATE TABLE IF NOT EXISTS knowledge_patterns (
+    id VARCHAR(255) PRIMARY KEY,
+    name VARCHAR(500) NOT NULL,
+    description TEXT,
+    category VARCHAR(100) NOT NULL DEFAULT 'general',
+    language VARCHAR(50) NOT NULL,
+    pattern TEXT NOT NULL,
+    examples JSONB DEFAULT '[]',
+    frequency INTEGER DEFAULT 1,
+    confidence FLOAT DEFAULT 0.5 CHECK (confidence >= 0 AND confidence <= 1),
+    domain VARCHAR(100),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Repositories table for tracking analyzed repositories
+CREATE TABLE IF NOT EXISTS repositories (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    repository_path TEXT UNIQUE NOT NULL,
+    name VARCHAR(500) NOT NULL,
+    description TEXT,
+    languages JSONB DEFAULT '[]',
+    total_files INTEGER DEFAULT 0,
+    total_entities INTEGER DEFAULT 0,
+    domains JSONB DEFAULT '[]',
+    analysis_version VARCHAR(50) DEFAULT '1.0.0',
+    last_analyzed TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    metadata JSONB DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Entity embeddings table (legacy compatibility - embeddings are stored in artifacts.embedding)
+CREATE TABLE IF NOT EXISTS entity_embeddings (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    entity_id UUID NOT NULL REFERENCES artifacts(id) ON DELETE CASCADE,
+    embedding vector(384) NOT NULL,
+    model VARCHAR(255) DEFAULT 'text-embedding-3-small',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    
+    CONSTRAINT unique_entity_embedding UNIQUE (entity_id)
+);
+
+-- Add triggers for repositories table
+CREATE TRIGGER update_repositories_updated_at
+    BEFORE UPDATE ON repositories
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_knowledge_patterns_updated_at
+    BEFORE UPDATE ON knowledge_patterns
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Add indices for compatibility tables
+CREATE INDEX IF NOT EXISTS idx_knowledge_patterns_language ON knowledge_patterns(language);
+CREATE INDEX IF NOT EXISTS idx_knowledge_patterns_domain ON knowledge_patterns(domain);
+CREATE INDEX IF NOT EXISTS idx_knowledge_patterns_confidence ON knowledge_patterns(confidence DESC);
+CREATE INDEX IF NOT EXISTS idx_repositories_path ON repositories(repository_path);
+CREATE INDEX IF NOT EXISTS idx_entity_embeddings_entity_id ON entity_embeddings(entity_id);
+
+-- =============================================================================
 -- COMPLETION MESSAGE
 -- =============================================================================
 
@@ -511,8 +575,9 @@ BEGIN
     RAISE NOTICE 'Schema version: 2.0.0';
     RAISE NOTICE 'pgvector extension: enabled with 384-dimensional embeddings';
     RAISE NOTICE 'Tables created: % tables', (
-        SELECT COUNT(*) FROM information_schema.tables 
+        SELECT COUNT(*) FROM information_schema.tables
         WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
     );
+    RAISE NOTICE 'Enhanced schema includes compatibility tables for original demo';
     RAISE NOTICE 'Ready for knowledge graph ingestion and semantic search';
 END $$;

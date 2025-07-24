@@ -532,10 +532,10 @@ export class OracleQueryProcessor {
     if (entityIds.length === 0) return [];
 
     const placeholders = entityIds.map((_, i) => `$${i + 1}`).join(',');
-    const sql = `SELECT * FROM code_entities WHERE id IN (${placeholders})`;
+    const sql = `SELECT * FROM artifacts WHERE id IN (${placeholders})`;
     
     const result = await this.indexer['dbClient'].query(sql, entityIds);
-    return result.rows.map((row: any) => this.indexer['rowToCodeEntity'](row));
+    return result.rows.map((row: any) => this.indexer['rowToArtifact'](row));
   }
 
   private async findRelatedPatterns(
