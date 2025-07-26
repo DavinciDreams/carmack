@@ -2,17 +2,18 @@ import { readFile } from 'node:fs/promises';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
 
-import type { ComplexityMetrics } from '../types.js';
+import { ComplexityMetricsSchema } from '../types.ts';
+import type { ComplexityMetrics } from '../types.ts';
 
 // Complexity input schema
 const ComplexityInputSchema = z.union([
   z.object({
     files: z.array(z.string()),
-    metrics: z.any().optional(), // ComplexityMetrics schema
+    metrics: ComplexityMetricsSchema.optional(),
   }),
   z.object({
     files: z.array(z.string()),
-    baseline: z.any().optional(), // ComplexityMetrics schema
+    baseline: ComplexityMetricsSchema.optional(),
   }),
 ]);
 type ComplexityInput = z.infer<typeof ComplexityInputSchema>;
