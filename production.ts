@@ -321,14 +321,16 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
   const repoDir = join(workspaceDir, 'repository');
 
   // Clone/update repository
-  if (config.repository.url) {
-    await cloneRepository(
-      config.repository.url,
-      args.branch || config.repository.branch,
-      workspaceDir
-    );
-    await validateRepository(repoDir, config);
-  }
+  // PATCH: Disable auto-clone of Carmack repo at startup for all services.
+  // if (config.repository.url) {
+  //   await cloneRepository(
+  //     config.repository.url,
+  //     args.branch || config.repository.branch,
+  //     workspaceDir
+  //   );
+  //   await validateRepository(repoDir, config);
+  // }
+  // Only clone when explicitly requested by repository manager or via CLI.
 
   // Discover eligible files for transformation
   console.log('🔍 Discovering eligible files...');
