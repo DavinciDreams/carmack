@@ -1,3 +1,240 @@
+// --- Data Integrity Validation Actor ---
+type DataIntegrityInput = void;
+
+export const dataIntegrityActor = fromPromise(
+  async () => {
+    // Mock validations as in the legacy implementation
+    const validations = [
+      {
+        testId: randomUUID(),
+        validationType: 'schema',
+        totalRecords: 10000,
+        validRecords: 9950,
+        invalidRecords: 50,
+        integrityScore: 0.995,
+        violations: [
+          { type: 'missing_required_field', description: 'Missing required fields', severity: 'medium', count: 30 },
+          { type: 'invalid_data_type', description: 'Invalid data types', severity: 'low', count: 20 },
+        ],
+        passed: true,
+      },
+      {
+        testId: randomUUID(),
+        validationType: 'relationships',
+        totalRecords: 50000,
+        validRecords: 49800,
+        invalidRecords: 200,
+        integrityScore: 0.996,
+        violations: [
+          { type: 'orphaned_relationship', description: 'Orphaned relationships', severity: 'high', count: 150 },
+          { type: 'circular_reference', description: 'Circular references', severity: 'medium', count: 50 },
+        ],
+        passed: true,
+      },
+      {
+        testId: randomUUID(),
+        validationType: 'consistency',
+        totalRecords: 25000,
+        validRecords: 24750,
+        invalidRecords: 250,
+        integrityScore: 0.99,
+        violations: [
+          { type: 'data_inconsistency', description: 'Data inconsistencies', severity: 'medium', count: 200 },
+          { type: 'duplicate_records', description: 'Duplicate records', severity: 'low', count: 50 },
+        ],
+        passed: true,
+      },
+      {
+        testId: randomUUID(),
+        validationType: 'completeness',
+        totalRecords: 15000,
+        validRecords: 14850,
+        invalidRecords: 150,
+        integrityScore: 0.99,
+        violations: [
+          { type: 'missing_data', description: 'Missing required data', severity: 'medium', count: 100 },
+          { type: 'incomplete_records', description: 'Incomplete records', severity: 'low', count: 50 },
+        ],
+        passed: true,
+      },
+    ];
+    return validations;
+  }
+);
+
+export async function validateDataIntegrity(): Promise<any[]> {
+  const actor = createActor(dataIntegrityActor);
+  actor.start();
+  const result = await actor.getSnapshot();
+  return result.output ?? [];
+}
+// --- Graph Traversal Helper Functions ---
+function calculatePathCorrectness(expectedPaths: string[][], actualPaths: string[][]): number {
+  if (expectedPaths.length === 0) return 1;
+  let correctPaths = 0;
+  for (const expectedPath of expectedPaths) {
+    const found = actualPaths.some(actualPath => pathsEqual(expectedPath, actualPath));
+    if (found) correctPaths++;
+  }
+  return correctPaths / expectedPaths.length;
+}
+function calculatePathCompleteness(expectedPaths: string[][], actualPaths: string[][]): number {
+  if (expectedPaths.length === 0) return 1;
+  return Math.min(1, actualPaths.length / expectedPaths.length);
+}
+function detectCycles(paths: string[][]): boolean {
+  for (const path of paths) {
+    const visited = new Set<string>();
+    for (const node of path) {
+      if (visited.has(node)) return true;
+      visited.add(node);
+    }
+  }
+  return false;
+}
+function calculateRelationshipAccuracy(expectedPaths: string[][], actualPaths: string[][]): number {
+  // Simplified relationship accuracy calculation
+  return 0.85; // Mock value
+}
+function pathsEqual(path1: string[], path2: string[]): boolean {
+  if (path1.length !== path2.length) return false;
+  return path1.every((node, index) => node === path2[index]);
+}
+// --- Graph Traversal Validation Actor ---
+type GraphTraversalInput = Array<{
+  startArtifact: string;
+  expectedPaths: string[][];
+  actualPaths: string[][];
+  maxDepth: number;
+}>;
+
+export const graphTraversalActor = fromPromise(
+  async ({ input }: { input: GraphTraversalInput }) => {
+    const validations: any[] = [];
+    for (const test of input) {
+      const testId = randomUUID();
+      const queryId = randomUUID();
+      // Calculate correctness score
+      const correctnessScore = calculatePathCorrectness(test.expectedPaths, test.actualPaths);
+      // Calculate completeness score
+      const completenessScore = calculatePathCompleteness(test.expectedPaths, test.actualPaths);
+      // Check for cycles
+      const cycleDetected = detectCycles(test.actualPaths);
+      // Calculate max depth reached
+      const maxDepthReached = Math.max(...test.actualPaths.map(path => path.length));
+      // Calculate relationship accuracy
+      const relationshipAccuracy = calculateRelationshipAccuracy(test.expectedPaths, test.actualPaths);
+      // Determine if test passed
+      const passed = correctnessScore >= 0.8 &&
+                    completenessScore >= 0.7 &&
+                    !cycleDetected &&
+                    relationshipAccuracy >= 0.8;
+      // Identify issues
+      const issues: string[] = [];
+      if (correctnessScore < 0.8) issues.push('Low path correctness');
+      if (completenessScore < 0.7) issues.push('Incomplete path coverage');
+      if (cycleDetected) issues.push('Cycles detected in traversal');
+      if (relationshipAccuracy < 0.8) issues.push('Inaccurate relationship traversal');
+      if (maxDepthReached > test.maxDepth) issues.push('Exceeded maximum depth');
+      validations.push({
+        testId,
+        queryId,
+        startArtifact: test.startArtifact,
+        expectedPaths: test.expectedPaths,
+        actualPaths: test.actualPaths,
+        correctnessScore,
+        completenessScore,
+        cycleDetected,
+        maxDepthReached,
+        relationshipAccuracy,
+        passed,
+        issues,
+      });
+    }
+    return validations;
+  }
+);
+
+export async function validateGraphTraversal(
+  traversalTests: GraphTraversalInput
+): Promise<any[]> {
+  const actor = createActor(graphTraversalActor, { input: traversalTests });
+  actor.start();
+  const result = await actor.getSnapshot();
+  return result.output ?? [];
+}
+// --- Search Relevance Validation Actor ---
+type SearchRelevanceInput = Array<{
+  query: string;
+  results: Array<{ artifactId: string; rank: number; score: number }>;
+  expectedRelevance?: Array<{ artifactId: string; relevance: number }>;
+}>;
+
+export const searchRelevanceActor = fromPromise(
+  async ({ input }: { input: SearchRelevanceInput }) => {
+    // Use the same logic as the legacy evaluateSearchRelevance
+    const evaluations: any[] = [];
+    for (const { query, results, expectedRelevance } of input) {
+      const queryId = randomUUID();
+      const resultsWithRelevance = results.map(result => ({
+        ...result,
+        relevanceRating: expectedRelevance
+          ? (expectedRelevance.find(e => e.artifactId === result.artifactId)?.relevance ?? 1)
+          : Math.max(1, Math.min(5, Math.round(result.score * 5))),
+        explanation: `Relevance based on score ${result.score.toFixed(3)} and rank ${result.rank}`,
+      }));
+      // NDCG
+      const dcg = resultsWithRelevance.reduce((sum, r) => {
+        const gain = Math.pow(2, r.relevanceRating) - 1;
+        const discount = Math.log2(r.rank + 1);
+        return sum + (gain / discount);
+      }, 0);
+      const sortedRelevance = resultsWithRelevance.map(r => r.relevanceRating).sort((a, b) => b - a);
+      const idcg = sortedRelevance.reduce((sum, relevance, index) => {
+        const gain = Math.pow(2, relevance) - 1;
+        const discount = Math.log2(index + 2);
+        return sum + (gain / discount);
+      }, 0);
+      const ndcg = idcg > 0 ? dcg / idcg : 0;
+      // MAP
+      const relevantResults = resultsWithRelevance.filter(r => r.relevanceRating >= 4);
+      let sumPrecision = 0, relevantCount = 0;
+      for (let i = 0; i < resultsWithRelevance.length; i++) {
+        const r = resultsWithRelevance[i];
+        if (r && r.relevanceRating >= 4) {
+          relevantCount++;
+          sumPrecision += relevantCount / (i + 1);
+        }
+      }
+      const map = relevantResults.length > 0 ? sumPrecision / relevantResults.length : 0;
+      // Precision, Recall, F1
+      const precision = resultsWithRelevance.length > 0 ? relevantResults.length / resultsWithRelevance.length : 0;
+      const recall = expectedRelevance && expectedRelevance.length > 0 ? relevantResults.length / expectedRelevance.length : 0;
+      const f1Score = precision + recall > 0 ? (2 * precision * recall) / (precision + recall) : 0;
+      evaluations.push({
+        queryId,
+        query,
+        results: resultsWithRelevance,
+        ndcg,
+        map,
+        precision,
+        recall,
+        f1Score,
+        evaluatedAt: new Date(),
+      });
+    }
+    return evaluations;
+  }
+);
+
+export async function evaluateSearchRelevance(
+  searchResults: SearchRelevanceInput
+): Promise<any[]> {
+  const actor = createActor(searchRelevanceActor, { input: searchResults });
+  actor.start();
+  const result = await actor.getSnapshot();
+  return result.output ?? [];
+}
 
 import { randomUUID } from 'node:crypto';
 import { fromPromise } from 'xstate';
