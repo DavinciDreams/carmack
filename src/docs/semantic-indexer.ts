@@ -15,6 +15,7 @@ import {
   validateRepositoryAnalysis,
 } from './types.js';
 import { MultiLanguageAnalyzer } from './multi-language-analyzer.js';
+import { getDatabaseManager } from '../db/connection.js';
 
 // PostgreSQL connection configuration
 interface DatabaseConfig {
@@ -56,41 +57,26 @@ export class SemanticIndexer {
     this.embeddingConfig = embeddingConfig;
     this.analyzer = new MultiLanguageAnalyzer();
   }
-
-  /**
-   * Initialize database connection
-   */
-  async initialize(): Promise<void> {
-    try {
-      const { Client } = await import('pg');
-      this.dbClient = new Client({
-        host: this.dbConfig.host,
-        port: this.dbConfig.port,
-        database: this.dbConfig.database,
-        user: this.dbConfig.user,
-        password: this.dbConfig.password,
-      });
-
-      await this.dbClient.connect();
-      
-      // Set search path to our schema
-      await this.dbClient.query(`SET search_path TO ${this.dbConfig.schema}`);
-      
-      console.log('✅ Database connection established');
-    } catch (error) {
-      console.error('❌ Failed to connect to database:', error);
-      throw error;
-    }
+/**
+ * Initialize database connection
+ */
+async initialize(): Promise<void> {
+  try {
+    this.dbClient = getDatabaseManager();
+    console.log('✅ Database connection established');
+  } catch (error) {
+    console.error('❌ Failed to connect to database:', error);
+    throw error;
   }
+}
 
-  /**
-   * Close database connection
-   */
-  async close(): Promise<void> {
-    if (this.dbClient) {
-      await this.dbClient.end();
-      this.dbClient = null;
-    }
+/**
+ * Close database connection
+ */
+async close(): Promise<void> {
+  // Connection is managed centrally, no need to close here
+  this.dbClient = null;
+}
   }
 
   /**
