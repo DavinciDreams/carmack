@@ -12,7 +12,17 @@ import { z } from 'zod';
  * - Discovering new patterns from successful transformations
  * - Optimizing pattern parameters based on usage data
  */
-// Feedback data schema
+// AST-grep pattern metadata schema
+const ASTGrepPatternSchema = z.object({
+  id: z.string(),
+  description: z.string().optional(),
+  language: z.string(), // e.g., 'typescript', 'python', 'cpp', etc.
+  query: z.string(), // AST-grep query (YAML/JSON or string)
+  options: z.record(z.any()).optional(), // AST-grep options (optional)
+});
+export type ASTGrepPattern = z.infer<typeof ASTGrepPatternSchema>;
+
+// Feedback data schema (language-agnostic)
 const FeedbackDataSchema = z.object({
   patternId: z.string(),
   transformationId: z.string(),
@@ -26,12 +36,13 @@ const FeedbackDataSchema = z.object({
     fileType: z.string(),
     codeSize: z.number(),
     complexity: z.number(),
-    language: z.enum(['typescript', 'javascript']),
+    language: z.string(), // Accept any language
   }),
   timestamp: z.string(),
+  astGrepPattern: ASTGrepPatternSchema.optional(), // Link to AST-grep pattern metadata
 });
 export type FeedbackData = z.infer<typeof FeedbackDataSchema>;
-// Feedback loop request schema
+// Feedback loop request schema (language-agnostic, supports AST-grep)
 const FeedbackLoopRequestSchema = z.object({
   operation: z.enum(['collect', 'analyze', 'optimize', 'report']),
   // Feedback data for collection
@@ -56,10 +67,12 @@ const FeedbackLoopRequestSchema = z.object({
     })
     .optional()
     .default({}),
+  // AST-grep pattern(s) for transformation/analysis (optional)
+  astGrepPatterns: z.array(ASTGrepPatternSchema).optional(),
 });
 export type FeedbackLoopRequest = z.infer<typeof FeedbackLoopRequestSchema>;
 /**
- * Pattern performance metrics
+ * Pattern performance metrics (language-agnostic, AST-grep aware)
  */
 interface PatternMetrics {
   patternId: string;
@@ -79,6 +92,8 @@ interface PatternMetrics {
   };
   // Recent feedback
   recentFeedback: FeedbackData[];
+  // AST-grep pattern metadata (optional)
+  astGrepPattern?: ASTGrepPattern;
 }
 /**
  * Optimization parameters for different actions
@@ -133,15 +148,49 @@ interface OptimizationConfig {
   enableAutoRemoval: boolean;
 }
 /**
- * Feedback Loop Actor
+ * Feedback Loop Actor (language-agnostic, AST-grep aware)
  */
 export const feedbackLoopActor = fromPromise(async ({ input }: { input: FeedbackLoopRequest }) => {
   const validatedInput = FeedbackLoopRequestSchema.parse(input);
   console.log(`🔄 Starting feedback loop: ${validatedInput.operation}`);
+  // If AST-grep patterns are provided, validate and prepare them
+  if (validatedInput.astGrepPatterns && validatedInput.astGrepPatterns.length > 0) {
+    for (const pattern of validatedInput.astGrepPatterns) {
+      ASTGrepPatternSchema.parse(pattern);
+    }
+  }
   const result = await executeFeedbackLoop(validatedInput);
   console.log(`✨ Feedback loop completed: ${result.status}`);
   return result;
 });
+/**
+ * AST-grep pattern application stub (to be implemented with @ast-grep/napi)
+ * This function should apply an AST-grep query to code in any language.
+ */
+// import { AstGrep } from '@ast-grep/napi'; // Uncomment when dependency is available
+export async function applyASTGrepPattern({
+  code,
+  pattern,
+  language,
+  options,
+}: {
+  code: string;
+  pattern: string;
+  language: string;
+  options?: Record<string, unknown>;
+}): Promise<{ matches: any[] }> {
+  // Mark parameters as used to avoid TS lint error
+  void code;
+  void pattern;
+  void language;
+  void options;
+  // TODO: Integrate with @ast-grep/napi for real AST-based matching
+  // Example:
+  // const sg = new AstGrep({ language });
+  // const matches = sg.search(code, pattern, options);
+  // return { matches };
+  return { matches: [] }; // Stub: returns no matches
+}
 /**
  * Execute feedback loop operation
  */
