@@ -1,12 +1,12 @@
 import { createActor, fromPromise } from 'xstate';
 import { z } from 'zod';
 
-import { gitActor } from './actors/git.js';
-import { type LearningResult, patternLearningActor } from './actors/pattern-learning.js';
-import { carmackCoderMachine } from './machine.js';
-import { AstPatternSchema, TransformationRequestSchema } from './types.js';
+import { gitActor } from './actors/git.ts';
+import { type LearningResult, patternLearningActor } from './actors/pattern-learning.ts';
+import { carmackCoderMachine } from './machine.ts';
+import { AstPatternSchema, TransformationRequestSchema } from './types.ts';
 
-import type { AstPattern, TransformationRequest, TransformationResult } from './types.js';
+import type { AstPattern, TransformationRequest, TransformationResult } from './types.ts';
 
 // Repository management types and schemas
 export const RepositoryConfigSchema = z.object({
@@ -1119,4 +1119,4 @@ export const processRepository = async (
 
 export const validateRepositoryConfig = (data: unknown): RepositoryConfig => {
   return RepositoryConfigSchema.parse(data);
-};
+};
