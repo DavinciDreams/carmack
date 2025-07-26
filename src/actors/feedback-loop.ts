@@ -167,7 +167,7 @@ export const feedbackLoopActor = fromPromise(async ({ input }: { input: Feedback
  * AST-grep pattern application stub (to be implemented with @ast-grep/napi)
  * This function should apply an AST-grep query to code in any language.
  */
-// import { AstGrep } from '@ast-grep/napi'; // Uncomment when dependency is available
+import { parse, pattern as compilePattern, Lang } from '@ast-grep/napi';
 export async function applyASTGrepPattern({
   code,
   pattern,
@@ -179,17 +179,18 @@ export async function applyASTGrepPattern({
   language: string;
   options?: Record<string, unknown>;
 }): Promise<{ matches: any[] }> {
-  // Mark parameters as used to avoid TS lint error
-  void code;
-  void pattern;
-  void language;
-  void options;
-  // TODO: Integrate with @ast-grep/napi for real AST-based matching
-  // Example:
-  // const sg = new AstGrep({ language });
-  // const matches = sg.search(code, pattern, options);
-  // return { matches };
-  return { matches: [] }; // Stub: returns no matches
+  // Try to resolve language to a supported enum, fallback to string
+  let lang: string | Lang = language;
+  if (Lang[language as keyof typeof Lang]) {
+    lang = Lang[language as keyof typeof Lang];
+  }
+  // Compile the AST-grep pattern
+  const compiledPattern = compilePattern(lang, pattern);
+  // Parse the code to AST
+  const root = parse(lang, code);
+  // Find matches using SgRoot.root().findAll()
+  const matches = root.root().findAll(compiledPattern);
+  return { matches };
 }
 /**
  * Execute feedback loop operation
