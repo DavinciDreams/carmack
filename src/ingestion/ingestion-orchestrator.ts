@@ -1,3 +1,12 @@
+import { z } from 'zod';
+
+import { getDatabaseManager } from '../db/connection.ts';
+import { ASTAnalyzer, createTensorRTASTAnalyzer } from './ast-analyzer.ts';
+import { ContentProcessor, createTensorRTContentProcessor } from './content-processor.ts';
+import { GitHubClient, createTensorRTGitHubClient } from './github-client.ts';
+import { RepositoryManager, createTensorRTRepositoryManager } from './repository-manager.ts';
+
+
 /**
  * Ingestion Orchestrator for TensorRT-LLM Knowledge Graph
  *
@@ -6,13 +15,6 @@
  * population. Follows Carmack's principles of robust orchestration and
  * error recovery.
  */
-
-import { z } from 'zod';
-import { RepositoryManager, createTensorRTRepositoryManager } from './repository-manager.ts';
-import { GitHubClient, createTensorRTGitHubClient } from './github-client.ts';
-import { ASTAnalyzer, createTensorRTASTAnalyzer } from './ast-analyzer.ts';
-import { ContentProcessor, createTensorRTContentProcessor } from './content-processor.ts';
-import { getDatabaseManager } from '../db/connection.ts';
 import type { 
   CommitSchema, 
   PRSchema, 
@@ -178,8 +180,9 @@ export class IngestionOrchestrator {
       console.log('🚀 Starting TensorRT-LLM knowledge graph ingestion...');
       
       // Phase 1: Clone/Update Repository
-      await this.updateProgress('cloning_repository', 'Cloning TensorRT-LLM repository');
-      await this.cloneRepository();
+     // Skipping auto-clone of Carmack repo; only clone target repos via repository manager as requested.
+     await this.updateProgress('cloning_repository', 'Ready for repository ingestion (no auto-clone)');
+     // No-op: do not clone Carmack repo at startup.
       
       // Phase 2: Extract Git History
       await this.updateProgress('extracting_commits', 'Extracting commit history');
