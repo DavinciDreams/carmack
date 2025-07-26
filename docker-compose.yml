@@ -25,24 +25,21 @@ services:
       timeout: 5s
       retries: 5
 
-  carmack-coder:
+  # Unified API service
+  api:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: carmack-production
+    container_name: carmack-api
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=${NODE_ENV:-production}
       - CARMACK_WORKSPACE=/workspace
       - CARMACK_LOG_LEVEL=info
       - CARMACK_TELEMETRY_ENABLED=true
       - POSTGRES_URL=postgresql://carmack:carmack_password@postgres:5432/tensorrt_knowledge_graph
+      - GITHUB_TOKEN=ghp_xxx...
     volumes:
-      # Mount workspace for persistent storage
       - carmack-workspace:/workspace
-      # Mount git credentials if needed
-      - ${HOME}/.gitconfig:/home/carmack/.gitconfig:ro
-      - ${HOME}/.ssh:/home/carmack/.ssh:ro
-      # Mount custom configuration
       - ./production.config.ts:/app/production.config.ts:ro
     networks:
       - carmack-network
@@ -50,13 +47,81 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    command: >
-      --repository https://github.com/your-org/your-repo.git
-      --branch main
-      --auto-commit
-      --risk-level low
-      --verbose
-
+    entrypoint: ["bun", "run", "production.ts"]
+    command: []
+  # Ingestion service
+  ingestion:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: carmack-ingestion
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - CARMACK_WORKSPACE=/workspace
+      - CARMACK_LOG_LEVEL=info
+      - CARMACK_TELEMETRY_ENABLED=true
+      - POSTGRES_URL=postgresql://carmack:carmack_password@postgres:5432/tensorrt_knowledge_graph
+      - GITHUB_TOKEN=ghp_xxx...
+    volumes:
+      - carmack-workspace:/workspace
+      - ./production.config.ts:/app/production.config.ts:ro
+    networks:
+      - carmack-network
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    entrypoint: ["bun", "run", "production.ts"]
+    command: []
+  # Learning service
+  learning:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: carmack-learning
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - CARMACK_WORKSPACE=/workspace
+      - CARMACK_LOG_LEVEL=info
+      - CARMACK_TELEMETRY_ENABLED=true
+      - POSTGRES_URL=postgresql://carmack:carmack_password@postgres:5432/tensorrt_knowledge_graph
+      - GITHUB_TOKEN=ghp_xxx...
+    volumes:
+      - carmack-workspace:/workspace
+      - ./production.config.ts:/app/production.config.ts:ro
+    networks:
+      - carmack-network
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    entrypoint: ["bun", "run", "production.ts"]
+    command: []
+  # Telemetry service
+  telemetry:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: carmack-telemetry
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - CARMACK_WORKSPACE=/workspace
+      - CARMACK_LOG_LEVEL=info
+      - CARMACK_TELEMETRY_ENABLED=true
+      - POSTGRES_URL=postgresql://carmack:carmack_password@postgres:5432/tensorrt_knowledge_graph
+      - GITHUB_TOKEN=ghp_xxx...
+    volumes:
+      - carmack-workspace:/workspace
+      - ./production.config.ts:/app/production.config.ts:ro
+    networks:
+      - carmack-network
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    entrypoint: ["bun", "run", "production.ts"]
+    command: []
+  # Monitoring (Grafana)
   carmack-monitor:
     image: grafana/grafana:latest
     container_name: carmack-monitor
@@ -71,6 +136,7 @@ services:
       - carmack-network
     restart: unless-stopped
 
+  # Metrics (Prometheus)
   carmack-metrics:
     image: prom/prometheus:latest
     container_name: carmack-metrics
