@@ -315,10 +315,8 @@ async function validateDependencies(): Promise<SetupResult> {
       'zod',
       'pg',
       'fastify',
-      'ts-rest',
       '@octokit/rest',
       '@trigger.dev/sdk',
-      '@baml/ts-client',
     ];
     
     const dependencies = { ...packageContent.dependencies, ...packageContent.devDependencies };
