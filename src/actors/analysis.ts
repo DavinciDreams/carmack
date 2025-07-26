@@ -7,9 +7,9 @@ import type {
   ComplexityMetrics,
   TransformationMode,
   TransformationRequest,
-} from '../types.js';
+} from '../types.ts';
 // Analysis input schema
-const AnalysisInputSchema = z.union([
+export const AnalysisInputSchema = z.union([
   z.object({
     files: z.array(z.string()),
     patterns: z.array(z.any()), // AstPattern schema
@@ -274,13 +274,72 @@ async function handleLearning(input: {
     analysisTimestamp: Date.now(),
   };
 }
+
+// Zod schema for summarization input
+const SummarizationInputSchema = z.object({
+  operation: z.literal('summarize'),
+  transformation: z.object({
+    id: z.string().optional(),
+    mode: z.string().optional(),
+    filesModified: z.array(z.string()).optional(),
+    success: z.boolean().optional(),
+    executionTime: z.number().optional(),
+    confidence: z.number().optional(),
+    appliedPatterns: z.array(z.object({
+      pattern: z.string(),
+      count: z.number(),
+    })).optional(),
+    summary: z.string().optional(),
+    error: z.string().optional(),
+  }).optional(),
+});
+
 async function handleSummarization(input: {
   operation: 'summarize';
   transformation?: unknown;
 }): Promise<AnalysisResult> {
-  // TODO: Implement transformation summarization
-  const transformation = input.transformation as { id?: string; mode?: string } | undefined;
+  // Validate input with Zod
+  const parsed = SummarizationInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      summary: 'Invalid summarization input',
+      insights: [JSON.stringify(parsed.error.issues)],
+      analysisTimestamp: Date.now(),
+    };
+  }
+  const transformation = parsed.data.transformation;
+  // Build a structured summary
+  let summary = '';
+  const insights: string[] = [];
+  if (!transformation) {
+    summary = 'No transformation data provided.';
+  } else {
+    summary = `Transformation ${transformation.id || 'unknown'} completed with ${transformation.mode || 'unknown'} mode.`;
+    if (typeof transformation.success === 'boolean') {
+      summary += ` Success: ${transformation.success ? 'Yes' : 'No'}.`;
+    }
+    if (transformation.executionTime !== undefined) {
+      summary += ` Execution time: ${transformation.executionTime}ms.`;
+    }
+    if (transformation.confidence !== undefined) {
+      summary += ` Confidence: ${(transformation.confidence * 100).toFixed(1)}%.`;
+    }
+    if (transformation.filesModified && transformation.filesModified.length > 0) {
+      insights.push(`Files modified: ${transformation.filesModified.join(', ')}`);
+    }
+    if (transformation.appliedPatterns && transformation.appliedPatterns.length > 0) {
+      insights.push(`Patterns applied: ${transformation.appliedPatterns.map(p => `${p.pattern} (${p.count})`).join(', ')}`);
+    }
+    if (transformation.summary) {
+      insights.push(`Transformation summary: ${transformation.summary}`);
+    }
+    if (transformation.error) {
+      insights.push(`Error: ${transformation.error}`);
+    }
+  }
   return {
-    summary: `Transformation ${transformation?.id || 'unknown'} completed with ${transformation?.mode || 'unknown'} mode`,
+    summary,
+    insights,
+    analysisTimestamp: Date.now(),
   };
 }
