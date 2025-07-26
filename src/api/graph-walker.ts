@@ -1,3 +1,52 @@
+import { getDatabaseOperations } from '../db/operations.ts';
+import type { Artifact, GraphEdge } from '../db/schema.ts';
+
+import { z } from 'zod';
+import { ArtifactSchema, GraphEdgeSchema } from '../db/schema.ts';
+
+export const GraphPathSchema = z.object({
+  artifacts: z.array(z.object({
+    artifact: ArtifactSchema,
+    depth: z.number(),
+    relationship: GraphEdgeSchema.optional(),
+    confidence: z.number(),
+  })),
+  total_confidence: z.number(),
+  path_length: z.number(),
+  path_ids: z.array(z.string()),
+});
+
+export const TraversalOptionsSchema = z.object({
+  max_depth: z.number(),
+  min_confidence: z.number(),
+  direction: z.enum(['outgoing', 'incoming', 'both']),
+  relation_types: z.array(z.string()).optional(),
+  limit: z.number(),
+  avoid_cycles: z.boolean(),
+  confidence_decay: z.number(),
+  relevance_boost: z.record(z.string(), z.number()),
+});
+
+export const GraphTraversalResponseSchema = z.object({
+  paths: z.array(z.object({
+    artifacts: z.array(z.object({
+      artifact: ArtifactSchema,
+      depth: z.number(),
+      relationship: GraphEdgeSchema.optional(),
+    })),
+    total_confidence: z.number(),
+    path_length: z.number(),
+  })),
+  total_paths: z.number(),
+  max_depth_reached: z.number(),
+  execution_time_ms: z.number(),
+});
+
+
+
+
+
+
 /**
  * Graph Walker for Knowledge Graph Traversal
  *
@@ -6,21 +55,7 @@
  * Follows Carmack's principles of algorithmic correctness and performance.
  */
 
-import { z } from 'zod';
-import type {
-  GraphTraversalRequest,
-  GraphTraversalResponse,
-} from './contracts.ts';
-import {
-  validateGraphTraversalRequest,
-} from './contracts.ts';
-import { getDatabaseOperations } from '../db/operations.ts';
-import type {
-  Artifact,
-  GraphEdge,
-  GraphTraversalInput,
-  GraphTraversalResult,
-} from '../db/schema.ts';
+
 
 // =============================================================================
 // GRAPH WALKER ERRORS
@@ -37,25 +72,9 @@ export class GraphWalkerError extends Error {
   }
 }
 
-export class CycleDetectedError extends GraphWalkerError {
-  constructor(path: string[]) {
-    super(
-      `Cycle detected in graph traversal: ${path.join(' -> ')}`,
-      'CYCLE_DETECTED',
-      { path }
-    );
-  }
-}
-
-export class MaxDepthExceededError extends GraphWalkerError {
-  constructor(maxDepth: number) {
-    super(
-      `Maximum traversal depth exceeded: ${maxDepth}`,
-      'MAX_DEPTH_EXCEEDED',
-      { maxDepth }
-    );
-  }
-}
+export type GraphPath = z.infer<typeof GraphPathSchema>;
+export type TraversalOptions = z.infer<typeof TraversalOptionsSchema>;
+export type GraphTraversalResponse = z.infer<typeof GraphTraversalResponseSchema>;
 
 // =============================================================================
 // GRAPH PATH TYPES
@@ -64,31 +83,12 @@ export class MaxDepthExceededError extends GraphWalkerError {
 /**
  * Graph path representation
  */
-export interface GraphPath {
-  artifacts: Array<{
-    artifact: Artifact;
-    depth: number;
-    relationship?: GraphEdge;
-    confidence: number;
-  }>;
-  total_confidence: number;
-  path_length: number;
-  path_ids: string[]; // For cycle detection
-}
+
 
 /**
  * Traversal options
  */
-export interface TraversalOptions {
-  max_depth: number;
-  min_confidence: number;
-  direction: 'outgoing' | 'incoming' | 'both';
-  relation_types?: string[];
-  limit: number;
-  avoid_cycles: boolean;
-  confidence_decay: number; // How much confidence decreases with depth
-  relevance_boost: Record<string, number>; // Boost for specific artifact types
-}
+
 
 /**
  * Traversal state for tracking progress
@@ -116,14 +116,21 @@ export class GraphWalker {
   /**
    * Traverse the knowledge graph from a starting artifact
    */
-  async traverse(request: GraphTraversalRequest): Promise<GraphTraversalResponse> {
+  async traverse(request: unknown): Promise<GraphTraversalResponse> {
     const startTime = Date.now();
-    
     try {
-      const validatedRequest = validateGraphTraversalRequest(request);
-      
+      // Validate input
+      const validatedRequest = z.object({
+        start_artifact_id: z.string().uuid(),
+        relation_types: z.array(z.string()).optional(),
+        max_depth: z.number().int().positive().max(10).default(3),
+        min_confidence: z.number().min(0).max(1).default(0.5),
+        direction: z.enum(['outgoing', 'incoming', 'both']).default('outgoing'),
+        limit: z.number().int().positive().max(1000).default(100),
+      }).parse(request);
+
       // Build traversal options
-      const options: TraversalOptions = {
+      const options: TraversalOptions = TraversalOptionsSchema.parse({
         max_depth: validatedRequest.max_depth,
         min_confidence: validatedRequest.min_confidence,
         direction: validatedRequest.direction,
@@ -132,7 +139,7 @@ export class GraphWalker {
         avoid_cycles: true,
         confidence_decay: this.DEFAULT_CONFIDENCE_DECAY,
         relevance_boost: this.buildRelevanceBoost(),
-      };
+      });
 
       // Perform traversal
       const traversalResult = await this.performTraversal(
@@ -144,9 +151,9 @@ export class GraphWalker {
       const response: GraphTraversalResponse = {
         paths: traversalResult.paths.map(path => ({
           artifacts: path.artifacts.map(item => ({
-            artifact: this.artifactToRecord(item.artifact),
+            artifact: item.artifact,
             depth: item.depth,
-            relationship: item.relationship ? this.edgeToRecord(item.relationship) : undefined,
+            relationship: item.relationship,
           })),
           total_confidence: path.total_confidence,
           path_length: path.path_length,
@@ -158,7 +165,8 @@ export class GraphWalker {
         execution_time_ms: Date.now() - startTime,
       };
 
-      return response;
+      // Validate output
+      return GraphTraversalResponseSchema.parse(response);
     } catch (error) {
       throw new GraphWalkerError(
         'Graph traversal failed',
@@ -195,14 +203,14 @@ export class GraphWalker {
       const forwardPaths = await this.performBFS(sourceId, {
         max_depth: Math.ceil(max_depth / 2),
         direction: 'outgoing',
-        relation_types,
+  ...(relation_types ? { relation_types } : {}),
         target_id: targetId,
       });
 
       const backwardPaths = await this.performBFS(targetId, {
         max_depth: Math.ceil(max_depth / 2),
         direction: 'incoming',
-        relation_types,
+  ...(relation_types ? { relation_types } : {}),
         target_id: sourceId,
       });
 
