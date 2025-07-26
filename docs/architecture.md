@@ -1,12 +1,108 @@
 # Architecture Documentation
 
-Generated on 2025-07-23T03:16:28.678Z
+_Last updated: 2025-07-26_
 
-## Overview
+## Unified Architecture Overview
 
-This document describes the architectural structure of the Carmack Coder system.
+This document provides a comprehensive, up-to-date overview of the Carmack Coder unified architecture, covering data models, API, database schema, telemetry, deployment, configuration, and integration test strategy. All core data models are defined and validated using Zod schemas in [`src/types/unified-schemas.ts`](src/types/unified-schemas.ts), ensuring strict type safety and runtime validation across all subsystems.
 
-## Architectural Layers
+---
+
+## Unified Data Models
+
+All persistent and API-exposed entities are defined as Zod schemas:
+
+- **RepositoryMetadataSchema**: Repository/project metadata (UUID, URL, name, owner, branch, languages, timestamps)
+- **FileMetadataSchema**: File/document metadata (UUID, repositoryId, path, language, size, timestamps, embedding)
+- **ASTNodeSchema**: AST/CST node representation (UUID, type, name, parentId, fileId, lines, children, properties)
+- **VectorEmbeddingSchema**: Vector embedding payload (UUID, fileId, vector, model, createdAt)
+- **PatternDefinitionSchema**: Pattern and transformation definition (UUID, name, description, language, astPattern, embedding, timestamps)
+- **TelemetryEventSchema**: Telemetry event structure (UUID, timestamp, eventType, userId, repositoryId, fileId, patternId, details)
+
+All API endpoints and database operations validate and serialize data using these schemas, guaranteeing consistency and extensibility.
+
+---
+
+## Modular API Structure
+
+Each resource is mapped to a dedicated route file and Zod schema:
+
+- [`src/api/routes/repository.ts`](src/api/routes/repository.ts): CRUD for repositories
+- [`src/api/routes/file.ts`](src/api/routes/file.ts): CRUD for files
+- [`src/api/routes/pattern.ts`](src/api/routes/pattern.ts): CRUD for patterns
+- [`src/api/routes/vector.ts`](src/api/routes/vector.ts): CRUD for vector embeddings
+- [`src/api/routes/telemetry.ts`](src/api/routes/telemetry.ts): CRUD for telemetry events
+
+All handlers use `.safeParse` for input validation and return type-safe responses. The API server (`src/api/server.ts`) composes all routes and initializes telemetry with environment-driven configuration.
+
+---
+
+## Unified Database Schema
+
+The relational schema in [`sql/migrations/002_unified_transformations_and_patterns.sql`](sql/migrations/002_unified_transformations_and_patterns.sql) is directly aligned with the Zod models:
+
+- `repository_metadata`, `file_metadata`, `ast_node`, `vector_embedding`, `pattern_definition`, `transformation_result`, `pattern_embedding`, `telemetry_event`
+- All foreign keys and constraints enforce referential integrity and support analytics across all subsystems.
+- Indexes are defined for efficient lookups and analytics.
+
+---
+
+## Telemetry and Observability
+
+The telemetry system (`src/telemetry/collector.ts`) provides:
+
+- High-performance, privacy-compliant event collection with batching and anonymization
+- Zod schema validation for all events
+- Extensible metrics: pattern success, latency, memory, cache, mode selection, error recovery, quality delta, session tracking
+- Integration with Prometheus and Grafana for monitoring and alerting
+- Centralized configuration via environment variables and Docker Compose
+
+---
+
+## Deployment and Configuration
+
+Deployment is orchestrated via [`docker-compose.yml`](docker-compose.yml):
+
+- **PostgreSQL (pgvector)**: Unified knowledge graph and analytics storage
+- **API Service**: Unified API, modular routes, telemetry integration
+- **Ingestion Service**: Artifact and repository ingestion
+- **Learning Service**: Pattern learning and recommendation
+- **Telemetry Service**: Metrics collection and forwarding
+- **Monitoring (Grafana/Prometheus)**: Observability and alerting
+
+All services share a workspace volume and are configured via environment variables for portability and reproducibility.
+
+---
+
+## Integration Test Strategy
+
+Integration tests (see [`test/integration/unified-dataflow-integration.test.ts`](test/integration/unified-dataflow-integration.test.ts)):
+
+- Validate end-to-end data flow and schema conformance across API, ingestion, learning, and telemetry
+- Use mocks for external dependencies and assert Zod schema compliance at each stage
+- Ensure that all subsystems interoperate using the unified data models
+
+---
+
+## Extensibility and Formal Guarantees
+
+- All external data is validated at runtime using Zod schemas, with strict TypeScript types for compile-time safety
+- Modular structure enables independent evolution of API, ingestion, learning, and telemetry
+- Telemetry and monitoring are integrated at every major flow for observability and feedback-driven optimization
+- Integration tests provide provable guarantees of schema and data flow correctness
+
+---
+
+## References
+
+- Unified Zod Schemas: [`src/types/unified-schemas.ts`](src/types/unified-schemas.ts)
+- Database Schema: [`sql/migrations/002_unified_transformations_and_patterns.sql`](sql/migrations/002_unified_transformations_and_patterns.sql)
+- API Entrypoint: [`src/api/server.ts`](src/api/server.ts)
+- Telemetry Collector: [`src/telemetry/collector.ts`](src/telemetry/collector.ts)
+- Integration Test: [`test/integration/unified-dataflow-integration.test.ts`](test/integration/unified-dataflow-integration.test.ts)
+- Deployment: [`docker-compose.yml`](docker-compose.yml)
+
+---
 
 ### Presentation
 
@@ -1075,3 +1171,201 @@ graph TD
   zod[zod] --> src_utils_yaml_handler[src\utils\yaml-handler]
 ```
 
+
+## System Data Flow Overview
+
+```mermaid
+flowchart TD
+  subgraph Ingestion
+    A[Repository Manager] --> B[Artifact Operations]
+  end
+  subgraph Transformation
+    B --> C[Production Pipeline]
+    C --> D[Pattern Discovery]
+    C --> E[Pattern Learning]
+    C --> F[Transformation Engine]
+  end
+  subgraph Learning
+    D --> G[Clustering/Similarity]
+    E --> G
+    G --> H[Pattern Database]
+  end
+  subgraph Telemetry
+    F --> I[Telemetry Collector]
+    I --> J[Metrics Store]
+    J --> K[Monitoring Dashboard]
+  end
+  H --> F
+  H --> D
+```
+
+- **Ingestion**: Repository manager extracts artifacts and stores them via artifact operations.
+- **Transformation**: Production pipeline orchestrates pattern discovery, learning, and code transformation.
+- **Learning**: Pattern discovery and learning modules update the pattern database using clustering and similarity.
+- **Telemetry**: All transformation and learning events are tracked by the telemetry collector, feeding metrics and monitoring dashboards.
+- **Feedback Loops**: Pattern database and telemetry insights inform future transformations and learning.
+
+## Integration Gaps and Dependencies
+
+### Gaps
+- No unified pattern object/interface shared across ingestion, learning, and transformation systems.
+- Telemetry hooks are not consistently present in all transformation and learning stages.
+- Pattern database schema differs between learning and transformation modules.
+- Feedback loop between telemetry analytics and pattern optimization is not automated.
+- Lack of a central registry for pattern metadata and lifecycle status.
+
+### Dependencies
+- Transformation pipeline depends on pattern discovery and learning outputs.
+- Telemetry collector requires event emission from all pipeline and learning actors.
+- Monitoring dashboards depend on metrics from both transformation and telemetry layers.
+- Pattern optimization depends on feedback from both code quality metrics and user analytics.
+
+## Unified Interface Specifications
+
+### Pattern Object Interface
+
+```typescript
+export interface UnifiedPattern {
+  id: string;
+  language: string;
+  mode: 'template' | 'ast' | 'llm';
+  pattern: string | { template?: string; rule?: unknown };
+  replacement?: string | { template?: string };
+  description?: string;
+  complexity?: number;
+  riskLevel?: 'low' | 'medium' | 'high';
+  category?: string;
+  performance?: {
+    priority: number;
+    batchable: boolean;
+  };
+  lifecycleStatus?: 'experimental' | 'stable' | 'deprecated';
+  metadata?: Record<string, unknown>;
+}
+```
+
+### Telemetry Event Interface
+
+```typescript
+export interface UnifiedTelemetryEvent {
+  eventId: string;
+  eventType: string;
+  timestamp: number;
+  userId?: string;
+  sessionId?: string;
+  patternId?: string;
+  transformationId?: string;
+  stage?: string;
+  metrics?: Record<string, unknown>;
+  outcome?: 'success' | 'failure' | 'warning';
+  details?: string;
+}
+```
+
+### Pattern Metadata Registry
+
+```typescript
+export interface PatternRegistryEntry {
+  pattern: UnifiedPattern;
+  adoptionRate: number;
+  successRate: number;
+  firstSeen: number;
+  lastUsed: number;
+  feedback: Array<{ rating: number; comment?: string; timestamp: number }>;
+}
+```
+
+## Cross-System Database Schema (Draft)
+
+```sql
+-- Unified Pattern Table
+CREATE TABLE unified_patterns (
+  id UUID PRIMARY KEY,
+  language TEXT NOT NULL,
+  mode TEXT CHECK (mode IN ('template', 'ast', 'llm')),
+  pattern JSONB NOT NULL,
+  replacement JSONB,
+  description TEXT,
+  complexity INT,
+  risk_level TEXT,
+  category TEXT,
+  performance JSONB,
+  lifecycle_status TEXT,
+  metadata JSONB
+);
+
+-- Pattern Registry Table
+CREATE TABLE pattern_registry (
+  pattern_id UUID REFERENCES unified_patterns(id),
+  adoption_rate FLOAT,
+  success_rate FLOAT,
+  first_seen TIMESTAMP,
+  last_used TIMESTAMP,
+  feedback JSONB,
+  PRIMARY KEY (pattern_id)
+);
+
+-- Telemetry Event Table
+CREATE TABLE telemetry_events (
+  event_id UUID PRIMARY KEY,
+  event_type TEXT NOT NULL,
+  timestamp TIMESTAMP NOT NULL,
+  user_id TEXT,
+  session_id TEXT,
+  pattern_id UUID REFERENCES unified_patterns(id),
+  transformation_id TEXT,
+  stage TEXT,
+  metrics JSONB,
+  outcome TEXT,
+  details TEXT
+);
+
+-- Indexes for analytics
+CREATE INDEX idx_pattern_mode ON unified_patterns(mode);
+CREATE INDEX idx_event_type ON telemetry_events(event_type);
+CREATE INDEX idx_pattern_adoption ON pattern_registry(adoption_rate);
+```
+
+- All pattern, transformation, and telemetry systems should use these tables for cross-system data sharing and analytics.
+
+## Telemetry Collection Points
+
+- **Ingestion**
+  - Artifact creation and update
+  - Repository scan start/complete
+- **Pattern Discovery & Learning**
+  - Pattern discovery start/complete
+  - Pattern learning start/complete
+  - Pattern adoption or deprecation
+- **Transformation Pipeline**
+  - Stage start/complete (preprocessing, discovery, transformation, validation, testing, feedback, postprocessing)
+  - Each transformation attempt (template, AST, LLM)
+  - Pattern application success/failure
+  - Code quality delta and validation results
+- **Testing & Validation**
+  - Test suite execution start/complete
+  - Validation error/warning events
+- **Feedback & Optimization**
+  - Feedback loop events (collection, analysis, optimization)
+  - User rating or feedback submission
+- **System Health & Performance**
+  - Performance metrics (latency, memory, cache)
+  - Error recovery and mode switching
+  - Session start/end
+
+All events should be emitted using the unified telemetry event interface and stored in the cross-system telemetry_events table.
+
+# Carmack Coder Unified Architecture
+
+## Overview
+
+This document defines the unified architecture for the Carmack Coder system, covering ingestion, transformation, pattern learning, telemetry, and cross-system analytics. It specifies data flows, integration points, unified interfaces, and database schema to ensure provable correctness, observability, and extensibility.
+
+<!--
+Sections:
+- System Data Flow Overview
+- Integration Gaps and Dependencies
+- Unified Interface Specifications
+- Cross-System Database Schema (Draft)
+- Telemetry Collection Points
+-->
