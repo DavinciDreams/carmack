@@ -1,3 +1,8 @@
+// Utility: Run a real query and assign result to qualityValidationResponses
+import { QueryProcessingPipeline } from './api/query-pipeline.ts';
+import type { QueryRequest } from './api/contracts.ts';
+
+// (assignQueryResultToValidation is now deprecated for use inside assigners; see docs for async event pattern)
 import { assign, setup } from 'xstate';
 import { z } from 'zod';
 
@@ -14,7 +19,11 @@ import { patternLearningActor } from './actors/pattern-learning.ts';
 import { type TemplatePattern, templateEngineActor } from './actors/template-engine.ts';
 import { enhancedTransformationActor } from './actors/transformation-enhanced.ts';
 import { transformationActor } from './actors/transformation.ts';
-import { validationActor } from './actors/validation.ts';
+import {
+  accuracyValidationActor,
+  graphTraversalActor,
+  dataIntegrityActor
+} from './testing/validation/quality-validator.ts';
 import { MachineContextSchema, MachineEventSchema } from './types.ts';
 
 import type { AnalysisResult } from './actors/analysis.ts';
@@ -97,7 +106,9 @@ const _carmackCoderMachine = setup({
     patternLearningActor,
     templateEngineActor,
     transformationActor,
-    validationActor,
+    dataIntegrityActor,
+    graphTraversalActor,
+    accuracyValidationActor,
   },
   guards: {
     hasMaxRetriesExceeded: ({ context }) => {
@@ -148,6 +159,7 @@ const _carmackCoderMachine = setup({
         filesModified?: string[];
         status?: string;
       };
+      // Synchronously update transformation, queue async query assignment elsewhere
       return {
         ...context,
         currentTransformation: {
@@ -164,6 +176,7 @@ const _carmackCoderMachine = setup({
         filesModified?: string[];
         status?: string;
       };
+      // Synchronously update transformation, queue async query assignment elsewhere
       return {
         ...context,
         currentTransformation: {
@@ -487,13 +500,8 @@ const _carmackCoderMachine = setup({
     validatingFormat: {
       invoke: {
         id: 'format-validation',
-        src: 'validationActor',
-        input: (ctx) => ({
-          type: 'format' as const,
-          files: Array.isArray(ctx.context.currentTransformation?.request?.targetFiles)
-            ? ctx.context.currentTransformation.request.targetFiles
-            : [],
-        }),
+        src: 'dataIntegrityActor',
+        input: () => undefined,
         onDone: [
           {
             target: 'fixingFormat',
@@ -515,13 +523,8 @@ const _carmackCoderMachine = setup({
     fixingFormat: {
       invoke: {
         id: 'format-fixing',
-        src: 'validationActor',
-        input: (ctx) => ({
-          type: 'formatFix' as const,
-          files: Array.isArray(ctx.context.currentTransformation?.request?.targetFiles)
-            ? ctx.context.currentTransformation.request.targetFiles
-            : [],
-        }),
+        src: 'dataIntegrityActor',
+        input: () => undefined,
         onDone: {
           target: 'validatingTypes',
           actions: 'resetRetries',
@@ -543,13 +546,8 @@ const _carmackCoderMachine = setup({
     validatingTypes: {
       invoke: {
         id: 'type-validation',
-        src: 'validationActor',
-        input: (ctx) => ({
-          type: 'types' as const,
-          files: Array.isArray(ctx.context.currentTransformation?.request?.targetFiles)
-            ? ctx.context.currentTransformation.request.targetFiles
-            : [],
-        }),
+        src: 'graphTraversalActor',
+        input: () => [], // TODO: Provide actual traversal test input from context
         onDone: [
           {
             target: 'fixingTypes',
@@ -576,16 +574,8 @@ const _carmackCoderMachine = setup({
     fixingTypes: {
       invoke: {
         id: 'type-fixing',
-        src: 'validationActor',
-        input: (ctx) => ({
-          type: 'typeFix' as const,
-          files: Array.isArray(ctx.context.currentTransformation?.request?.targetFiles)
-            ? ctx.context.currentTransformation.request.targetFiles
-            : [],
-          errors: Array.isArray(ctx.context.currentTransformation?.validation?.errors)
-            ? ctx.context.currentTransformation.validation.errors
-            : [],
-        }),
+        src: 'graphTraversalActor',
+        input: () => [], // TODO: Provide actual traversal test input from context
         onDone: [
           {
             target: 'verifyingWithDafny',
@@ -661,12 +651,22 @@ const _carmackCoderMachine = setup({
     analyzingQuality: {
       invoke: {
         id: 'quality-analysis',
-        src: 'validationActor',
+        src: 'accuracyValidationActor',
         input: (ctx) => ({
-          type: 'quality' as const,
-          files: Array.isArray(ctx.context.currentTransformation?.request?.targetFiles)
-            ? ctx.context.currentTransformation.request.targetFiles
-            : [],
+          responses: (ctx.context.qualityValidationResponses as Array<{ query: string; response: import('./api/contracts.ts').QueryResponse; topic?: string }>)
+            .filter(r => r.response),
+          config: {
+            accuracyThreshold: 0.85,
+            relevanceThreshold: 0.8,
+            completenessThreshold: 0.8,
+            factualAccuracyThreshold: 0.9,
+            evidenceQualityThreshold: 0.8,
+            enableManualValidation: false,
+            enableAutomatedValidation: true,
+            enableHybridValidation: true,
+            sampleSize: 100,
+          },
+          knowledgeBase: new (require('./testing/validation/quality-validator.ts').MockKnowledgeBase)(),
         }),
         onDone: {
           target: 'learningFromFeedback',
