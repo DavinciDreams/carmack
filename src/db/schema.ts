@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 /**
  * Database Schema Types and Zod Validation for TensorRT-LLM Knowledge Graph
  *
@@ -6,7 +8,6 @@
  * runtime validation.
  */
 
-import { z } from 'zod';
 
 // =============================================================================
 // CORE KNOWLEDGE GRAPH SCHEMAS
@@ -29,6 +30,7 @@ export const PerformanceImpactSchema = z.enum(['critical', 'high', 'normal', 'lo
  * Base artifact schema without refinements for use in derived schemas
  */
 const BaseArtifactSchema = z.object({
+  entityKind: z.literal('artifact'),
   id: z.string().uuid(),
   type: ArtifactTypeSchema,
   name: z.string().max(500),
