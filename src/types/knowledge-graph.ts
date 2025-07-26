@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 /**
  * Knowledge Graph Type Definitions for TensorRT-LLM System
  *
@@ -5,7 +7,6 @@
  * following Carmack's principles of type safety and formal correctness.
  */
 
-import { z } from 'zod';
 
 // =============================================================================
 // CORE KNOWLEDGE GRAPH TYPES
