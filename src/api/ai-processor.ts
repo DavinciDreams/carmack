@@ -1,3 +1,7 @@
+import { z } from 'zod';
+
+import type {
+
 /**
  * AI Processor for Knowledge Graph Query Engine
  *
@@ -6,8 +10,6 @@
  * of deterministic AI processing and structured outputs.
  */
 
-import { z } from 'zod';
-import type {
   QueryIntent,
   QueryComplexity,
   EvidenceItem,
