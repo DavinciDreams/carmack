@@ -1,13 +1,15 @@
+import chokidar from 'chokidar';
+import { existsSync } from 'node:fs';
+import { parseArgs } from 'node:util';
+import { z } from 'zod';
+
+import { DocumentationGenerator } from './generator.js';
+import { DocumentationFormatSchema, DocumentationTypeSchema } from './types.js';
+
 /**
  * CLI interface for the Documentation Generator
  */
 
-import { existsSync } from 'node:fs';
-import { parseArgs } from 'node:util';
-import chokidar from 'chokidar';
-import { z } from 'zod';
-import { DocumentationGenerator } from './generator.js';
-import { DocumentationFormatSchema, DocumentationTypeSchema } from './types.js';
 
 // Zod schema for CLI options
 export const DocCLIOptionsSchema = z.object({
@@ -259,4 +261,4 @@ if (
     console.error('Fatal error:', error);
     process.exit(1);
   });
-}
+}
