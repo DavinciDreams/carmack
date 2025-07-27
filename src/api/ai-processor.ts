@@ -226,7 +226,85 @@ export class AIProcessor {
     }
   }
 
-  // Move all core and helper methods into the class
+  /**
+   * Extract facts from query and evidence using BAML
+   */
+  async extractFacts(input: {
+    query: string;
+    evidence: EvidenceItem[];
+    intent: QueryIntent;
+    complexity: QueryComplexity;
+    context?: Record<string, unknown>;
+  }): Promise<FactExtraction> {
+    try {
+      // BAML expects context to be present, but may be optional
+      return await this.bamlClient.extractFacts({
+        query: input.query,
+        evidence: input.evidence,
+        context: input.context || {},
+      });
+    } catch (error) {
+      throw new AIProcessorError(
+        'Fact extraction failed',
+        'FACT_EXTRACTION_ERROR',
+        { input, error: error instanceof Error ? error.message : String(error) }
+      );
+    }
+  }
+
+  /**
+   * Generate hypotheses from facts using BAML
+   */
+  async generateHypotheses(input: {
+    query: string;
+    facts: FactExtraction;
+    intent: QueryIntent;
+    complexity: QueryComplexity;
+    context?: Record<string, unknown>;
+  }): Promise<HypothesisGeneration> {
+    try {
+      return await this.bamlClient.generateHypotheses({
+        query: input.query,
+        facts: input.facts,
+        intent: input.intent,
+        complexity: input.complexity,
+      });
+    } catch (error) {
+      throw new AIProcessorError(
+        'Hypothesis generation failed',
+        'HYPOTHESIS_GENERATION_ERROR',
+        { input, error: error instanceof Error ? error.message : String(error) }
+      );
+    }
+  }
+
+  /**
+   * Synthesize a response from facts and hypotheses using BAML
+   */
+  async synthesize(input: {
+    query: string;
+    facts: FactExtraction;
+    hypotheses: HypothesisGeneration;
+    intent: QueryIntent;
+    complexity: QueryComplexity;
+    context?: Record<string, unknown>;
+  }): Promise<ResponseSynthesis> {
+    try {
+      return await this.bamlClient.synthesizeResponse({
+        query: input.query,
+        facts: input.facts,
+        hypotheses: input.hypotheses,
+        evidence: [], // Optionally pass evidence if needed
+        intent: input.intent,
+      });
+    } catch (error) {
+      throw new AIProcessorError(
+        'Response synthesis failed',
+        'RESPONSE_SYNTHESIS_ERROR',
+        { input, error: error instanceof Error ? error.message : String(error) }
+      );
+    }
+  }
 
   generateInvestigationThreads(
     hypotheses: HypothesisGeneration,
@@ -274,6 +352,4 @@ export class AIProcessor {
       };
     });
   }
-
-  // Add any other helper methods here as needed
 }
