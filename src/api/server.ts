@@ -22,15 +22,10 @@ initializeTelemetry({
   privacy: {
     collectUserIds: env.TELEMETRY_COLLECT_USER_IDS,
     collectFilePaths: env.TELEMETRY_COLLECT_FILE_PATHS,
+    retentionDays: env.TELEMETRY_RETENTION_DAYS,
   },
   performanceSampleRate: env.TELEMETRY_SAMPLE_RATE,
   behaviorSampleRate: env.TELEMETRY_SAMPLE_RATE,
-  retentionDays: env.TELEMETRY_RETENTION_DAYS,
-  metricsEndpoint: env.METRICS_ENDPOINT,
-  prometheusUrl: env.PROMETHEUS_URL,
-  grafanaUrl: env.GRAFANA_URL,
-  alertingWebhookUrl: env.ALERTING_WEBHOOK_URL,
-  alertEmail: env.ALERT_EMAIL,
 });
 
 const routes = [
@@ -50,7 +45,7 @@ serve({
     }
     try {
       // Optionally pass env/config to handlers if needed
-      return await route.handler(req, env);
+      return await route.handler(req);
     } catch (err) {
       return new Response(JSON.stringify({ error: (err as Error).message }), { status: 400 });
     }
