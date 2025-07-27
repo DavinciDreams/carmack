@@ -1,3 +1,17 @@
+
+import { z } from 'zod';
+import { getDatabaseManager } from './connection.ts';
+import { getDatabaseOperations } from './operations.ts';
+import {
+  ArtifactTypeSchema,
+  RelationTypeSchema,
+  PerformanceImpactSchema,
+} from './schema.ts';
+import type {
+  CreateArtifactInput,
+  CreateGraphEdgeInput,
+} from './schema.ts';
+
 /**
  * Database Seeding and Testing Utilities for TensorRT-LLM Knowledge Graph
  *
@@ -6,16 +20,6 @@
  * correctness and comprehensive testing.
  */
 
-import { z } from 'zod';
-import { getDatabaseManager } from './connection.ts';
-import { getDatabaseOperations } from './operations.ts';
-import {
-  type CreateArtifactInput,
-  type CreateGraphEdgeInput,
-  ArtifactTypeSchema,
-  RelationTypeSchema,
-  PerformanceImpactSchema,
-} from './schema.ts';
 
 // =============================================================================
 // SEEDING CONFIGURATION
@@ -87,6 +91,7 @@ export class TestDataGenerator {
     const name = names[Math.floor(this.random() * names.length)] as string;
     
     return {
+      entityKind: 'artifact',
       type,
       name: `${name}_${index}`,
       description: this.generateDescription(type, name),
