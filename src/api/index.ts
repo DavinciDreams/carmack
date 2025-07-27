@@ -1,3 +1,8 @@
+import { QueryProcessingPipeline } from './query-pipeline.ts';
+
+import type { QueryRequest, QueryResponse } from './contracts.ts';
+import { QueryRequestSchema, QueryResponseSchema } from './contracts.ts';
+
 /**
  * Main Entry Point for TensorRT-LLM Knowledge Graph Query Engine
  *
@@ -30,8 +35,6 @@ export * from './contracts.ts';
 // CONVENIENCE FUNCTIONS
 // =============================================================================
 
-import { QueryProcessingPipeline } from './query-pipeline.ts';
-import type { QueryRequest, QueryResponse } from './contracts.ts';
 
 /**
  * Simple query interface for direct usage
@@ -47,8 +50,9 @@ export async function processQuery(
   } = {}
 ): Promise<QueryResponse> {
   const pipeline = new QueryProcessingPipeline();
-  
-  const request: QueryRequest = {
+
+  // Build and validate the request using Zod
+  const requestInput = {
     query,
     context: {
       repository_url: options.repository_url,
@@ -63,10 +67,16 @@ export async function processQuery(
       search_depth: 3,
     },
   };
+  const request: QueryRequest = QueryRequestSchema.parse(requestInput);
 
-  return await pipeline.processQuery(request);
+  const response = await pipeline.processQuery(request);
+  // Validate response with Zod
+  return QueryResponseSchema.parse(response);
 }
 
+/**
+ * Create a configured query engine instance
+ */
 /**
  * Create a configured query engine instance
  */
@@ -76,8 +86,11 @@ export function createQueryEngine(config?: {
   ai_processing_enabled?: boolean;
   max_execution_time_ms?: number;
 }): QueryProcessingPipeline {
+  // Optionally, validate config here with a Zod schema if you have one
   return new QueryProcessingPipeline(config);
 }
+// Export Zod schemas for server integration
+export { QueryRequestSchema, QueryResponseSchema };
 
 // =============================================================================
 // SYSTEM INFORMATION
@@ -128,6 +141,8 @@ export async function exampleUsage(): Promise<void> {
   try {
     // Example 1: Simple query
     console.log('📝 Example 1: Simple technical question');
+
+    // Example with Zod validation
     const response1 = await processQuery(
       'How does TensorRT-LLM handle memory allocation for CUDA kernels?',
       {
@@ -136,6 +151,7 @@ export async function exampleUsage(): Promise<void> {
         max_results: 10,
       }
     );
+    QueryResponseSchema.parse(response1); // Runtime validation
 
     console.log(`Query ID: ${response1.query_id}`);
     console.log(`Intent: ${response1.intent}`);
@@ -147,6 +163,7 @@ export async function exampleUsage(): Promise<void> {
 
     // Example 2: Performance investigation
     console.log('⚡ Example 2: Performance investigation');
+
     const response2 = await processQuery(
       'What are the performance bottlenecks in the TensorRT inference pipeline?',
       {
@@ -154,6 +171,7 @@ export async function exampleUsage(): Promise<void> {
         max_results: 15,
       }
     );
+    QueryResponseSchema.parse(response2);
 
     console.log(`Query ID: ${response2.query_id}`);
     console.log(`Investigation threads: ${response2.investigation_threads.length}`);
@@ -169,7 +187,8 @@ export async function exampleUsage(): Promise<void> {
       max_execution_time_ms: 15000,
     });
 
-    const response3 = await pipeline.processQuery({
+
+    const response3 = await pipeline.processQuery(QueryRequestSchema.parse({
       query: 'Show me examples of CUDA kernel optimization techniques',
       context: {
         language_hint: 'cuda',
@@ -182,7 +201,8 @@ export async function exampleUsage(): Promise<void> {
         complexity_preference: 'expert',
         search_depth: 4,
       },
-    });
+    }));
+    QueryResponseSchema.parse(response3);
 
     console.log(`Query ID: ${response3.query_id}`);
     console.log(`Artifacts searched: ${response3.artifacts_searched}`);
@@ -216,7 +236,8 @@ export async function runCLI(): Promise<void> {
 
   try {
     const response = await processQuery(query);
-    
+    QueryResponseSchema.parse(response); // Validate CLI output
+
     console.log('📊 Query Results:');
     console.log(`- Query ID: ${response.query_id}`);
     console.log(`- Intent: ${response.intent}`);
@@ -226,17 +247,17 @@ export async function runCLI(): Promise<void> {
     console.log(`- Execution time: ${response.execution_time_ms}ms`);
     console.log(`- Artifacts searched: ${response.artifacts_searched}`);
     console.log(`- Relationships traversed: ${response.relationships_traversed}\n`);
-    
+
     console.log('💡 Answer:');
     console.log(response.primary_answer);
-    
+
     if (response.suggested_questions.length > 0) {
       console.log('\n🤔 Suggested follow-up questions:');
       response.suggested_questions.forEach((question, index) => {
         console.log(`${index + 1}. ${question}`);
       });
     }
-    
+
     if (response.investigation_threads.length > 0) {
       console.log('\n🔬 Investigation threads:');
       response.investigation_threads.forEach((thread, index) => {
