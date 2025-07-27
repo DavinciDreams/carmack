@@ -13,7 +13,7 @@ import { z } from 'zod';
  * - Optimizing pattern parameters based on usage data
  */
 // AST-grep pattern metadata schema
-const ASTGrepPatternSchema = z.object({
+export const ASTGrepPatternSchema = z.object({
   id: z.string(),
   description: z.string().optional(),
   language: z.string(), // e.g., 'typescript', 'python', 'cpp', etc.
