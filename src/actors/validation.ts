@@ -1,16 +1,12 @@
-import { execSync } from 'node:child_process';
 import { ESLint } from 'eslint';
+import { execSync } from 'node:child_process';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
+
 import type { ErrorInfo, ValidationResult } from '../types.js';
 
 const eslint = new ESLint({
-  overrideConfigFile: true,
   overrideConfig: {
-    languageOptions: {
-      ecmaVersion: 'latest',
-      sourceType: 'module',
-    },
     rules: {
       // Code quality rules
       'prefer-const': 'warn',
@@ -893,7 +889,7 @@ async function validateQuality(files: string[]): Promise<ValidationResult> {
   const warnings: ErrorInfo[] = [];
   let fixableIssues = 0;
 
-  try
+  try {
     // Process files with ESLint directly using the lint function
     for (const filePath of files) {
       try {
@@ -902,7 +898,6 @@ async function validateQuality(files: string[]): Promise<ValidationResult> {
           errors.push(...result.errors);
           warnings.push(...result.warnings);
           fixableIssues += result.fixableIssues;
-
         }
       } catch (error) {
         console.warn(`ESLint failed or timed out for ${filePath}:`, error);
@@ -1143,4 +1138,4 @@ function calculateFunctionComplexity(functionBody: string): number {
   });
 
   return complexity;
-}
+}
