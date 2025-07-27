@@ -55,7 +55,7 @@
     "llm:patterns": "bun run llm-annotate.ts --focus patterns --format markdown",
     "verify": "dafny verify src/**/*.dfy",
     "all-checks": "bun run format && bun run lint && bun run type-check && bun run test:high",
-  "fix:types": "bun run src/scripts/pre-commit-typescript.ts --all-files",
+    "fix:types": "bun run src/scripts/pre-commit-typescript.ts --all-files",
     "fix:types:dry": "bun run src/scripts/pre-commit-typescript.ts src/**/*.ts --dry-run",
     "fix:imports": "bun run src/scripts/pre-commit-imports.ts src/**/*.ts",
     "pre-commit:check": "bun run src/scripts/pre-commit-typescript.ts",
@@ -126,7 +126,7 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@ast-grep/napi": "^0.38.7",
+    "@ast-grep/napi": "^0.39.1",
     "@inkjs/ui": "2.0.0",
     "@octokit/rest": "^21.0.2",
     "@trigger.dev/sdk": "^3.2.4",
