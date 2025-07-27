@@ -12,11 +12,9 @@ import { z } from 'zod';
  * - Generating new transformation rules
  * - Validating pattern effectiveness
  */
-
 // Pattern discovery request schema
 const PatternDiscoveryRequestSchema = z.object({
   operation: z.enum(['discover', 'analyze', 'generate', 'validate']),
-
   // Source data for pattern discovery
   sources: z.object({
     codeFiles: z.array(z.string()).optional(),
@@ -49,7 +47,6 @@ const PatternDiscoveryRequestSchema = z.object({
       )
       .optional(),
   }),
-
   // Discovery configuration
   config: z
     .object({
@@ -68,9 +65,7 @@ const PatternDiscoveryRequestSchema = z.object({
     .optional()
     .default({}),
 });
-
 export type PatternDiscoveryRequest = z.infer<typeof PatternDiscoveryRequestSchema>;
-
 /**
  * Discovered pattern structure
  */
@@ -78,7 +73,6 @@ interface DiscoveredPattern {
   id: string;
   name: string;
   description: string;
-
   // Pattern definition
   pattern: {
     before: string; // Pattern to match
@@ -86,7 +80,6 @@ interface DiscoveredPattern {
     variables: string[]; // Extracted variables
     constraints: Record<string, string>; // Variable constraints
   };
-
   // Pattern metadata
   metadata: {
     language: 'typescript' | 'javascript';
@@ -97,7 +90,6 @@ interface DiscoveredPattern {
     occurrences: number; // Number of times pattern was found
     successRate: number; // Success rate from transformations
   };
-
   // Evidence and examples
   evidence: {
     examples: Array<{
@@ -112,7 +104,6 @@ interface DiscoveredPattern {
       userRating: number;
     };
   };
-
   // Generated test cases
   testCases: Array<{
     input: string;
@@ -120,24 +111,18 @@ interface DiscoveredPattern {
     description: string;
   }>;
 }
-
 /**
  * Pattern Discovery Actor
  */
 export const patternDiscoveryActor = fromPromise(
   async ({ input }: { input: PatternDiscoveryRequest }) => {
     const validatedInput = PatternDiscoveryRequestSchema.parse(input);
-
     console.log(`🔍 Starting pattern discovery: ${validatedInput.operation}`);
-
     const result = await executePatternDiscovery(validatedInput);
-
     console.log(`✨ Pattern discovery completed: ${result.patterns.length} patterns discovered`);
-
     return result;
   }
 );
-
 /**
  * Execute pattern discovery based on operation type
  */
@@ -155,21 +140,18 @@ async function executePatternDiscovery(request: PatternDiscoveryRequest) {
       throw new Error(`Unknown operation: ${request.operation}`);
   }
 }
-
 /**
  * Analyze code for patterns (alias for discover)
  */
 async function analyzeCodeForPatterns(request: PatternDiscoveryRequest) {
   return await discoverPatterns(request);
 }
-
 /**
  * Generate patterns from history (alias for discover)
  */
 async function generatePatternsFromHistory(request: PatternDiscoveryRequest) {
   return await discoverPatterns(request);
 }
-
 /**
  * Validate existing patterns
  */
@@ -186,19 +168,16 @@ async function validatePatterns(_request: PatternDiscoveryRequest) {
     timestamp: new Date().toISOString(),
   };
 }
-
 /**
  * Discover new patterns from code analysis
  */
 async function discoverPatterns(request: PatternDiscoveryRequest) {
   const discoveredPatterns: DiscoveredPattern[] = [];
-
   // Analyze code files for patterns
   if (request.sources.codeFiles) {
     const codePatterns = await analyzeCodeFiles(request.sources.codeFiles, request.config);
     discoveredPatterns.push(...codePatterns);
   }
-
   // Analyze repositories
   if (request.sources.repositories) {
     const repoPatterns = await analyzeRepositories(
@@ -211,7 +190,6 @@ async function discoverPatterns(request: PatternDiscoveryRequest) {
     );
     discoveredPatterns.push(...repoPatterns);
   }
-
   // Learn from transformation history
   if (request.sources.transformationHistory) {
     const historyPatterns = await learnFromHistory(
@@ -220,10 +198,8 @@ async function discoverPatterns(request: PatternDiscoveryRequest) {
     );
     discoveredPatterns.push(...historyPatterns);
   }
-
   // Filter and rank patterns
   const filteredPatterns = filterAndRankPatterns(discoveredPatterns, request.config);
-
   return {
     operation: 'discover' as const,
     patterns: filteredPatterns,
@@ -242,7 +218,6 @@ async function discoverPatterns(request: PatternDiscoveryRequest) {
     timestamp: new Date().toISOString(),
   };
 }
-
 /**
  * Filter and rank patterns based on configuration
  */
@@ -256,7 +231,6 @@ function filterAndRankPatterns(
     .sort((a, b) => b.metadata.confidence - a.metadata.confidence)
     .slice(0, config.maxPatterns);
 }
-
 /**
  * Analyze code files for common patterns
  */
@@ -265,7 +239,6 @@ async function analyzeCodeFiles(
   config: PatternDiscoveryRequest['config']
 ): Promise<DiscoveredPattern[]> {
   const patterns: DiscoveredPattern[] = [];
-
   for (const filePath of files) {
     try {
       const content = await readFile(filePath, 'utf-8');
@@ -275,10 +248,8 @@ async function analyzeCodeFiles(
       console.warn(`Failed to analyze file ${filePath}:`, error);
     }
   }
-
   return patterns;
 }
-
 /**
  * Extract patterns from code content using AST analysis
  */
@@ -288,12 +259,10 @@ async function extractPatternsFromCode(
   config: PatternDiscoveryRequest['config']
 ): Promise<DiscoveredPattern[]> {
   const patterns: DiscoveredPattern[] = [];
-
   try {
     // Use TypeScript compiler API for AST analysis
     const ts = await import('typescript');
     const sourceFile = ts.createSourceFile(source, content, ts.ScriptTarget.Latest, true);
-
     // Common pattern detectors
     const detectors = [
       detectVarDeclarationPatterns,
@@ -304,7 +273,6 @@ async function extractPatternsFromCode(
       detectImportPatterns,
       detectClassPatterns,
     ];
-
     for (const detector of detectors) {
       const detectedPatterns = detector(sourceFile, content, source, config);
       patterns.push(...detectedPatterns);
@@ -312,10 +280,8 @@ async function extractPatternsFromCode(
   } catch (error) {
     console.warn(`Failed to parse ${source}:`, error);
   }
-
   return patterns;
 }
-
 /**
  * Detect variable declaration patterns (var → const/let)
  */
@@ -326,10 +292,8 @@ function detectVarDeclarationPatterns(
   config: PatternDiscoveryRequest['config']
 ): DiscoveredPattern[] {
   const patterns: DiscoveredPattern[] = [];
-
   // Simple regex-based detection for demonstration
   const varMatches = content.match(/var\s+(\w+)\s*=\s*([^;]+);/g);
-
   if (varMatches && varMatches.length >= config.minOccurrences) {
     patterns.push({
       id: `var-to-const-${Date.now()}`,
@@ -380,10 +344,8 @@ function detectVarDeclarationPatterns(
       ],
     });
   }
-
   return patterns;
 }
-
 /**
  * Convert function to arrow function (helper)
  */
@@ -394,7 +356,6 @@ function convertFunctionToArrow(functionStr: string): string {
     'const $1 = ($2) => $3;'
   );
 }
-
 /**
  * Detect function patterns (function → arrow function)
  */
@@ -405,11 +366,9 @@ function detectFunctionPatterns(
   config: PatternDiscoveryRequest['config']
 ): DiscoveredPattern[] {
   const patterns: DiscoveredPattern[] = [];
-
   const functionMatches = content.match(
     /function\s+(\w+)\s*\(([^)]*)\)\s*\{\s*return\s+([^}]+);\s*\}/g
   );
-
   if (functionMatches && functionMatches.length >= config.minOccurrences) {
     patterns.push({
       id: `function-to-arrow-${Date.now()}`,
@@ -461,10 +420,8 @@ function detectFunctionPatterns(
       ],
     });
   }
-
   return patterns;
 }
-
 /**
  * Detect object patterns (property shorthand, destructuring)
  */
@@ -475,10 +432,8 @@ function detectObjectPatterns(
   config: PatternDiscoveryRequest['config']
 ): DiscoveredPattern[] {
   const patterns: DiscoveredPattern[] = [];
-
   // Object property shorthand
   const shorthandMatches = content.match(/\{\s*(\w+):\s*\1\s*\}/g);
-
   if (shorthandMatches && shorthandMatches.length >= config.minOccurrences) {
     patterns.push({
       id: `object-shorthand-${Date.now()}`,
@@ -523,10 +478,8 @@ function detectObjectPatterns(
       ],
     });
   }
-
   return patterns;
 }
-
 /**
  * Detect array patterns (indexOf → includes)
  */
@@ -537,9 +490,7 @@ function detectArrayPatterns(
   config: PatternDiscoveryRequest['config']
 ): DiscoveredPattern[] {
   const patterns: DiscoveredPattern[] = [];
-
   const indexOfMatches = content.match(/(\w+)\.indexOf\(([^)]+)\)\s*!==\s*-1/g);
-
   if (indexOfMatches && indexOfMatches.length >= config.minOccurrences) {
     patterns.push({
       id: `indexof-to-includes-${Date.now()}`,
@@ -585,10 +536,8 @@ function detectArrayPatterns(
       ],
     });
   }
-
   return patterns;
 }
-
 /**
  * Detect Promise patterns (then/catch → async/await)
  */
@@ -599,9 +548,7 @@ function detectPromisePatterns(
   config: PatternDiscoveryRequest['config']
 ): DiscoveredPattern[] {
   const patterns: DiscoveredPattern[] = [];
-
   const promiseMatches = content.match(/(\w+)\.then\(([^)]+)\)/g);
-
   if (promiseMatches && promiseMatches.length >= config.minOccurrences) {
     patterns.push({
       id: `promise-to-await-${Date.now()}`,
@@ -647,10 +594,8 @@ function detectPromisePatterns(
       ],
     });
   }
-
   return patterns;
 }
-
 /**
  * Detect import patterns
  */
@@ -661,9 +606,7 @@ function detectImportPatterns(
   config: PatternDiscoveryRequest['config']
 ): DiscoveredPattern[] {
   const patterns: DiscoveredPattern[] = [];
-
   const requireMatches = content.match(/const\s+(\w+)\s*=\s*require\(['"]([^'"]+)['"]\)/g);
-
   if (requireMatches && requireMatches.length >= config.minOccurrences) {
     patterns.push({
       id: `require-to-import-${Date.now()}`,
@@ -712,10 +655,8 @@ function detectImportPatterns(
       ],
     });
   }
-
   return patterns;
 }
-
 /**
  * Detect class patterns
  */
@@ -726,12 +667,10 @@ function detectClassPatterns(
   config: PatternDiscoveryRequest['config']
 ): DiscoveredPattern[] {
   const patterns: DiscoveredPattern[] = [];
-
   // Constructor property assignment
   const constructorMatches = content.match(
     /constructor\([^)]*\)\s*\{[^}]*this\.(\w+)\s*=\s*\1[^}]*\}/g
   );
-
   if (constructorMatches && constructorMatches.length >= config.minOccurrences) {
     patterns.push({
       id: `constructor-shorthand-${Date.now()}`,
@@ -777,10 +716,8 @@ function detectClassPatterns(
       ],
     });
   }
-
   return patterns;
 }
-
 /**
  * Analyze repositories for patterns
  */
@@ -789,12 +726,10 @@ async function analyzeRepositories(
   config: PatternDiscoveryRequest['config']
 ): Promise<DiscoveredPattern[]> {
   const patterns: DiscoveredPattern[] = [];
-
   for (const repo of repositories) {
     try {
       // This would integrate with git/file system analysis
       console.log(`Analyzing repository: ${repo.path}`);
-
       // For now, simulate repository analysis
       const repoPatterns = await simulateRepositoryAnalysis(repo, config);
       patterns.push(...repoPatterns);
@@ -802,10 +737,8 @@ async function analyzeRepositories(
       console.warn(`Failed to analyze repository ${repo.path}:`, error);
     }
   }
-
   return patterns;
 }
-
 /**
  * Simulate repository analysis (placeholder for real implementation)
  */
@@ -817,7 +750,6 @@ async function simulateRepositoryAnalysis(
   // For now, return empty array
   return [];
 }
-
 /**
  * Learn patterns from transformation history
  */
@@ -831,10 +763,8 @@ async function learnFromHistory(
   config: PatternDiscoveryRequest['config']
 ): Promise<DiscoveredPattern[]> {
   const patterns: DiscoveredPattern[] = [];
-
   // Group similar transformations
   const transformationGroups = groupSimilarTransformations(history);
-
   for (const group of transformationGroups) {
     if (group.length >= config.minOccurrences) {
       const pattern = generatePatternFromGroup(group, config);
@@ -843,10 +773,8 @@ async function learnFromHistory(
       }
     }
   }
-
   return patterns;
 }
-
 /**
  * Group similar transformations together
  */
@@ -856,12 +784,10 @@ function groupSimilarTransformations(
   Array<{ before: string; after: string; success: boolean; feedback?: string | undefined }>
 > {
   const groups: Array<Array<(typeof history)[0]>> = [];
-
   for (const transformation of history) {
     // Simple grouping by pattern similarity
     // In a real implementation, this would use more sophisticated similarity analysis
     let foundGroup = false;
-
     for (const group of groups) {
       const firstInGroup = group[0];
       if (firstInGroup && isSimilarTransformation(transformation, firstInGroup)) {
@@ -870,15 +796,12 @@ function groupSimilarTransformations(
         break;
       }
     }
-
     if (!foundGroup) {
       groups.push([transformation]);
     }
   }
-
   return groups;
 }
-
 /**
  * Check if two transformations are similar
  */
@@ -889,23 +812,18 @@ function isSimilarTransformation(
   // Simple similarity check - in practice, this would be more sophisticated
   const beforeSimilarity = calculateStringSimilarity(a.before, b.before);
   const afterSimilarity = calculateStringSimilarity(a.after, b.after);
-
   return beforeSimilarity > 0.7 && afterSimilarity > 0.7;
 }
-
 /**
  * Calculate string similarity (simplified Levenshtein distance)
  */
 function calculateStringSimilarity(a: string, b: string): number {
   if (a === b) return 1;
   if (a.length === 0 || b.length === 0) return 0;
-
   const maxLength = Math.max(a.length, b.length);
   const distance = levenshteinDistance(a, b);
-
   return 1 - distance / maxLength;
 }
-
 /**
  * Calculate Levenshtein distance between two strings
  */
@@ -913,7 +831,6 @@ function levenshteinDistance(a: string, b: string): number {
   const matrix: number[][] = Array(b.length + 1)
     .fill(null)
     .map(() => Array(a.length + 1).fill(0));
-
   for (let i = 0; i <= a.length; i++) {
     const row = matrix[0];
     if (row) row[i] = i;
@@ -922,13 +839,11 @@ function levenshteinDistance(a: string, b: string): number {
     const row = matrix[j];
     if (row) row[0] = j;
   }
-
   for (let j = 1; j <= b.length; j++) {
     for (let i = 1; i <= a.length; i++) {
       const indicator = a[i - 1] === b[j - 1] ? 0 : 1;
       const currentRow = matrix[j];
       const prevRow = matrix[j - 1];
-
       if (currentRow && prevRow) {
         currentRow[i] = Math.min(
           (currentRow[i - 1] ?? 0) + 1, // deletion
@@ -938,11 +853,9 @@ function levenshteinDistance(a: string, b: string): number {
       }
     }
   }
-
   const lastRow = matrix[b.length];
   return lastRow ? (lastRow[a.length] ?? 0) : 0;
 }
-
 /**
  * Generate pattern from transformation group
  */
@@ -951,17 +864,12 @@ function generatePatternFromGroup(
   _config: PatternDiscoveryRequest['config']
 ): DiscoveredPattern | null {
   if (group.length === 0) return null;
-
   const successfulTransformations = group.filter((t) => t.success);
   const successRate = successfulTransformations.length / group.length;
-
   if (successRate < 0.5) return null; // Skip patterns with low success rate
-
   const representative = group[0];
   if (!representative) return null;
-
   const variables = extractVariablesFromTransformation(representative.before, representative.after);
-
   return {
     id: `learned-pattern-${Date.now()}`,
     name: 'Learned Pattern',
@@ -1003,7 +911,6 @@ function generatePatternFromGroup(
     ],
   };
 }
-
 /**
  * Calculate average rating from group feedback
  */
@@ -1014,24 +921,20 @@ function calculateAverageRating(
   const successfulCount = group.filter((t) => t.success).length;
   return (successfulCount / group.length) * 5; // Convert success rate to 1-5 rating
 }
-
 /**
  * Extract variables from before/after transformation pair
  */
 function extractVariablesFromTransformation(before: string, after: string): string[] {
   // Simple variable extraction - in practice, this would be more sophisticated
   const variables: string[] = [];
-
   // Look for common variable patterns
   const beforeTokens = before.split(/\W+/).filter((t) => t.length > 0);
   const afterTokens = after.split(/\W+/).filter((t) => t.length > 0);
-
   // Find tokens that appear in both before and after
   for (const token of beforeTokens) {
     if (afterTokens.includes(token) && !variables.includes(token)) {
       variables.push(token);
     }
   }
-
   return variables;
 }
