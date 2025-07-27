@@ -1,3 +1,8 @@
+import { execSync } from 'node:child_process';
+import { readFile, writeFile } from 'node:fs/promises';
+import { fromPromise } from 'xstate';
+import { z } from 'zod';
+
 /**
  * TypeScript Error Detection and Resolution Actor
  *
@@ -6,10 +11,6 @@
  * architecture for seamless error resolution.
  */
 
-import { execSync } from 'node:child_process';
-import { readFile, writeFile } from 'node:fs/promises';
-import { fromPromise } from 'xstate';
-import { z } from 'zod';
 
 // TypeScript error schemas
 export const TypeScriptErrorSchema = z.object({
@@ -529,4 +530,4 @@ export const validateErrorResolution = (data: unknown): ErrorResolution => {
 
 export const validateTypeScriptFixResult = (data: unknown): TypeScriptFixResult => {
   return TypeScriptFixResultSchema.parse(data);
-};
+};
