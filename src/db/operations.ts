@@ -1,3 +1,28 @@
+
+import { z } from 'zod';
+import { getDatabaseManager } from './connection.ts';
+import type { PoolClient } from 'pg';
+import {
+  validateArtifact,
+  validateGraphEdge,
+  validateSemanticSearch,
+  validateGraphTraversal,
+} from './schema.ts';
+import type {
+  Artifact,
+  GraphEdge,
+  QuerySession,
+  CreateArtifactInput,
+  UpdateArtifactInput,
+  CreateGraphEdgeInput,
+  SearchFilters,
+  SemanticSearchInput,
+  GraphTraversalInput,
+  SearchResult,
+  GraphTraversalResult,
+  DatabaseOperationResult
+} from './schema.ts';
+
 /**
  * Database Operations and Query Builders for TensorRT-LLM Knowledge Graph
  *
@@ -6,44 +31,7 @@
  * of provable correctness and performance optimization.
  */
 
-import type { PoolClient } from 'pg';
-import { z } from 'zod';
-import { getDatabaseManager } from './connection.ts';
-import {
-  type Artifact,
-  type GraphEdge,
-  type QuerySession,
-  type Intermediate,
-  type Commit,
-  type PR,
-  type CSTNode,
-  type ArtifactKeyword,
-  type ArtifactDomain,
-  type QueryLog,
-  type CreateArtifactInput,
-  type UpdateArtifactInput,
-  type CreateGraphEdgeInput,
-  type SearchFilters,
-  type SemanticSearchInput,
-  type GraphTraversalInput,
-  type SearchResult,
-  type GraphTraversalResult,
-  type DatabaseOperationResult,
-  ArtifactSchema,
-  GraphEdgeSchema,
-  QuerySessionSchema,
-  IntermediateSchema,
-  CommitSchema,
-  PRSchema,
-  CSTNodeSchema,
-  ArtifactKeywordSchema,
-  ArtifactDomainSchema,
-  QueryLogSchema,
-  validateArtifact,
-  validateGraphEdge,
-  validateSemanticSearch,
-  validateGraphTraversal,
-} from './schema.ts';
+// ...imports cleaned up above...
 
 // =============================================================================
 // DATABASE OPERATION ERRORS
@@ -72,9 +60,7 @@ export class ValidationError extends Error {
   }
 }
 
-// =============================================================================
-// ARTIFACT OPERATIONS
-// =============================================================================
+
 
 export class ArtifactOperations {
   private db = getDatabaseManager();
@@ -525,6 +511,7 @@ export class ArtifactOperations {
   private mapRowToArtifact(row: any): Artifact {
     return {
       ...row,
+      entityKind: 'artifact',
       embedding: row.embedding ? JSON.parse(row.embedding) : undefined,
       metadata: row.metadata ? JSON.parse(row.metadata) : {},
       created_date: row.created_date ? new Date(row.created_date) : undefined,
@@ -794,6 +781,7 @@ export class GraphEdgeOperations {
       id: row.artifact_id || row.id,
       type: row.type,
       name: row.name,
+      entityKind: 'artifact',
       description: row.description,
       content: row.content,
       file_path: row.file_path,
@@ -940,23 +928,20 @@ export class DatabaseOperations {
    * Get database health status
    */
   async healthCheck(): Promise<DatabaseOperationResult> {
-    const startTime = Date.now();
-    
     try {
       const db = getDatabaseManager();
       const health = await db.healthCheck();
-      
       return {
         success: health.isHealthy,
         affected_rows: 0,
-        execution_time_ms: Date.now() - startTime,
+        execution_time_ms: 0,
         data: health,
       };
     } catch (error) {
       return {
         success: false,
         affected_rows: 0,
-        execution_time_ms: Date.now() - startTime,
+        execution_time_ms: 0,
         error: error instanceof Error ? error.message : String(error),
       };
     }
