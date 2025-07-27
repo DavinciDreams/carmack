@@ -1,16 +1,25 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
+
 import { PatternClusterer } from '../learning/clustering.ts';
 import { createNLPAnalyzer } from '../learning/nlp.ts';
 import { ReinforcementLearningManager } from '../learning/reinforcement.ts';
 import { PatternSimilarityDetector } from '../learning/similarity.ts';
 import { PatternStatistics, StatisticalAnalyzer } from '../learning/statistics.ts';
+
 import type { NLPAnalysis, PatternFeatureVector } from '../learning/types.ts';
 import type { AstPattern, ComplexityMetrics } from '../types.js';
 
+// Canonical language enum (should match pattern-discovery)
+export const SupportedLanguageEnum = [
+  'typescript', 'javascript', 'python', 'cpp', 'c', 'java', 'go', 'rust', 'ruby', 'php', 'csharp', 'kotlin', 'swift', 'scala', 'haskell', 'elixir', 'shell', 'json', 'yaml', 'toml', 'lua', 'perl', 'r', 'dart', 'other',
+] as const;
+export type SupportedLanguage = typeof SupportedLanguageEnum[number];
+
 // Extended pattern type for learning with confidence
-type LearnedPattern = AstPattern & {
+type LearnedPattern = Omit<AstPattern, 'language'> & {
+  language: SupportedLanguage;
   confidence?: number;
 };
 
@@ -97,7 +106,7 @@ const PatternLearningInputSchema = z.object({
     .object({
       codebase: z
         .object({
-          language: z.string().default('typescript'),
+          language: z.enum(SupportedLanguageEnum).default('typescript'),
           framework: z.string().optional(),
           complexity: z.number().default(5),
           size: z.number().default(1000), // lines of code
@@ -456,7 +465,12 @@ export class PatternLearner {
 
     // Analyze context for optimization opportunities
     if (context?.codebase) {
-      const contextInsights = this.analyzeCodebaseContext(context.codebase);
+      // Ensure language is a string for analyzeCodebaseContext
+      const codebase = context.codebase ? {
+        ...context.codebase,
+        language: typeof context.codebase.language === 'string' ? context.codebase.language : 'other',
+      } : undefined;
+      const contextInsights = codebase ? this.analyzeCodebaseContext(codebase) : [];
       insights.push(...contextInsights);
     }
 
@@ -777,7 +791,7 @@ export class PatternLearner {
           // Generate pattern based on NLP analysis and file content
           const discoveredPattern: LearnedPattern = {
             id: `discovered-${transformation.id}-${Date.now()}`,
-            language: featureVector.metadata.language,
+            language: normalizeLanguage(featureVector.metadata.language),
             pattern: this.generatePatternFromAnalysis(fileContent, nlpAnalysis),
             replacement: this.generateReplacementFromAnalysis(fileContent, nlpAnalysis),
             description: `Auto-discovered ${nlpAnalysis.extractedFeatures.intent} pattern: ${nlpAnalysis.extractedFeatures.keywords.slice(0, 3).join(', ')}`,
@@ -786,6 +800,11 @@ export class PatternLearner {
             mode: transformation.mode,
             confidence: this.calculatePatternConfidence(nlpAnalysis, fileContent),
           };
+// Normalize language to SupportedLanguage
+function normalizeLanguage(lang: string): SupportedLanguage {
+  if (SupportedLanguageEnum.includes(lang as SupportedLanguage)) return lang as SupportedLanguage;
+  return 'other';
+}
 
           patterns.push(discoveredPattern);
         } catch (fileError) {
