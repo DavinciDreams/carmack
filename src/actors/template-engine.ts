@@ -1,8 +1,9 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
-import { filterPatternsByLanguageAndMode, PRESET_FILTERS } from '../utils/pattern-filtering.js';
-import { detectLanguageFromFile } from '../utils/language-detection.js';
+
+import { detectLanguageFromFile } from '../utils/language-detection.ts';
+import { filterPatternsByLanguageAndMode, PRESET_FILTERS } from '../utils/pattern-filtering.ts';
 
 /**
  * Enhanced Template Engine for Ultra-Fast Code Transformations
