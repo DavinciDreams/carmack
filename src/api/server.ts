@@ -1,3 +1,34 @@
+// Export routes for introspection/testing
+export { routes };
+
+// Create server instance (does not start listening)
+export function createServer(options?: { port?: number }) {
+  return serve({
+    async fetch(req) {
+      const url = new URL(req.url);
+      const route = routes.find(r => r.method === req.method && r.path === url.pathname);
+      if (!route) {
+        return new Response(JSON.stringify({ error: "Not found" }), { status: 404 });
+      }
+      try {
+        return await route.handler(req);
+      } catch (err) {
+        return new Response(JSON.stringify({ error: (err as Error).message }), { status: 400 });
+      }
+    },
+    port: options?.port ?? env.PORT ?? 3000,
+  });
+}
+
+// Stop server (stub, as Bun's serve does not support shutdown yet)
+export function stopServer() {
+  // No-op for now; add logic if Bun adds shutdown support
+}
+
+// Setup graceful shutdown (stub for future extensibility)
+export function setupGracefulShutdown() {
+  // No-op for now; add signal handling if needed
+}
 import { serve } from "bun";
 
 import { getEnvironmentConfig } from "../config/environment.ts";
@@ -36,19 +67,23 @@ const routes = [
   ...telemetryRoutes,
 ];
 
-serve({
-  async fetch(req) {
-    const url = new URL(req.url);
-    const route = routes.find(r => r.method === req.method && r.path === url.pathname);
-    if (!route) {
-      return new Response(JSON.stringify({ error: "Not found" }), { status: 404 });
-    }
-    try {
-      // Optionally pass env/config to handlers if needed
-      return await route.handler(req);
-    } catch (err) {
-      return new Response(JSON.stringify({ error: (err as Error).message }), { status: 400 });
-    }
-  },
-  port: env.PORT ?? 3000,
-});
+
+export function startServer(portOverride?: number) {
+  const server = serve({
+    async fetch(req) {
+      const url = new URL(req.url);
+      const route = routes.find(r => r.method === req.method && r.path === url.pathname);
+      if (!route) {
+        return new Response(JSON.stringify({ error: "Not found" }), { status: 404 });
+      }
+      try {
+        // Optionally pass env/config to handlers if needed
+        return await route.handler(req);
+      } catch (err) {
+        return new Response(JSON.stringify({ error: (err as Error).message }), { status: 400 });
+      }
+    },
+    port: portOverride ?? env.PORT ?? 3000,
+  });
+  return server;
+}
