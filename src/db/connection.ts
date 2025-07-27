@@ -1,3 +1,10 @@
+import { Pool } from 'pg';
+import { z } from 'zod';
+
+import { getEnvironmentConfig } from '../config/environment.ts';
+
+import type { PoolClient, PoolConfig } from 'pg';
+
 /**
  * Database Connection Module for TensorRT-LLM Knowledge Graph
  *
@@ -6,10 +13,6 @@
  * provable correctness and robust error handling.
  */
 
-import { Pool } from 'pg';
-import type { PoolClient, PoolConfig } from 'pg';
-import { z } from 'zod';
-import { getEnvironmentConfig } from '../config/environment.ts';
 
 // =============================================================================
 // DATABASE CONFIGURATION SCHEMAS
