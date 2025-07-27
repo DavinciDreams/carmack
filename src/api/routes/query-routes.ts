@@ -1,27 +1,21 @@
-/**
- * Query Routes for TensorRT-LLM Knowledge Graph API
- *
- * Implements the main query processing endpoints with proper error handling,
- * validation, and response formatting. Follows Carmack's principles of
- * robust API design and type safety.
- */
-
-import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
+
+
+import { AIProcessor } from '../ai-processor.ts';
+import { QueryEngine } from '../query-engine.ts';
+import { SessionManager } from '../session-manager.ts';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import {
+  validateQueryRequest,
+  validateContinueQueryRequest,
+  API_ENDPOINTS,
+} from '../contracts.ts';
 import type {
   QueryRequest,
   QueryResponse,
   ContinueQueryRequest,
   ErrorResponse,
 } from '../contracts.ts';
-import {
-  validateQueryRequest,
-  validateContinueQueryRequest,
-  API_ENDPOINTS,
-} from '../contracts.ts';
-import { QueryEngine } from '../query-engine.ts';
-import { SessionManager } from '../session-manager.ts';
-import { AIProcessor } from '../ai-processor.ts';
 
 // =============================================================================
 // ROUTE HANDLER ERRORS
@@ -88,19 +82,34 @@ export class QueryRouteHandlers {
       const queryResult = await this.queryEngine.processQuery(validatedRequest);
 
       // Enhance with AI processing
-      const aiResult = await this.aiProcessor.processQuery({
+
+      // --- AI Processing Pipeline ---
+      const facts = await this.aiProcessor.extractFacts({
         query: validatedRequest.query,
         evidence: queryResult.evidence_chain,
         intent: queryResult.intent,
         complexity: queryResult.complexity,
         context: queryResult.session_context,
       });
-
-      // Generate investigation threads from AI hypotheses
-      const investigationThreads = this.aiProcessor.generateInvestigationThreads(
-        aiResult.hypotheses,
-        aiResult.facts
-      );
+      const hypotheses = await this.aiProcessor.generateHypotheses({
+        query: validatedRequest.query,
+        facts,
+        intent: queryResult.intent,
+        complexity: queryResult.complexity,
+        context: queryResult.session_context,
+      });
+      const synthesis = await this.aiProcessor.synthesize({
+        query: validatedRequest.query,
+        facts,
+        hypotheses,
+        intent: queryResult.intent,
+        complexity: queryResult.complexity,
+        context: queryResult.session_context,
+      });
+      const enhanced_evidence = this.aiProcessor['enhanceEvidence']
+        ? this.aiProcessor['enhanceEvidence'](queryResult.evidence_chain, facts)
+        : queryResult.evidence_chain;
+      const investigationThreads = this.aiProcessor.generateInvestigationThreads(hypotheses, facts);
 
       // Update session with query results
       const updatedSession = await this.sessionManager.updateSessionWithQuery(
@@ -111,43 +120,50 @@ export class QueryRouteHandlers {
           query_id: requestId,
           session_id: session.id,
           investigation_threads: investigationThreads,
-          primary_answer: aiResult.synthesis.primary_answer,
-          confidence_score: aiResult.synthesis.confidence_assessment.overall_confidence,
-          suggested_questions: aiResult.synthesis.follow_up_suggestions,
+          primary_answer: synthesis.primary_answer,
+          confidence_score: synthesis.confidence_assessment.overall_confidence,
+          suggested_questions: synthesis.follow_up_suggestions,
         }
       );
 
       // Build response
       const response: QueryResponse = {
+        created_at: new Date(),
         query_id: requestId,
         session_id: session.id,
         intent: queryResult.intent,
         complexity: queryResult.complexity,
-        primary_answer: aiResult.synthesis.primary_answer,
-        evidence_chain: aiResult.enhanced_evidence,
-        confidence_score: aiResult.synthesis.confidence_assessment.overall_confidence,
+        primary_answer: synthesis.primary_answer,
+        evidence_chain: enhanced_evidence,
+        confidence_score: synthesis.confidence_assessment.overall_confidence,
         investigation_threads: investigationThreads,
-        suggested_questions: aiResult.synthesis.follow_up_suggestions,
+        suggested_questions: synthesis.follow_up_suggestions,
         execution_time_ms: Date.now() - startTime,
         artifacts_searched: queryResult.artifacts_searched,
         relationships_traversed: queryResult.relationships_traversed,
-        session_context: updatedSession.context,
-        created_at: new Date(),
+        session_context: queryResult.session_context,
       };
-
-      // Set session token in response header
-      reply.header('x-session-token', session.token);
-
       return response;
     } catch (error) {
-      const errorResponse = this.buildErrorResponse(
-        error,
-        requestId,
-        Date.now() - startTime
-      );
-      
+      const errorResponse = this.buildErrorResponse(error, requestId);
       reply.status(errorResponse.statusCode || 500);
-      throw errorResponse;
+      // Return a QueryResponse-shaped error object
+      return {
+        created_at: new Date(),
+        query_id: requestId,
+        session_id: '',
+        intent: 'technical_question',
+        complexity: 'simple',
+        primary_answer: '',
+        evidence_chain: [],
+        confidence_score: 0,
+        investigation_threads: [],
+        suggested_questions: [],
+        execution_time_ms: Date.now() - startTime,
+        artifacts_searched: 0,
+        relationships_traversed: 0,
+        session_context: {},
+      };
     }
   }
 
@@ -205,19 +221,34 @@ export class QueryRouteHandlers {
       const queryResult = await this.queryEngine.processQuery(enhancedQuery);
 
       // Enhance with AI processing
-      const aiResult = await this.aiProcessor.processQuery({
+
+      // --- AI Processing Pipeline ---
+      const facts = await this.aiProcessor.extractFacts({
         query: validatedRequest.follow_up_query,
         evidence: queryResult.evidence_chain,
         intent: queryResult.intent,
         complexity: queryResult.complexity,
         context: { ...queryResult.session_context, ...context_hints },
       });
-
-      // Generate updated investigation threads
-      const investigationThreads = this.aiProcessor.generateInvestigationThreads(
-        aiResult.hypotheses,
-        aiResult.facts
-      );
+      const hypotheses = await this.aiProcessor.generateHypotheses({
+        query: validatedRequest.follow_up_query,
+        facts,
+        intent: queryResult.intent,
+        complexity: queryResult.complexity,
+        context: { ...queryResult.session_context, ...context_hints },
+      });
+      const synthesis = await this.aiProcessor.synthesize({
+        query: validatedRequest.follow_up_query,
+        facts,
+        hypotheses,
+        intent: queryResult.intent,
+        complexity: queryResult.complexity,
+        context: { ...queryResult.session_context, ...context_hints },
+      });
+      const enhanced_evidence = this.aiProcessor['enhanceEvidence']
+        ? this.aiProcessor['enhanceEvidence'](queryResult.evidence_chain, facts)
+        : queryResult.evidence_chain;
+      const investigationThreads = this.aiProcessor.generateInvestigationThreads(hypotheses, facts);
 
       // Update session
       const updatedSession = await this.sessionManager.updateSessionWithQuery(
@@ -228,40 +259,50 @@ export class QueryRouteHandlers {
           query_id: crypto.randomUUID(),
           session_id: session.id,
           investigation_threads: investigationThreads,
-          primary_answer: aiResult.synthesis.primary_answer,
-          confidence_score: aiResult.synthesis.confidence_assessment.overall_confidence,
-          suggested_questions: aiResult.synthesis.follow_up_suggestions,
+          primary_answer: synthesis.primary_answer,
+          confidence_score: synthesis.confidence_assessment.overall_confidence,
+          suggested_questions: synthesis.follow_up_suggestions,
         }
       );
 
       // Build response
       const response: QueryResponse = {
+        created_at: new Date(),
         query_id: crypto.randomUUID(),
         session_id: session.id,
         intent: queryResult.intent,
         complexity: queryResult.complexity,
-        primary_answer: aiResult.synthesis.primary_answer,
-        evidence_chain: aiResult.enhanced_evidence,
-        confidence_score: aiResult.synthesis.confidence_assessment.overall_confidence,
+        primary_answer: synthesis.primary_answer,
+        evidence_chain: enhanced_evidence,
+        confidence_score: synthesis.confidence_assessment.overall_confidence,
         investigation_threads: investigationThreads,
-        suggested_questions: aiResult.synthesis.follow_up_suggestions,
+        suggested_questions: synthesis.follow_up_suggestions,
         execution_time_ms: Date.now() - startTime,
         artifacts_searched: queryResult.artifacts_searched,
         relationships_traversed: queryResult.relationships_traversed,
         session_context: updatedSession.context,
-        created_at: new Date(),
       };
-
       return response;
     } catch (error) {
-      const errorResponse = this.buildErrorResponse(
-        error,
-        queryId,
-        Date.now() - startTime
-      );
-      
+      const errorResponse = this.buildErrorResponse(error, queryId);
       reply.status(errorResponse.statusCode || 500);
-      throw errorResponse;
+      // Return a QueryResponse-shaped error object
+      return {
+        created_at: new Date(),
+        query_id: crypto.randomUUID(),
+        session_id: '',
+        intent: 'technical_question',
+        complexity: 'simple',
+        primary_answer: '',
+        evidence_chain: [],
+        confidence_score: 0,
+        investigation_threads: [],
+        suggested_questions: [],
+        execution_time_ms: Date.now() - startTime,
+        artifacts_searched: 0,
+        relationships_traversed: 0,
+        session_context: {},
+      };
     }
   }
 
@@ -319,23 +360,13 @@ export class QueryRouteHandlers {
       details = {
         validation_errors: error.errors,
       };
-    } else if (error instanceof Error) {
-      message = error.message;
-      details = {
-        error_type: error.constructor.name,
-      };
     }
-
-    if (executionTime) {
-      details.execution_time_ms = executionTime;
-    }
-
     return {
       error: {
         code,
         message,
-        details,
         timestamp: new Date(),
+        details,
         request_id: requestId,
       },
       statusCode,
@@ -343,68 +374,10 @@ export class QueryRouteHandlers {
   }
 }
 
-// =============================================================================
-// ROUTE REGISTRATION
-// =============================================================================
 
-/**
- * Register query routes with Fastify instance
- */
-export async function registerQueryRoutes(fastify: FastifyInstance): Promise<void> {
+// Route registration function
+export function registerQueryRoutes(fastify: FastifyInstance) {
   const handlers = new QueryRouteHandlers();
-
-  // Initial query processing
-  fastify.post(API_ENDPOINTS.QUERY, {
-    schema: {
-      description: 'Process initial query with intelligent analysis',
-      tags: ['Query'],
-      body: {
-        type: 'object',
-        properties: {
-          query: { type: 'string', minLength: 1, maxLength: 2000 },
-          context: {
-            type: 'object',
-            properties: {
-              repository_url: { type: 'string', format: 'uri' },
-              file_paths: { type: 'array', items: { type: 'string' } },
-              language_hint: { type: 'string' },
-              domain_hint: { type: 'string' },
-            },
-          },
-          options: {
-            type: 'object',
-            properties: {
-              max_results: { type: 'number', minimum: 1, maximum: 100, default: 20 },
-              include_code_snippets: { type: 'boolean', default: true },
-              enable_multi_turn: { type: 'boolean', default: true },
-              complexity_preference: { 
-                type: 'string', 
-                enum: ['simple', 'moderate', 'complex', 'expert'],
-                default: 'moderate'
-              },
-              search_depth: { type: 'number', minimum: 1, maximum: 5, default: 3 },
-            },
-          },
-        },
-        required: ['query'],
-      },
-      response: {
-        200: {
-          type: 'object',
-          description: 'Query processed successfully',
-        },
-        400: {
-          type: 'object',
-          description: 'Invalid request',
-        },
-        500: {
-          type: 'object',
-          description: 'Internal server error',
-        },
-      },
-    },
-    handler: handlers.handleQuery.bind(handlers),
-  });
 
   // Query continuation
   fastify.post(API_ENDPOINTS.CONTINUE_QUERY, {
