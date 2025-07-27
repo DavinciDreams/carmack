@@ -3,9 +3,8 @@ import { join } from 'path';
 import { z } from 'zod';
 
 import { getDatabaseManager } from './connection.ts';
-import { SchemaMigrationSchema, type SchemaMigration } from './schema.ts';
+import { type SchemaMigration } from './schema.ts';
 
-import type { PoolClient } from 'pg';
 
 /**
  * Database Migration Management for TensorRT-LLM Knowledge Graph
