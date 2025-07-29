@@ -2,23 +2,26 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { type ActorLogic, createActor, fromPromise } from 'xstate';
 import { z } from 'zod';
+
 import { astGrepTransformationActor } from '../actors/ast-grep-transformation.ts';
 import { complexityActor } from '../actors/complexity.ts';
 import { feedbackLoopActor } from '../actors/feedback-loop.ts';
 import { llmTestingFrameworkActor } from '../actors/llm-testing-framework.ts';
-import { llmTransformationActor } from '../actors/llm-transformation.ts';
 import { createEnhancedLLMTransformer } from '../actors/llm-transformation-enhanced.ts';
+import { llmTransformationActor } from '../actors/llm-transformation.ts';
 import { patternDiscoveryActor } from '../actors/pattern-discovery.ts';
 import { patternLearningActor } from '../actors/pattern-learning.ts';
-// Import all our transformation systems
 import { templateEngineActor } from '../actors/template-engine.ts';
-// Import enhanced components
 import { enhancedTransformationOrchestratorActor } from '../actors/transformation-enhanced.ts';
 import { validationActor } from '../actors/validation.ts';
 import { DocumentationGenerator } from '../docs/generator.ts';
 
-// Import standardized result types
 import type {
+
+// Import all our transformation systems
+// Import enhanced components
+
+// Import standardized result types
   AstGrepResult,
   ComplexityMetrics,
   FeedbackLoopResult,
@@ -1589,4 +1592,4 @@ export const defaultProductionConfig: ProductionConfig = {
     maxExecutionTime: 600000,
     intelligentFallback: true,
   },
-};
+};
