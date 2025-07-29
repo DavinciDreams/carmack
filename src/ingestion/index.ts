@@ -1,9 +1,9 @@
 /**
- * TensorRT-LLM Knowledge Graph Ingestion Pipeline
+ * Repository Knowledge Graph Ingestion Pipeline
  *
- * Complete ingestion system for processing repository data, extracting code
- * semantics, and populating the knowledge graph. This module provides all
- * the components needed for the EPIC-INGESTION-PIPELINE implementation.
+ * Complete ingestion system for processing any repository's data, extracting code
+ * semantics, and populating a knowledge graph. This module provides all
+ * the components needed for a robust, repo-agnostic ingestion pipeline implementation.
  */
 
 // Core components
