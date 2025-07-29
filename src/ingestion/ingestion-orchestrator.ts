@@ -8,9 +8,9 @@ import { RepositoryManager, createRepositoryManager } from './repository-manager
 
 
 /**
- * Ingestion Orchestrator for TensorRT-LLM Knowledge Graph
+ * Ingestion Orchestrator for Repository Knowledge Graph
  *
- * Coordinates the complete ingestion pipeline including repository processing,
+ * Coordinates the complete ingestion pipeline for any repository, including repository processing,
  * historical data extraction, AST analysis, content processing, and database
  * population. Follows Carmack's principles of robust orchestration and
  * error recovery.
@@ -25,7 +25,7 @@ import { RepositoryManager, createRepositoryManager } from './repository-manager
  * Ingestion configuration schema
  */
 // Dynamically resolve repo URL and workspace path from environment
-const DEFAULT_REPO_URL = process.env.REPO_URL || 'https://github.com/NVIDIA/TensorRT-LLM';
+const DEFAULT_REPO_URL = process.env.REPO_URL || 'https://github.com/example/repo';
 const repoNameFromUrl = (url: string) => {
   const match = url.match(/github.com[/:]([^/]+)\/([^/.]+)/);
   return match ? match[2] : 'repo';
@@ -196,7 +196,7 @@ export class IngestionOrchestrator {
     const startTime = Date.now();
     
     try {
-      console.log('🚀 Starting TensorRT-LLM knowledge graph ingestion...');
+  console.log('🚀 Starting repository knowledge graph ingestion...');
       
       // Phase 1: Clone/Update Repository
      // Skipping auto-clone of Carmack repo; only clone target repos via repository manager as requested.
@@ -652,9 +652,9 @@ export class IngestionOrchestrator {
 // =============================================================================
 
 /**
- * Create and run TensorRT-LLM ingestion
+ * Create and run repository ingestion
  */
-export async function runTensorRTIngestion(
+export async function runRepositoryIngestion(
   config?: Partial<IngestionConfig>
 ): Promise<IngestionResult> {
   const orchestrator = new IngestionOrchestrator(config);
