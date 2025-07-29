@@ -1,25 +1,25 @@
+import { createHash } from 'node:crypto';
+import { performance } from 'node:perf_hooks';
+
+import { getTelemetryCollector } from './collector.js';
+
+import type {
+
 /**
  * Telemetry integration for Carmack Coder transformation system
  * Provides comprehensive observability without impacting transformation performance
  */
-
-import { createHash } from 'node:crypto';
-import { performance } from 'node:perf_hooks';
-import { getTelemetryCollector } from './collector.js';
-import type {
   PipelineStages,
   QualityMetrics,
   TransformationMode,
   // CodeQualityDelta,
 } from './types.js';
-
 /**
  * Performance timer for measuring pipeline stages
  */
 export class PerformanceTimer {
   private startTimes: Map<string, number> = new Map();
   private stages: Partial<PipelineStages> = {};
-
   /**
    * Start timing a pipeline stage
    * @param stage - Stage name to time
@@ -27,7 +27,6 @@ export class PerformanceTimer {
   start(stage: keyof PipelineStages): void {
     this.startTimes.set(stage, performance.now());
   }
-
   /**
    * End timing a pipeline stage
    * @param stage - Stage name to complete
@@ -39,7 +38,6 @@ export class PerformanceTimer {
       this.startTimes.delete(stage);
     }
   }
-
   /**
    * Get completed pipeline timing measurements
    */
@@ -52,7 +50,6 @@ export class PerformanceTimer {
       serialization: this.stages.serialization ?? 0,
     };
   }
-
   /**
    * Get total elapsed time across all stages
    */
@@ -60,7 +57,6 @@ export class PerformanceTimer {
     return Object.values(this.stages).reduce((total, time) => total + (time ?? 0), 0);
   }
 }
-
 /**
  * Memory usage tracker for transformation operations
  */
@@ -72,48 +68,37 @@ export class MemoryTracker {
     external: number;
     rss: number;
   }> = [];
-
   private samplingInterval: NodeJS.Timeout | null = null;
   private isTracking = false;
-
   /**
    * Start memory tracking with periodic sampling
    * @param intervalMs - Sampling interval in milliseconds
    */
   start(intervalMs = 100): void {
     if (this.isTracking) return;
-
     this.isTracking = true;
     this.timeline = [];
-
     /** Record initial memory state */
     this.recordSample();
-
     /** Set up periodic sampling */
     this.samplingInterval = setInterval(() => {
       this.recordSample();
     }, intervalMs);
   }
-
   /**
    * Stop memory tracking and return timeline
    */
   stop(): typeof this.timeline {
     if (!this.isTracking) return [];
-
     this.isTracking = false;
-
     if (this.samplingInterval) {
       clearInterval(this.samplingInterval);
       this.samplingInterval = null;
     }
-
     /** Record final memory state */
     this.recordSample();
-
     return [...this.timeline];
   }
-
   /**
    * Record current memory usage sample
    */
@@ -127,7 +112,6 @@ export class MemoryTracker {
       rss: memUsage.rss,
     });
   }
-
   /**
    * Check if GC was likely triggered based on memory patterns
    */
@@ -135,21 +119,16 @@ export class MemoryTracker {
     if (this.timeline.length < 3) {
       return { triggered: false, estimatedGCTime: 0 };
     }
-
     /** Look for significant heap drops that indicate GC */
     let gcTriggered = false;
     let estimatedGCTime = 0;
-
     for (let i = 1; i < this.timeline.length; i++) {
       const prev = this.timeline[i - 1];
       const curr = this.timeline[i];
-
       if (!prev || !curr) continue;
-
       /** Detect significant heap reduction (likely GC) */
       const heapReduction = prev.heapUsed - curr.heapUsed;
       const reductionPercentage = heapReduction / prev.heapUsed;
-
       if (reductionPercentage > 0.1) {
         // >10% heap reduction
         gcTriggered = true;
@@ -157,11 +136,9 @@ export class MemoryTracker {
         estimatedGCTime += curr.timestamp - prev.timestamp;
       }
     }
-
     return { triggered: gcTriggered, estimatedGCTime };
   }
 }
-
 /**
  * Cache performance monitor for AST and pattern caches
  */
@@ -177,7 +154,6 @@ export class CacheMonitor {
       memoryUsage: number;
     }
   > = new Map();
-
   /**
    * Record cache hit
    * @param cacheKey - Cache identifier
@@ -187,7 +163,6 @@ export class CacheMonitor {
     this.getOrCreateStats(cacheKey).hits++;
     this.getOrCreateStats(cacheKey).lookupTimes.push(lookupTime);
   }
-
   /**
    * Record cache miss
    * @param cacheKey - Cache identifier
@@ -197,7 +172,6 @@ export class CacheMonitor {
     this.getOrCreateStats(cacheKey).misses++;
     this.getOrCreateStats(cacheKey).lookupTimes.push(lookupTime);
   }
-
   /**
    * Record cache eviction
    * @param cacheKey - Cache identifier
@@ -205,7 +179,6 @@ export class CacheMonitor {
   recordEviction(cacheKey: string): void {
     this.getOrCreateStats(cacheKey).evictions++;
   }
-
   /**
    * Update cache size and memory usage
    * @param cacheKey - Cache identifier
@@ -217,7 +190,6 @@ export class CacheMonitor {
     stats.size = size;
     stats.memoryUsage = memoryUsage;
   }
-
   /**
    * Get cache statistics for telemetry reporting
    * @param cacheKey - Cache identifier
@@ -225,7 +197,6 @@ export class CacheMonitor {
   getStats(cacheKey: string) {
     const stats = this.stats.get(cacheKey);
     if (!stats) return null;
-
     return {
       hits: stats.hits,
       misses: stats.misses,
@@ -235,7 +206,6 @@ export class CacheMonitor {
       memoryUsage: stats.memoryUsage,
     };
   }
-
   /**
    * Reset statistics for a cache
    * @param cacheKey - Cache identifier
@@ -243,7 +213,6 @@ export class CacheMonitor {
   reset(cacheKey: string): void {
     this.stats.delete(cacheKey);
   }
-
   private getOrCreateStats(cacheKey: string) {
     if (!this.stats.has(cacheKey)) {
       this.stats.set(cacheKey, {
@@ -262,7 +231,6 @@ export class CacheMonitor {
     return stats;
   }
 }
-
 /**
  * Code quality analyzer for before/after comparison
  */
@@ -277,30 +245,23 @@ export class QualityAnalyzer {
     const linesOfCode = lines.filter(
       (line) => line.trim().length > 0 && !line.trim().startsWith('//')
     ).length;
-
     /** Count functions (simplified regex approach) */
     const functionMatches = code.match(/function\s+\w+|const\s+\w+\s*=\s*\([^)]*\)\s*=>/g) || [];
     const functionCount = functionMatches.length;
-
     /** Calculate nesting depth */
     const nestingDepth = this.calculateNestingDepth(code);
-
     /** Estimate cyclomatic complexity (simplified) */
     const cyclomaticComplexity = this.calculateCyclomaticComplexity(code);
-
     /** Estimate cognitive complexity */
     const cognitiveComplexity = this.calculateCognitiveComplexity(code);
-
     /** Calculate maintainability index (simplified version) */
     const maintainabilityIndex = this.calculateMaintainabilityIndex(
       cyclomaticComplexity,
       linesOfCode,
       code
     );
-
     /** Calculate duplication ratio (simplified) */
     const duplicationRatio = this.calculateDuplicationRatio(lines);
-
     return {
       cyclomaticComplexity,
       cognitiveComplexity,
@@ -311,14 +272,12 @@ export class QualityAnalyzer {
       nestingDepth,
     };
   }
-
   /**
    * Calculate maximum nesting depth in code
    */
   private calculateNestingDepth(code: string): number {
     let maxDepth = 0;
     let currentDepth = 0;
-
     for (const char of code) {
       if (char === '{') {
         currentDepth++;
@@ -327,17 +286,14 @@ export class QualityAnalyzer {
         currentDepth = Math.max(0, currentDepth - 1);
       }
     }
-
     return maxDepth;
   }
-
   /**
    * Calculate cyclomatic complexity (simplified)
    */
   private calculateCyclomaticComplexity(code: string): number {
     /** Base complexity is 1 */
     let complexity = 1;
-
     /** Add complexity for control flow statements */
     const controlFlowPatterns = [
       /\bif\b/g,
@@ -349,35 +305,28 @@ export class QualityAnalyzer {
       /\bcatch\b/g,
       /\b\?\s*.*?\s*:/g, // ternary operator
     ];
-
     for (const pattern of controlFlowPatterns) {
       const matches = code.match(pattern);
       if (matches) {
         complexity += matches.length;
       }
     }
-
     return complexity;
   }
-
   /**
    * Calculate cognitive complexity (simplified)
    */
   private calculateCognitiveComplexity(code: string): number {
     let complexity = 0;
     let nestingLevel = 0;
-
     /** Split into tokens for analysis */
     const tokens = code.split(/\s+/);
-
     for (let i = 0; i < tokens.length; i++) {
       const token = tokens[i];
-
       /** Increment for control structures */
       if (['if', 'while', 'for', 'switch'].includes(token || '')) {
         complexity += 1 + nestingLevel;
       }
-
       /** Track nesting level */
       if (token?.includes('{')) {
         nestingLevel++;
@@ -385,10 +334,8 @@ export class QualityAnalyzer {
         nestingLevel = Math.max(0, nestingLevel - 1);
       }
     }
-
     return complexity;
   }
-
   /**
    * Calculate maintainability index (simplified)
    */
@@ -400,7 +347,6 @@ export class QualityAnalyzer {
     /** Simplified version of Maintainability Index calculation */
     const halsteadVolume = Math.log2(code.length); // Simplified Halstead volume
     const commentRatio = (code.match(/\/\*[\s\S]*?\*\/|\/\/.*$/gm) || []).length / linesOfCode;
-
     const maintainabilityIndex = Math.max(
       0,
       171 -
@@ -409,38 +355,31 @@ export class QualityAnalyzer {
         16.2 * Math.log(linesOfCode) +
         50 * Math.sin(Math.sqrt(2.4 * commentRatio))
     );
-
     return Math.min(100, maintainabilityIndex);
   }
-
   /**
    * Calculate code duplication ratio (simplified)
    */
   private calculateDuplicationRatio(lines: string[]): number {
     const lineMap = new Map<string, number>();
     let duplicateLines = 0;
-
     /** Count non-empty, non-comment lines */
     const meaningfulLines = lines.filter((line) => {
       const trimmed = line.trim();
       return trimmed.length > 3 && !trimmed.startsWith('//') && !trimmed.startsWith('/*');
     });
-
     /** Count duplicates */
     for (const line of meaningfulLines) {
       const normalized = line.trim();
       const count = lineMap.get(normalized) || 0;
       lineMap.set(normalized, count + 1);
-
       if (count > 0) {
         duplicateLines++;
       }
     }
-
     return meaningfulLines.length > 0 ? duplicateLines / meaningfulLines.length : 0;
   }
 }
-
 /**
  * Main telemetry integration class for transformation operations
  */
@@ -450,13 +389,11 @@ export class TransformationTelemetry {
   private memoryTracker = new MemoryTracker();
   private cacheMonitor = new CacheMonitor();
   private qualityAnalyzer = new QualityAnalyzer();
-
   private transformationId: string;
   private mode: TransformationMode;
   private filePath: string;
   private originalCode: string;
   private fileSizeBytes: number;
-
   constructor(
     transformationId: string,
     mode: TransformationMode,
@@ -469,18 +406,15 @@ export class TransformationTelemetry {
     this.originalCode = originalCode;
     this.fileSizeBytes = Buffer.byteLength(originalCode, 'utf8');
   }
-
   /**
    * Start telemetry collection for transformation
    */
   startTransformation(): void {
     /** Start performance timing */
     this.timer.start('parsing');
-
     /** Start memory tracking */
     this.memoryTracker.start();
   }
-
   /**
    * Record successful pattern application
    * @param patternId - Pattern that was applied
@@ -488,7 +422,6 @@ export class TransformationTelemetry {
   recordPatternSuccess(patternId: string): void {
     this.collector.recordPatternSuccess(patternId, true, this.mode, this.filePath);
   }
-
   /**
    * Record failed pattern application
    * @param patternId - Pattern that failed
@@ -497,7 +430,6 @@ export class TransformationTelemetry {
   recordPatternFailure(patternId: string, errorReason: string): void {
     this.collector.recordPatternSuccess(patternId, false, this.mode, this.filePath, errorReason);
   }
-
   /**
    * Mark completion of parsing stage
    */
@@ -505,7 +437,6 @@ export class TransformationTelemetry {
     this.timer.end('parsing');
     this.timer.start('patternMatching');
   }
-
   /**
    * Mark completion of pattern matching stage
    */
@@ -513,7 +444,6 @@ export class TransformationTelemetry {
     this.timer.end('patternMatching');
     this.timer.start('transformation');
   }
-
   /**
    * Mark completion of transformation stage
    */
@@ -521,7 +451,6 @@ export class TransformationTelemetry {
     this.timer.end('transformation');
     this.timer.start('validation');
   }
-
   /**
    * Mark completion of validation stage
    */
@@ -529,7 +458,6 @@ export class TransformationTelemetry {
     this.timer.end('validation');
     this.timer.start('serialization');
   }
-
   /**
    * Complete telemetry collection and report metrics
    * @param transformedCode - Final transformed code
@@ -543,11 +471,9 @@ export class TransformationTelemetry {
   ): Promise<void> {
     /** Complete final timing */
     this.timer.end('serialization');
-
     /** Stop memory tracking */
     const memoryTimeline = this.memoryTracker.stop();
     const gcInfo = this.memoryTracker.detectGC();
-
     /** Record latency metrics */
     this.collector.recordLatency(
       this.transformationId,
@@ -557,7 +483,6 @@ export class TransformationTelemetry {
       patternsApplied,
       cacheHit
     );
-
     /** Record memory profile */
     if (memoryTimeline.length > 0) {
       this.collector.recordMemoryProfile(
@@ -567,12 +492,10 @@ export class TransformationTelemetry {
         gcInfo.estimatedGCTime
       );
     }
-
     /** Analyze code quality changes */
     try {
       const originalQuality = await this.qualityAnalyzer.analyzeCode(this.originalCode);
       const transformedQuality = await this.qualityAnalyzer.analyzeCode(transformedCode);
-
       /** Calculate quality improvements */
       const improvement = {
         cyclomaticComplexity:
@@ -583,14 +506,12 @@ export class TransformationTelemetry {
           transformedQuality.maintainabilityIndex - originalQuality.maintainabilityIndex,
         duplicationRatio: originalQuality.duplicationRatio - transformedQuality.duplicationRatio,
       };
-
       /** Calculate overall quality delta */
       const overallQualityDelta =
         (improvement.cyclomaticComplexity > 0 ? 0.3 : -0.3) +
         (improvement.cognitiveComplexity > 0 ? 0.2 : -0.2) +
         (improvement.maintainabilityIndex > 0 ? 0.3 : -0.3) +
         (improvement.duplicationRatio > 0 ? 0.2 : -0.2);
-
       /** Record quality metrics (TEL-003) */
       this.collector.recordQualityDelta({
         id: 'TEL-003',
@@ -607,7 +528,6 @@ export class TransformationTelemetry {
       console.warn('Failed to analyze code quality:', error);
     }
   }
-
   /**
    * Record cache performance metrics
    * @param cacheType - Type of cache measured
@@ -628,7 +548,6 @@ export class TransformationTelemetry {
       );
     }
   }
-
   /**
    * Get cache monitor for external cache operations
    */
@@ -636,7 +555,6 @@ export class TransformationTelemetry {
     return this.cacheMonitor;
   }
 }
-
 /**
  * Create telemetry instance for transformation
  * @param transformationId - Unique transformation ID
