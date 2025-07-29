@@ -1,7 +1,7 @@
 import * as yaml from 'js-yaml';
 import { fromPromise } from 'xstate';
-import type { ASTGrepAnalyzer } from '../docs/ast-analyzer.js';
-import type { ModuleDoc } from '../docs/types.js';
+import type { ASTGrepAnalyzer } from '../docs/ast-analyzer.ts';
+import type { ModuleDoc } from '../docs/types.ts';
 import type {
   AnnotationRequest,
   AnnotationResult,
@@ -11,7 +11,7 @@ import type {
   PatternAnnotation,
   TransformationOpportunity,
 } from './types.js';
-import { AnnotationRequestSchema, LLMAnnotationSchema } from './types.js';
+import { AnnotationRequestSchema, LLMAnnotationSchema } from './types.ts';
 
 /**
  * LLM Annotation Analyzer
