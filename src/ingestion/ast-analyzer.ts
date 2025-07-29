@@ -75,6 +75,28 @@ export const CSTNodeSchema = z.object({
 // =============================
 
 export class ASTAnalyzer {
+  /**
+   * Analyze an array of files and return AST results for each file.
+   * Each file should have: { filePath: string, content: string, language: string }
+   */
+  public async analyzeFiles(files: Array<{ filePath: string; content: string; language: string }>): Promise<Array<{ filePath: string; cstNodes: CSTNode[]; patterns?: any }>> {
+    const results: Array<{ filePath: string; cstNodes: CSTNode[]; patterns?: any }> = [];
+    for (const file of files) {
+      const root = this.parseContent(file.content, file.language);
+      if (!root) {
+        results.push({ filePath: file.filePath, cstNodes: [] });
+        continue;
+      }
+      const cstNodes = this.extractNodes(root, file.language, file.filePath);
+      // Optionally apply patterns if any are loaded
+      let patterns;
+      if (this.patterns.size > 0) {
+        patterns = this.applyPatterns(root, file.language);
+      }
+      results.push({ filePath: file.filePath, cstNodes, patterns });
+    }
+    return results;
+  }
   private config: ASTConfig;
   private patterns: Map<string, ASTGrepPattern>;
 
