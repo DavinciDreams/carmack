@@ -1,12 +1,19 @@
+import { createHash, randomUUID } from 'node:crypto';
+import { EventEmitter } from 'node:events';
+import { performance } from 'node:perf_hooks';
+
+import { getEnvironmentConfig } from "../config/environment.ts";
+import { TelemetryEventSchema } from "../types/unified-schemas.ts";
+import { TelemetryConfigSchema, TelemetryMetricSchema } from './types';
+
+import type { z } from "zod";
+import type {
+
 /**
  * Core telemetry collection system for Carmack Coder
  * Provides high-performance, low-overhead metrics collection with privacy compliance
  */
 
-import { createHash, randomUUID } from 'node:crypto';
-import { EventEmitter } from 'node:events';
-import { performance } from 'node:perf_hooks';
-import type {
   CacheEfficiencyMetric,
   ErrorRecoveryMetric,
   LatencyMetric,
@@ -18,7 +25,6 @@ import type {
   TelemetryMetric,
   TransformationMode,
 } from './types.js';
-import { TelemetryConfigSchema, TelemetryMetricSchema } from './types.js';
 
 /**
  * High-performance telemetry event buffer with automatic batching
@@ -176,6 +182,7 @@ class PerformanceMonitor {
  * Main telemetry collector class
  * Provides low-overhead, high-performance metrics collection
  */
+
 export class TelemetryCollector extends EventEmitter {
   private config: TelemetryConfig;
   private buffer!: TelemetryBuffer;
@@ -183,6 +190,28 @@ export class TelemetryCollector extends EventEmitter {
   private performanceMonitor!: PerformanceMonitor;
   private sessionId!: string;
   private isEnabled: boolean;
+
+  /**
+   * Emit a unified telemetry event conforming to TelemetryEventSchema.
+   * This enables cross-system event reporting for all major components.
+   */
+  public emitUnifiedEvent(event: z.infer<typeof TelemetryEventSchema>): void {
+    if (!this.isEnabled) return;
+    try {
+      // Validate event
+      TelemetryEventSchema.parse(event);
+      // Accepts minimal schema, buffers as generic event for downstream processing
+      // (If needed, could wrap/transform to TelemetryMetric for analytics pipeline)
+      // For now, just emit as a generic event for batch flush
+      this.emit('unifiedTelemetryEvent', event);
+      // Optionally, buffer for batch processing (extend as needed)
+  // Accepts generic event for extensibility
+      this.buffer.add(event as any);
+    } catch (err) {
+      // Do not throw, but log for diagnostics
+      console.warn('[Telemetry] Invalid unified event:', err);
+    }
+  }
 
   constructor(config?: Partial<TelemetryConfig>) {
     super();
@@ -664,13 +693,35 @@ export class TelemetryCollector extends EventEmitter {
 // Singleton instance for global access
 let globalCollector: TelemetryCollector | null = null;
 
+
 /**
  * Get or create global telemetry collector instance
  * @param config - Optional configuration override
  */
 export function getTelemetryCollector(config?: Partial<TelemetryConfig>): TelemetryCollector {
   if (!globalCollector) {
-    globalCollector = new TelemetryCollector(config);
+    // Always use centralized config as base, allow override
+    const env = getEnvironmentConfig();
+    globalCollector = new TelemetryCollector({
+      enabled: env.CARMACK_TELEMETRY_ENABLED,
+      batchSize: env.TELEMETRY_BATCH_SIZE,
+      flushInterval: env.TELEMETRY_FLUSH_INTERVAL,
+      maxBufferSize: env.TELEMETRY_MAX_BUFFER_SIZE,
+      privacy: {
+        collectUserIds: env.TELEMETRY_COLLECT_USER_IDS,
+        collectFilePaths: env.TELEMETRY_COLLECT_FILE_PATHS,
+        retentionDays: env.TELEMETRY_RETENTION_DAYS,
+      },
+      performanceSampleRate: env.TELEMETRY_SAMPLE_RATE,
+      behaviorSampleRate: env.TELEMETRY_SAMPLE_RATE,
+      retentionDays: env.TELEMETRY_RETENTION_DAYS,
+      metricsEndpoint: env.METRICS_ENDPOINT,
+      prometheusUrl: env.PROMETHEUS_URL,
+      grafanaUrl: env.GRAFANA_URL,
+      alertingWebhookUrl: env.ALERTING_WEBHOOK_URL,
+      alertEmail: env.ALERT_EMAIL,
+      ...config,
+    });
   }
   return globalCollector;
 }
@@ -683,6 +734,27 @@ export function initializeTelemetry(config: Partial<TelemetryConfig>): Telemetry
   if (globalCollector) {
     globalCollector.shutdown();
   }
-  globalCollector = new TelemetryCollector(config);
+  // Always use centralized config as base, allow override
+  const env = getEnvironmentConfig();
+  globalCollector = new TelemetryCollector({
+    enabled: env.CARMACK_TELEMETRY_ENABLED,
+    batchSize: env.TELEMETRY_BATCH_SIZE,
+    flushInterval: env.TELEMETRY_FLUSH_INTERVAL,
+    maxBufferSize: env.TELEMETRY_MAX_BUFFER_SIZE,
+    privacy: {
+      collectUserIds: env.TELEMETRY_COLLECT_USER_IDS,
+      collectFilePaths: env.TELEMETRY_COLLECT_FILE_PATHS,
+      retentionDays: env.TELEMETRY_RETENTION_DAYS,
+    },
+    performanceSampleRate: env.TELEMETRY_SAMPLE_RATE,
+    behaviorSampleRate: env.TELEMETRY_SAMPLE_RATE,
+    retentionDays: env.TELEMETRY_RETENTION_DAYS,
+    metricsEndpoint: env.METRICS_ENDPOINT,
+    prometheusUrl: env.PROMETHEUS_URL,
+    grafanaUrl: env.GRAFANA_URL,
+    alertingWebhookUrl: env.ALERTING_WEBHOOK_URL,
+    alertEmail: env.ALERT_EMAIL,
+    ...config,
+  });
   return globalCollector;
 }
