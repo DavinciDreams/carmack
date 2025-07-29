@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import { YAML } from './yaml-handler.js';
 
 /**
@@ -538,4 +539,4 @@ export const ConfigSchemas = {
   dockerCompose: DockerComposeSchema,
   prometheus: PrometheusConfigSchema,
   githubWorkflow: GitHubWorkflowSchema,
-} as const;
+} as const;
