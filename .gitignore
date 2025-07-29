@@ -170,6 +170,10 @@ telemetry-cache/
 metrics-cache/
 alerts-cache/
 
+# Annotation output files
+output/annotations/
+*.annotation-*.json
+
 # Container and deployment
 .docker/
 k8s-temp/
