@@ -5,8 +5,8 @@
  * without the complex orchestration issues.
  */
 
-import { BenchmarkEngine } from './benchmarks/benchmark-engine.js';
-import { PerformanceValidator } from './validation/performance-validator.js';
+import { BenchmarkEngine } from './benchmarks/benchmark-engine.ts';
+import { PerformanceValidator } from './validation/performance-validator.ts';
 
 interface EpicValidationResult {
   speedImprovement: { target: number; actual: number; passed: boolean };
