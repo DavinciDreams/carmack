@@ -426,5 +426,15 @@ export const TelemetryConfigSchema = z.object({
     /** Data retention period in days */
     retentionDays: z.number().int().min(1).max(365).default(90),
   }),
+  /** Endpoint for metrics ingestion */
+  metricsEndpoint: z.string().url().optional(),
+  /** Prometheus metrics endpoint */
+  prometheusUrl: z.string().url().optional(),
+  /** Grafana dashboard URL */
+  grafanaUrl: z.string().url().optional(),
+  /** Alerting webhook URL */
+  alertingWebhookUrl: z.string().url().optional(),
+  /** Alert notification email */
+  alertEmail: z.string().email().optional(),
 });
 export type TelemetryConfig = z.infer<typeof TelemetryConfigSchema>;
