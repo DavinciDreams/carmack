@@ -7,7 +7,7 @@
  */
 
 import { glob } from 'glob';
-import { join, extname, relative } from 'path';
+import { join, extname } from 'path';
 import { stat, readFile } from 'fs/promises';
 import { simpleGit } from 'simple-git';
 import { z } from 'zod';
@@ -21,7 +21,7 @@ import {
 } from '../types/unified-schemas.ts';
 
 import type { CommitMetadata, FileContentMetadata } from '../types/unified-schemas.ts';
-import type { SimpleGit, LogResult, DiffResult } from 'simple-git';
+import type { SimpleGit, LogResult } from 'simple-git';
 // =============================================================================
 // SCHEMAS AND TYPES
 // =============================================================================

@@ -3,7 +3,6 @@ import { z } from 'zod';
 
 import { gitActor } from './actors/git.ts';
 import { type LearningResult, patternLearningActor } from './actors/pattern-learning.ts';
-import { carmackCoderMachine } from './machine.ts';
 import { AstPatternSchema, TransformationRequestSchema } from './types.ts';
 
 import type { AstPattern, TransformationRequest, TransformationResult } from './types.ts';
