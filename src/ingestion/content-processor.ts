@@ -4,10 +4,10 @@ import { getEnvironmentConfig } from '../config/environment.ts';
 import { getTelemetryCollector } from '../telemetry/index.ts';
 import { FileMetadataSchema, VectorEmbeddingSchema, TelemetryEventSchema } from '../types/unified-schemas.ts';
 
-import type { CSTNode, AnalysisResult } from './ast-analyzer.ts';
+
 
 /**
- * Content Processor for TensorRT-LLM Knowledge Graph Ingestion
+ * Content Processor for Universal Knowledge Graph Ingestion
  *
  * Handles content transformation, semantic annotation using BAML,
  * and embedding generation via HuggingFace API. Follows Carmack's
@@ -154,7 +154,7 @@ export class ContentProcessor {
    */
   async processFileContent(
     fileContent: z.infer<typeof FileMetadataSchema> & { content: string },
-    astResult?: AnalysisResult
+  astResult?: unknown
   ): Promise<ProcessingResult> {
     const startTime = Date.now();
 
@@ -171,7 +171,7 @@ export class ContentProcessor {
       const embeddingVectors = await this.generateEmbeddings(chunks.map(c => c.content));
 
       // Step 4: Attach embeddings to chunks and build VectorEmbeddingSchema objects
-      const vectorEmbeddings = embeddingVectors.map((vector, index) =>
+      const vectorEmbeddings = embeddingVectors.map((vector) =>
         VectorEmbeddingSchema.parse({
           id: crypto.randomUUID(),
           fileId: fileContent.id,
@@ -197,7 +197,7 @@ export class ContentProcessor {
           originalSize: fileContent.content.length,
           chunkCount: chunks.length,
           language: fileContent.language,
-          astNodeCount: astResult?.totalNodes || 0,
+          astNodeCount: (astResult && typeof astResult === 'object' && 'totalNodes' in astResult && typeof (astResult as any).totalNodes === 'number') ? (astResult as any).totalNodes : 0,
         },
       };
 
@@ -256,7 +256,7 @@ export class ContentProcessor {
    */
   async processFiles(
     fileContents: (z.infer<typeof FileMetadataSchema> & { content: string })[],
-    astResults?: Map<string, AnalysisResult>
+  astResults?: Map<string, unknown>
   ): Promise<ProcessingResult[]> {
     console.log(`🔄 Batch processing ${fileContents.length} files...`);
 
@@ -483,7 +483,7 @@ export class ContentProcessor {
    */
   private async generateSemanticAnnotation(
     fileContent: z.infer<typeof FileMetadataSchema> & { content: string },
-    astResult?: AnalysisResult
+  astResult?: unknown
   ): Promise<SemanticAnnotation> {
     try {
       // For now, implement a simple heuristic-based annotation
@@ -508,7 +508,7 @@ export class ContentProcessor {
    */
   private generateHeuristicAnnotation(
     fileContent: z.infer<typeof FileMetadataSchema> & { content: string },
-    astResult?: AnalysisResult
+  astResult?: unknown
   ): SemanticAnnotation {
     const content = fileContent.content;
     const path = fileContent.path;
@@ -537,7 +537,9 @@ export class ContentProcessor {
     const keywords = this.extractKeywords(content);
 
     // Calculate metrics
-    const complexity_score = astResult?.metrics.complexity || lineCount / 100;
+    const complexity_score = (astResult && typeof astResult === 'object' && 'metrics' in astResult && typeof (astResult as any).metrics?.complexity === 'number')
+      ? (astResult as any).metrics.complexity
+      : lineCount / 100;
     const maintainability = Math.max(0, 1 - (complexity_score / 10));
     const testability = isTest ? 0.9 : maintainability * 0.7;
     const technical_debt = Math.min(1, complexity_score / 20);
@@ -549,7 +551,7 @@ export class ContentProcessor {
 
     return {
       summary: this.generateSummary(fileContent, domains),
-      purpose: this.inferPurpose(fileContent, domains),
+  purpose: this.inferPurpose(domains),
       complexity: complexity as 'low' | 'medium' | 'high',
       domain: domains,
       keywords: keywords.slice(0, 20), // Limit keywords
@@ -713,9 +715,7 @@ export class ContentProcessor {
   /**
    * Infer purpose of file
    */
-  private inferPurpose(fileContent: z.infer<typeof FileMetadataSchema> & { content: string }, domains: string[]): string {
-    const path = fileContent.path;
-    const content = fileContent.content;
+  private inferPurpose(domains: string[]): string {
 
     if (domains.includes('scheduling')) {
       return 'Manages task scheduling and execution ordering';
@@ -803,9 +803,9 @@ export class ContentProcessor {
 // =============================================================================
 
 /**
- * Create content processor with TensorRT configuration
+ * Create content processor with generic configuration
  */
-export function createTensorRTContentProcessor(
+export function createContentProcessor(
   config?: Partial<ContentProcessingConfig>
 ): ContentProcessor {
   // Always use centralized config as base
