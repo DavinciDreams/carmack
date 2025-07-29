@@ -1,17 +1,19 @@
+import { parseArgs } from 'util';
+import { z } from 'zod';
+
+import { getEnvironmentConfig } from '../config/environment.ts';
+import { initializeDatabase } from '../db/connection.ts';
+import { createIngestionOrchestrator } from './ingestion-orchestrator.ts';
+import { runIngestionTests } from './test-ingestion-pipeline.ts';
+
 #!/usr/bin/env bun
 /**
- * CLI Tool for TensorRT-LLM Knowledge Graph Ingestion
+ * CLI Tool for Universal Knowledge Graph Ingestion
  *
  * Command-line interface for running the complete ingestion pipeline
  * with progress tracking, configuration options, and comprehensive logging.
  */
 
-import { parseArgs } from 'util';
-import { z } from 'zod';
-import { createIngestionOrchestrator, runTensorRTIngestion } from './ingestion-orchestrator.ts';
-import { runIngestionTests } from './test-ingestion-pipeline.ts';
-import { initializeDatabase } from '../db/connection.ts';
-import { getEnvironmentConfig } from '../config/environment.ts';
 
 // =============================================================================
 // CLI CONFIGURATION
@@ -20,7 +22,7 @@ import { getEnvironmentConfig } from '../config/environment.ts';
 const CLIArgsSchema = z.object({
   command: z.enum(['ingest', 'test', 'status', 'help']).default('ingest'),
   repositoryUrl: z.string().url().optional(),
-  localPath: z.string().default('./workspace/tensorrt-llm'),
+  localPath: z.string().default('./workspace/repo'),
   branch: z.string().default('main'),
   maxCommits: z.number().int().positive().default(1000),
   maxPRs: z.number().int().positive().default(500),
@@ -97,14 +99,14 @@ class IngestionCLI {
       return;
     }
 
-    console.log('🚀 Starting TensorRT-LLM Knowledge Graph Ingestion...');
+  console.log('🚀 Starting Knowledge Graph Ingestion...');
     
     // Initialize database
     await initializeDatabase();
     
     // Create orchestrator with progress tracking
     const orchestrator = createIngestionOrchestrator({
-      repositoryUrl: this.args.repositoryUrl || 'https://github.com/NVIDIA/TensorRT-LLM',
+  repositoryUrl: this.args.repositoryUrl || 'https://github.com/NVIDIA/TensorRT-LLM',
       localPath: this.args.localPath,
       branch: this.args.branch,
       maxCommits: this.args.maxCommits,
@@ -165,7 +167,7 @@ class IngestionCLI {
    * Run tests
    */
   private async runTests(): Promise<void> {
-    console.log('🧪 Running TensorRT-LLM Ingestion Pipeline Tests...');
+  console.log('🧪 Running Ingestion Pipeline Tests...');
     
     const testConfig = {
       testMode: this.args.verbose ? 'full' as const : 'integration' as const,
@@ -190,7 +192,7 @@ class IngestionCLI {
    * Show system status
    */
   private async showStatus(): Promise<void> {
-    console.log('📊 TensorRT-LLM Knowledge Graph System Status');
+  console.log('📊 Knowledge Graph System Status');
     console.log('='.repeat(50));
 
     try {
@@ -218,7 +220,7 @@ class IngestionCLI {
    */
   private showHelp(): void {
     console.log(`
-TensorRT-LLM Knowledge Graph Ingestion CLI
+Knowledge Graph Ingestion CLI
 
 USAGE:
   bun run src/ingestion/cli.ts [COMMAND] [OPTIONS]
@@ -230,8 +232,8 @@ COMMANDS:
   help      Show this help message
 
 OPTIONS:
-  --repository-url URL     Repository URL to process (default: TensorRT-LLM)
-  --local-path PATH        Local path for repository (default: ./workspace/tensorrt-llm)
+  --repository-url URL     Repository URL to process (default: https://github.com/NVIDIA/TensorRT-LLM)
+  --local-path PATH        Local path for repository (default: ./workspace/repo)
   --branch BRANCH          Git branch to process (default: main)
   --max-commits N          Maximum commits to process (default: 1000)
   --max-prs N              Maximum PRs to fetch (default: 500)
@@ -290,9 +292,9 @@ ENVIRONMENT VARIABLES:
    * Print CLI banner
    */
   private printBanner(): void {
-    console.log(`
+  console.log(`
 ╔══════════════════════════════════════════════════════════════╗
-║                TensorRT-LLM Knowledge Graph                  ║
+║                Universal Knowledge Graph                     ║
 ║                    Ingestion Pipeline                        ║
 ╚══════════════════════════════════════════════════════════════╝
 `);
@@ -303,7 +305,7 @@ ENVIRONMENT VARIABLES:
    */
   private printConfiguration(): void {
     console.log('\n📋 Configuration:');
-    console.log(`   Repository: ${this.args.repositoryUrl || 'https://github.com/NVIDIA/TensorRT-LLM'}`);
+  console.log(`   Repository: ${this.args.repositoryUrl || 'https://github.com/NVIDIA/TensorRT-LLM'}`);
     console.log(`   Local Path: ${this.args.localPath}`);
     console.log(`   Branch: ${this.args.branch}`);
     console.log(`   Max Commits: ${this.args.maxCommits}`);
