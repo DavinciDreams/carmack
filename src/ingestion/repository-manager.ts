@@ -1,50 +1,69 @@
 /**
- * Repository Manager for TensorRT-LLM Knowledge Graph Ingestion
+ * Repository Manager for  Knowledge Graph Ingestion
  *
  * Handles git operations, file filtering, and content extraction for the
- * TensorRT-LLM repository. Follows Carmack's principles of provable correctness
+ * repository. Follows Carmack's principles of provable correctness
  * and efficient processing.
  */
 
-import { simpleGit } from 'simple-git';
-import type { SimpleGit, LogResult, DiffResult } from 'simple-git';
-import { z } from 'zod';
-import { readFile, stat, readdir } from 'fs/promises';
-import { join, extname, relative } from 'path';
 import { glob } from 'glob';
+import { join, extname, relative } from 'path';
+import { stat, readFile } from 'fs/promises';
+import { simpleGit } from 'simple-git';
+import { z } from 'zod';
 
+import { getTelemetryCollector } from '../telemetry/index.ts';
+import {
+  TelemetryEventSchema,
+  CommitMetadataSchema,
+  CommitDiffSchema,
+  FileContentMetadataSchema,
+} from '../types/unified-schemas.ts';
+
+import type { CommitMetadata, FileContentMetadata } from '../types/unified-schemas.ts';
+import type { SimpleGit, LogResult, DiffResult } from 'simple-git';
 // =============================================================================
 // SCHEMAS AND TYPES
 // =============================================================================
-
-/**
- * Repository configuration schema
- */
-export const RepositoryConfigSchema = z.object({
-  url: z.string().url(),
-  localPath: z.string(),
-  branch: z.string().default('main'),
-  depth: z.number().int().positive().optional(),
-  includeSubmodules: z.boolean().default(false),
-});
-
-export type RepositoryConfig = z.infer<typeof RepositoryConfigSchema>;
 
 /**
  * File filter configuration schema
  */
 export const FileFilterConfigSchema = z.object({
   includePatterns: z.array(z.string()).default([
-    'runtime/scheduler.cc',
-    'core/memory/**/*',
+    '**/*.ts',
+    '**/*.tsx',
+    '**/*.js',
+    '**/*.jsx',
+    '**/*.py',
+    '**/*.java',
+    '**/*.go',
+    '**/*.rs',
+    '**/*.cpp',
+    '**/*.c',
+    '**/*.h',
+    '**/*.hpp',
+    '**/*.cxx',
     '**/*.cu',
     '**/*.cuh',
-    '**/*.cpp',
-    '**/*.hpp',
-    '**/*.h',
-    '**/*.py',
-    'python/**/*',
-    'tensorrt_llm/**/*',
+    '**/*.sh',
+    '**/*.yaml',
+    '**/*.yml',
+    '**/*.md',
+    '**/*.json',
+    '**/*.toml',
+    '**/*.xml',
+    '**/*.ini',
+    '**/*.conf',
+    '**/*.bat',
+    '**/*.ps1',
+    '**/src/**',
+    '**/include/**',
+    '**/lib/**',
+    '**/app/**',
+    '**/bin/**',
+    '**/scripts/**',
+    '**/config/**',
   ]),
   excludePatterns: z.array(z.string()).default([
     '**/test/**',
@@ -63,63 +82,13 @@ export const FileFilterConfigSchema = z.object({
   ]),
   maxFileSize: z.number().int().positive().default(1024 * 1024), // 1MB
   supportedExtensions: z.array(z.string()).default([
-    '.cc', '.cpp', '.cxx', '.c++', '.h', '.hpp', '.hxx', '.h++',
-    '.cu', '.cuh', '.py', '.pyx', '.pxd',
+    '.ts', '.tsx', '.js', '.jsx', '.py', '.java', '.go', '.rs',
+    '.cpp', '.c', '.h', '.hpp', '.cxx', '.cu', '.cuh', '.sh',
+    '.yaml', '.yml', '.md', '.json', '.toml', '.xml', '.ini', '.conf', '.bat', '.ps1',
   ]),
 });
 
 export type FileFilterConfig = z.infer<typeof FileFilterConfigSchema>;
-
-/**
- * Commit metadata schema
- */
-export const CommitMetadataSchema = z.object({
-  hash: z.string().length(40),
-  shortHash: z.string(),
-  author: z.object({
-    name: z.string(),
-    email: z.string().email(),
-  }),
-  committer: z.object({
-    name: z.string(),
-    email: z.string().email(),
-  }),
-  date: z.date(),
-  message: z.string(),
-  subject: z.string(),
-  body: z.string().optional(),
-  parentHashes: z.array(z.string().length(40)),
-  refs: z.string().optional(),
-  diff: z.object({
-    files: z.array(z.object({
-      file: z.string(),
-      changes: z.number().int(),
-      insertions: z.number().int(),
-      deletions: z.number().int(),
-    })),
-    insertions: z.number().int(),
-    deletions: z.number().int(),
-    filesChanged: z.number().int(),
-  }).optional(),
-});
-
-export type CommitMetadata = z.infer<typeof CommitMetadataSchema>;
-
-/**
- * File content schema
- */
-export const FileContentSchema = z.object({
-  path: z.string(),
-  relativePath: z.string(),
-  content: z.string(),
-  size: z.number().int(),
-  language: z.string(),
-  encoding: z.string().default('utf-8'),
-  lastModified: z.date(),
-  commitHash: z.string().length(40).optional(),
-});
-
-export type FileContent = z.infer<typeof FileContentSchema>;
 
 // =============================================================================
 // ERRORS
@@ -156,14 +125,32 @@ export class FileFilterError extends Error {
  */
 export class RepositoryManager {
   private git: SimpleGit;
-  private config: RepositoryConfig;
+  private config: {
+    url: string;
+    localPath: string;
+    branch: string;
+    depth?: number | undefined;
+    includeSubmodules?: boolean | undefined;
+  };
   private filterConfig: FileFilterConfig;
 
   constructor(
-    config: RepositoryConfig,
+    config: {
+      url: string;
+      localPath: string;
+      branch?: string;
+      depth?: number;
+      includeSubmodules?: boolean;
+    },
     filterConfig?: Partial<FileFilterConfig>
   ) {
-    this.config = RepositoryConfigSchema.parse(config);
+    this.config = {
+      url: config.url,
+      localPath: config.localPath,
+      branch: config.branch || 'main',
+      depth: typeof config.depth === "number" ? config.depth : undefined,
+      includeSubmodules: typeof config.includeSubmodules === "boolean" ? config.includeSubmodules : undefined,
+    };
     this.filterConfig = FileFilterConfigSchema.parse(filterConfig || {});
     this.git = simpleGit();
   }
@@ -187,14 +174,49 @@ export class RepositoryManager {
       if (this.config.includeSubmodules) {
         cloneOptions.push('--recurse-submodules');
       }
-
       await this.git.clone(this.config.url, this.config.localPath, cloneOptions);
       
       // Switch to the cloned repository
       this.git = simpleGit(this.config.localPath);
       
+      // Emit telemetry event for successful clone
+      try {
+        const event = TelemetryEventSchema.parse({
+          id: crypto.randomUUID(),
+          timestamp: new Date(),
+          eventType: 'repository_cloned',
+          repositoryId: undefined,
+          details: {
+            url: this.config.url,
+            localPath: this.config.localPath,
+            branch: this.config.branch,
+          },
+        });
+        getTelemetryCollector().emitUnifiedEvent(event);
+      } catch (telemetryError) {
+        console.warn('Telemetry emission failed:', telemetryError);
+      }
+
       console.log(`✅ Repository cloned to: ${this.config.localPath}`);
     } catch (error) {
+      // Emit telemetry event for clone error
+      try {
+        const event = TelemetryEventSchema.parse({
+          id: crypto.randomUUID(),
+          timestamp: new Date(),
+          eventType: 'repository_clone_error',
+          repositoryId: undefined,
+          details: {
+            url: this.config.url,
+            localPath: this.config.localPath,
+            branch: this.config.branch,
+            error: error instanceof Error ? error.message : String(error),
+          },
+        });
+        getTelemetryCollector().emitUnifiedEvent(event);
+      } catch (telemetryError) {
+        console.warn('Telemetry emission failed:', telemetryError);
+      }
       throw new RepositoryError(
         'Failed to clone repository',
         'CLONE_FAILED',
@@ -219,8 +241,42 @@ export class RepositoryManager {
       await this.git.fetch();
       await this.git.pull('origin', this.config.branch);
       
+      // Emit telemetry event for successful update
+      try {
+        const event = TelemetryEventSchema.parse({
+          id: crypto.randomUUID(),
+          timestamp: new Date(),
+          eventType: 'repository_updated',
+          repositoryId: undefined,
+          details: {
+            localPath: this.config.localPath,
+            branch: this.config.branch,
+          },
+        });
+  getTelemetryCollector().emitUnifiedEvent(event);
+      } catch (telemetryError) {
+        console.warn('Telemetry emission failed:', telemetryError);
+      }
+
       console.log(`✅ Repository updated`);
     } catch (error) {
+      // Emit telemetry event for update error
+      try {
+        const event = TelemetryEventSchema.parse({
+          id: crypto.randomUUID(),
+          timestamp: new Date(),
+          eventType: 'repository_update_error',
+          repositoryId: undefined,
+          details: {
+            localPath: this.config.localPath,
+            branch: this.config.branch,
+            error: error instanceof Error ? error.message : String(error),
+          },
+        });
+        getTelemetryCollector().emitUnifiedEvent(event);
+      } catch (telemetryError) {
+        console.warn('Telemetry emission failed:', telemetryError);
+      }
       throw new RepositoryError(
         'Failed to update repository',
         'UPDATE_FAILED',
@@ -245,8 +301,8 @@ export class RepositoryManager {
   ): Promise<CommitMetadata[]> {
     try {
       console.log(`📊 Extracting commit history...`);
-      
-      const logOptions: any = {
+
+  const logOptions: Record<string, unknown> = {
         format: {
           hash: '%H',
           shortHash: '%h',
@@ -276,16 +332,15 @@ export class RepositoryManager {
       }
 
       const logResult: LogResult = await this.git.log(logOptions);
-      
-      const commits: CommitMetadata[] = [];
+
+  const commits: CommitMetadata[] = [];
 
       for (const commit of logResult.all) {
-        let diffData;
-        
+        let diffData: z.infer<typeof CommitDiffSchema> | undefined = undefined;
         if (options.includeDiff) {
           try {
             const diffResult = await this.git.diffSummary([`${commit.hash}^`, commit.hash]);
-            diffData = {
+            diffData = CommitDiffSchema.parse({
               files: diffResult.files.map(file => ({
                 file: file.file,
                 changes: 'changes' in file ? file.changes : 0,
@@ -295,13 +350,12 @@ export class RepositoryManager {
               insertions: diffResult.insertions,
               deletions: diffResult.deletions,
               filesChanged: diffResult.files.length,
-            };
+            });
           } catch (error) {
             console.warn(`⚠️ Failed to get diff for commit ${commit.hash}:`, error);
           }
         }
-
-        const commitMetadata: CommitMetadata = {
+        const commitMetadataRaw = {
           hash: commit.hash,
           shortHash: (commit as any).shortHash,
           author: {
@@ -320,8 +374,8 @@ export class RepositoryManager {
           refs: (commit as any).refs || undefined,
           diff: diffData,
         };
-
-        commits.push(CommitMetadataSchema.parse(commitMetadata));
+        const commitMetadata = CommitMetadataSchema.parse(commitMetadataRaw);
+        commits.push(commitMetadata);
       }
 
       console.log(`✅ Extracted ${commits.length} commits`);
@@ -429,37 +483,37 @@ export class RepositoryManager {
   /**
    * Read file content with metadata
    */
-  async readFileContent(filePath: string, commitHash?: string): Promise<FileContent> {
+  async readFileContent(filePath: string, commitHash?: string): Promise<FileContentMetadata> {
     try {
       const fullPath = join(this.config.localPath, filePath);
-      
+
       let content: string;
-      let stats: any;
+      let stats: { size: number; mtime: Date; birthtime: Date };
 
       if (commitHash) {
         // Read file from specific commit
         content = await this.git.show([`${commitHash}:${filePath}`]);
-        stats = { size: Buffer.byteLength(content, 'utf8') };
+        stats = { size: Buffer.byteLength(content, 'utf8'), mtime: new Date(), birthtime: new Date() };
       } else {
         // Read current file
         content = await readFile(fullPath, 'utf-8');
-        stats = await stat(fullPath);
+        const fileStats = await stat(fullPath);
+        stats = { size: fileStats.size, mtime: fileStats.mtime, birthtime: fileStats.birthtime };
       }
 
       const language = this.detectLanguage(filePath);
-      
-      const fileContent: FileContent = {
-        path: fullPath,
-        relativePath: filePath,
-        content,
-        size: stats.size,
-        language,
-        encoding: 'utf-8',
-        lastModified: stats.mtime || new Date(),
-        commitHash,
-      };
 
-      return FileContentSchema.parse(fileContent);
+      // Use Zod to validate the returned metadata
+      return FileContentMetadataSchema.parse({
+        id: crypto.randomUUID(),
+        repositoryId: "",
+        path: fullPath,
+        language,
+        size: stats.size,
+        createdAt: stats.birthtime ? stats.birthtime : undefined,
+        updatedAt: stats.mtime ? stats.mtime : undefined,
+        content,
+      });
     } catch (error) {
       throw new FileFilterError(
         'Failed to read file content',
@@ -629,22 +683,21 @@ export function createTensorRTRepositoryManager(
     customFilters?: Partial<FileFilterConfig>;
   }
 ): RepositoryManager {
-  const config: RepositoryConfig = {
+  const config: {
+    url: string;
+    localPath: string;
+    branch?: string;
+    depth?: number;
+    includeSubmodules?: boolean;
+  } = {
     url: 'https://github.com/NVIDIA/TensorRT-LLM',
     localPath,
     branch: options?.branch || 'main',
-    depth: options?.depth,
-    includeSubmodules: false,
   };
+  if (typeof options?.depth === "number") config.depth = options.depth;
+  config.includeSubmodules = false;
 
   return new RepositoryManager(config, options?.customFilters);
-}
-
-/**
- * Validate repository configuration
- */
-export function validateRepositoryConfig(config: unknown): RepositoryConfig {
-  return RepositoryConfigSchema.parse(config);
 }
 
 /**
