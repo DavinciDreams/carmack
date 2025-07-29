@@ -1,10 +1,9 @@
+import { z } from 'zod';
+
 /**
  * Telemetry system type definitions for Carmack Coder
  * Provides comprehensive observability into transformation effectiveness and performance
  */
-
-import { z } from 'zod';
-
 // Core telemetry event base schema
 export const TelemetryEventBaseSchema = z.object({
   /** Unique event identifier for tracing */
@@ -18,13 +17,10 @@ export const TelemetryEventBaseSchema = z.object({
   /** Event version for schema evolution */
   version: z.string().default('1.0.0'),
 });
-
 export type TelemetryEventBase = z.infer<typeof TelemetryEventBaseSchema>;
-
 // Transformation mode enum
 export const TransformationModeSchema = z.enum(['template', 'ast', 'llm']);
 export type TransformationMode = z.infer<typeof TransformationModeSchema>;
-
 /**
  * TEL-001: Pattern Success Rate Metric
  * Measures the percentage of successful pattern applications
@@ -47,9 +43,7 @@ export const PatternSuccessMetricSchema = TelemetryEventBaseSchema.extend({
   /** Error details if pattern failed */
   errorReason: z.string().optional(),
 });
-
 export type PatternSuccessMetric = z.infer<typeof PatternSuccessMetricSchema>;
-
 /**
  * TEL-002: Semantic Correctness Score
  * Validates that transformations preserve program semantics using Dafny verification
@@ -74,9 +68,7 @@ export const SemanticCorrectnessMetricSchema = TelemetryEventBaseSchema.extend({
   /** Verification method used */
   verificationMethod: z.enum(['dafny', 'static-analysis', 'type-check']),
 });
-
 export type SemanticCorrectnessMetric = z.infer<typeof SemanticCorrectnessMetricSchema>;
-
 /**
  * Quality metrics structure for before/after comparison
  */
@@ -96,9 +88,7 @@ export const QualityMetricsSchema = z.object({
   /** Maximum nesting depth */
   nestingDepth: z.number().int().min(0),
 });
-
 export type QualityMetrics = z.infer<typeof QualityMetricsSchema>;
-
 /**
  * TEL-003: Code Quality Delta
  * Measures before/after code quality using multiple dimensions
@@ -122,9 +112,7 @@ export const CodeQualityDeltaSchema = TelemetryEventBaseSchema.extend({
   /** Overall quality score change (-1 to 1, positive = improvement) */
   overallQualityDelta: z.number().min(-1).max(1),
 });
-
 export type CodeQualityDelta = z.infer<typeof CodeQualityDeltaSchema>;
-
 /**
  * Pipeline stage timing for detailed performance analysis
  */
@@ -140,9 +128,7 @@ export const PipelineStagesSchema = z.object({
   /** Time to serialize result back to text */
   serialization: z.number().min(0),
 });
-
 export type PipelineStages = z.infer<typeof PipelineStagesSchema>;
-
 /**
  * TEL-004: Transformation Latency Distribution
  * Tracks end-to-end transformation times across different modes and file sizes
@@ -167,9 +153,7 @@ export const LatencyMetricSchema = TelemetryEventBaseSchema.extend({
   /** Whether this was a cache hit or cold execution */
   cacheHit: z.boolean(),
 });
-
 export type LatencyMetric = z.infer<typeof LatencyMetricSchema>;
-
 /**
  * Memory usage timeline point
  */
@@ -185,7 +169,6 @@ export const MemoryTimelinePointSchema = z.object({
   /** Resident set size in bytes */
   rss: z.number().int().min(0),
 });
-
 /**
  * TEL-005: Memory Usage Profile
  * Tracks memory consumption during AST processing
@@ -206,9 +189,7 @@ export const MemoryProfileMetricSchema = TelemetryEventBaseSchema.extend({
   /** Time spent in garbage collection in milliseconds */
   gcTime: z.number().min(0),
 });
-
 export type MemoryProfileMetric = z.infer<typeof MemoryProfileMetricSchema>;
-
 /**
  * TEL-006: AST Parse Cache Effectiveness
  * Measures cache hit rates for AST parsing operations
@@ -233,9 +214,7 @@ export const CacheEfficiencyMetricSchema = TelemetryEventBaseSchema.extend({
   /** Cache effectiveness score (custom metric) */
   effectivenessScore: z.number().min(0).max(1),
 });
-
 export type CacheEfficiencyMetric = z.infer<typeof CacheEfficiencyMetricSchema>;
-
 /**
  * User action sequence item for behavior analysis
  */
@@ -253,7 +232,6 @@ export const UserActionSchema = z.object({
   /** Time spent on this action in milliseconds */
   duration: z.number().min(0),
 });
-
 /**
  * TEL-007: Mode Selection Patterns
  * Understands when users choose template vs AST vs LLM modes
@@ -274,9 +252,7 @@ export const ModeSelectionMetricSchema = TelemetryEventBaseSchema.extend({
   /** User satisfaction indicator (if available) */
   satisfactionScore: z.number().min(1).max(5).optional(),
 });
-
 export type ModeSelectionMetric = z.infer<typeof ModeSelectionMetricSchema>;
-
 /**
  * User recovery action for error analysis
  */
@@ -290,7 +266,6 @@ export const RecoveryActionSchema = z.object({
   /** New mode selected (if mode-switch) */
   newMode: TransformationModeSchema.optional(),
 });
-
 /**
  * TEL-008: Error Recovery Patterns
  * Tracks how users respond to transformation failures
@@ -313,9 +288,7 @@ export const ErrorRecoveryMetricSchema = TelemetryEventBaseSchema.extend({
   /** Error severity level */
   severity: z.enum(['low', 'medium', 'high', 'critical']),
 });
-
 export type ErrorRecoveryMetric = z.infer<typeof ErrorRecoveryMetricSchema>;
-
 /**
  * Productivity measurement structure
  */
@@ -333,7 +306,6 @@ export const ProductivityMeasurementSchema = z.object({
   /** Number of potential errors prevented */
   errorsPrevented: z.number().int().min(0),
 });
-
 /**
  * TEL-009: Developer Productivity Index
  * Quantifies actual time savings from using Carmack Coder
@@ -354,9 +326,7 @@ export const ProductivityMetricSchema = TelemetryEventBaseSchema.extend({
   /** Productivity trend compared to previous period */
   trend: z.enum(['improving', 'stable', 'declining']),
 });
-
 export type ProductivityMetric = z.infer<typeof ProductivityMetricSchema>;
-
 /**
  * Pattern lifecycle stage tracking
  */
@@ -372,7 +342,6 @@ export const PatternLifecycleSchema = z.object({
   /** When pattern was deprecated (if applicable) */
   deprecated: z.number().int().positive().optional(),
 });
-
 /**
  * User feedback on pattern effectiveness
  */
@@ -386,7 +355,6 @@ export const PatternFeedbackSchema = z.object({
   /** Feedback context */
   context: z.enum(['post-transformation', 'survey', 'support-ticket']),
 });
-
 /**
  * TEL-010: Pattern Adoption Lifecycle
  * Tracks how patterns evolve from experimental to stable
@@ -407,9 +375,7 @@ export const PatternAdoptionMetricSchema = TelemetryEventBaseSchema.extend({
   /** Competitive analysis vs alternative patterns */
   competitivePosition: z.enum(['leading', 'competitive', 'lagging']),
 });
-
 export type PatternAdoptionMetric = z.infer<typeof PatternAdoptionMetricSchema>;
-
 // Union type for all telemetry metrics
 export type TelemetryMetric =
   | PatternSuccessMetric
@@ -422,7 +388,6 @@ export type TelemetryMetric =
   | ErrorRecoveryMetric
   | ProductivityMetric
   | PatternAdoptionMetric;
-
 // Telemetry event validation
 export const TelemetryMetricSchema = z.discriminatedUnion('id', [
   PatternSuccessMetricSchema,
@@ -436,7 +401,6 @@ export const TelemetryMetricSchema = z.discriminatedUnion('id', [
   ProductivityMetricSchema,
   PatternAdoptionMetricSchema,
 ]);
-
 /**
  * Telemetry configuration schema
  */
@@ -463,5 +427,4 @@ export const TelemetryConfigSchema = z.object({
     retentionDays: z.number().int().min(1).max(365).default(90),
   }),
 });
-
 export type TelemetryConfig = z.infer<typeof TelemetryConfigSchema>;
