@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+import { readFile, writeFile } from 'node:fs/promises';
 
 /**
  * Pre-commit Import Organization and Unused Code Detection Script
@@ -6,7 +6,6 @@
  * Automatically organizes imports and removes unused code before commits
  */
 
-import { readFile, writeFile } from 'node:fs/promises';
 
 // Future enhancement: Use AST-grep for more sophisticated import transformations
 // Currently using simple regex-based approach for reliability
@@ -18,6 +17,42 @@ async function organizeImports(filePath: string): Promise<boolean> {
   try {
     const content = await readFile(filePath, 'utf-8');
     const lines = content.split('\n');
+
+    // Detect and preserve shebang if present
+    let shebang = '';
+    let startIdx = 0;
+    if (lines.length > 0 && typeof lines[0] === 'string' && lines[0].startsWith('#!')) {
+      shebang = lines[0] || '';
+      startIdx = 1;
+    }
+
+    // Collect leading comments above imports (after shebang, before first import)
+    const leadingComments: string[] = [];
+    let i = startIdx;
+    while (i < lines.length) {
+      const line = lines[i];
+      if (typeof line !== 'string') {
+        i++;
+        continue;
+      }
+      if (line.trim().startsWith('import ')) break;
+      if (line.trim() === '' && leadingComments.length === 0) {
+        // skip blank lines before comments
+        i++;
+        continue;
+      }
+      if (line.trim().startsWith('//') || line.trim().startsWith('/*') || line.trim().startsWith('*') || line.trim().startsWith('*/')) {
+        leadingComments.push(line);
+        i++;
+        continue;
+      }
+      if (line.trim() === '') {
+        leadingComments.push(line);
+        i++;
+        continue;
+      }
+      break;
+    }
 
     // Extract imports
     const imports: Array<{
@@ -31,14 +66,14 @@ async function organizeImports(filePath: string): Promise<boolean> {
     const nonImportLines: string[] = [];
     let inImportSection = true;
 
-    for (let i = 0; i < lines.length; i++) {
+    for (; i < lines.length; i++) {
       const line = lines[i];
       if (!line) continue; // Skip undefined lines
 
       const trimmed = line.trim();
 
       if (trimmed.startsWith('import ')) {
-        const moduleMatch = line.match(/from ['"]([^'"]+)['"]/);
+        const moduleMatch = line.match(/from ['"]([^'\"]+)['\"]/);
         const module = moduleMatch ? moduleMatch[1] : '';
         const isNodeModule = module ? !module.startsWith('.') && !module.startsWith('/') : false;
         const isTypeOnly = line.includes('import type');
@@ -51,6 +86,7 @@ async function organizeImports(filePath: string): Promise<boolean> {
           isTypeOnly,
         });
       } else if (trimmed === '' && inImportSection) {
+        // skip blank lines between imports
       } else {
         inImportSection = false;
         nonImportLines.push(line);
@@ -67,29 +103,27 @@ async function organizeImports(filePath: string): Promise<boolean> {
       if (a.isTypeOnly !== b.isTypeOnly) {
         return a.isTypeOnly ? 1 : -1;
       }
-
       // Node modules before relative imports
       if (a.isNodeModule !== b.isNodeModule) {
         return a.isNodeModule ? -1 : 1;
       }
-
       // Alphabetical within each group
       return a.module.localeCompare(b.module);
     });
 
     // Rebuild file content
     const organizedLines: string[] = [];
+    if (shebang) organizedLines.push(shebang);
+    if (leadingComments.length > 0) organizedLines.push(...leadingComments);
 
     // Add organized imports
     let lastGroup = '';
     for (const imp of imports) {
       const currentGroup = imp.isTypeOnly ? 'type' : imp.isNodeModule ? 'node' : 'relative';
-
       // Add empty line between groups
       if (lastGroup && lastGroup !== currentGroup) {
         organizedLines.push('');
       }
-
       organizedLines.push(imp.line);
       lastGroup = currentGroup;
     }
@@ -213,4 +247,4 @@ if (import.meta.main) {
     console.error('Fatal error:', errorMessage);
     process.exit(1);
   });
-}
+}
