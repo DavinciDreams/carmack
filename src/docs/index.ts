@@ -1,3 +1,7 @@
+import { DocumentationGenerator } from './generator.js';
+
+import type { DocumentationRequest, DocumentationResult } from './types.js';
+
 /**
  * Carmack Coder Documentation System
  *
@@ -9,8 +13,6 @@ export * from './ast-analyzer.js';
 export * from './generator.js';
 export * from './types.js';
 
-import { DocumentationGenerator } from './generator.js';
-import type { DocumentationRequest, DocumentationResult } from './types.js';
 
 /**
  * Main documentation API
@@ -252,4 +254,4 @@ export const generateAllDocumentation = (
 
 export const generateAndWriteAll = (
   options?: Parameters<DocumentationSystem['generateAndWriteAll']>[0]
-) => documentationSystem.generateAndWriteAll(options);
+) => documentationSystem.generateAndWriteAll(options);
