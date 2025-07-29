@@ -1,0 +1,8 @@
+rule:
+  pattern: |
+    export function $NAME($PARAMS): $RET { $BODY }
+  metaVariables:
+    - name: NAME
+    - name: PARAMS
+    - name: RET
+    - name: BODY
