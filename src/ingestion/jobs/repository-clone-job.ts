@@ -1,4 +1,5 @@
-import { task } from '@trigger.dev/sdk';
+import { rm } from 'fs/promises';
+import { task } from '@trigger.dev/sdk/v3';
 import { z } from 'zod';
 
 import { RepositoryManager } from '../repository-manager.ts';
@@ -53,11 +54,11 @@ export const repositoryCloneJob = task({
   queue: {
     concurrencyLimit: 1, // Only one clone operation at a time
   },
-  run: async (payload: RepositoryClonePayload, { ctx, logger }) => {
+  run: async (payload: RepositoryClonePayload) => {
     const startTime = Date.now();
     
     try {
-      logger.info('Starting repository clone job', { 
+      console.log('Starting repository clone job', { 
         repositoryUrl: payload.repositoryUrl,
         localPath: payload.localPath,
         branch: payload.branch,
@@ -67,29 +68,38 @@ export const repositoryCloneJob = task({
       const validatedPayload = RepositoryClonePayloadSchema.parse(payload);
       
       // Create repository manager
-      const repoManager = new RepositoryManager(
-        {
-          url: validatedPayload.repositoryUrl,
-          localPath: validatedPayload.localPath,
-          branch: validatedPayload.branch,
-          depth: validatedPayload.depth,
-          includeSubmodules: validatedPayload.includeSubmodules,
-        }
-      );
+      const repoManager = new RepositoryManager({
+        url: validatedPayload.repositoryUrl,
+        localPath: validatedPayload.localPath,
+        branch: validatedPayload.branch,
+        includeSubmodules: validatedPayload.includeSubmodules,
+        ...(validatedPayload.depth !== undefined ? { depth: validatedPayload.depth } : {}),
+      });
 
       // Check if repository already exists
       const repoExists = await repoManager.repositoryExists();
       
       if (repoExists && !validatedPayload.forceClone) {
-        logger.info('Repository already exists, updating instead of cloning');
+  console.log('Repository already exists, updating instead of cloning');
         await repoManager.updateRepository();
       } else {
         if (repoExists && validatedPayload.forceClone) {
-          logger.info('Force clone requested, removing existing repository');
-          // In a real implementation, you'd remove the existing directory
+          console.log('Force clone requested, removing existing repository');
+          try {
+            // Use Bun's fs.rm to remove the directory recursively
+            // Use fs/promises.rm for recursive directory removal (Bun/Node compatible)
+            await rm(validatedPayload.localPath, { recursive: true, force: true });
+            console.log('Existing repository directory removed:', validatedPayload.localPath);
+          } catch (removeErr) {
+            console.error('Failed to remove existing repository directory', {
+              path: validatedPayload.localPath,
+              error: removeErr instanceof Error ? removeErr.message : String(removeErr),
+            });
+            throw new Error(`Failed to remove existing repository directory: ${validatedPayload.localPath}`);
+          }
         }
         
-        logger.info('Cloning repository');
+  console.log('Cloning repository');
         await repoManager.cloneRepository();
       }
 
@@ -108,12 +118,12 @@ export const repositoryCloneJob = task({
         processingTime: Date.now() - startTime,
       };
 
-      logger.info('Repository clone job completed successfully', result);
+  console.log('Repository clone job completed successfully', result);
       return RepositoryCloneResultSchema.parse(result);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       
-      logger.error('Repository clone job failed', {
+      console.error('Repository clone job failed', {
         error: errorMessage,
         payload,
         processingTime: Date.now() - startTime,
