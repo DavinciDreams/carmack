@@ -1,11 +1,3 @@
-import { parseArgs } from 'util';
-import { z } from 'zod';
-
-import { getEnvironmentConfig } from '../config/environment.ts';
-import { initializeDatabase } from '../db/connection.ts';
-import { createIngestionOrchestrator } from './ingestion-orchestrator.ts';
-import { runIngestionTests } from './test-ingestion-pipeline.ts';
-
 #!/usr/bin/env bun
 /**
  * CLI Tool for Universal Knowledge Graph Ingestion
@@ -14,6 +6,13 @@ import { runIngestionTests } from './test-ingestion-pipeline.ts';
  * with progress tracking, configuration options, and comprehensive logging.
  */
 
+import { parseArgs } from 'util';
+import { z } from 'zod';
+
+import { getEnvironmentConfig } from '../config/environment.ts';
+import { initializeDatabase } from '../db/connection.ts';
+import { createIngestionOrchestrator } from './ingestion-orchestrator.ts';
+import { runIngestionTests } from './test-ingestion-pipeline.ts';
 
 // =============================================================================
 // CLI CONFIGURATION
