@@ -1,5 +1,4 @@
 #!/usr/bin/env bun
-
 /**
  * Pre-commit TypeScript Error Detection and Auto-Fix Script
  *
@@ -54,23 +53,10 @@ async function getStagedTypeScriptFiles(): Promise<string[]> {
  * Get all TypeScript files in src directory
  */
 async function getAllTypeScriptFiles(): Promise<string[]> {
-  try {
-    const output = execSync(
-      'find src -name "*.ts" -not -path "*/node_modules/*" -not -name "*.d.ts"',
-      {
-        encoding: 'utf-8',
-        stdio: 'pipe',
-      }
-    );
-
-    return output
-      .split('\n')
-      .filter((file) => file.trim())
-      .filter((file) => existsSync(file));
-  } catch (error) {
-    // Fallback: manually traverse src directory
-    return await findTypeScriptFiles('src');
-  }
+  // Always use the Node.js directory traversal for cross-platform compatibility
+  const files = await findTypeScriptFiles('.');
+  console.log(`[DEBUG] TypeScript files found:`, files);
+  return files;
 }
 
 /**
@@ -80,6 +66,7 @@ async function findTypeScriptFiles(dir: string): Promise<string[]> {
   const files: string[] = [];
 
   try {
+    console.log(`[DEBUG] Traversing directory: ${dir}`);
     const entries = await readdir(dir, { withFileTypes: true });
 
     for (const entry of entries) {
@@ -93,6 +80,7 @@ async function findTypeScriptFiles(dir: string): Promise<string[]> {
       }
     }
   } catch (error) {
+    console.log(`[DEBUG] Could not read directory: ${dir} - ${(error as Error).message}`);
     // Directory doesn't exist or can't be read
   }
 
@@ -107,8 +95,8 @@ async function loadConfig(): Promise<PreCommitConfig> {
     autoFix: true,
     maxRiskLevel: 'medium',
     dryRun: false,
-    stagedFilesOnly: true,
-    excludePatterns: ['**/*.test.ts', '**/test/**', '**/tests/**'],
+    stagedFilesOnly: false, // Force to false for debugging
+    excludePatterns: [], // Temporarily remove all exclude patterns for debugging
   };
 
   try {
@@ -185,9 +173,14 @@ async function main(): Promise<void> {
     );
 
     // Get files to check
-    const files = config.stagedFilesOnly
-      ? await getStagedTypeScriptFiles()
-      : await getAllTypeScriptFiles();
+    let files: string[] = [];
+    if (config.stagedFilesOnly) {
+      console.log('[DEBUG] Using getStagedTypeScriptFiles');
+      files = await getStagedTypeScriptFiles();
+    } else {
+      console.log('[DEBUG] Using getAllTypeScriptFiles');
+      files = await getAllTypeScriptFiles();
+    }
 
     if (files.length === 0) {
       console.log('✅ No TypeScript files to check');
