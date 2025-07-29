@@ -17,42 +17,25 @@ export * from './ingestion-orchestrator.ts';
 export * from './jobs/index.ts';
 
 // Testing and CLI
-export * from './test-ingestion-pipeline.ts';
-export * from './cli.ts';
+
+export { main as IngestionTestMain } from './test-ingestion-pipeline.ts';
+export { IngestionCLI, parseCommandLineArgs } from './cli.ts';
+export { main as IngestionCLIMain } from './cli.ts';
 
 // Re-export commonly used functions
-export {
-  createIngestionOrchestrator,
-  runTensorRTIngestion,
-} from './ingestion-orchestrator.ts';
 
-export {
-  createTensorRTRepositoryManager,
-} from './repository-manager.ts';
-
-export {
-  createTensorRTGitHubClient,
-} from './github-client.ts';
-
-export {
-  createTensorRTASTAnalyzer,
-} from './ast-analyzer.ts';
-
-export {
-  createTensorRTContentProcessor,
-} from './content-processor.ts';
-
-export {
-  runIngestionTests,
-} from './test-ingestion-pipeline.ts';
+// Only export generic, repo-agnostic, and valid symbols
+export { createIngestionOrchestrator } from './ingestion-orchestrator.ts';
+export { createRepositoryManager } from './repository-manager.ts';
+export { createGitHubClient } from './github-client.ts';
+export { runIngestionTests } from './test-ingestion-pipeline.ts';
 
 // Types and schemas
+
 export type {
-  RepositoryConfig,
   FileFilterConfig,
-  CommitMetadata,
-  FileContent,
 } from './repository-manager.ts';
+export type { CommitMetadata, FileContentMetadata } from '../types/unified-schemas.ts';
 
 export type {
   GitHubConfig,
@@ -64,8 +47,7 @@ export type {
 export type {
   ASTConfig,
   CSTNode,
-  TensorRTPattern,
-  AnalysisResult,
+  ASTGrepPattern,
 } from './ast-analyzer.ts';
 
 export type {
