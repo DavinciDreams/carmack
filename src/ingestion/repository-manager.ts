@@ -672,10 +672,12 @@ export class RepositoryManager {
 // UTILITY FUNCTIONS
 // =============================================================================
 
+
 /**
- * Create repository manager for TensorRT-LLM
+ * Create repository manager for any repository
  */
-export function createTensorRTRepositoryManager(
+export function createRepositoryManager(
+  url: string,
   localPath: string,
   options?: {
     branch?: string;
@@ -690,13 +692,12 @@ export function createTensorRTRepositoryManager(
     depth?: number;
     includeSubmodules?: boolean;
   } = {
-    url: 'https://github.com/NVIDIA/TensorRT-LLM',
+    url,
     localPath,
     branch: options?.branch || 'main',
   };
   if (typeof options?.depth === "number") config.depth = options.depth;
   config.includeSubmodules = false;
-
   return new RepositoryManager(config, options?.customFilters);
 }
 
