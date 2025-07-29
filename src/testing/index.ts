@@ -1,3 +1,19 @@
+export * from './types.js';
+export * from './benchmarks/benchmark-engine.js';
+export * from './benchmarks/historical-scenarios.js';
+export * from './metrics/engagement-tracker.js';
+export * from './validation/performance-validator.js';
+export * from './validation/quality-validator.js';
+export * from './reporting/test-reporter.js';
+export * from './framework/test-orchestrator.js';
+
+import { TestOrchestrator } from './framework/test-orchestrator.js';
+import { BenchmarkEngine } from './benchmarks/benchmark-engine.js';
+import { EngagementTracker } from './metrics/engagement-tracker.js';
+import { PerformanceValidator } from './validation/performance-validator.js';
+import { TestReporter } from './reporting/test-reporter.js';
+import type { DashboardData } from './types';
+import type { TestSuiteResult, CITestResult } from './framework/test-orchestrator';
 /**
  * EPIC-TESTING-METRICS System - Main Entry Point
  * 
@@ -6,41 +22,7 @@
  * quality assurance, and automated reporting.
  */
 
-export * from './types.js';
 
-// Benchmark Testing
-export * from './benchmarks/benchmark-engine.js';
-export * from './benchmarks/historical-scenarios.js';
-
-// User Engagement Metrics
-export * from './metrics/engagement-tracker.js';
-
-// Performance Validation
-export * from './validation/performance-validator.js';
-
-// Quality Assurance
-export * from './validation/quality-validator.js';
-
-// Reporting System
-export * from './reporting/test-reporter.js';
-
-// Test Framework
-export * from './framework/test-orchestrator.js';
-
-// Main API
-import { TestOrchestrator } from './framework/test-orchestrator.js';
-import { BenchmarkEngine } from './benchmarks/benchmark-engine.js';
-import { EngagementTracker } from './metrics/engagement-tracker.js';
-import { PerformanceValidator } from './validation/performance-validator.js';
-import { TestReporter } from './reporting/test-reporter.js';
-import type {
-  DashboardData,
-  TestReportSummary
-} from './types.js';
-import type {
-  TestSuiteResult,
-  CITestResult
-} from './framework/test-orchestrator.js';
 
 /**
  * EPIC-TESTING-METRICS System Configuration
@@ -52,8 +34,8 @@ export interface EpicTestingConfig {
   enableEngagementTracking: boolean;
   enableLoadTesting: boolean;
   enableReporting: boolean;
-  outputDirectory: string;
-  reportFormat: 'json' | 'html' | 'markdown';
+  outputDir: string;
+  formatTypes: Array<'json' | 'html' | 'markdown'>;
   alertingEnabled: boolean;
   continuousIntegration: boolean;
 }
@@ -71,16 +53,16 @@ export class EpicTestingSystem {
 
   constructor(config: Partial<EpicTestingConfig> = {}) {
     this.config = {
-      enableBenchmarkTests: true,
-      enablePerformanceTests: true,
-      enableQualityTests: true,
-      enableEngagementTracking: true,
-      enableLoadTesting: true,
-      enableReporting: true,
-      outputDirectory: './test-reports',
-      reportFormat: 'html',
-      alertingEnabled: true,
-      continuousIntegration: false,
+  enableBenchmarkTests: true,
+  enablePerformanceTests: true,
+  enableQualityTests: true,
+  enableEngagementTracking: true,
+  enableLoadTesting: true,
+  enableReporting: true,
+  outputDir: './test-reports',
+  formatTypes: ['html', 'json', 'markdown'],
+  alertingEnabled: true,
+  continuousIntegration: false,
       ...config,
     };
 
@@ -99,8 +81,8 @@ export class EpicTestingSystem {
     this.engagementTracker = new EngagementTracker();
     this.performanceValidator = new PerformanceValidator();
     this.testReporter = new TestReporter({
-      outputFormat: this.config.reportFormat,
-      outputDirectory: this.config.outputDirectory,
+      formatTypes: this.config.formatTypes,
+      outputDir: this.config.outputDir,
     });
   }
 
@@ -165,7 +147,7 @@ export class EpicTestingSystem {
 
     console.log(`✅ Performance Validation Complete:`);
     results.forEach((result, index) => {
-      console.log(`   Test ${index + 1}: ${result.passed ? 'PASSED' : 'FAILED'} - ${result.testName}`);
+      console.log(`   Test ${index + 1}: ${result.passed ? 'PASSED' : 'FAILED'}`);
     });
 
     return results;
@@ -213,16 +195,29 @@ export class EpicTestingSystem {
   /**
    * Generate comprehensive report
    */
-  async generateReport(): Promise<TestReportSummary> {
+  async generateReport(): Promise<import('./reporting/test-reporter.js').ReportGenerationResult> {
     console.log('📄 Generating Comprehensive Report...');
-    
-    const report = await this.testReporter.generateComprehensiveReport();
 
+    // Gather all required arguments for generateComprehensiveReport
+    const suiteResult = await this.orchestrator.runComprehensiveTestSuite();
+    const benchmarkResults = suiteResult.categories.benchmark.details ? [suiteResult.categories.benchmark.details] : [];
+    const performanceResults = suiteResult.categories.performance.details || [];
+    const qualityResults = suiteResult.categories.quality.details || {};
+    const engagementResults = suiteResult.categories.engagement.details || {};
+    const dashboardData = this.orchestrator.generateDashboardData();
+    const report = await this.testReporter.generateComprehensiveReport(
+      suiteResult,
+      benchmarkResults,
+      performanceResults,
+      qualityResults,
+      engagementResults,
+      dashboardData
+    );
     console.log(`✅ Report Generated: ${report.reportId}`);
-    console.log(`   Overall Score: ${report.summary.overallScore}/100`);
-    console.log(`   Total Tests: ${report.summary.totalTests}`);
-    console.log(`   Pass Rate: ${(report.summary.passedTests / report.summary.totalTests * 100).toFixed(1)}%`);
-
+    console.log(`   Files: ${report.generatedFiles.map(f => f.path).join(', ')}`);
+    if (report.errors.length > 0) {
+      console.log(`   Errors: ${report.errors.join('; ')}`);
+    }
     return report;
   }
 
@@ -242,7 +237,7 @@ export class EpicTestingSystem {
     const benchmarkResult = await this.runBenchmarkValidation();
 
     // Run performance validation
-    const performanceResults = await this.runPerformanceValidation();
+  await this.runPerformanceValidation();
 
     // Calculate metrics
     const speedImprovement = {
