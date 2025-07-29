@@ -1,3 +1,60 @@
+// =====================
+// Commit Diff Schema
+// =====================
+export const CommitDiffSchema = z.object({
+  files: z.array(z.object({
+    file: z.string(),
+    changes: z.number().int().nonnegative().optional(),
+    insertions: z.number().int().nonnegative().optional(),
+    deletions: z.number().int().nonnegative().optional(),
+  })),
+  insertions: z.number().int().nonnegative().optional(),
+  deletions: z.number().int().nonnegative().optional(),
+  filesChanged: z.number().int().nonnegative().optional(),
+});
+
+export type CommitDiff = z.infer<typeof CommitDiffSchema>;
+
+// =====================
+// Commit Metadata Schema
+// =====================
+export const CommitMetadataSchema = z.object({
+  hash: z.string(),
+  shortHash: z.string().optional(),
+  author: z.object({
+    name: z.string(),
+    email: z.string().optional(),
+  }),
+  committer: z.object({
+    name: z.string(),
+    email: z.string().optional(),
+  }),
+  date: z.date(),
+  message: z.string(),
+  subject: z.string().optional(),
+  body: z.string().optional(),
+  parentHashes: z.array(z.string()).optional(),
+  refs: z.string().optional(),
+  diff: CommitDiffSchema.optional(),
+});
+
+export type CommitMetadata = z.infer<typeof CommitMetadataSchema>;
+
+// =====================
+// File Content Metadata Schema
+// =====================
+export const FileContentMetadataSchema = z.object({
+  id: z.string().uuid(),
+  repositoryId: z.string().optional(),
+  path: z.string(),
+  language: z.string(),
+  size: z.number().int().min(0),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+  content: z.string(),
+});
+
+export type FileContentMetadata = z.infer<typeof FileContentMetadataSchema>;
 // Performance metrics schema
 export const PerformanceMetricsSchema = z.object({
   testId: z.string().uuid(),
