@@ -1,3 +1,5 @@
+// Zod schema for validating a safe directory path (basic, can be extended)
+const DirectoryPathSchema = z.string().min(1, 'Directory path must not be empty');
 import { rm } from 'fs/promises';
 import { task } from '@trigger.dev/sdk/v3';
 import { z } from 'zod';
@@ -85,17 +87,26 @@ export const repositoryCloneJob = task({
       } else {
         if (repoExists && validatedPayload.forceClone) {
           console.log('Force clone requested, removing existing repository');
+          // Validate the directory path with Zod before removal
+          let safePath: string;
           try {
-            // Use Bun's fs.rm to remove the directory recursively
-            // Use fs/promises.rm for recursive directory removal (Bun/Node compatible)
-            await rm(validatedPayload.localPath, { recursive: true, force: true });
-            console.log('Existing repository directory removed:', validatedPayload.localPath);
+            safePath = DirectoryPathSchema.parse(validatedPayload.localPath);
+          } catch (validationErr) {
+            console.error('Invalid directory path for removal', {
+              path: validatedPayload.localPath,
+              error: validationErr instanceof Error ? validationErr.message : String(validationErr),
+            });
+            throw new Error(`Invalid directory path for removal: ${validatedPayload.localPath}`);
+          }
+          try {
+            await rm(safePath, { recursive: true, force: true });
+            console.log('Existing repository directory removed:', safePath);
           } catch (removeErr) {
             console.error('Failed to remove existing repository directory', {
-              path: validatedPayload.localPath,
+              path: safePath,
               error: removeErr instanceof Error ? removeErr.message : String(removeErr),
             });
-            throw new Error(`Failed to remove existing repository directory: ${validatedPayload.localPath}`);
+            throw new Error(`Failed to remove existing repository directory: ${safePath}`);
           }
         }
         
