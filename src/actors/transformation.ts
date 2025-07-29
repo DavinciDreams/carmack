@@ -3,11 +3,11 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
 
-import { detectLanguageFromFile } from '../utils/language-detection.js';
+import { detectLanguageFromFile } from '../utils/language-detection.ts';
 import { filterPatternsByLanguageAndMode, createPatternFilter } from '../utils/pattern-filtering.js';
 import { type EnhancedLLMTransformationInput, EnhancedLLMTransformer } from './llm-transformation-enhanced.js';
 
-import type { AstPattern, TransformationRequest } from '../types.js';
+import type { AstPattern, TransformationRequest } from '../types.ts';
 
 // Import AST-grep for syntax tree parsing
 
