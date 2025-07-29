@@ -58,6 +58,14 @@ pre-commit:
         echo "📦 Organizing imports and removing unused code..."
         bun run src/scripts/pre-commit-imports.ts {staged_files}
       stage_fixed: true
+
+    # 6. Auto-update Carmack documentation
+    update-docs:
+      tags: documentation
+      run: |
+        echo "📚 Updating Carmack documentation..."
+        bun run src/scripts/update-docs.ts
+      stage_fixed: true
     
     # 6. Security and Vulnerability Check
     security-check:
