@@ -1,6 +1,6 @@
-import { VectorUtils } from './types.js';
+import { VectorUtils } from './types.ts';
 
-import type { ClusterResult, PatternFeatureVector, Vector } from './types.js';
+import type { ClusterResult, PatternFeatureVector, Vector } from './types.ts';
 
 /**
  * Clustering Algorithms for Pattern Categorization
@@ -695,4 +695,4 @@ export class PatternClusterer {
       minPts: Math.max(3, Math.ceil(patterns.length * 0.01)),
     });
   }
-}
+}
