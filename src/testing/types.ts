@@ -1,3 +1,40 @@
+// =============================================================================
+// QUALITY AND ENGAGEMENT RESULT TYPES
+// =============================================================================
+
+export const QualityResultSchema = z.object({
+  averageAccuracy: z.number().min(0).max(1),
+  averageRelevance: z.number().min(0).max(1),
+  averageCompleteness: z.number().min(0).max(1),
+  averageFactualAccuracy: z.number().min(0).max(1),
+  averageEvidenceQuality: z.number().min(0).max(1),
+  passRate: z.number().min(0).max(1),
+  qualityDistribution: z.object({
+    excellent: z.number(),
+    good: z.number(),
+    fair: z.number(),
+    poor: z.number(),
+  }),
+  commonIssues: z.array(z.object({
+    issue: z.string(),
+    frequency: z.number(),
+    impact: z.enum(['high', 'medium', 'low']),
+  })),
+  recommendations: z.array(z.string()),
+  totalResponses: z.number(),
+  validatedResponses: z.number(),
+});
+export type QualityResult = z.infer<typeof QualityResultSchema>;
+
+export const EngagementResultSchema = z.object({
+  trackingActive: z.boolean(),
+  activeSessions: z.number(),
+  totalQueries: z.number(),
+  averageSessionDuration: z.number(),
+});
+export type EngagementResult = z.infer<typeof EngagementResultSchema>;
+import { z } from 'zod';
+
 /**
  * Type Definitions for EPIC-TESTING-METRICS System
  * 
@@ -5,7 +42,6 @@
  * testing and validation system.
  */
 
-import { z } from 'zod';
 
 // =============================================================================
 // BENCHMARK TESTING TYPES
