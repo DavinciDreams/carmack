@@ -1,13 +1,15 @@
+import { task } from '@trigger.dev/sdk';
+import { z } from 'zod';
+
+import { RepositoryManager } from '../repository-manager.ts';
+
 /**
  * Repository Clone Job for Trigger.dev
  *
- * Handles cloning and updating the TensorRT-LLM repository in the background.
+ * Handles cloning and updating any git repository in the background.
  * Includes progress tracking, error handling, and retry logic.
  */
 
-import { task } from '@trigger.dev/sdk';
-import { z } from 'zod';
-import { RepositoryManager, createTensorRTRepositoryManager } from '../repository-manager.ts';
 
 // =============================================================================
 // SCHEMAS
@@ -136,24 +138,25 @@ export const repositoryCloneJob = task({
 // =============================================================================
 
 /**
- * Trigger repository clone job for TensorRT-LLM
+ * Trigger repository clone job for any repository
  */
-export async function triggerTensorRTClone(
+export async function triggerRepositoryClone(
+  repositoryUrl: string,
   localPath: string,
   options?: {
     branch?: string;
     forceClone?: boolean;
+    includeSubmodules?: boolean;
     depth?: number;
   }
 ) {
   const payload: RepositoryClonePayload = {
-    repositoryUrl: 'https://github.com/NVIDIA/TensorRT-LLM',
+    repositoryUrl,
     localPath,
     branch: options?.branch || 'main',
     forceClone: options?.forceClone || false,
-    includeSubmodules: false,
+    includeSubmodules: options?.includeSubmodules || false,
     depth: options?.depth,
   };
-
   return repositoryCloneJob.trigger(payload);
 }
