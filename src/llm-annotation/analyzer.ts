@@ -1,7 +1,7 @@
 import * as yaml from 'js-yaml';
 import { fromPromise } from 'xstate';
-import type { ASTGrepAnalyzer } from '../docs/ast-analyzer.ts';
-import type { ModuleDoc } from '../docs/types.ts';
+import type { ASTGrepAnalyzer } from '../docs/ast-analyzer';
+import type { ModuleDoc } from '../docs/types';
 import type {
   AnnotationRequest,
   AnnotationResult,
@@ -10,8 +10,8 @@ import type {
   LLMAnnotation,
   PatternAnnotation,
   TransformationOpportunity,
-} from './types.js';
-import { AnnotationRequestSchema, LLMAnnotationSchema } from './types.ts';
+} from './types';
+import { AnnotationRequestSchema, LLMAnnotationSchema } from './types.js';
 import { z } from 'zod';
 // Zod schemas for file paths and directories
 const FilePathSchema = z.string().min(1, 'File path must not be empty');
