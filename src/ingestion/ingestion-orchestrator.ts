@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
 import { getDatabaseManager } from '../db/connection.ts';
-import { ASTAnalyzer, createTensorRTASTAnalyzer } from './ast-analyzer.ts';
-import { ContentProcessor, createTensorRTContentProcessor } from './content-processor.ts';
-import { GitHubClient, createTensorRTGitHubClient } from './github-client.ts';
-import { RepositoryManager, createTensorRTRepositoryManager } from './repository-manager.ts';
+import { ASTAnalyzer } from './ast-analyzer.ts';
+import { ContentProcessor } from './content-processor.ts';
+import { GitHubClient } from './github-client.ts';
+import { RepositoryManager, createRepositoryManager } from './repository-manager.ts';
 
 
 /**
@@ -15,14 +15,7 @@ import { RepositoryManager, createTensorRTRepositoryManager } from './repository
  * population. Follows Carmack's principles of robust orchestration and
  * error recovery.
  */
-import type { 
-  CommitSchema, 
-  PRSchema, 
-  ArtifactSchema, 
-  CSTNodeSchema,
-  CreateArtifactSchema,
-  CreateGraphEdgeSchema 
-} from '../db/schema.ts';
+
 
 // =============================================================================
 // SCHEMAS AND TYPES
@@ -31,9 +24,18 @@ import type {
 /**
  * Ingestion configuration schema
  */
+// Dynamically resolve repo URL and workspace path from environment
+const DEFAULT_REPO_URL = process.env.REPO_URL || 'https://github.com/NVIDIA/TensorRT-LLM';
+const repoNameFromUrl = (url: string) => {
+  const match = url.match(/github.com[/:]([^/]+)\/([^/.]+)/);
+  return match ? match[2] : 'repo';
+};
+const DEFAULT_REPO_NAME = repoNameFromUrl(DEFAULT_REPO_URL);
+const DEFAULT_LOCAL_PATH = `./workspace/${DEFAULT_REPO_NAME}`;
+
 export const IngestionConfigSchema = z.object({
-  repositoryUrl: z.string().url().default('https://github.com/NVIDIA/TensorRT-LLM'),
-  localPath: z.string().default('./workspace/tensorrt-llm'),
+  repositoryUrl: z.string().url().default(DEFAULT_REPO_URL),
+  localPath: z.string().default(DEFAULT_LOCAL_PATH),
   branch: z.string().default('main'),
   maxCommits: z.number().int().positive().default(1000),
   maxPRs: z.number().int().positive().default(500),
@@ -161,13 +163,30 @@ export class IngestionOrchestrator {
     };
 
     // Initialize components
-    this.repositoryManager = createTensorRTRepositoryManager(this.config.localPath, {
-      branch: this.config.branch,
+    this.repositoryManager = createRepositoryManager(
+      this.config.repositoryUrl,
+      this.config.localPath,
+      { branch: this.config.branch }
+    );
+    // TODO: Replace below with generic factories if needed for GitHubClient, ASTAnalyzer, ContentProcessor
+    // Parse owner/repo from repositoryUrl
+    const repoUrl = this.config.repositoryUrl;
+    let owner = '';
+    let repo = '';
+    try {
+      const match = repoUrl.match(/github.com[/:]([^/]+)\/([^/.]+)/);
+      if (match) {
+        owner = match[1] ?? '';
+        repo = match[2] ?? '';
+      }
+    } catch {}
+    this.githubClient = new GitHubClient({
+      owner,
+      repo,
+      token: process.env.GITHUB_TOKEN,
     });
-    
-    this.githubClient = createTensorRTGitHubClient();
-    this.astAnalyzer = createTensorRTASTAnalyzer();
-    this.contentProcessor = createTensorRTContentProcessor();
+    this.astAnalyzer = new ASTAnalyzer();
+    this.contentProcessor = new ContentProcessor();
   }
 
   /**
