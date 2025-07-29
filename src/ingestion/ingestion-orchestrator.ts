@@ -130,7 +130,7 @@ export class IngestionError extends Error {
 // =============================================================================
 
 /**
- * Orchestrates the complete TensorRT-LLM knowledge graph ingestion pipeline
+ * Orchestrates the complete knowledge graph ingestion pipeline
  */
 export class IngestionOrchestrator {
   private config: IngestionConfig;
