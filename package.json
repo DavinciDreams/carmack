@@ -98,6 +98,7 @@
     "oracle:interactive": "bun run oracle-cli.ts --interactive",
     "oracle:stats": "bun run oracle-cli.ts --stats",
     "oracle:simple": "bun run simple-oracle-demo.ts"
+
   },
   "engines": {
     "bun": ">=1.0.0"
@@ -105,10 +106,12 @@
   "trustedDependencies": [
     "@biomejs/biome",
     "esbuild",
-    "lefthook"
+    "lefthook",
+    "protobufjs"
+
   ],
   "devDependencies": {
-    "@anthropic-ai/claude-code": "^1.0.56",
+    "@anthropic-ai/claude-code": "^1.0.57",
     "@biomejs/biome": "^2.1.2",
     "@types/bun": "^1.2.18",
     "@types/chokidar": "^2.1.7",
@@ -146,6 +149,7 @@
     "react": "19.1.0",
     "simple-git": "^3.28.0",
     "xstate": "^5.20.1",
+    "yaml": "^2.8.0",
     "zod": "^3.25.76"
   }
 }
