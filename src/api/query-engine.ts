@@ -125,21 +125,7 @@ const INTENT_PATTERNS = {
   ],
 };
 
-/**
- * Domain-specific keywords for TensorRT-LLM
- */
-const DOMAIN_KEYWORDS = {
-  inference: ['inference', 'execute', 'run', 'predict', 'forward', 'context'],
-  optimization: ['optimize', 'fuse', 'quantize', 'precision', 'fp16', 'int8'],
-  memory_management: ['memory', 'buffer', 'allocation', 'cuda', 'device', 'host'],
-  kernel_execution: ['kernel', 'launch', 'grid', 'block', 'thread', 'sync'],
-  graph_construction: ['network', 'layer', 'build', 'graph', 'node'],
-  serialization: ['serialize', 'save', 'load', 'engine', 'plan'],
-  plugin_system: ['plugin', 'custom', 'operator', 'creator'],
-  builder_api: ['builder', 'config', 'profile', 'workspace'],
-  runtime_api: ['runtime', 'context', 'binding', 'tensor'],
-  parser: ['parser', 'onnx', 'uff', 'caffe', 'model'],
-};
+/* Domain-specific keywords for TensorRT-LLM were defined but not used, so removed to eliminate unused variable error. */
 
 // =============================================================================
 // EMBEDDING SERVICE
@@ -312,7 +298,7 @@ export class HybridSearchEngine {
   ): Promise<SearchResult[]> {
     try {
       // Use PostgreSQL full-text search
-      const { whereClause, values } = this.buildKeywordSearchQuery(query, options.filters || {});
+      const { whereClause, values } = this.buildKeywordSearchQuery(options.filters || {});
       
       const searchQuery = `
         SELECT 
@@ -353,7 +339,7 @@ export class HybridSearchEngine {
       limit?: number;
     }
   ): Promise<SearchResult[]> {
-    const { whereClause, values } = this.buildKeywordSearchQuery('', options.filters || {});
+    const { whereClause, values } = this.buildKeywordSearchQuery(options.filters || {});
     const keywords = query.toLowerCase().split(/\s+/).filter(k => k.length > 2);
     
     if (keywords.length === 0) {
@@ -392,7 +378,7 @@ export class HybridSearchEngine {
   /**
    * Build WHERE clause for keyword search
    */
-  private buildKeywordSearchQuery(query: string, filters: SearchFilters): { whereClause: string; values: any[] } {
+  private buildKeywordSearchQuery(filters: SearchFilters): { whereClause: string; values: any[] } {
     const conditions: string[] = [];
     const values: any[] = [];
     let paramIndex = 2; // Start from 2 since $1 is reserved for query
@@ -491,7 +477,6 @@ export class HybridSearchEngine {
  */
 export class QueryEngine {
   private hybridSearch = new HybridSearchEngine();
-  private embeddingService = EmbeddingService.getInstance();
 
   /**
    * Process a query request and return intelligent results
@@ -504,25 +489,31 @@ export class QueryEngine {
       
       // Classify query intent and complexity
       const intent = this.classifyIntent(validatedRequest.query);
-      const complexity = this.assessComplexity(validatedRequest.query, intent);
+      const complexity = this.assessComplexity(validatedRequest.query);
       
-      // Perform hybrid search
-      const searchResults = await this.hybridSearch.search(validatedRequest.query, {
-        filters: this.buildSearchFilters(validatedRequest.context),
-validatedRequest.options?.max_results
-        semantic_weight: this.getSemanticWeight(intent),
-        keyword_weight: this.getKeywordWeight(intent),
-        threshold: this.getThreshold(complexity),
-      });
+// Perform hybrid search
+const searchOptions: Parameters<typeof this.hybridSearch.search>[1] = {
+  filters: this.buildSearchFilters(validatedRequest.context),
+  semantic_weight: this.getSemanticWeight(intent),
+  keyword_weight: this.getKeywordWeight(intent),
+  threshold: this.getThreshold(complexity),
+};
+if (validatedRequest.options?.max_results !== undefined) {
+  searchOptions.limit = validatedRequest.options.max_results;
+}
+const searchResults = await this.hybridSearch.search(validatedRequest.query, searchOptions);
 
-      // Convert search results to evidence items
-validatedRequest.options?.include_code_snippets
-      
-      // Generate primary answer
-      const primaryAnswer = this.generatePrimaryAnswer(validatedRequest.query, intent, evidenceChain);
-      
-      // Calculate confidence score
-      const confidenceScore = this.calculateConfidenceScore(evidenceChain, searchResults.length);
+// Convert search results to evidence items
+const evidenceChain = this.buildEvidenceChain(
+  searchResults,
+  validatedRequest.options?.include_code_snippets
+);
+
+// Generate primary answer
+const primaryAnswer = this.generatePrimaryAnswer(validatedRequest.query, intent, evidenceChain);
+
+// Calculate confidence score
+const confidenceScore = this.calculateConfidenceScore(evidenceChain, searchResults.length);
       
       // Generate investigation threads and suggestions
       const investigationThreads = this.generateInvestigationThreads(intent, evidenceChain);
@@ -577,7 +568,7 @@ validatedRequest.options?.include_code_snippets
   /**
    * Assess query complexity
    */
-  private assessComplexity(query: string, intent: QueryIntent): QueryComplexity {
+  private assessComplexity(query: string): QueryComplexity {
     const words = query.split(/\s+/).length;
     const hasSpecificTerms = /\b(implementation|architecture|optimization|performance)\b/i.test(query);
     const hasMultipleConcepts = (query.match(/\band\b|\bor\b|\bbut\b/gi) || []).length > 0;
