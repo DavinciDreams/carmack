@@ -262,3 +262,4 @@ export function isValidFilePath(path: string): boolean {
    
    return allPatterns;
  }
+

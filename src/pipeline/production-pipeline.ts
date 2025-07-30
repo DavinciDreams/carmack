@@ -1409,6 +1409,7 @@ async function getDefaultTemplatePatterns(): Promise<unknown[]> {
 
     // Filter for template patterns and convert to expected format
     return patternsData.patterns
+
       .filter((p: { mode: string; [key: string]: unknown }) => p.mode === 'template')
       .map((p: { id: string; language: string; pattern: string; [key: string]: unknown }) => ({
         id: p.id,
