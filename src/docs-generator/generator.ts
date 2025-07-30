@@ -1,7 +1,7 @@
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
 
-import { ASTAnalyzer } from './ast-analyzer.ts';
+import { ASTAnalyzer } from '../docs-generator/ast-analyzer.ts';
 import { validateDocumentationRequest, validateDocumentationResult } from './types.ts';
 
 import type {
@@ -1969,11 +1969,8 @@ export class DocumentationGenerator {
     }
 
     return examples.slice(0, 5); // Limit to first 5 examples per file
-
-  private async generateChangelogHTML(_changes: ChangeAnalysis[]): Promise<string> {
-    return '<html><body><h1>Changelog</h1><p>HTML format not yet implemented</p></body></html>';
-
   }
+
 }
 
 // Create and export the documentation generator actor

@@ -9,7 +9,7 @@
 // Core components
 export * from './repository-manager.ts';
 export * from './github-client.ts';
-export * from './ast-analyzer.ts';
+export * from '../docs-generator/ast-analyzer.ts';
 export * from './content-processor.ts';
 export * from './ingestion-orchestrator.ts';
 
@@ -44,11 +44,6 @@ export type {
   GitHubCommit,
 } from './github-client.ts';
 
-export type {
-  ASTConfig,
-  CSTNode,
-  ASTGrepPattern,
-} from './ast-analyzer.ts';
 
 export type {
   ContentProcessingConfig,

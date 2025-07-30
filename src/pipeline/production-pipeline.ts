@@ -7,14 +7,13 @@ import { astGrepTransformationActor } from '../actors/ast-grep-transformation.ts
 import { complexityActor } from '../actors/complexity.ts';
 import { feedbackLoopActor } from '../actors/feedback-loop.ts';
 import { llmTestingFrameworkActor } from '../actors/llm-testing-framework.ts';
-import { createEnhancedLLMTransformer } from '../actors/llm-transformation-enhanced.ts';
-import { llmTransformationActor } from '../actors/llm-transformation.ts';
+import { createEnhancedLLMTransformer, enhancedLLMTransformationActor } from '../actors/llm-transformation-enhanced.ts';
 import { patternDiscoveryActor } from '../actors/pattern-discovery.ts';
 import { patternLearningActor } from '../actors/pattern-learning.ts';
 import { templateEngineActor } from '../actors/template-engine.ts';
-import { enhancedTransformationOrchestratorActor } from '../actors/transformation-enhanced.ts';
+import { enhancedTransformationOrchestratorActor } from '../transformation/transformation-enhanced.ts';
 import { validationActor } from '../actors/validation.ts';
-import { DocumentationGenerator } from '../docs/generator.ts';
+import { DocumentationGenerator } from '../docs-generator/generator.ts';
 
 import type {
 
@@ -953,7 +952,7 @@ async function executeTransformation(
         throw new Error('Simulated critical error for testing');
       }
 
-      const llmResult = await invokeActor<LLMTransformationResult>(llmTransformationActor, {
+      const llmResult = await invokeActor<LLMTransformationResult>(enhancedLLMTransformationActor, {
         files: input.files,
         request: input.transformationRequest,
         context: {

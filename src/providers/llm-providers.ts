@@ -145,10 +145,10 @@ class RateLimiter {
     state.totalCost += cost;
   }
 
-  getTotalCost(provider: string, model: string): number {
-    const key = `${provider}-${model}`;
-this.state.get(key)?.totalCost
-  }
+getTotalCost(provider: string, model: string): number {
+  const key = `${provider}-${model}`;
+  return this.state.get(key)?.totalCost ?? 0;
+}
 }
 
 const globalRateLimiter = new RateLimiter();
@@ -204,108 +204,108 @@ abstract class BaseLLMProvider {
 // =============================================================================
 
 export class OpenAIProvider extends BaseLLMProvider {
-  async makeRequest(request: LLMRequest): Promise<LLMResponse> {
-    const validatedRequest = LLMRequestSchema.parse(request);
-    const estimatedTokens = this.estimateTokens(validatedRequest.prompt);
+async makeRequest(request: LLMRequest): Promise<LLMResponse> {
+  const validatedRequest = LLMRequestSchema.parse(request);
+  const estimatedTokens = this.estimateTokens(validatedRequest.prompt);
 
-    await this.waitForRateLimit(estimatedTokens);
+  await this.waitForRateLimit(estimatedTokens);
 
-    if (!this.config.apiKey) {
-      throw new Error('OpenAI API key not configured');
-    }
-
-    const startTime = Date.now();
-    let retryCount = 0;
-validatedRequest.options?.maxRetries
-
-    while (retryCount <= maxRetries) {
-      try {
-
-        const response = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${this.config.apiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: this.config.model,
-            messages: [
-              ...(validatedRequest.systemPrompt
-                ? [
-                    {
-                      role: 'system',
-                      content: validatedRequest.systemPrompt,
-                    },
-                  ]
-                : []),
-              {
-                role: 'user',
-                content: validatedRequest.prompt,
-              },
-            ],
-            max_tokens: this.config.maxTokens,
-            temperature: this.config.temperature,
-validatedRequest.options?.jsonMode
-              response_format: { type: 'json_object' },
-            }),
-          }),
-        }, this.config.timeout);
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-
-          throw new Error(
-            `OpenAI API error: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`
-          );
-        }
-
-        const data = await response.json();
-        const content = data.choices?.[0]?.message?.content || '';
-        const usage = data.usage || {};
-        const cost = this.calculateCost(usage.total_tokens || estimatedTokens);
-
-        // Record usage for rate limiting
-        await this.rateLimiter.recordRequest(
-          this.config.provider,
-          this.config,
-          usage.total_tokens || estimatedTokens,
-          cost
-        );
-
-
-        return LLMResponseSchema.parse({
-          content,
-          usage: {
-            promptTokens: usage.prompt_tokens || 0,
-            completionTokens: usage.completion_tokens || 0,
-            totalTokens: usage.total_tokens || 0,
-            cost,
-          },
-          model: this.config.model,
-          provider: 'openai',
-          metadata: {
-            requestId: data.id,
-            processingTime: Date.now() - startTime,
-            retryCount,
-          },
-        });
-      } catch (error) {
-        retryCount++;
-
-        if (retryCount > maxRetries) {
-          throw error;
-        }
-
-        const delay = Math.min(1000 * 2 ** retryCount, 10000);
-
-          `OpenAI request failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms...`
-        );
-        await new Promise((resolve) => setTimeout(resolve, delay));
-      }
-    }
-
-    throw new Error('Max retries exceeded');
+  if (!this.config.apiKey) {
+    throw new Error('OpenAI API key not configured');
   }
+
+  const startTime = Date.now();
+  let retryCount = 0;
+  const maxRetries = validatedRequest.options?.maxRetries ?? this.config.retries ?? 3;
+
+  while (retryCount <= maxRetries) {
+    try {
+
+      const response = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.config.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: this.config.model,
+          messages: [
+            ...(validatedRequest.systemPrompt
+              ? [
+                  {
+                    role: 'system',
+                    content: validatedRequest.systemPrompt,
+                  },
+                ]
+              : []),
+            {
+              role: 'user',
+              content: validatedRequest.prompt,
+            },
+          ],
+          max_tokens: this.config.maxTokens,
+          temperature: this.config.temperature,
+          ...(validatedRequest.options?.jsonMode
+            ? { response_format: { type: 'json_object' } }
+            : {}),
+        }),
+      }, this.config.timeout);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+
+        throw new Error(
+          `OpenAI API error: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`
+        );
+      }
+
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content || '';
+      const usage = data.usage || {};
+      const cost = this.calculateCost(usage.total_tokens || estimatedTokens);
+
+      // Record usage for rate limiting
+      await this.rateLimiter.recordRequest(
+        this.config.provider,
+        this.config,
+        usage.total_tokens || estimatedTokens,
+        cost
+      );
+
+
+      return LLMResponseSchema.parse({
+        content,
+        usage: {
+          promptTokens: usage.prompt_tokens || 0,
+          completionTokens: usage.completion_tokens || 0,
+          totalTokens: usage.total_tokens || 0,
+          cost,
+        },
+        model: this.config.model,
+        provider: 'openai',
+        metadata: {
+          requestId: data.id,
+          processingTime: Date.now() - startTime,
+          retryCount,
+        },
+      });
+    } catch (error) {
+      retryCount++;
+
+      if (retryCount > maxRetries) {
+        throw error;
+      }
+
+      const delay = Math.min(1000 * 2 ** retryCount, 10000);
+
+      // Optionally log retry here
+      // console.warn(`OpenAI request failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms...`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+
+  throw new Error('Max retries exceeded');
+}
 }
 
 // =============================================================================
@@ -323,11 +323,11 @@ export class AnthropicProvider extends BaseLLMProvider {
       throw new Error('Anthropic API key not configured');
     }
 
-    const startTime = Date.now();
-    let retryCount = 0;
-validatedRequest.options?.maxRetries
+const startTime = Date.now();
+let retryCount = 0;
+const maxRetries = validatedRequest.options?.maxRetries ?? this.config.retries ?? 3;
 
-    while (retryCount <= maxRetries) {
+while (retryCount <= maxRetries) {
       try {
         const response = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
           method: 'POST',
@@ -395,8 +395,8 @@ validatedRequest.options?.maxRetries
 
         const delay = Math.min(1000 * 2 ** retryCount, 10000);
 
-          `Anthropic request failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms...`
-        );
+          // Optionally log retry here
+          // console.warn(`Anthropic request failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms...`);
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
@@ -420,12 +420,12 @@ export class OpenRouterProvider extends BaseLLMProvider {
       throw new Error('OpenRouter API key not configured');
     }
 
-    const baseURL = this.config.baseURL || 'https://openrouter.ai/api/v1';
-    const startTime = Date.now();
-    let retryCount = 0;
-validatedRequest.options?.maxRetries
+const baseURL = this.config.baseURL || 'https://openrouter.ai/api/v1';
+const startTime = Date.now();
+let retryCount = 0;
+const maxRetries = validatedRequest.options?.maxRetries ?? this.config.retries ?? 3;
 
-    while (retryCount <= maxRetries) {
+while (retryCount <= maxRetries) {
       try {
         const response = await fetchWithTimeout(`${baseURL}/chat/completions`, {
           method: 'POST',
@@ -501,8 +501,8 @@ validatedRequest.options?.maxRetries
 
         const delay = Math.min(1000 * 2 ** retryCount, 10000);
 
-          `OpenRouter request failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms...`
-        );
+          // Optionally log retry here
+          // console.warn(`OpenRouter request failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms...`);
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
@@ -520,12 +520,12 @@ export class OllamaProvider extends BaseLLMProvider {
     const validatedRequest = LLMRequestSchema.parse(request);
     const estimatedTokens = this.estimateTokens(validatedRequest.prompt);
 
-    const baseURL = this.config.baseURL || 'http://localhost:11434';
-    const startTime = Date.now();
-    let retryCount = 0;
-validatedRequest.options?.maxRetries
+const baseURL = this.config.baseURL || 'http://localhost:11434';
+const startTime = Date.now();
+let retryCount = 0;
+const maxRetries = validatedRequest.options?.maxRetries ?? this.config.retries ?? 3;
 
-    while (retryCount <= maxRetries) {
+while (retryCount <= maxRetries) {
       try {
         // Check if Ollama is running
         await fetchWithTimeout(`${baseURL}/api/tags`, {
@@ -585,8 +585,7 @@ validatedRequest.options?.maxRetries
 
         const delay = Math.min(1000 * 2 ** retryCount, 5000);
 
-          `Ollama request failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms...`
-        );
+          // Ollama request failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms...
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }

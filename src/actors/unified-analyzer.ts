@@ -97,8 +97,10 @@ export class UnifiedAnalyzer {
     const issuesByFile: Record<string, z.infer<typeof IssueSchema>[]> = {};
     for (const issue of this.issues) {
       if (issue.fix) {
-        if (!issuesByFile[issue.file]) issuesByFile[issue.file] = [];
-        issuesByFile[issue.file].push(issue);
+        if (!issuesByFile[issue.file]) {
+          issuesByFile[issue.file] = [];
+        }
+        (issuesByFile[issue.file] ?? []).push(issue);
       }
     }
     for (const [file, issues] of Object.entries(issuesByFile)) {
