@@ -20,7 +20,7 @@ $ pnpm add @boundaryml/baml
 
 import type { Image, Audio, Pdf, Video } from "@boundaryml/baml"
 import type { Checked, Check } from "./types"
-import type {  Resume } from "./types"
+import type {  Resume,  SemanticAnnotation } from "./types"
 import type * as types from "./types"
 
 /******************************************************************************
@@ -41,5 +41,17 @@ export namespace partial_types {
       email?: string | null
       experience: string[]
       skills: string[]
+    }
+    export interface SemanticAnnotation {
+      summary?: string | null
+      purpose?: string | null
+      complexity?: string | null
+      domain: string[]
+      keywords: string[]
+      dependencies: string[]
+      performance_impact?: string | null
+      maintainability?: number | null
+      testability?: number | null
+      technical_debt?: number | null
     }
 }

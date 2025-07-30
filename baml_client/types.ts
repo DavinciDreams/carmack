@@ -54,3 +54,17 @@ export interface Resume {
   skills: string[]
   
 }
+
+export interface SemanticAnnotation {
+  summary: string
+  purpose: string
+  complexity: string
+  domain: string[]
+  keywords: string[]
+  dependencies: string[]
+  performance_impact: string
+  maintainability: number
+  testability: number
+  technical_debt: number
+  
+}

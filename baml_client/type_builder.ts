@@ -27,12 +27,14 @@ export default class TypeBuilder {
     
     Resume: ClassViewer<'Resume', "name" | "email" | "experience" | "skills">;
     
+    SemanticAnnotation: ClassViewer<'SemanticAnnotation', "summary" | "purpose" | "complexity" | "domain" | "keywords" | "dependencies" | "performance_impact" | "maintainability" | "testability" | "technical_debt">;
+    
     
 
     constructor() {
         this.tb = new _TypeBuilder({
           classes: new Set([
-            "Resume",
+            "Resume","SemanticAnnotation",
           ]),
           enums: new Set([
             
@@ -42,6 +44,10 @@ export default class TypeBuilder {
         
         this.Resume = this.tb.classViewer("Resume", [
           "name","email","experience","skills",
+        ]);
+        
+        this.SemanticAnnotation = this.tb.classViewer("SemanticAnnotation", [
+          "summary","purpose","complexity","domain","keywords","dependencies","performance_impact","maintainability","testability","technical_debt",
         ]);
         
         
