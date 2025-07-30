@@ -262,4 +262,4 @@ export function isValidFilePath(path: string): boolean {
    console.log(`Merged ${mainPatterns.length} main patterns with ${enhancedPatterns.length} enhanced patterns (${allPatterns.length} total)`);
    
    return allPatterns;
- }
+ }

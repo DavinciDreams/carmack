@@ -1324,6 +1324,7 @@ async function validateQuality(files: string[]): Promise<ValidationResult> {
 
   try {
     // Process files with ESLint directly using the lint function
+
     for (const filePath of files) {
       try {
         const result = await lint(filePath);

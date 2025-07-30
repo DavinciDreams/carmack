@@ -817,6 +817,7 @@ const _carmackCoderMachine = setup({
     failed: {
       type: 'final',
       entry: ({ context }) => {
+        console.log(context);
         console.error('❌ Transformation failed:', context.currentTransformation?.errors);
       },
     },
