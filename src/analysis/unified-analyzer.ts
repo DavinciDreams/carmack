@@ -1,8 +1,8 @@
 // Unified TypeScript Analyzer - The ONE analyzer to rule them all
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { performance } from 'node:perf_hooks';
+import * as fs from 'fs';
+import * as path from 'path';
+import { performance } from 'perf_hooks';
 import { Project, SyntaxKind } from 'ts-morph';
 import * as ts from 'typescript';
 import { z } from 'zod';
@@ -67,7 +67,13 @@ export class UnifiedAnalyzer {
   // @ts-ignore // TODO: Resolve 'this' type annotation issue in strict mode
   public async analyze(): Promise<{
     issues: z.infer<typeof IssueSchema>[];
-    stats: typeof this.stats;
+    stats: {
+      filesAnalyzed: number;
+      totalLines: number;
+      issuesFound: number;
+      startTime: number;
+      endTime: number;
+    };
     filesModified: string[];
     llmResults?: Array<{ file: string; success: boolean; errors?: unknown[]; details?: unknown }>;
   }> {
@@ -96,7 +102,7 @@ export class UnifiedAnalyzer {
       await this.applyFixes();
 
       try {
-        const { spawnSync } = require('node:child_process');
+        const { spawnSync } = require('child_process');
         const tscPath = require.resolve('typescript/bin/tsc', { paths: [this.config.projectPath] });
         const result = spawnSync(process.execPath, [tscPath, '--noEmit'], {
           cwd: this.config.projectPath,
@@ -125,7 +131,7 @@ export class UnifiedAnalyzer {
       }
 
       if (this.filesModified.length > 0) {
-        const { spawnSync } = require('node:child_process');
+        const { spawnSync } = require('child_process');
         let criticalError = false;
         const biomeErrors: Record<string, string> = {};
         const eslintErrors: Record<string, string> = {};
@@ -171,8 +177,8 @@ export class UnifiedAnalyzer {
 
         if (criticalError) {
           for (const file of this.filesModified) {
-            if (fs.existsSync(`${file}.bak`)) {
-              fs.copyFileSync(`${file}.bak`, file);
+            if (fs.existsSync(file + '.bak')) {
+              fs.copyFileSync(file + '.bak', file);
             }
           }
           this.filesModified = [];
@@ -302,7 +308,7 @@ export class UnifiedAnalyzer {
       const llmPromises: Promise<void>[] = [];
       for (const file of llmTypeErrorFiles) {
         try {
-          const _code = fs.readFileSync(file, 'utf8');
+          const code = fs.readFileSync(file, 'utf8');
           const fileIssues = this.issues.filter((i) => i.file === file && i.type === 'type-error');
           const errorMessages = fileIssues.map((i) => i.message).join('\n');
           const llmInput = {
@@ -340,7 +346,7 @@ export class UnifiedAnalyzer {
                   details: result,
                 });
                 console.error(`❌ LLM failed to fix ${file}:`, result.errors);
-              } else if (result.filesModified?.includes(file)) {
+              } else if (result.filesModified && result.filesModified.includes(file)) {
                 this.filesModified.push(file);
                 this.llmResults.push({
                   file,
