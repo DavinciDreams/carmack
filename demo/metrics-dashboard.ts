@@ -6,8 +6,9 @@
  * Real-time monitoring and analytics for the TensorRT Oracle system
  */
 
-import { SemanticIndexer } from '../src/docs/semantic-indexer.js';
+import { SemanticIndexer } from '../src/ingestion/semantic-indexer.ts';
 import { performance } from 'perf_hooks';
+import { z } from 'zod';
 
 interface SystemMetrics {
   database: {
@@ -112,9 +113,16 @@ class MetricsDashboard {
   }
 
   private async collectDatabaseMetrics(): Promise<SystemMetrics['database']> {
-    try {
-      const stats = await this.indexer.getRepositoryStats();
-      
+      // Define a Zod schema for repository stats
+      const RepositoryStatsSchema = z.object({
+        total: z.object({
+          totalEntities: z.number(),
+        }).partial().default({}),
+      });
+
+      const rawStats = await this.indexer.getRepositoryStats();
+      const stats = RepositoryStatsSchema.parse(rawStats);
+
       // Simulate database performance metrics
       const vectorSearchTime = Math.random() * 50 + 10; // 10-60ms
       const textSearchTime = Math.random() * 20 + 5;    // 5-25ms
@@ -136,17 +144,6 @@ class MetricsDashboard {
           indexEfficiency,
         },
       };
-    } catch (error) {
-      console.error('Error collecting database metrics:', error);
-      return {
-        totalEntities: 0,
-        totalEmbeddings: 0,
-        totalQueries: 0,
-        averageQueryTime: 0,
-        connectionPoolStatus: { active: 0, idle: 0, waiting: 0 },
-        indexPerformance: { vectorSearchTime: 0, textSearchTime: 0, indexEfficiency: 0 },
-      };
-    }
   }
 
   private async collectApplicationMetrics(): Promise<SystemMetrics['application']> {

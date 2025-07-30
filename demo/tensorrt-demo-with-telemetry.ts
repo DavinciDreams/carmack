@@ -11,10 +11,10 @@
  */
 
 import { OracleQueryProcessor } from '../src/docs/oracle-query-processor.js';
-import { SemanticIndexer } from '../src/docs/semantic-indexer.js';
+import { SemanticIndexer } from '../src/ingestion/semantic-indexer.js';
 import { TensorRTTelemetry } from '../src/telemetry/tensorrt-telemetry.js';
 import { performance } from 'perf_hooks';
-
+import { z } from 'zod';
 // Demo configuration
 const DEMO_CONFIG = {
   database: {
@@ -84,7 +84,13 @@ class TensorRTDemoWithTelemetry {
 
   constructor() {
     this.processor = new OracleQueryProcessor(DEMO_CONFIG.database);
-    this.indexer = new SemanticIndexer(DEMO_CONFIG.database);
+    this.indexer = new SemanticIndexer({
+      model: 'claude-4-sonnet',
+      maxTokens: 2048,
+      batchSize: 16,
+      // Optionally add apiKey if required:
+      apiKey: process.env.ANTHROPIC_API_KEY,
+    });
     this.telemetry = new TensorRTTelemetry(DEMO_CONFIG.database);
     this.sessionId = `demo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     this.startTime = Date.now();
@@ -149,7 +155,27 @@ class TensorRTDemoWithTelemetry {
       console.log('✅ TensorRT Oracle schema validated');
       
       // Show database schema info
-      const stats = await this.indexer.getRepositoryStats();
+      const statsRaw = await this.indexer.getRepositoryStats();
+
+      // Zod schema for repository stats validation
+      const { z } = await import('zod');
+      const RepositoryStatsSchema = z.object({
+        total: z.object({
+          totalEntities: z.number().int().min(0),
+          languagesCount: z.number().int().min(0),
+          domainsCount: z.number().int().min(0),
+          filesCount: z.number().int().min(0),
+        }).strict().optional()
+      }).strict();
+
+      let stats: z.infer<typeof RepositoryStatsSchema>;
+      try {
+        stats = RepositoryStatsSchema.parse(statsRaw);
+      } catch (err) {
+        console.error('❌ Invalid repository stats structure:', err);
+        throw err;
+      }
+
       console.log('\n📊 Database Status:');
       if (stats.total && stats.total.totalEntities > 0) {
         console.log(`  • Total Entities: ${stats.total.totalEntities}`);

@@ -103,9 +103,15 @@ async function demonstrateEpicTestingSystem() {
     };
 
     // Create a comprehensive test report summary
+    const now = new Date();
     const reportSummary = {
-      testRunId: `epic-demo-${Date.now()}`,
-      timestamp: new Date(),
+      reportId: `epic-demo-${Date.now()}`,
+      reportType: "comprehensive" as const,
+      generatedAt: now,
+      timeRange: {
+        start: now,
+        end: now
+      },
       summary: {
         totalTests: testResults.totalTests,
         passedTests: testResults.passedTests,
@@ -113,6 +119,24 @@ async function demonstrateEpicTestingSystem() {
         averagePerformance: testResults.duration,
         overallScore: testResults.overallScore
       },
+      keyMetrics: {
+        speedImprovement: 64.4,
+        averageResponseTime: 1247,
+        accuracy: 87.3,
+        concurrentUsers: 287
+      },
+      recommendations: [
+        "Continue optimizing response time.",
+        "Increase concurrent user support for scalability.",
+        "Maintain high accuracy in future releases."
+      ],
+      trends: [
+        { metric: "speedImprovement", values: [60, 62, 64.4], timestamps: [now, now, now] },
+        { metric: "averageResponseTime", values: [1500, 1300, 1247], timestamps: [now, now, now] }
+      ],
+      alerts: [
+        { type: "info", message: "All EPIC requirements currently met.", timestamp: now }
+      ],
       benchmarkResults: [{
         scenarioId: 'tensorrt-llm-comprehensive',
         description: 'TensorRT-LLM Knowledge Graph Performance',
@@ -132,7 +156,7 @@ async function demonstrateEpicTestingSystem() {
         value: 1247,
         target: 2000,
         passed: true,
-        timestamp: new Date()
+        timestamp: now
       }],
       qualityResults: {
         overallAccuracy: 0.873,
@@ -170,12 +194,7 @@ async function demonstrateEpicTestingSystem() {
     console.log('📄 Generating Reports:');
     
     // Generate HTML report
-    const htmlReport = await reporter.generateHTMLReport(reportSummary, reportConfig);
-    console.log(`   ✅ HTML Report: ${htmlReport.filePath}`);
-    console.log(`      Size: ${Math.round(htmlReport.content.length / 1024)}KB`);
-    
-    // Generate JSON report  
-    const jsonReport = await reporter.createJSONReport(
+    const htmlReportContent = reporter.generateHTMLReport(
       reportSummary,
       reportSummary.benchmarkResults,
       reportSummary.performanceResults,
@@ -183,13 +202,27 @@ async function demonstrateEpicTestingSystem() {
       reportSummary.engagementResults,
       dashboardData
     );
-    console.log(`   ✅ JSON Report: ${jsonReport.filePath}`);
-    console.log(`      Size: ${Math.round(jsonReport.content.length / 1024)}KB`);
+    // If you need to save the report to a file, implement file writing here.
+    // For demonstration, we'll just log the content length.
+    console.log(`   ✅ HTML Report generated`);
+    console.log(`      Size: ${Math.round(htmlReportContent.length / 1024)}KB`);
+    
+    // Generate JSON report  
+    const jsonReport = await reporter.generateJSONReport(
+      reportSummary,
+      reportSummary.benchmarkResults,
+      reportSummary.performanceResults,
+      reportSummary.qualityResults,
+      reportSummary.engagementResults,
+      dashboardData
+    );
+    console.log(`   ✅ JSON Report generated`);
+    console.log(`      Size: ${Math.round(jsonReport.length / 1024)}KB`);
     
     // Generate Markdown report
     const markdownReport = await reporter.generateMarkdownReport(reportSummary, reportConfig);
-    console.log(`   ✅ Markdown Report: ${markdownReport.filePath}`);
-    console.log(`      Size: ${Math.round(markdownReport.content.length / 1024)}KB`);
+    console.log(`   ✅ Markdown Report generated`);
+    console.log(`      Size: ${Math.round(markdownReport.length / 1024)}KB`);
 
     console.log('\n🎉 EPIC-TESTING-METRICS System Validation Complete!\n');
     console.log('=' .repeat(60));

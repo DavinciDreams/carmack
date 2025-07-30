@@ -24,7 +24,12 @@ async function runDemo() {
     console.log('✅ Database connection successful\n');
 
     // Initialize components
-    const indexer = new SemanticIndexer(pool);
+    const indexer = new SemanticIndexer({
+      model: process.env.SEMANTIC_MODEL || 'default-model',
+      maxTokens: 2048,
+      batchSize: 16,
+      apiKey: process.env.SEMANTIC_API_KEY,
+    });
     const oracle = new OracleQueryProcessor(pool);
 
     // Run sample queries
@@ -41,19 +46,18 @@ async function runDemo() {
     // Test oracle queries
     console.log('2. Testing oracle queries...');
     
-    const explainQuery = {
-      query: 'tensor optimization',
-      intent: 'explain' as const,
-    };
+    const explainQuery = 'tensor optimization';
     const explainResponse = await oracle.processQuery(explainQuery);
-    console.log('Explain response:', explainResponse.response.substring(0, 200) + '...\n');
+    // Use 'response' property as per the type definition
 
-    const examplesQuery = {
-      query: 'CUDA kernel',
-      intent: 'find-examples' as const,
-    };
-    const examplesResponse = await oracle.processQuery(examplesQuery);
-    console.log('Examples response:', examplesResponse.response.substring(0, 200) + '...\n');
+  // OracleQuery does not have 'answer', so log the query, intent, and results
+  console.log('Explain response:', `Query: ${explainResponse.query}, Intent: ${explainResponse.intent}, Results: ${JSON.stringify(explainResponse.results.slice(0, 2))}`);
+
+  // Define an examplesQuery string
+  const examplesQuery = 'tensor optimization examples';
+  const examplesResponse = await oracle.processQuery(examplesQuery);
+  // Log the query, intent, and results for the examples response
+  console.log('Examples response:', `Query: ${examplesResponse.query}, Intent: ${examplesResponse.intent}, Results: ${JSON.stringify(examplesResponse.results.slice(0, 2))}`);
 
     // Get repository stats
     console.log('3. Getting repository statistics...');
