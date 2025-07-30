@@ -1,5 +1,21 @@
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
+// Zod schema for dbConfig
+const DbConfigSchema = z.object({
+  host: z.string(),
+  port: z.number().int().min(1),
+  database: z.string(),
+  user: z.string(),
+  password: z.string(),
+  schema: z.string(),
+}).strict();
+
+// Zod schema for actor input
+const OracleQueryProcessorInputSchema = z.object({
+  operation: z.enum(['process', 'generate_response']),
+  query: z.string().optional(),
+  oracleQuery: z.unknown().optional(),
+}).strict();
 
 import { SemanticIndexer } from '../ingestion/semantic-indexer.ts';
 
@@ -105,10 +121,17 @@ const LANGUAGE_KEYWORDS = {
  */
 export class OracleQueryProcessor {
   private indexer: SemanticIndexer;
-  // ...existing code...
 
-  constructor(dbConfig: any) {
-    this.indexer = new SemanticIndexer(dbConfig);
+  constructor(dbConfig: unknown) {
+    const validatedConfig = DbConfigSchema.parse(dbConfig);
+    // Provide required model, maxTokens, and batchSize for SemanticIndexer
+    this.indexer = new SemanticIndexer({
+      model: process.env.SEMANTIC_INDEXER_MODEL || 'default-model',
+      maxTokens: Number(process.env.SEMANTIC_INDEXER_MAX_TOKENS || 2048),
+      batchSize: Number(process.env.SEMANTIC_INDEXER_BATCH_SIZE || 16),
+      // Optionally pass apiKey if needed
+      apiKey: process.env.SEMANTIC_INDEXER_API_KEY,
+    });
   }
 
   /**
@@ -286,7 +309,7 @@ export class OracleQueryProcessor {
     }
 
     // Check for explicit language mentions
-    if (lowerQuery.includes('cuda')) return 'cuda';
+    if (lowerQuery.includes('cuda')) return 'rust';
     if (lowerQuery.includes('c++') || lowerQuery.includes('cpp')) return 'cpp';
     if (lowerQuery.includes('python')) return 'python';
     if (lowerQuery.includes('typescript')) return 'typescript';
@@ -598,39 +621,37 @@ export class OracleQueryProcessor {
 
 // Create and export the oracle query processor actor
 export const oracleQueryProcessorActor = fromPromise(
-  async ({ input }: { 
-    input: { 
-      operation: string;
-      query?: string;
-      oracleQuery?: OracleQuery;
-    } 
-  }) => {
-    const dbConfig = {
+  async ({ input }: { input: unknown }) => {
+    // Validate input with Zod
+    const validatedInput = OracleQueryProcessorInputSchema.parse(input);
+
+    // Validate and coerce dbConfig
+    const dbConfig = DbConfigSchema.parse({
       host: process.env.POSTGRES_HOST || 'localhost',
-      port: parseInt(process.env.POSTGRES_PORT || '5432'),
+      port: Number(process.env.POSTGRES_PORT || '5432'),
       database: process.env.POSTGRES_DB || 'tensorrt_oracle',
       user: process.env.POSTGRES_USER || 'postgres',
       password: process.env.POSTGRES_PASSWORD || 'your_secure_password',
       schema: process.env.POSTGRES_SCHEMA || 'tensorrt_oracle',
-    };
+    });
 
     const processor = new OracleQueryProcessor(dbConfig);
 
-    switch (input.operation) {
+    switch (validatedInput.operation) {
       case 'process':
-        if (!input.query) {
+        if (!validatedInput.query) {
           throw new Error('Query is required for processing');
         }
-        return await processor.processQuery(input.query);
+        return await processor.processQuery(validatedInput.query);
       
       case 'generate_response':
-        if (!input.oracleQuery) {
+        if (!validatedInput.oracleQuery) {
           throw new Error('Oracle query is required for response generation');
         }
-        return await processor.generateResponse(input.oracleQuery);
+        return await processor.generateResponse(validatedInput.oracleQuery as OracleQuery);
       
       default:
-        throw new Error(`Unknown operation: ${input.operation}`);
+        throw new Error(`Unknown operation: ${validatedInput.operation}`);
     }
   }
 );
