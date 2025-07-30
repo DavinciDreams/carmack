@@ -472,39 +472,40 @@ export class EnhancedLLMTransformer {
     // Enhanced complexity calculation
     const complexity = this.calculateEnhancedComplexity(content);
 
-    // Detect code patterns and issues
-    const patterns = this.detectCodePatterns(content);
-    const issues = this.detectCodeIssues(content);
+  // Detect code patterns and issues
+  const patterns = this.detectCodePatterns(content);
+  const issues = this.detectCodeIssues(content);
 
-context?.framework
+  // Detect framework from imports
+  const detectedFramework = this.detectFramework(imports);
 
-    const result: {
-      language: string;
-      framework?: string;
-      complexity: number;
-      patterns: string[];
-      imports: string[];
-      exports: string[];
-      functions: number;
-      classes: number;
-      issues: string[];
-    } = {
-      language,
-      complexity,
-      patterns,
-      imports,
-      exports,
-      functions,
-      classes,
-      issues,
-    };
+  const result: {
+    language: string;
+    framework?: string;
+    complexity: number;
+    patterns: string[];
+    imports: string[];
+    exports: string[];
+    functions: number;
+    classes: number;
+    issues: string[];
+  } = {
+    language,
+    complexity,
+    patterns,
+    imports,
+    exports,
+    functions,
+    classes,
+    issues,
+  };
 
-    if (detectedFramework) {
-      result.framework = detectedFramework;
-    }
-
-    return result;
+  if (detectedFramework) {
+    result.framework = detectedFramework;
   }
+
+  return result;
+}
 
   /**
    * Generate enhanced transformation prompt focused on complex LLM-specific tasks
@@ -520,9 +521,11 @@ context?.framework
     context: FileContextAnalysis,
     request?: TransformationRequest
   ): string {
-request?.prompt
+const customPrompt =
+  request?.prompt ||
+  this.getDefaultLLMTransformationGoals(context);
 
-    return `You are an expert code transformation assistant specializing in complex transformations that require semantic understanding and type inference. This code has already been processed by template and AST transformations - you should focus on intelligent, context-aware improvements.
+    return `You are a world class software engineer specializing in complex enterprise systems. You've always been able to hold a multitude of interrelated parts in your mind and keep them in context many layers deep. Your keen intellect cuts through crud like a gordian knot, easily finding performant and elegant solutions to intractable problems. You excel at navigating multiple levels of abstraction and delivering optimized solutions so quickly you make VonNeumann jealous. You'll need deep understanding to make meaningful improvements to this code base, it is large and in production. Junior engineers have already annotated and analysed it with AST grep to address common patterns and issues to no avail, so you've been called in to architect the answer. This isn't your first rodeo so no cowboy coding, just clean well crafted commits ready for production deployment.
 
 COMPLEX TRANSFORMATION GOALS:
 ${customPrompt}
@@ -573,7 +576,7 @@ Please respond with a JSON object containing:
    * @returns Optimized system prompt string for LLM code transformation tasks
    */
   private generateSystemPrompt(context: FileContextAnalysis): string {
-    return `You are an expert code transformation assistant specializing in ${context.language} development. 
+    return `You are a world class software engineer specializing in ${context.language} development.
 Your goal is to improve code quality, maintainability, and performance while preserving functionality.
 Always respond with valid JSON containing the transformed code and metadata.
 Focus on modern best practices and clean code principles.`;
@@ -601,20 +604,20 @@ Focus on modern best practices and clean code principles.`;
 
       return validatedResponse;
     } catch (parseError) {
-      // If not JSON, try to extract code from markdown blocks
-      const codeMatch = response.match(/```[\w]*\n([\s\S]*?)\n```/);
-codeMatch?.[1]?.trim
+// If not JSON, try to extract code from markdown blocks
+const codeMatch = response.match(/```[\w]*\n([\s\S]*?)\n```/);
+const extractedCode = codeMatch && codeMatch[1] ? codeMatch[1].trim() : undefined;
 
-      // Use Zod to create a valid response with defaults
-      const fallbackResponse = LLMTransformationResponseSchema.parse({
-        transformedCode: extractedCode || originalCode,
-        explanation: 'Raw response from LLM - could not parse JSON',
-        confidence: extractedCode ? 0.4 : 0.1,
-        warnings: ['Could not parse structured JSON response'],
-        appliedTransformations: extractedCode ? ['markdown-extraction'] : ['no-transformation'],
-      });
+// Use Zod to create a valid response with defaults
+const fallbackResponse = LLMTransformationResponseSchema.parse({
+  transformedCode: extractedCode || originalCode,
+  explanation: 'Raw response from LLM - could not parse JSON',
+  confidence: extractedCode ? 0.4 : 0.1,
+  warnings: ['Could not parse structured JSON response'],
+  appliedTransformations: extractedCode ? ['markdown-extraction'] : ['no-transformation'],
+});
 
-      return fallbackResponse;
+return fallbackResponse;
     }
   }
 
@@ -967,4 +970,4 @@ export function createEnhancedLLMTransformer(
   config?: Partial<EnhancedLLMConfig>
 ): EnhancedLLMTransformer {
   return new EnhancedLLMTransformer(config);
-}
+}

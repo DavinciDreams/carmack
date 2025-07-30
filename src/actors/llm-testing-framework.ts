@@ -553,7 +553,7 @@ async function checkComplexityReduction(
 async function checkTypesSafety(_code: string, language: string): Promise<boolean> {
   if (language !== 'typescript') return true; // Skip for JavaScript
   try {
-    const { validationActor } = await import('./validation');
+    const { validationActor } = await import('../utils/validation.ts');
     const { createActor } = await import('xstate');
     const result = await new Promise<ValidationActorResult>((resolve) => {
       const actor = createActor(validationActor, {

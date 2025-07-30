@@ -17,7 +17,7 @@ import { enhancedLLMTransformationActor } from './actors/llm-transformation-enha
 import { patternDiscoveryActor } from './actors/pattern-discovery.ts';
 import { patternLearningActor } from './actors/pattern-learning.ts';
 import { type TemplatePattern, templateEngineActor } from './actors/template-engine.ts';
-import { enhancedTransformationActor } from './transformation/transformation-enhanced.ts';
+import { enhancedTransformationActor } from './actors/transformation-enhanced.ts';
 import {
   accuracyValidationActor,
   graphTraversalActor,

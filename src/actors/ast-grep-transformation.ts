@@ -195,13 +195,11 @@ export const astGrepTransformationActor = fromPromise(
 
 
       `🌳 Starting AST-grep transformations on ${validatedInput.targetFiles.length} files with ${validatedInput.patterns.length} patterns`
-    );
 
     const results = await applyAstGrepTransformations(validatedInput);
 
 
       `✨ AST-grep engine completed: ${results.transformationsApplied} transformations across ${results.filesModified.length} files`
-    );
 
     return results;
   }
@@ -246,7 +244,7 @@ async function applyAstGrepTransformations(request: AstGrepTransformationRequest
 
 
           `🌳 AST-transformed ${filePath}: ${transformResult.transformations.length} patterns applied`
-        );
+        ;
       }
     } catch (error) {
 
@@ -267,17 +265,17 @@ async function applyAstGrepTransformations(request: AstGrepTransformationRequest
 function prepareAstPatterns(patterns: AstGrepPattern[], maxComplexity: number): AstGrepPattern[] {
   return patterns
     .filter((p) => p.complexity <= maxComplexity)
-    .sort((a, b) => {
-      // Sort by priority first, then by complexity
-a.performance?.priority
-b.performance?.priority
+.sort((a, b) => {
+  // Sort by priority first, then by complexity
+  const aPriority = a.performance?.priority ?? 0;
+  const bPriority = b.performance?.priority ?? 0;
 
-      if (aPriority !== bPriority) {
-        return bPriority - aPriority; // Higher priority first
-      }
+  if (aPriority !== bPriority) {
+    return bPriority - aPriority; // Higher priority first
+  }
 
-      return a.complexity - b.complexity; // Lower complexity first
-    });
+  return a.complexity - b.complexity; // Lower complexity first
+});
 }
 
 /**
@@ -297,17 +295,17 @@ async function transformFileWithAstGrep(
   const transformations: Array<{ patternId: string; count: number }> = [];
   let totalModified = false;
 
-  // Determine language for AST-grep
-  // Use the first pattern's language or infer from file extension
-patterns[0]?.language
-  if (Lang[lang as keyof typeof Lang]) {
-    lang = Lang[lang as keyof typeof Lang];
-  }
-  // Parse the source code into AST
-  let root: SgRoot;
-  try {
-    root = parse(lang, modifiedContent);
-  } catch (error) {
+// Determine language for AST-grep
+// Use the first pattern's language or infer from file extension
+let lang: string | Lang = patterns[0]?.language || inferLanguageFromFile(filePath);
+if (Lang[lang as keyof typeof Lang]) {
+  lang = Lang[lang as keyof typeof Lang];
+}
+// Parse the source code into AST
+let root: SgRoot;
+try {
+  root = parse(lang, modifiedContent);
+} catch (error) {
 
     return { content, modified: false, transformations: [] };
   }
@@ -375,8 +373,11 @@ async function applyAstGrepPattern(
     }
 
     // Limit matches if specified
-pattern.performance?.maxMatches
-    const limitedMatches = matches.slice(0, maxMatches);
+const maxMatches =
+  pattern.performance?.maxMatches ??
+  options.maxMatchesPerPattern ??
+  1000;
+const limitedMatches = matches.slice(0, maxMatches);
 
     // Apply transformations in reverse order to maintain indices
     let modifiedContent = content;
@@ -552,8 +553,7 @@ function extractVariables(node: SgNode, pattern: AstGrepPattern): Record<string,
       Object.assign(variables, variableMatches);
       if (Object.keys(variableMatches).length > 0) {
 
-          `   ✅ Pattern-based extraction found: ${Object.keys(variableMatches).join(', ')}`
-        );
+        `   ✅ Pattern-based extraction found: ${Object.keys(variableMatches).join(', ')}`
       }
     }
 

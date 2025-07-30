@@ -1,5 +1,7 @@
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
+import { getDatabaseManager } from '../db/connection.js';
+import { randomUUID } from 'node:crypto';
 
 /**
  * Feedback Loop System for Continuous Pattern Improvement
@@ -216,17 +218,36 @@ async function collectFeedback(request: FeedbackLoopRequest) {
   const feedbackData = request.feedbackData || [];
   // Validate all feedback data
   const validatedFeedback = feedbackData.map((data) => FeedbackDataSchema.parse(data));
-  // Store feedback in memory (in production, this would be a database)
-  const feedbackStore = await getFeedbackStore();
+  const db = getDatabaseManager();
+  let processed = 0;
   for (const feedback of validatedFeedback) {
-    feedbackStore.push(feedback);
+    // Insert feedback as a transformation_result row
+    const sql = `
+      INSERT INTO transformation_result (
+        id, pattern_id, file_id, ast_node_id, embedding_id, result, created_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+      ON CONFLICT (id) DO UPDATE SET result = EXCLUDED.result
+    `;
+    await db.query(sql, [
+      feedback.transformationId || randomUUID(),
+      feedback.patternId,
+  // Use fileId if present in context, otherwise null
+  feedback.context && 'fileId' in feedback.context ? (feedback.context as any).fileId : null,
+      null,
+      null,
+      JSON.stringify(feedback),
+      feedback.timestamp || new Date().toISOString(),
+    ]);
+    processed++;
   }
+  // Fetch updated feedback store for summary
+  const feedbackStore = await getFeedbackStore();
   // Update pattern metrics in real-time
   const updatedMetrics = await updatePatternMetrics(validatedFeedback);
   return {
     operation: 'collect' as const,
     status: 'success',
-    processed: validatedFeedback.length,
+    processed,
     updatedPatterns: updatedMetrics.length,
     summary: {
       totalFeedback: feedbackStore.length,
@@ -234,7 +255,7 @@ async function collectFeedback(request: FeedbackLoopRequest) {
       recentFailures: validatedFeedback.filter((f) => !f.success).length,
       averageQuality:
         validatedFeedback.reduce((sum, f) => sum + f.codeQualityImprovement, 0) /
-        validatedFeedback.length,
+        (validatedFeedback.length || 1),
     },
     timestamp: new Date().toISOString(),
   };

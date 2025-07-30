@@ -132,16 +132,16 @@ async function rollbackToCheckpoint(checkpoint: GitCheckpoint): Promise<GitCheck
     if (!isRepo) {
       throw new Error('Not a git repository');
     }
-    // Reset to the checkpoint hash
-    await git.reset(['--hard', checkpoint.hash]);
-    // Verify we're at the correct commit
-    const log = await git.log(['-1']);
-log.latest?.hash
-    if (currentHash !== checkpoint.hash) {
-      throw new Error(
-        `Rollback verification failed: expected ${checkpoint.hash}, got ${currentHash}`
-      );
-    }
+// Reset to the checkpoint hash
+await git.reset(['--hard', checkpoint.hash]);
+// Verify we're at the correct commit
+const log = await git.log(['-1']);
+const currentHash = log.latest?.hash;
+if (currentHash !== checkpoint.hash) {
+  throw new Error(
+    `Rollback verification failed: expected ${checkpoint.hash}, got ${currentHash}`
+  );
+}
     return {
       hash: currentHash || checkpoint.hash,
       branch: checkpoint.branch,
