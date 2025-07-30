@@ -1,9 +1,4 @@
-#!/usr/bin/env bun
-/**
- * Unified TypeScript Analyzer - The ONE analyzer to rule them all
- * 
- * Combines the best of v1 and v2, works on any codebase structure
- */
+// Unified TypeScript Analyzer - The ONE analyzer to rule them all
 
 import * as ts from 'typescript';
 import * as fs from 'fs';
@@ -12,7 +7,7 @@ import { z } from 'zod';
 import { performance } from 'perf_hooks';
 
 // Configuration schema
-const AnalyzerConfigSchema = z.object({
+export const AnalyzerConfigSchema = z.object({
   projectPath: z.string().default(process.cwd()),
   includePatterns: z.array(z.string()).default(['**/*.ts', '**/*.tsx']),
   excludePatterns: z.array(z.string()).default(['node_modules', '.next', 'dist', '.test.', '.spec.']),
@@ -23,7 +18,7 @@ const AnalyzerConfigSchema = z.object({
   maxIssues: z.number().default(1000),
 });
 
-type AnalyzerConfig = z.infer<typeof AnalyzerConfigSchema>;
+export type AnalyzerConfig = z.infer<typeof AnalyzerConfigSchema>;
 
 // Result schemas
 const IssueSchema = z.object({
@@ -40,10 +35,12 @@ const IssueSchema = z.object({
 });
 
 export class UnifiedAnalyzer {
+  declare this: UnifiedAnalyzer;
   private program!: ts.Program;
   private checker!: ts.TypeChecker;
   private sourceFiles: ts.SourceFile[] = [];
   private issues: z.infer<typeof IssueSchema>[] = [];
+  private filesModified: string[] = [];
   private stats = {
     filesAnalyzed: 0,
     totalLines: 0,
@@ -55,6 +52,82 @@ export class UnifiedAnalyzer {
   constructor(private config: AnalyzerConfig) {
     this.config = AnalyzerConfigSchema.parse(config);
     this.initializeProgram();
+  }
+
+  /**
+   * @this {UnifiedAnalyzer}
+   */
+  // @ts-ignore // TODO: Resolve 'this' type annotation issue in strict mode
+  public analyze(): { issues: z.infer<typeof IssueSchema>[]; stats: typeof this.stats; filesModified: string[] } {
+    console.log(`🔍 Unified Analyzer starting...`);
+    console.log(`📁 Found ${this.sourceFiles.length} files to analyze\n`);
+
+    this.stats.startTime = performance.now();
+
+    for (const sourceFile of this.sourceFiles) {
+      this.analyzeFile(sourceFile);
+      this.stats.filesAnalyzed++;
+      
+      // Progress indicator
+      if (this.stats.filesAnalyzed % 50 === 0) {
+        console.log(`  Analyzed ${this.stats.filesAnalyzed}/${this.sourceFiles.length} files...`);
+      }
+    }
+
+    // Apply fixes if enabled
+    if (this.config.enableFixes) {
+      this.applyFixes();
+    }
+
+    this.stats.endTime = performance.now();
+    this.stats.issuesFound = this.issues.length;
+
+    this.generateReport();
+
+    return {
+      issues: this.issues,
+      stats: this.stats,
+      filesModified: this.filesModified
+    };
+  }
+
+  // Apply all available fixes to files
+  private applyFixes() {
+    // Group issues by file
+    const issuesByFile: Record<string, z.infer<typeof IssueSchema>[]> = {};
+    for (const issue of this.issues) {
+      if (issue.fix) {
+        if (!issuesByFile[issue.file]) {
+          issuesByFile[issue.file] = [];
+        }
+        (issuesByFile[issue.file] ?? []).push(issue);
+      }
+    }
+    for (const [file, issues] of Object.entries(issuesByFile)) {
+      try {
+        let content = fs.readFileSync(file, 'utf-8');
+        let modified = false;
+        // Apply each fix (naive: in order, no overlap handling)
+        for (const issue of issues) {
+          if (!issue.fix) continue;
+          // Only apply simple fixes: replace the line with the fix code
+          const lines = content.split('\n');
+          const idx = issue.line - 1;
+          if (idx >= 0 && idx < lines.length) {
+            lines[idx] = issue.fix.code;
+            modified = true;
+          }
+          content = lines.join('\n');
+        }
+        if (modified) {
+          fs.writeFileSync(file, content, 'utf-8');
+          this.filesModified.push(file);
+          console.log(`💡 Auto-fixed: ${file}`);
+        }
+      } catch (e) {
+        console.warn(`Failed to auto-fix ${file}:`, e);
+      }
+    }
   }
 
   private initializeProgram() {
@@ -118,36 +191,12 @@ export class UnifiedAnalyzer {
       }
     };
 
+    console.log("UnifiedAnalyzer DEBUG: Walking directory:", this.config.projectPath);
     walkDir(this.config.projectPath);
+    console.log("UnifiedAnalyzer DEBUG: Discovered files:", files);
     return files;
   }
 
-  analyze(): { issues: z.infer<typeof IssueSchema>[]; stats: { filesAnalyzed: number; totalLines: number; issuesFound: number; startTime: number; endTime: number } } {
-    console.log(`🔍 Unified Analyzer starting...`);
-    console.log(`📁 Found ${this.sourceFiles.length} files to analyze\n`);
-
-    this.stats.startTime = performance.now();
-
-    for (const sourceFile of this.sourceFiles) {
-      this.analyzeFile(sourceFile);
-      this.stats.filesAnalyzed++;
-      
-      // Progress indicator
-      if (this.stats.filesAnalyzed % 50 === 0) {
-        console.log(`  Analyzed ${this.stats.filesAnalyzed}/${this.sourceFiles.length} files...`);
-      }
-    }
-
-    this.stats.endTime = performance.now();
-    this.stats.issuesFound = this.issues.length;
-
-    this.generateReport();
-
-    return {
-      issues: this.issues,
-      stats: this.stats
-    };
-  }
 
   private analyzeFile(sourceFile: ts.SourceFile) {
     const lineCount = sourceFile.getLineAndCharacterOfPosition(sourceFile.end).line;
@@ -350,20 +399,4 @@ export class UnifiedAnalyzer {
 
     return md;
   }
-}
-
-// CLI interface
-if (import.meta.main) {
-  const analyzer = new UnifiedAnalyzer({
-    projectPath: process.cwd(),
-    includePatterns: ['**/*.ts', '**/*.tsx'],
-    excludePatterns: ['node_modules', '.next', 'dist', '.test.', '.spec.'],
-    enableFixes: true,
-    checkNullability: true,
-    checkComponents: true,
-    reportFormat: 'both',
-    maxIssues: 1000
-  });
-  
-  analyzer.analyze();
 }

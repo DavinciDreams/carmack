@@ -5,6 +5,8 @@ import { performance } from 'node:perf_hooks';
 import { getEnvironmentConfig } from "../config/environment.ts";
 import { TelemetryEventSchema } from "../types/unified-schemas.ts";
 import { TelemetryConfigSchema, TelemetryMetricSchema } from './types';
+import type { FileBasedTelemetryExporter } from '../telemetry/file-exporter.ts';
+import { createFileExporter } from '../telemetry/file-exporter';
 
 import type { z } from "zod";
 import type {

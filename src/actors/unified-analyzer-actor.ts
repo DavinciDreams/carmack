@@ -3,7 +3,7 @@ import { fromPromise } from 'xstate';
 import { z } from 'zod';
 
 // Import UnifiedAnalyzer (assume in project or as dependency)
-import { UnifiedAnalyzer } from './unified-analyzer';
+import { UnifiedAnalyzer } from '../analysis/unified-analyzer';
 
 // Zod schema for actor input
 export const UnifiedAnalyzerInputSchema = z.object({
