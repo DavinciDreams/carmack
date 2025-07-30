@@ -31,8 +31,6 @@ import type {
  * of provable correctness and performance optimization.
  */
 
-// ...imports cleaned up above...
-
 // =============================================================================
 // DATABASE OPERATION ERRORS
 // =============================================================================

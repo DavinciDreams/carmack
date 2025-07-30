@@ -1,6 +1,12 @@
 import { z } from 'zod';
 
 import type {
+    QueryIntent,
+  QueryComplexity,
+  EvidenceItem,
+  Hypothesis,
+  InvestigationThread,
+} from './contracts.ts';
 
 /**
  * AI Processor for Knowledge Graph Query Engine
@@ -10,12 +16,7 @@ import type {
  * of deterministic AI processing and structured outputs.
  */
 
-  QueryIntent,
-  QueryComplexity,
-  EvidenceItem,
-  Hypothesis,
-  InvestigationThread,
-} from './contracts.ts';
+
 
 // =============================================================================
 // AI PROCESSOR ERRORS

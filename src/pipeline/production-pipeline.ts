@@ -11,8 +11,8 @@ import { createEnhancedLLMTransformer, enhancedLLMTransformationActor } from '..
 import { patternDiscoveryActor } from '../actors/pattern-discovery.ts';
 import { patternLearningActor } from '../actors/pattern-learning.ts';
 import { templateEngineActor } from '../actors/template-engine.ts';
-import { enhancedTransformationOrchestratorActor } from '../transformation/transformation-enhanced.ts';
-import { validationActor } from '../actors/validation.ts';
+import { enhancedTransformationOrchestratorActor } from '../actors/transformation-enhanced.ts';
+import { validationActor } from '../utils/validation.ts';
 import { DocumentationGenerator } from '../docs-generator/generator.ts';
 
 import type {

@@ -7,8 +7,8 @@ import { createActor, waitFor } from 'xstate';
 import { analysisActor } from '../../src/actors/analysis.js';
 import { dafnyActor } from '../../src/actors/dafny.js';
 import { gitActor } from '../../src/actors/git.js';
-import { transformationActor } from '../../src/actors/transformation.js';
-import { validationActor } from '../../src/actors/validation.js';
+import { enhancedTransformationActor } from '../../src/actors/transformation-enhanced.js';
+import { validationActor } from '../../src/utils/validation.js';
 import type { AstPattern } from '../../src/types.js';
 
 describe('Actor Integration Tests', () => {
@@ -215,13 +215,21 @@ describe('Actor Integration Tests', () => {
       ];
 
       const transformationInput = {
-        mode: 'template' as const,
-        files: ['transform-target.ts'],
-        patterns,
+        transformationType: 'template' as const,
+        targetFiles: ['transform-target.ts'],
+        patterns: patterns.map(p => ({
+          id: p.id,
+          language: p.language,
+          query: p.pattern,
+          replacement: p.replacement,
+          description: p.description,
+          options: {},
+        })),
+        maxComplexity: 10,
         dryRun: false,
       };
 
-      const transformationActorInstance = createActor(transformationActor, {
+      const transformationActorInstance = createActor(enhancedTransformationActor, {
         input: transformationInput,
       });
       transformationActorInstance.start();
@@ -303,16 +311,31 @@ describe('Actor Integration Tests', () => {
       ];
 
       const riskyTransformationInput = {
-        mode: 'llm' as const,
-        files: ['risky-transform.ts'],
-        patterns: riskyPatterns,
-        request: {
-          prompt: 'Refactor this function to use modern TypeScript patterns',
+        targetFiles: ['risky-transform.ts'],
+        transformationType: 'llm' as const,
+        patterns: riskyPatterns.map(p => ({
+          id: p.id,
+          language: p.language,
+          query: p.pattern,
+          replacement: p.replacement,
+          description: p.description,
+          options: {},
+        })),
+        maxComplexity: 10,
+        dryRun: false,
+        context: {
+          request: {
+            prompt: 'Refactor this function to use modern TypeScript patterns',
+          },
+          projectType: 'typescript',
+          priority: 'normal' as 'normal',
+          enableRollback: true,
+          enableMonitoring: false,
         },
       };
 
       try {
-        const transformationActorInstance = createActor(transformationActor, {
+        const transformationActorInstance = createActor(enhancedTransformationActor, {
           input: riskyTransformationInput,
         });
         transformationActorInstance.start();
@@ -417,12 +440,21 @@ describe('Actor Integration Tests', () => {
       ];
 
       const transformationInput = {
-        mode: 'template' as const,
-        files: ['verify-transform.ts'],
-        patterns: safePatterns,
+        transformationType: 'template' as const,
+        targetFiles: ['verify-transform.ts'],
+        patterns: safePatterns.map(p => ({
+          id: p.id,
+          language: p.language,
+          query: p.pattern,
+          replacement: p.replacement,
+          description: p.description,
+          options: {},
+        })),
+        maxComplexity: 10,
+        dryRun: false,
       };
 
-      const transformationActorInstance = createActor(transformationActor, {
+      const transformationActorInstance = createActor(enhancedTransformationActor, {
         input: transformationInput,
       });
       transformationActorInstance.start();
@@ -537,12 +569,21 @@ describe('Actor Integration Tests', () => {
       ];
 
       const transformationInput = {
-        mode: 'ast' as const,
-        files: ['complex-verify.ts'],
-        patterns: lowRiskPatterns,
+        transformationType: 'ast' as const,
+        targetFiles: ['complex-verify.ts'],
+        patterns: lowRiskPatterns.map(p => ({
+          id: p.id,
+          language: p.language,
+          query: p.pattern,
+          replacement: p.replacement,
+          description: p.description,
+          options: {},
+        })),
+        maxComplexity: 10,
+        dryRun: false,
       };
 
-      const transformationActorInstance = createActor(transformationActor, {
+      const transformationActorInstance = createActor(enhancedTransformationActor, {
         input: transformationInput,
       });
       transformationActorInstance.start();
@@ -641,12 +682,21 @@ describe('Actor Integration Tests', () => {
       ];
 
       const transformationInput = {
-        mode: 'template' as const,
-        files: ['pipeline-test.ts'],
-        patterns: safePatterns,
+        transformationType: 'template' as const,
+        targetFiles: ['pipeline-test.ts'],
+        patterns: safePatterns.map(p => ({
+          id: p.id,
+          language: p.language,
+          query: p.pattern,
+          replacement: p.replacement,
+          description: p.description,
+          options: {},
+        })),
+        maxComplexity: 10,
+        dryRun: false,
       };
 
-      const transformationActorInstance = createActor(transformationActor, {
+      const transformationActorInstance = createActor(enhancedTransformationActor, {
         input: transformationInput,
       });
       transformationActorInstance.start();
@@ -799,12 +849,21 @@ describe('Actor Integration Tests', () => {
         ];
 
         const transformationInput = {
-          mode: 'template' as const,
-          files: [file],
-          patterns,
+          transformationType: 'template' as const,
+          targetFiles: [file],
+          patterns: patterns.map(p => ({
+            id: p.id,
+            language: p.language,
+            query: p.pattern,
+            replacement: p.replacement,
+            description: p.description,
+            options: {},
+          })),
+          maxComplexity: 10,
+          dryRun: false,
         };
 
-        const transformationActorInstance = createActor(transformationActor, {
+        const transformationActorInstance = createActor(enhancedTransformationActor, {
           input: transformationInput,
         });
         transformationActorInstance.start();
@@ -918,12 +977,21 @@ describe('Actor Integration Tests', () => {
 
       try {
         const transformationInput = {
-          mode: 'template' as const,
-          files: ['consistency-test.ts'],
-          patterns: riskyPatterns,
+          transformationType: 'template' as const,
+          targetFiles: ['consistency-test.ts'],
+          patterns: riskyPatterns.map(p => ({
+            id: p.id,
+            language: p.language,
+            query: p.pattern,
+            replacement: p.replacement,
+            description: p.description,
+            options: {},
+          })),
+          maxComplexity: 10,
+          dryRun: false,
         };
 
-        const transformationActorInstance = createActor(transformationActor, {
+        const transformationActorInstance = createActor(enhancedTransformationActor, {
           input: transformationInput,
         });
         transformationActorInstance.start();
