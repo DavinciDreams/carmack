@@ -11,13 +11,14 @@ import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { simpleGit } from 'simple-git';
 import { createActor } from 'xstate';
-import { z } from 'zod';
+// ...existing code...
 import {
   defaultProductionConfig,
   type ProductionConfig,
   ProductionConfigSchema,
 } from './production.config.ts';
 import { carmackCoderMachine } from './src/machine.ts';
+import { z } from 'zod';
 import {
   type MachineEvent,
   type TransformationRequest,
@@ -321,18 +322,24 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
   const repoDir = join(workspaceDir, 'repository');
 
   // Clone/update repository
-  if (config.repository.url) {
-    await cloneRepository(
-      config.repository.url,
-      args.branch || config.repository.branch,
-      workspaceDir
-    );
-    await validateRepository(repoDir, config);
-  }
+  // PATCH: Disable auto-clone of Carmack repo at startup for all services.
+  // if (config.repository.url) {
+  //   await cloneRepository(
+  //     config.repository.url,
+  //     args.branch || config.repository.branch,
+  //     workspaceDir
+  //   );
+  //   await validateRepository(repoDir, config);
+  // }
+  // Only clone when explicitly requested by repository manager or via CLI.
+
 
   // Discover eligible files for transformation
   console.log('🔍 Discovering eligible files...');
-  const eligibleFiles = await discoverEligibleFiles(repoDir, config);
+  const eligibleFilesRaw = await discoverEligibleFiles(repoDir, config);
+  // Zod-validate eligible files as non-empty string array
+  const EligibleFilesSchema = z.array(z.string().min(1));
+  const eligibleFiles = EligibleFilesSchema.parse(eligibleFilesRaw);
   console.log(`📁 Selected ${eligibleFiles.length} files for transformation`);
 
   if (args.verbose) {
@@ -395,25 +402,47 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
       import('./src/utils/index.ts').then(m => m.loadAllPatterns('./patterns.json', './src/patterns/enhanced-templates.json')),
       import('./src/utils/pattern-filtering.ts')
     ])
-      .then(([allPatterns, filteringModule]) => {
+      .then(([allPatternsRaw, filteringModule]) => {
+        // Zod-validate loaded patterns as array of objects with required fields
+        const PatternSchema = z.object({
+          id: z.string(),
+          description: z.string(),
+          language: z.enum(['typescript', 'javascript', 'cpp', 'c']),
+          pattern: z.string(),
+          replacement: z.string(),
+          complexity: z.number(),
+          riskLevel: z.enum(['low', 'medium', 'high']),
+          mode: z.enum(['template', 'ast', 'llm']),
+          category: z.string().optional(),
+          performance: z.object({
+            priority: z.number(),
+            batchable: z.boolean(),
+            conflicts: z.array(z.string()).optional(),
+            maxMatches: z.number().optional(),
+          }).optional(),
+          verification: z.any().optional(),
+          testCases: z.any().optional(),
+        }).strict();
+        const PatternsArraySchema = z.array(PatternSchema);
+        const allPatterns = PatternsArraySchema.parse(allPatternsRaw);
+
         const { filterPatternsByLanguageAndMode } = filteringModule;
-        
         console.log(`📋 Loaded ${allPatterns.length} total transformation patterns`);
-        
-        // Apply language-aware pattern filtering
+
+        // ...existing code...
         const filterResult = filterPatternsByLanguageAndMode(
           allPatterns,
           eligibleFiles,
           'template',
           {
             maxComplexity: config.transformation.maxComplexityThreshold,
-            allowedRiskLevels: ['low', 'medium'], // Allow both low and medium risk patterns
+            allowedRiskLevels: ['low', 'medium'],
             strictLanguageMatching: true
           }
         );
-        
+
         console.log(`🎯 Filtered to ${filterResult.filteredCount}/${filterResult.totalPatterns} patterns for target languages: ${filterResult.filterCriteria.targetLanguages.join(', ')}`);
-        
+
         if (filterResult.warnings.length > 0) {
           console.log('⚠️  Pattern filtering warnings:');
           filterResult.warnings.forEach(warning => console.log(`   - ${warning}`));
@@ -435,7 +464,7 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
         // Send start event with language-filtered patterns
         const transformationRequest: TransformationRequest = validateTransformationRequest({
           targetFiles: eligibleFiles,
-          transformationType: 'template' as const, // Start with template, will be dynamically upgraded
+          transformationType: 'template' as const,
           patterns: filterResult.filteredPatterns,
           maxComplexity: config.transformation.maxComplexityThreshold,
           dryRun: args['dry-run'] || config.transformation.dryRunFirst,

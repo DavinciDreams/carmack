@@ -1,5 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { z } from 'zod';
+
 import { type AstPattern, AstPatternSchema } from '../types.js';
 
 /**
@@ -262,4 +263,3 @@ export function isValidFilePath(path: string): boolean {
    
    return allPatterns;
  }
-

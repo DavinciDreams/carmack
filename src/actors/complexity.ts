@@ -1,22 +1,22 @@
 import { readFile } from 'node:fs/promises';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
-import type { ComplexityMetrics } from '../types.js';
+
+import { ComplexityMetricsSchema } from '../types.ts';
+import type { ComplexityMetrics } from '../types.ts';
 
 // Complexity input schema
 const ComplexityInputSchema = z.union([
   z.object({
     files: z.array(z.string()),
-    metrics: z.any().optional(), // ComplexityMetrics schema
+    metrics: ComplexityMetricsSchema.optional(),
   }),
   z.object({
     files: z.array(z.string()),
-    baseline: z.any().optional(), // ComplexityMetrics schema
+    baseline: ComplexityMetricsSchema.optional(),
   }),
 ]);
-
 type ComplexityInput = z.infer<typeof ComplexityInputSchema>;
-
 /**
  * Complexity Actor
  *
@@ -30,33 +30,25 @@ type ComplexityInput = z.infer<typeof ComplexityInputSchema>;
 export const complexityActor = fromPromise(async ({ input }: { input: ComplexityInput }) => {
   const validatedInput = ComplexityInputSchema.parse(input);
   const { files } = validatedInput;
-
   console.log(`Analyzing complexity for ${files.length} files`);
-
   const metrics = await calculateComplexityMetrics(files);
-
   if ('baseline' in validatedInput && validatedInput.baseline) {
     return await compareWithBaseline(metrics, validatedInput.baseline);
   }
-
   return metrics;
 });
-
 async function calculateComplexityMetrics(files: string[]): Promise<ComplexityMetrics> {
   console.log('Calculating complexity metrics using file analysis...');
-
   let totalCyclomaticComplexity = 0;
   let totalCognitiveComplexity = 0;
   let totalLinesOfCode = 0;
   let maxNestingDepth = 0;
   let totalFunctionCount = 0;
   let totalClassCount = 0;
-
   for (const filePath of files) {
     try {
       const content = await readFile(filePath, 'utf-8');
       const fileMetrics = analyzeFileComplexity(content);
-
       totalCyclomaticComplexity += fileMetrics.cyclomaticComplexity;
       totalCognitiveComplexity += fileMetrics.cognitiveComplexity;
       totalLinesOfCode += fileMetrics.linesOfCode;
@@ -68,7 +60,6 @@ async function calculateComplexityMetrics(files: string[]): Promise<ComplexityMe
       // Continue with other files
     }
   }
-
   return {
     cyclomaticComplexity: totalCyclomaticComplexity,
     cognitiveComplexity: totalCognitiveComplexity,
@@ -78,7 +69,6 @@ async function calculateComplexityMetrics(files: string[]): Promise<ComplexityMe
     classCount: totalClassCount,
   };
 }
-
 /**
  * Analyze complexity metrics for a single file
  */
@@ -88,7 +78,6 @@ function analyzeFileComplexity(content: string): ComplexityMetrics {
     const trimmed = line.trim();
     return trimmed.length > 0 && !trimmed.startsWith('//') && !trimmed.startsWith('/*');
   }).length;
-
   // Calculate cyclomatic complexity
   let cyclomaticComplexity = 1; // Base complexity
   const cyclomaticPatterns = [
@@ -105,17 +94,14 @@ function analyzeFileComplexity(content: string): ComplexityMetrics {
     /&&/g,
     /\|\|/g, // Logical operators
   ];
-
   cyclomaticPatterns.forEach((pattern) => {
     const matches = content.match(pattern);
     if (matches) cyclomaticComplexity += matches.length;
   });
-
   // Calculate cognitive complexity (more sophisticated)
   let cognitiveComplexity = 0;
   let nestingLevel = 0;
   let maxNestingDepth = 0;
-
   // Cognitive complexity patterns with nesting penalties
   const cognitivePatterns = [
     { pattern: /\bif\b/g, increment: 1 },
@@ -129,7 +115,6 @@ function analyzeFileComplexity(content: string): ComplexityMetrics {
     { pattern: /\bcatch\b/g, increment: 1 },
     { pattern: /\?\s*.*\s*:/g, increment: 1 }, // Ternary
   ];
-
   // Simple nesting depth calculation
   for (const line of lines) {
     const openBraces = (line.match(/\{/g) || []).length;
@@ -137,17 +122,14 @@ function analyzeFileComplexity(content: string): ComplexityMetrics {
     nestingLevel += openBraces - closeBraces;
     maxNestingDepth = Math.max(maxNestingDepth, nestingLevel);
   }
-
   cognitivePatterns.forEach(({ pattern, increment }) => {
     const matches = content.match(pattern);
     if (matches) {
       cognitiveComplexity += matches.length * increment;
     }
   });
-
   // Add nesting penalty to cognitive complexity
   cognitiveComplexity += Math.max(0, maxNestingDepth - 1);
-
   // Count functions and classes
   const functionPatterns = [
     /\bfunction\s+\w+/g,
@@ -155,16 +137,13 @@ function analyzeFileComplexity(content: string): ComplexityMetrics {
     /const\s+\w+\s*=\s*\([^)]*\)\s*=>/g, // Arrow function assignments
     /\w+\s*\([^)]*\)\s*\{/g, // Method definitions
   ];
-
   let functionCount = 0;
   functionPatterns.forEach((pattern) => {
     const matches = content.match(pattern);
     if (matches) functionCount += matches.length;
   });
-
   const classMatches = content.match(/\bclass\s+\w+/g);
   const classCount = classMatches ? classMatches.length : 0;
-
   return {
     cyclomaticComplexity,
     cognitiveComplexity,
@@ -174,37 +153,31 @@ function analyzeFileComplexity(content: string): ComplexityMetrics {
     classCount,
   };
 }
-
 async function compareWithBaseline(
   current: ComplexityMetrics,
   baseline: ComplexityMetrics
 ): Promise<ComplexityMetrics & { improvement: boolean; changes: string[] }> {
   console.log('Comparing complexity with baseline...');
-
   const changes: string[] = [];
   let improvement = false;
-
   if (current.cyclomaticComplexity < baseline.cyclomaticComplexity) {
     changes.push('Reduced cyclomatic complexity');
     improvement = true;
   } else if (current.cyclomaticComplexity > baseline.cyclomaticComplexity) {
     changes.push('Increased cyclomatic complexity');
   }
-
   if (current.cognitiveComplexity < baseline.cognitiveComplexity) {
     changes.push('Reduced cognitive complexity');
     improvement = true;
   } else if (current.cognitiveComplexity > baseline.cognitiveComplexity) {
     changes.push('Increased cognitive complexity');
   }
-
   if (current.linesOfCode < baseline.linesOfCode) {
     changes.push('Reduced lines of code');
     improvement = true;
   } else if (current.linesOfCode > baseline.linesOfCode) {
     changes.push('Increased lines of code');
   }
-
   return {
     ...current,
     improvement,

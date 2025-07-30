@@ -1,26 +1,21 @@
+import { z } from 'zod';
+
+import { getDatabaseManager } from '../db/connection.ts';
+import { ASTAnalyzer } from './ast-analyzer.ts';
+import { ContentProcessor } from './content-processor.ts';
+import { GitHubClient } from './github-client.ts';
+import { RepositoryManager, createRepositoryManager } from './repository-manager.ts';
+
+
 /**
- * Ingestion Orchestrator for TensorRT-LLM Knowledge Graph
+ * Ingestion Orchestrator for Repository Knowledge Graph
  *
- * Coordinates the complete ingestion pipeline including repository processing,
+ * Coordinates the complete ingestion pipeline for any repository, including repository processing,
  * historical data extraction, AST analysis, content processing, and database
  * population. Follows Carmack's principles of robust orchestration and
  * error recovery.
  */
 
-import { z } from 'zod';
-import { RepositoryManager, createTensorRTRepositoryManager } from './repository-manager.ts';
-import { GitHubClient, createTensorRTGitHubClient } from './github-client.ts';
-import { ASTAnalyzer, createTensorRTASTAnalyzer } from './ast-analyzer.ts';
-import { ContentProcessor, createTensorRTContentProcessor } from './content-processor.ts';
-import { getDatabaseManager } from '../db/connection.ts';
-import type { 
-  CommitSchema, 
-  PRSchema, 
-  ArtifactSchema, 
-  CSTNodeSchema,
-  CreateArtifactSchema,
-  CreateGraphEdgeSchema 
-} from '../db/schema.ts';
 
 // =============================================================================
 // SCHEMAS AND TYPES
@@ -29,9 +24,18 @@ import type {
 /**
  * Ingestion configuration schema
  */
+// Dynamically resolve repo URL and workspace path from environment
+const DEFAULT_REPO_URL = process.env.REPO_URL || 'https://github.com/example/repo';
+const repoNameFromUrl = (url: string) => {
+  const match = url.match(/github.com[/:]([^/]+)\/([^/.]+)/);
+  return match ? match[2] : 'repo';
+};
+const DEFAULT_REPO_NAME = repoNameFromUrl(DEFAULT_REPO_URL);
+const DEFAULT_LOCAL_PATH = `./workspace/${DEFAULT_REPO_NAME}`;
+
 export const IngestionConfigSchema = z.object({
-  repositoryUrl: z.string().url().default('https://github.com/NVIDIA/TensorRT-LLM'),
-  localPath: z.string().default('./workspace/tensorrt-llm'),
+  repositoryUrl: z.string().url().default(DEFAULT_REPO_URL),
+  localPath: z.string().default(DEFAULT_LOCAL_PATH),
   branch: z.string().default('main'),
   maxCommits: z.number().int().positive().default(1000),
   maxPRs: z.number().int().positive().default(500),
@@ -126,7 +130,7 @@ export class IngestionError extends Error {
 // =============================================================================
 
 /**
- * Orchestrates the complete TensorRT-LLM knowledge graph ingestion pipeline
+ * Orchestrates the complete knowledge graph ingestion pipeline
  */
 export class IngestionOrchestrator {
   private config: IngestionConfig;
@@ -159,13 +163,30 @@ export class IngestionOrchestrator {
     };
 
     // Initialize components
-    this.repositoryManager = createTensorRTRepositoryManager(this.config.localPath, {
-      branch: this.config.branch,
+    this.repositoryManager = createRepositoryManager(
+      this.config.repositoryUrl,
+      this.config.localPath,
+      { branch: this.config.branch }
+    );
+    // TODO: Replace below with generic factories if needed for GitHubClient, ASTAnalyzer, ContentProcessor
+    // Parse owner/repo from repositoryUrl
+    const repoUrl = this.config.repositoryUrl;
+    let owner = '';
+    let repo = '';
+    try {
+      const match = repoUrl.match(/github.com[/:]([^/]+)\/([^/.]+)/);
+      if (match) {
+        owner = match[1] ?? '';
+        repo = match[2] ?? '';
+      }
+    } catch {}
+    this.githubClient = new GitHubClient({
+      owner,
+      repo,
+      token: process.env.GITHUB_TOKEN,
     });
-    
-    this.githubClient = createTensorRTGitHubClient();
-    this.astAnalyzer = createTensorRTASTAnalyzer();
-    this.contentProcessor = createTensorRTContentProcessor();
+    this.astAnalyzer = new ASTAnalyzer();
+    this.contentProcessor = new ContentProcessor();
   }
 
   /**
@@ -175,11 +196,12 @@ export class IngestionOrchestrator {
     const startTime = Date.now();
     
     try {
-      console.log('🚀 Starting TensorRT-LLM knowledge graph ingestion...');
+  console.log('🚀 Starting repository knowledge graph ingestion...');
       
       // Phase 1: Clone/Update Repository
-      await this.updateProgress('cloning_repository', 'Cloning TensorRT-LLM repository');
-      await this.cloneRepository();
+     // Skipping auto-clone of Carmack repo; only clone target repos via repository manager as requested.
+     await this.updateProgress('cloning_repository', 'Ready for repository ingestion (no auto-clone)');
+     // No-op: do not clone Carmack repo at startup.
       
       // Phase 2: Extract Git History
       await this.updateProgress('extracting_commits', 'Extracting commit history');
@@ -630,9 +652,9 @@ export class IngestionOrchestrator {
 // =============================================================================
 
 /**
- * Create and run TensorRT-LLM ingestion
+ * Create and run repository ingestion
  */
-export async function runTensorRTIngestion(
+export async function runRepositoryIngestion(
   config?: Partial<IngestionConfig>
 ): Promise<IngestionResult> {
   const orchestrator = new IngestionOrchestrator(config);

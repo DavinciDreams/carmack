@@ -1,0 +1,9 @@
+rules:
+  - id: function-declaration
+    message: "Function declaration detected"
+    severity: info
+    language: typescript
+    pattern: |
+      $MOD* function $NAME($PARAMS)$RET* {
+        $BODY
+      }

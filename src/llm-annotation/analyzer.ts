@@ -1,7 +1,7 @@
 import * as yaml from 'js-yaml';
 import { fromPromise } from 'xstate';
-import type { ASTGrepAnalyzer } from '../docs/ast-analyzer.js';
-import type { ModuleDoc } from '../docs/types.js';
+import type { ASTGrepAnalyzer } from '../docs/ast-analyzer';
+import type { ModuleDoc } from '../docs/types';
 import type {
   AnnotationRequest,
   AnnotationResult,
@@ -10,8 +10,12 @@ import type {
   LLMAnnotation,
   PatternAnnotation,
   TransformationOpportunity,
-} from './types.js';
+} from './types';
 import { AnnotationRequestSchema, LLMAnnotationSchema } from './types.js';
+import { z } from 'zod';
+// Zod schemas for file paths and directories
+const FilePathSchema = z.string().min(1, 'File path must not be empty');
+const DirectoryPathSchema = z.string().min(1, 'Directory path must not be empty');
 
 /**
  * LLM Annotation Analyzer
@@ -37,6 +41,10 @@ export class LLMAnnotationAnalyzer {
   async generateAnnotations(request: AnnotationRequest): Promise<AnnotationResult> {
     const startTime = Date.now();
     const validatedRequest = AnnotationRequestSchema.parse(request);
+    // Validate all file paths in the request
+    validatedRequest.sourceFiles.forEach((filePath) => {
+      FilePathSchema.parse(filePath);
+    });
 
     try {
       console.log('🔍 Starting LLM annotation analysis...');
@@ -134,6 +142,7 @@ export class LLMAnnotationAnalyzer {
     let detectedLanguage = 'unknown';
 
     for (const filePath of request.sourceFiles.slice(0, 10)) {
+      FilePathSchema.parse(filePath);
       // Sample first 10 files
       try {
         const content = await readFile(filePath, 'utf-8');
@@ -220,6 +229,7 @@ export class LLMAnnotationAnalyzer {
     const patternDefinitions = this.getPatternDefinitions(detectedLanguage);
 
     for (const filePath of request.sourceFiles.slice(0, 20)) {
+      FilePathSchema.parse(filePath);
       // Analyze first 20 files
       for (const patternDef of patternDefinitions) {
         try {
@@ -375,6 +385,7 @@ export class LLMAnnotationAnalyzer {
     const architecture: ArchitecturalAnnotation[] = [];
 
     for (const filePath of request.sourceFiles.slice(0, 15)) {
+      FilePathSchema.parse(filePath);
       // Analyze first 15 files
       try {
         if (!this.astAnalyzer) {
@@ -964,7 +975,8 @@ export class LLMAnnotationAnalyzer {
     const { writeFile, mkdir } = await import('node:fs/promises');
     const { join } = await import('node:path');
 
-    const outputDir = request.targetDirectory || './output/annotations';
+  const outputDir = request.targetDirectory || './output/annotations';
+  DirectoryPathSchema.parse(outputDir);
     await mkdir(outputDir, { recursive: true });
 
     const filename = `annotation-${annotation.id}.${request.outputFormat}`;

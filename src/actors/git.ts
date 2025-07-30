@@ -1,6 +1,7 @@
 import { simpleGit } from 'simple-git';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
+
 import type { GitCheckpoint } from '../types.js';
 
 // Git input schema
@@ -19,9 +20,7 @@ const GitInputSchema = z.union([
     checkpoint: z.any(), // GitCheckpoint schema
   }),
 ]);
-
 type GitInput = z.infer<typeof GitInputSchema>;
-
 /**
  * Git Actor
  *
@@ -32,9 +31,7 @@ type GitInput = z.infer<typeof GitInputSchema>;
  */
 export const gitActor = fromPromise(async ({ input }: { input: GitInput }) => {
   const validatedInput = GitInputSchema.parse(input);
-
   console.log(`Executing git operation: ${validatedInput.operation}`);
-
   switch (validatedInput.operation) {
     case 'createCheckpoint':
       return await createCheckpoint(validatedInput.description);
@@ -46,28 +43,22 @@ export const gitActor = fromPromise(async ({ input }: { input: GitInput }) => {
       throw new Error('Unknown git operation');
   }
 });
-
 async function createCheckpoint(description: string): Promise<GitCheckpoint> {
   console.log(`Creating git checkpoint: ${description}`);
-
   try {
     const git = simpleGit();
-
     // Ensure we're in a git repository
     const isRepo = await git.checkIsRepo();
     if (!isRepo) {
       throw new Error('Not a git repository');
     }
-
     // Get current branch and commit hash
     const status = await git.status();
     const currentBranch = status.current || 'main';
-
     // Stage all changes if any
     if (status.files.length > 0) {
       await git.add('.');
     }
-
     // Create commit if there are changes
     let hash: string;
     if (status.files.length > 0) {
@@ -78,7 +69,6 @@ async function createCheckpoint(description: string): Promise<GitCheckpoint> {
       const log = await git.log(['-1']);
       hash = log.latest?.hash || 'HEAD';
     }
-
     return {
       hash,
       branch: currentBranch,
@@ -96,33 +86,26 @@ async function createCheckpoint(description: string): Promise<GitCheckpoint> {
     };
   }
 }
-
 async function commitChanges(message: string, files: string[]): Promise<GitCheckpoint> {
   console.log(`Committing changes: ${message} (${files.length} files)`);
-
   try {
     const git = simpleGit();
-
     // Ensure we're in a git repository
     const isRepo = await git.checkIsRepo();
     if (!isRepo) {
       throw new Error('Not a git repository');
     }
-
     // Get current branch
     const status = await git.status();
     const currentBranch = status.current || 'main';
-
     // Stage specified files or all changes
     if (files.length > 0) {
       await git.add(files);
     } else {
       await git.add('.');
     }
-
     // Commit changes
     const commitResult = await git.commit(message);
-
     return {
       hash: commitResult.commit,
       branch: currentBranch,
@@ -140,32 +123,25 @@ async function commitChanges(message: string, files: string[]): Promise<GitCheck
     };
   }
 }
-
 async function rollbackToCheckpoint(checkpoint: GitCheckpoint): Promise<GitCheckpoint> {
   console.log(`Rolling back to checkpoint: ${checkpoint.hash}`);
-
   try {
     const git = simpleGit();
-
     // Ensure we're in a git repository
     const isRepo = await git.checkIsRepo();
     if (!isRepo) {
       throw new Error('Not a git repository');
     }
-
     // Reset to the checkpoint hash
     await git.reset(['--hard', checkpoint.hash]);
-
     // Verify we're at the correct commit
     const log = await git.log(['-1']);
     const currentHash = log.latest?.hash;
-
     if (currentHash !== checkpoint.hash) {
       throw new Error(
         `Rollback verification failed: expected ${checkpoint.hash}, got ${currentHash}`
       );
     }
-
     return {
       hash: currentHash || checkpoint.hash,
       branch: checkpoint.branch,

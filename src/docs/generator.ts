@@ -1,7 +1,11 @@
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
-import { ASTGrepAnalyzer } from './ast-analyzer.js';
+
+import { ASTGrepAnalyzer } from './ast-analyzer.ts';
+import { validateDocumentationRequest, validateDocumentationResult } from './types.ts';
+
 import type {
+
   ArchitectureDoc,
   ClassDoc,
   DocumentationRequest,
@@ -9,8 +13,7 @@ import type {
   FunctionDoc,
   ModuleDoc,
   PatternDoc,
-} from './types.js';
-import { validateDocumentationRequest, validateDocumentationResult } from './types.js';
+} from './types.ts';
 
 // JSON Pattern structure interfaces
 interface JsonPatternTestCase {

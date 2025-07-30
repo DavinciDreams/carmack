@@ -1,5 +1,5 @@
+import { parse, pattern as compilePattern, Lang, type SgNode, type SgRoot } from '@ast-grep/napi';
 import { readFile, writeFile } from 'node:fs/promises';
-import { js, type SgNode, type SgRoot, ts } from '@ast-grep/napi';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
 
@@ -21,7 +21,7 @@ import { z } from 'zod';
 // Enhanced AST pattern schema for real AST-grep patterns
 const AstGrepPatternSchema = z.object({
   id: z.string(),
-  language: z.enum(['typescript', 'javascript']),
+  language: z.string(), // Accept any language supported by AST-grep
 
   // AST-grep pattern configuration
   pattern: z.object({
@@ -297,14 +297,16 @@ async function transformFileWithAstGrep(
   const transformations: Array<{ patternId: string; count: number }> = [];
   let totalModified = false;
 
-  // Determine language based on file extension
-  const isTypeScript = filePath.endsWith('.ts') || filePath.endsWith('.tsx');
-  const lang = isTypeScript ? ts : js;
-
+  // Determine language for AST-grep
+  // Use the first pattern's language or infer from file extension
+  let lang: string | Lang = patterns[0]?.language || inferLanguageFromFile(filePath);
+  if (Lang[lang as keyof typeof Lang]) {
+    lang = Lang[lang as keyof typeof Lang];
+  }
   // Parse the source code into AST
   let root: SgRoot;
   try {
-    root = lang.parse(modifiedContent);
+    root = parse(lang, modifiedContent);
   } catch (error) {
     console.error(`Failed to parse ${filePath}:`, error);
     return { content, modified: false, transformations: [] };
@@ -323,7 +325,7 @@ async function transformFileWithAstGrep(
       }
     }
 
-    const patternResult = await applyAstGrepPattern(root, modifiedContent, pattern, lang, options);
+  const patternResult = await applyAstGrepPattern(root, modifiedContent, pattern, lang, options);
 
     if (patternResult.modified) {
       modifiedContent = patternResult.content;
@@ -339,7 +341,7 @@ async function transformFileWithAstGrep(
 
       // Re-parse for subsequent patterns
       try {
-        root = lang.parse(modifiedContent);
+        root = parse(lang, modifiedContent);
       } catch (error) {
         console.warn(`Failed to re-parse after ${pattern.id}:`, error);
         break; // Stop processing if we can't re-parse
@@ -361,12 +363,12 @@ async function applyAstGrepPattern(
   root: SgRoot,
   content: string,
   pattern: AstGrepPattern,
-  _lang: typeof ts | typeof js,
+  lang: string | Lang,
   options: AstGrepTransformationRequest['options']
 ): Promise<{ content: string; modified: boolean; matchCount: number }> {
   try {
-    // Find all matches using AST-grep
-    const matches = findAstGrepMatches(root, pattern);
+  // Find all matches using AST-grep
+  const matches = findAstGrepMatches(root, pattern, lang);
 
     if (matches.length === 0) {
       return { content, modified: false, matchCount: 0 };
@@ -410,15 +412,14 @@ async function applyAstGrepPattern(
 /**
  * Find AST-grep matches using sophisticated pattern matching
  */
-function findAstGrepMatches(root: SgRoot, pattern: AstGrepPattern): AstMatch[] {
+function findAstGrepMatches(root: SgRoot, pattern: AstGrepPattern, lang: string | Lang): AstMatch[] {
   const matches: AstMatch[] = [];
 
   try {
-    // Build AST-grep query from pattern
-    const query = buildAstGrepQuery(pattern);
-
-    // Find all nodes matching the pattern using the correct API
-    const nodes = root.root().findAll(query);
+  // Build AST-grep query from pattern
+  const query = buildAstGrepQuery(pattern, lang);
+  // Find all nodes matching the pattern using the correct API
+  const nodes = root.root().findAll(query);
 
     for (const node of nodes) {
       // Extract variables from the match
@@ -453,25 +454,44 @@ function findAstGrepMatches(root: SgRoot, pattern: AstGrepPattern): AstMatch[] {
 /**
  * Build AST-grep query from pattern configuration
  */
-function buildAstGrepQuery(pattern: AstGrepPattern): string {
+function buildAstGrepQuery(pattern: AstGrepPattern, lang: string | Lang): any {
+  // Use AST-grep's pattern compiler for robust matching
   const rule = pattern.pattern.rule;
-
-  // For simple pattern strings, return the string directly
+  // Prefer pattern string if present
   if (rule.pattern) {
-    return rule.pattern;
+    return compilePattern(lang, rule.pattern);
   }
-
   // If we have a kind, use it as a pattern
   if (rule.kind) {
-    return rule.kind;
+    return compilePattern(lang, rule.kind);
   }
-
   if (rule.regex) {
-    return rule.regex;
+    return compilePattern(lang, rule.regex);
   }
-
   // Fallback to a generic pattern
-  return '$_';
+  return compilePattern(lang, '$_');
+}
+
+/**
+ * Infer language from file extension (fallback for AST-grep)
+ */
+function inferLanguageFromFile(filePath: string): string {
+  if (filePath.endsWith('.ts') || filePath.endsWith('.tsx')) return 'typescript';
+  if (filePath.endsWith('.js') || filePath.endsWith('.jsx')) return 'javascript';
+  if (filePath.endsWith('.py')) return 'python';
+  if (filePath.endsWith('.cpp') || filePath.endsWith('.cc') || filePath.endsWith('.cxx')) return 'cpp';
+  if (filePath.endsWith('.go')) return 'go';
+  if (filePath.endsWith('.rs')) return 'rust';
+  if (filePath.endsWith('.java')) return 'java';
+  if (filePath.endsWith('.cs')) return 'csharp';
+  if (filePath.endsWith('.php')) return 'php';
+  if (filePath.endsWith('.rb')) return 'ruby';
+  if (filePath.endsWith('.swift')) return 'swift';
+  if (filePath.endsWith('.kt')) return 'kotlin';
+  if (filePath.endsWith('.scala')) return 'scala';
+  if (filePath.endsWith('.html')) return 'html';
+  if (filePath.endsWith('.css')) return 'css';
+  return 'auto';
 }
 
 /**

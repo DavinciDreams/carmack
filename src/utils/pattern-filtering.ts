@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import { type AstPattern, AstPatternSchema, type TransformationMode, TransformationModeSchema } from '../types.js';
 import { detectLanguageFromFile, detectLanguagesFromFiles, getLanguageDistribution } from './language-detection.js';
 
@@ -173,7 +174,7 @@ export function filterPatternsByLanguageAndMode(
       
       // Provide helpful suggestions
       const availableLanguages = new Set(request.patterns.map(p => p.language));
-      const missingLanguages = Array.from(targetLanguages).filter(lang => !availableLanguages.has(lang));
+      const missingLanguages = Array.from(targetLanguages).filter(lang => !availableLanguages.has(lang as typeof availableLanguages extends Set<infer L> ? L : never));
       
       if (missingLanguages.length > 0) {
         warnings.push(`Missing patterns for languages: ${missingLanguages.join(', ')}`);
@@ -354,7 +355,7 @@ export function generatePatternFilteringDiagnostic(
 
   // Check for missing language support
   const missingLanguages = detectedLanguages.filter(lang => 
-    lang !== 'unknown' && !patternLanguages.includes(lang)
+    lang !== 'unknown' && !patternLanguages.includes(lang as typeof patternLanguages[number])
   );
 
   if (missingLanguages.length > 0) {

@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 /**
  * Environment Configuration Module for Carmack Coder
  *
@@ -5,7 +7,6 @@
  * Follows the project's principles of runtime validation and formal correctness.
  */
 
-import { z } from 'zod';
 
 // =============================================================================
 // ENVIRONMENT VARIABLE SCHEMAS
@@ -17,6 +18,7 @@ import { z } from 'zod';
 const CoreEnvironmentSchema = z.object({
   NODE_ENV: z.enum(['development', 'staging', 'production']).default('development'),
   CARMACK_VERSION: z.string().default('1.0.0'),
+  PORT: z.coerce.number().default(3000),
 });
 
 /**

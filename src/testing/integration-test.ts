@@ -1,3 +1,7 @@
+import { EpicTestingSystem } from './index.js';
+
+import type { TestSuiteResult } from './framework/test-orchestrator.js';
+
 /**
  * Integration Test for EPIC-TESTING-METRICS System
  * 
@@ -5,8 +9,6 @@
  * works together and meets all EPIC requirements.
  */
 
-import { EpicTestingSystem } from './index.js';
-import type { TestSuiteResult } from './framework/test-orchestrator.js';
 
 /**
  * Integration test configuration
@@ -203,8 +205,6 @@ export class EpicTestingIntegrationTest {
         enableEngagementTracking: true,
         enableLoadTesting: true,
         enableReporting: true,
-        outputDirectory: './test-reports',
-        reportFormat: 'html',
         alertingEnabled: true,
         continuousIntegration: false,
       });
@@ -306,7 +306,9 @@ export class EpicTestingIntegrationTest {
       
       console.log('   ✅ Report generation working');
       console.log(`      Report ID: ${report.reportId}`);
-      console.log(`      Report Type: ${report.reportType}`);
+      for (const file of report.generatedFiles) {
+        console.log(`      Generated File: ${file.path} (${file.format}, ${file.size} bytes)`);
+      }
 
       return true;
     } catch (error) {

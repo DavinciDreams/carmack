@@ -1,21 +1,66 @@
+// Canonical orchestrator state type
+interface EnhancedOrchestratorState {
+  transformationId: string;
+  startTime: number;
+  stageTimings: Record<string, number>;
+  errors: Array<{
+    stage: string;
+    error: string;
+    message: string;
+    severity: 'warning' | 'error' | 'critical';
+    recoverable: boolean;
+  }>;
+  transformationsApplied: Array<{
+    type: 'template' | 'ast' | 'llm';
+    patternsUsed: string[];
+    executionTime: number;
+    success: boolean;
+    confidence: number;
+    metadata?: Record<string, unknown>;
+  }>;
+  filesModified: Set<string>;
+  complexityBefore: number;
+  complexityAfter: number;
+  dependencyGraph?: Record<string, string[]>;
+  transformationPlan?: {
+    order: readonly ('template' | 'ast' | 'llm')[];
+    enableParallel: boolean;
+    maxConcurrency: number;
+    fallbackEnabled: boolean;
+  };
+  typeErrors?: number;
+  formatIssues?: number;
+  rollbackInfo?: {
+    available: boolean;
+    checkpointId?: string;
+    backupPath?: string;
+  };
+  performanceMetrics?: {
+    memoryUsage: number;
+    cpuUsage: number;
+    executionTime: number;
+  };
+}
 import { mkdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { js, ts } from '@ast-grep/napi';
 import { createActor, fromPromise } from 'xstate';
 import { z } from 'zod';
+import { astGrepTransformationActor } from './ast-grep-transformation.ts';
+
+import { feedbackLoopActor, ASTGrepPatternSchema } from './feedback-loop.ts';
+import { complexityActor } from './complexity.ts';
+// import { BUILTIN_CPP_PATTERNS, cppTransformationActor } from './cpp-transformation.ts';
+import { createEnhancedLLMTransformer } from './llm-transformation-enhanced.ts';
+import { templateEngineActor } from './template-engine.ts';
+import { validationActor } from './validation.ts';
 import type {
   AstGrepResult,
-  AstPattern,
   ComplexityMetrics,
   LLMTransformationResult,
   TemplateEngineResult,
   ValidationActorResult,
 } from '../types.ts';
-import { astGrepTransformationActor } from './ast-grep-transformation.ts';
-import { complexityActor } from './complexity.ts';
-import { createEnhancedLLMTransformer } from './llm-transformation-enhanced.ts';
-import { templateEngineActor } from './template-engine.ts';
-import { validationActor } from './validation.ts';
+import type { SgRoot, SgNode } from '@ast-grep/napi';
 
 // ===== ENHANCED TRANSFORMATION ORCHESTRATOR =====
 
@@ -68,10 +113,11 @@ export interface EnhancedTransformationOrchestratorResult {
 /**
  * Enhanced transformation request schema for orchestrator
  */
+
 const EnhancedOrchestratorRequestSchema = z.object({
   targetFiles: z.array(z.string()),
   transformationType: z.enum(['template', 'ast', 'llm', 'auto']).default('auto'),
-  patterns: z.array(z.any()).default([]), // Use existing AstPattern from types
+  patterns: z.array(ASTGrepPatternSchema).default([]),
   maxComplexity: z.number().default(15),
   dryRun: z.boolean().default(false),
   context: z
@@ -80,48 +126,6 @@ const EnhancedOrchestratorRequestSchema = z.object({
       priority: z.enum(['low', 'normal', 'high', 'critical']).default('normal'),
       enableRollback: z.boolean().default(true),
       enableMonitoring: z.boolean().default(true),
-    })
-    .optional(),
-  config: z
-
-import { BUILTIN_CPP_PATTERNS, cppTransformationActor } from './cpp-transformation.js';
-
-// Enhanced pattern schema with full AST-grep support
-const EnhancedPatternSchema = z.object({
-  id: z.string(),
-  language: z.enum(['typescript', 'javascript', 'cpp', 'c']),
-  mode: z.enum(['template', 'ast']).default('template'),
-  pattern: z.union([
-    z.string(), // Template pattern
-    z.object({
-      // AST pattern
-      rule: z.object({
-        pattern: z.string(),
-        kind: z.string().optional(),
-        inside: z
-          .object({
-            pattern: z.string(),
-            kind: z.string().optional(),
-          })
-          .optional(),
-        has: z
-          .object({
-            pattern: z.string(),
-            kind: z.string().optional(),
-          })
-          .optional(),
-      }),
-    }),
-  ]),
-  replacement: z.string(),
-  description: z.string(),
-  complexity: z.number().min(1).max(10),
-  riskLevel: z.enum(['low', 'medium', 'high']),
-  astGrep: z.object({
-      enableContextAwareness: z.boolean().default(true),
-      enableMultiFileAnalysis: z.boolean().default(true),
-      enableCaching: z.boolean().default(true),
-      maxExecutionTime: z.number().default(300000), // 5 minutes
     })
     .optional(),
 });
@@ -192,7 +196,7 @@ export const enhancedTransformationOrchestratorActor = fromPromise(
       const validated = EnhancedOrchestratorRequestSchema.parse(input);
 
       // Initialize orchestrator state
-      const orchestratorState = {
+  const orchestratorState: EnhancedOrchestratorState = {
         transformationId,
         startTime,
         stageTimings: {} as Record<string, number>,
@@ -225,97 +229,7 @@ export const enhancedTransformationOrchestratorActor = fromPromise(
       return result;
     } catch (error) {
       console.error(`❌ Enhanced Orchestrator failed: ${transformationId}`, error);
-
-      // Handle C++ files with specialized transformation
-      const cppFiles = validated.targetFiles.filter(
-        (file) =>
-          file.endsWith('.cpp') ||
-          file.endsWith('.cxx') ||
-          file.endsWith('.cc') ||
-          file.endsWith('.c++') ||
-          file.endsWith('.hpp') ||
-          file.endsWith('.hxx') ||
-          file.endsWith('.h++') ||
-          file.endsWith('.h')
-      );
-
-      if (cppFiles.length > 0) {
-        console.log(`🔧 Applying specialized C++ transformations to ${cppFiles.length} files`);
-
-        // Convert patterns to C++ format and apply C++ transformations
-        const cppPatterns = BUILTIN_CPP_PATTERNS.filter(
-          (p) => p.complexity <= validated.maxComplexity
-        );
-
-        const cppRequest = {
-          targetFiles: cppFiles,
-          patterns: cppPatterns,
-          options: {
-            dryRun: validated.dryRun,
-            maxComplexity: validated.maxComplexity,
-            enableBatching: true,
-            skipConflicts: true,
-            preserveFormatting: true,
-            enableVerification: true,
-            maxMatchesPerPattern: 1000,
-          },
-        };
-
-        try {
-          const cppActor = createActor(cppTransformationActor, { input: cppRequest });
-          cppActor.start();
-          const cppResult = await new Promise((resolve, reject) => {
-            const subscription = cppActor.subscribe((state) => {
-              if (state.status === 'done') {
-                subscription.unsubscribe();
-                cppActor.stop();
-                resolve(state.output);
-              } else if (state.status === 'error') {
-                subscription.unsubscribe();
-                cppActor.stop();
-                reject(state.error);
-              }
-            });
-          });
-
-          // Merge C++ results with main results
-          if (typeof result === 'object' && result !== null) {
-            const mainResult = result as any;
-            const cppResultTyped = cppResult as any;
-            mainResult.filesModified = [
-              ...(mainResult.filesModified || []),
-              ...(cppResultTyped.filesModified || []),
-            ];
-            mainResult.transformationsApplied =
-              (mainResult.transformationsApplied || 0) +
-              (cppResultTyped.transformationsApplied || 0);
-            mainResult.appliedPatterns = [
-              ...(mainResult.appliedPatterns || []),
-              ...(cppResultTyped.appliedPatterns || []),
-            ];
-            mainResult.cppVerificationResults = cppResultTyped.verificationResults;
-            mainResult.cppPerformanceMetrics = cppResultTyped.performanceMetrics;
-          }
-        } catch (cppError) {
-          console.error('C++ transformation error:', cppError);
-          // Continue with main transformation even if C++ fails
-        }
-
-      let result: EnhancedTransformationResult;
-
-      switch (validated.transformationType) {
-        case 'template':
-          result = await applyEnhancedTemplateTransformation(validated);
-          break;
-        case 'ast':
-          result = await applyRealASTTransformation(validated);
-          break;
-        case 'llm':
-          result = await applyEnhancedLLMTransformation(validated);
-          break;
-        default:
-          throw new Error(`Unknown transformation type: ${validated.transformationType}`);
-      }
+      // Fallback: return error result (C++ fallback omitted for clarity)
 
       return {
         success: false,
@@ -352,9 +266,12 @@ export const enhancedTransformationOrchestratorActor = fromPromise(
 /**
  * Execute all enhanced orchestration stages
  */
+
+
+// --- Main stage runner ---
 async function executeEnhancedOrchestrationStages(
   request: EnhancedOrchestratorRequest,
-  state: any
+  state: EnhancedOrchestratorState
 ): Promise<EnhancedTransformationOrchestratorResult> {
   const stages = [
     { name: 'pre-analysis', fn: preAnalysisStage },
@@ -409,7 +326,7 @@ async function executeEnhancedOrchestrationStages(
 /**
  * Stage 1: Pre-analysis - Analyze files and prepare for transformation
  */
-async function preAnalysisStage(request: EnhancedOrchestratorRequest, state: any): Promise<void> {
+async function preAnalysisStage(request: EnhancedOrchestratorRequest, state: EnhancedOrchestratorState): Promise<void> {
   console.log('🔍 Pre-analysis: Analyzing target files...');
 
   // Analyze complexity of target files
@@ -440,7 +357,7 @@ async function preAnalysisStage(request: EnhancedOrchestratorRequest, state: any
  */
 async function dependencyAnalysisStage(
   request: EnhancedOrchestratorRequest,
-  state: any
+  state: EnhancedOrchestratorState
 ): Promise<void> {
   console.log('🔗 Dependency Analysis: Analyzing file relationships...');
 
@@ -476,7 +393,7 @@ async function dependencyAnalysisStage(
  */
 async function transformationPlanningStage(
   request: EnhancedOrchestratorRequest,
-  state: any
+  state: EnhancedOrchestratorState
 ): Promise<void> {
   console.log('🎯 Transformation Planning: Creating execution strategy...');
 
@@ -502,11 +419,15 @@ async function transformationPlanningStage(
  */
 async function transformationExecutionStage(
   request: EnhancedOrchestratorRequest,
-  state: any
+  state: EnhancedOrchestratorState
 ): Promise<void> {
   console.log('⚡ Transformation Execution: Applying transformations...');
 
+
   const { transformationPlan } = state;
+  if (!transformationPlan) {
+    throw new Error('Transformation plan is not defined');
+  }
 
   for (const transformationType of transformationPlan.order) {
     try {
@@ -543,7 +464,7 @@ async function transformationExecutionStage(
 async function executeEnhancedTransformation(
   type: 'template' | 'ast' | 'llm',
   request: EnhancedOrchestratorRequest,
-  state: any
+  state: EnhancedOrchestratorState
 ): Promise<{
   type: 'template' | 'ast' | 'llm';
   success: boolean;
@@ -584,9 +505,10 @@ async function executeEnhancedTransformation(
     }
 
     case 'ast': {
+      // AST-grep transformation (language-agnostic, Zod-centric)
       const astResult = await invokeActorWithTimeout<AstGrepResult>(astGrepTransformationActor, {
         targetFiles: request.targetFiles,
-        patterns: request.patterns.filter((p: any) => p.mode === 'ast'),
+        patterns: request.patterns,
         options: {
           dryRun: request.dryRun,
           maxComplexity: request.maxComplexity,
@@ -596,6 +518,30 @@ async function executeEnhancedTransformation(
           maxMatchesPerPattern: 1000,
         },
       });
+
+      // Feed AST-grep transformation results into feedback loop
+      try {
+        await invokeActorWithTimeout<any>(feedbackLoopActor, {
+          operation: 'collect',
+          feedbackData: astResult.appliedPatterns.map((p) => ({
+            patternId: p.pattern,
+            transformationId: `ast_${Date.now()}`,
+            success: astResult.transformationsApplied > 0,
+            executionTime: astResult.executionTime || 0,
+            codeQualityImprovement: 0, // Placeholder, can be improved with metrics
+            context: {
+              fileType: p.file.split('.').pop() || '',
+              codeSize: 0,
+              complexity: 0,
+              language: '',
+            },
+            timestamp: new Date().toISOString(),
+            astGrepPattern: request.patterns.find((pat) => pat.id === p.pattern),
+          })),
+        });
+      } catch (feedbackError) {
+        console.warn('⚠️ Feedback loop integration failed:', feedbackError);
+      }
 
       return {
         type: 'ast',
@@ -609,21 +555,94 @@ async function executeEnhancedTransformation(
     }
 
     case 'llm': {
-      // Create enhanced LLM transformer
-      const enhancedLLMTransformer = createEnhancedLLMTransformer({
-        provider: 'mock', // Use mock for integration testing
-        enableContextAwareness: request.config?.enableContextAwareness ?? true,
-        enableMultiFileAnalysis: request.config?.enableMultiFileAnalysis ?? true,
-        performance: {
-          enableCaching: request.config?.enableCaching ?? true,
-          enableBatching: true,
-          maxBatchSize: 10,
-          cacheStrategy: 'memory',
-        },
-      });
+      // Use the real enhanced LLM transformer with provider from env
+      const { enhancedLLMTransformationActor } = await import('./llm-transformation-enhanced');
 
-      const llmResult = await invokeActorWithTimeout<LLMTransformationResult>(
-        enhancedLLMTransformer,
+      // --- Advanced Prompt Context & AST Annotation ---
+      // For each file, extract AST annotation (structure, key nodes, complexity, etc.)
+      // --- Types for AST annotation ---
+      type ASTAnnotation = {
+        nodeKinds: string[];
+        functionCount: number;
+        classCount: number;
+        codeSize: number;
+      } | { error: string; codeSize?: number };
+      const astAnnotations: Record<string, ASTAnnotation> = {};
+      try {
+        const { parse, Lang } = await import('@ast-grep/napi');
+        for (const file of request.targetFiles) {
+          try {
+            const content = await readFile(file, 'utf-8');
+            // Infer language from extension (reuse logic from ast-grep-transformation)
+            let lang: string = 'typescript';
+            if (file.endsWith('.js') || file.endsWith('.jsx')) lang = 'javascript';
+            else if (file.endsWith('.py')) lang = 'python';
+            else if (file.endsWith('.cpp') || file.endsWith('.cc') || file.endsWith('.cxx')) lang = 'cpp';
+            else if (file.endsWith('.go')) lang = 'go';
+            else if (file.endsWith('.rs')) lang = 'rust';
+            else if (file.endsWith('.java')) lang = 'java';
+            else if (file.endsWith('.cs')) lang = 'csharp';
+            else if (file.endsWith('.php')) lang = 'php';
+            else if (file.endsWith('.rb')) lang = 'ruby';
+            else if (file.endsWith('.swift')) lang = 'swift';
+            else if (file.endsWith('.kt')) lang = 'kotlin';
+            else if (file.endsWith('.scala')) lang = 'scala';
+            else if (file.endsWith('.html')) lang = 'html';
+            else if (file.endsWith('.css')) lang = 'css';
+            // Use AST-grep to parse and annotate
+            let ast: SgRoot | null = null;
+            try {
+              ast = parse(Lang[lang as keyof typeof Lang] || lang, content) as SgRoot;
+            } catch (err) {
+              ast = null;
+            }
+            if (ast) {
+              // Collect a simple AST summary: top-level node kinds, function/class count, etc.
+              const root = ast.root();
+              // Defensive: filter out undefined/null children and ensure kind() is string
+              const children = root.children().filter((n): n is SgNode => !!n && typeof n.kind === 'function');
+              const nodeKinds: string[] = children.map((n) => {
+                const k = n.kind();
+                return typeof k === 'string' ? k : '';
+              }).filter(Boolean);
+              const functionCount: number = children.filter((n) => {
+                const k = n.kind();
+                return typeof k === 'string' && k.includes('function');
+              }).length;
+              const classCount: number = children.filter((n) => {
+                const k = n.kind();
+                return typeof k === 'string' && k.includes('class');
+              }).length;
+              astAnnotations[file] = {
+                nodeKinds,
+                functionCount,
+                classCount,
+                codeSize: content.length,
+              };
+            } else {
+              astAnnotations[file] = { error: 'AST parse failed', codeSize: content.length };
+            }
+          } catch (err) {
+            astAnnotations[file] = { error: 'File read/parse failed' };
+          }
+        }
+      } catch (err) {
+        // AST-grep not available or failed
+      }
+
+      // Compose advanced prompt context for LLM
+      const advancedPromptContext = {
+        projectType: request.context?.projectType || 'typescript',
+        priority: request.context?.priority || 'normal',
+        astAnnotations,
+        transformationGoal: 'Improve code quality and apply best practices',
+        files: request.targetFiles,
+        maxComplexity: request.maxComplexity,
+        dryRun: request.dryRun,
+      };
+
+      const llmResult = await invokeActorWithTimeout<any>(
+        enhancedLLMTransformationActor,
         {
           files: request.targetFiles,
           request: {
@@ -632,14 +651,13 @@ async function executeEnhancedTransformation(
             transformationType: 'llm' as const,
             maxComplexity: request.maxComplexity,
             dryRun: request.dryRun,
+            advancedContext: advancedPromptContext,
           },
-          config: {
-            provider: 'mock' as const,
-            enableContextAwareness: true,
-          },
+          // config and context will be picked up from env by the provider manager
           context: {
             projectType: request.context?.projectType || 'typescript',
             priority: request.context?.priority || 'normal',
+            astAnnotations,
           },
         }
       );
@@ -654,6 +672,7 @@ async function executeEnhancedTransformation(
         metadata: {
           transformationsApplied: llmResult.transformationsApplied,
           tokenUsage: llmResult.totalTokensUsed,
+          astAnnotations,
         },
       };
     }
@@ -668,7 +687,7 @@ async function executeEnhancedTransformation(
  */
 async function qualityValidationStage(
   request: EnhancedOrchestratorRequest,
-  state: any
+  state: EnhancedOrchestratorState
 ): Promise<void> {
   console.log('🔍 Quality Validation: Validating transformation results...');
 
@@ -686,7 +705,31 @@ async function qualityValidationStage(
       type: 'quality',
       files: modifiedFiles,
     });
-
+    // Feed validation results into feedback loop
+    await invokeActorWithTimeout<any>(feedbackLoopActor, {
+      operation: 'collect',
+      feedbackData: (validationResult.errors || []).map((err) => {
+        let patternId = 'unknown';
+        if (err && typeof err === 'object' && err !== null && 'patternId' in err) {
+          // @ts-expect-error: patternId may exist on error object
+          patternId = err.patternId || 'unknown';
+        }
+        return {
+          patternId,
+          transformationId: `validation_${Date.now()}`,
+          success: false,
+          executionTime: 0,
+          codeQualityImprovement: -1,
+          context: {
+            fileType: '',
+            codeSize: 0,
+            complexity: 0,
+            language: '',
+          },
+          timestamp: new Date().toISOString(),
+        };
+      }),
+    });
     state.typeErrors = validationResult.errors?.length || 0;
     state.formatIssues = validationResult.warnings?.length || 0;
   } catch (error) {
@@ -760,7 +803,7 @@ async function qualityValidationStage(
  */
 async function rollbackPreparationStage(
   request: EnhancedOrchestratorRequest,
-  state: any
+  state: EnhancedOrchestratorState
 ): Promise<void> {
   if (!request.context?.enableRollback) {
     console.log('⏭️ Rollback disabled, skipping preparation');
@@ -793,7 +836,7 @@ async function rollbackPreparationStage(
  */
 async function monitoringCollectionStage(
   request: EnhancedOrchestratorRequest,
-  state: any
+  state: EnhancedOrchestratorState
 ): Promise<void> {
   if (!request.context?.enableMonitoring) {
     console.log('⏭️ Monitoring disabled, skipping collection');
@@ -817,10 +860,13 @@ async function monitoringCollectionStage(
  */
 function buildEnhancedOrchestratorResult(
   request: EnhancedOrchestratorRequest,
-  state: any
+  state: EnhancedOrchestratorState
 ): EnhancedTransformationOrchestratorResult {
   const qualityImprovement = calculateQualityImprovement(state);
   const recommendations = generateEnhancedRecommendations(state);
+
+  // Always return a rollbackInfo object (never undefined)
+  const rollbackInfo = state.rollbackInfo ?? { available: false };
 
   return {
     success:
@@ -844,7 +890,7 @@ function buildEnhancedOrchestratorResult(
         cpu: state.performanceMetrics?.cpuUsage || 0,
       },
     },
-    rollbackInfo: state.rollbackInfo,
+    rollbackInfo,
     errors: state.errors,
     recommendations,
   };
@@ -853,7 +899,7 @@ function buildEnhancedOrchestratorResult(
 /**
  * Calculate quality improvement score
  */
-function calculateQualityImprovement(state: any): number {
+function calculateQualityImprovement(state: EnhancedOrchestratorState): number {
   const complexityImprovement =
     state.complexityBefore > 0
       ? (state.complexityBefore - state.complexityAfter) / state.complexityBefore
@@ -868,7 +914,7 @@ function calculateQualityImprovement(state: any): number {
 /**
  * Generate enhanced recommendations
  */
-function generateEnhancedRecommendations(state: any): string[] {
+function generateEnhancedRecommendations(state: EnhancedOrchestratorState): string[] {
   const recommendations: string[] = [];
 
   if (state.complexityAfter > state.complexityBefore) {
@@ -896,7 +942,7 @@ function generateEnhancedRecommendations(state: any): string[] {
   return recommendations;
 }
 
-// Legacy compatibility exports
+
 export interface EnhancedTransformationResult {
   filesModified: string[];
   transformationsApplied: number;
@@ -904,5 +950,4 @@ export interface EnhancedTransformationResult {
   mode: 'template' | 'ast' | 'llm';
 }
 
-// Export the legacy actor for backward compatibility
 export const enhancedTransformationActor = enhancedTransformationOrchestratorActor;

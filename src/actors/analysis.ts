@@ -1,14 +1,15 @@
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
+
 import type {
+
   AstPattern,
   ComplexityMetrics,
   TransformationMode,
   TransformationRequest,
-} from '../types.js';
-
+} from '../types.ts';
 // Analysis input schema
-const AnalysisInputSchema = z.union([
+export const AnalysisInputSchema = z.union([
   z.object({
     files: z.array(z.string()),
     patterns: z.array(z.any()), // AstPattern schema
@@ -24,9 +25,7 @@ const AnalysisInputSchema = z.union([
     transformation: z.any(), // TransformationResult schema
   }),
 ]);
-
 type AnalysisInput = z.infer<typeof AnalysisInputSchema>;
-
 // Standardized analysis result
 export interface AnalysisResult {
   complexity?: ComplexityMetrics;
@@ -36,7 +35,6 @@ export interface AnalysisResult {
   insights?: string[];
   summary?: string;
 }
-
 /**
  * Analysis Actor
  *
@@ -48,7 +46,6 @@ export const analysisActor = fromPromise(
   async ({ input }: { input: AnalysisInput }): Promise<AnalysisResult> => {
     // Validate input
     const validatedInput = AnalysisInputSchema.parse(input);
-
     if ('operation' in validatedInput) {
       if (validatedInput.operation === 'learn') {
         // Type-safe handling for learn operation
@@ -61,19 +58,15 @@ export const analysisActor = fromPromise(
         return await handleSummarization(summaryInput);
       }
     }
-
     // Main analysis flow
     const { files, patterns, request } = validatedInput as Extract<
       AnalysisInput,
       { files: string[] }
     >;
-
     // Analyze file complexity
     const complexity = await analyzeComplexity(files);
-
     // Determine recommended transformation mode
     const recommendedMode = await determineTransformationMode(files, patterns, complexity, request);
-
     return {
       complexity,
       recommendedMode,
@@ -81,7 +74,6 @@ export const analysisActor = fromPromise(
     };
   }
 );
-
 async function analyzeComplexity(files: string[]): Promise<ComplexityMetrics> {
   // Analyze actual file complexity
   let totalCyclomaticComplexity = 0;
@@ -90,15 +82,12 @@ async function analyzeComplexity(files: string[]): Promise<ComplexityMetrics> {
   let maxNestingDepth = 0;
   let totalFunctionCount = 0;
   let totalClassCount = 0;
-
   try {
     const { readFile } = await import('node:fs/promises');
-
     for (const filePath of files) {
       try {
         const content = await readFile(filePath, 'utf-8');
         const metrics = analyzeFileComplexity(content);
-
         totalCyclomaticComplexity += metrics.cyclomaticComplexity;
         totalCognitiveComplexity += metrics.cognitiveComplexity;
         totalLinesOfCode += metrics.linesOfCode;
@@ -109,7 +98,6 @@ async function analyzeComplexity(files: string[]): Promise<ComplexityMetrics> {
         console.warn(`Warning: Could not analyze file ${filePath}:`, error);
       }
     }
-
     return {
       cyclomaticComplexity: totalCyclomaticComplexity,
       cognitiveComplexity: totalCognitiveComplexity,
@@ -131,7 +119,6 @@ async function analyzeComplexity(files: string[]): Promise<ComplexityMetrics> {
     };
   }
 }
-
 function analyzeFileComplexity(content: string): ComplexityMetrics {
   const lines = content.split('\n');
   let cyclomaticComplexity = 1; // Base complexity
@@ -140,32 +127,26 @@ function analyzeFileComplexity(content: string): ComplexityMetrics {
   let maxNestingDepth = 0;
   let functionCount = 0;
   let classCount = 0;
-
   for (const line of lines) {
     const trimmed = line.trim();
-
     // Skip comments and empty lines
     if (trimmed.startsWith('//') || trimmed.startsWith('/*') || trimmed === '') {
       continue;
     }
-
     // Count functions
     if (/\bfunction\b|\b\w+\s*\(.*\)\s*=>|\b\w+\s*\(.*\)\s*\{/.test(trimmed)) {
       functionCount++;
       cyclomaticComplexity++; // Each function adds to complexity
     }
-
     // Count classes
     if (/\bclass\b/.test(trimmed)) {
       classCount++;
     }
-
     // Track nesting with braces
     const openBraces = (trimmed.match(/\{/g) || []).length;
     const closeBraces = (trimmed.match(/\}/g) || []).length;
     nestingDepth += openBraces - closeBraces;
     maxNestingDepth = Math.max(maxNestingDepth, nestingDepth);
-
     // Complexity indicators
     const complexityPatterns = [
       /\bif\b/,
@@ -181,30 +162,25 @@ function analyzeFileComplexity(content: string): ComplexityMetrics {
       /&&/,
       /\|\|/,
     ];
-
     for (const pattern of complexityPatterns) {
       if (pattern.test(trimmed)) {
         cyclomaticComplexity++;
         cognitiveComplexity += Math.max(1, nestingDepth); // Cognitive complexity considers nesting
       }
     }
-
     // Additional cognitive complexity for nested conditions
     if (/\bif\b.*\bif\b|\bfor\b.*\bfor\b|\bwhile\b.*\bwhile\b/.test(trimmed)) {
       cognitiveComplexity += 2;
     }
-
     // == usage increases cognitive complexity (less clear intent)
     if (/[^!=]\s*==\s*[^=]/.test(trimmed)) {
       cognitiveComplexity++;
     }
-
     // Var usage in complex contexts
     if (/\bvar\b/.test(trimmed) && nestingDepth > 0) {
       cognitiveComplexity++;
     }
   }
-
   return {
     cyclomaticComplexity,
     cognitiveComplexity,
@@ -214,7 +190,6 @@ function analyzeFileComplexity(content: string): ComplexityMetrics {
     classCount,
   };
 }
-
 async function determineTransformationMode(
   _files: string[],
   patterns: AstPattern[],
@@ -225,16 +200,13 @@ async function determineTransformationMode(
   if (complexity.cyclomaticComplexity <= 5 && patterns.length > 0) {
     return 'template';
   }
-
   // Use AST for medium complexity with known patterns
   if (complexity.cyclomaticComplexity <= 15 && patterns.length > 0) {
     return 'ast';
   }
-
   // Fall back to LLM for complex transformations
   return 'llm';
 }
-
 async function handleLearning(input: {
   operation: 'learn';
   transformation?: unknown;
@@ -252,10 +224,8 @@ async function handleLearning(input: {
         appliedPatterns?: Array<{ pattern: string; count: number }>;
       }
     | undefined;
-
   const newPatterns: AstPattern[] = [];
   const insights: string[] = [];
-
   if (transformation?.success && transformation.appliedPatterns) {
     // Learn from successful pattern applications
     for (const appliedPattern of transformation.appliedPatterns) {
@@ -272,38 +242,32 @@ async function handleLearning(input: {
             transformation.confidence && transformation.confidence > 0.8 ? 'low' : 'medium',
           mode: transformation.mode ?? 'template',
         };
-
         newPatterns.push(learnedPattern);
         insights.push(
           `Pattern "${appliedPattern.pattern}" was successfully applied ${appliedPattern.count} times`
         );
       }
     }
-
     // Generate insights based on transformation characteristics
     if (transformation.mode) {
       insights.push(
         `${transformation.mode} transformation mode was effective for this type of change`
       );
     }
-
     if (transformation.executionTime && transformation.executionTime < 1000) {
       insights.push('Fast execution time suggests this pattern is suitable for template mode');
     } else if (transformation.executionTime && transformation.executionTime > 5000) {
       insights.push('Slow execution time suggests complex transformation requiring LLM mode');
     }
-
     if (transformation.confidence && transformation.confidence > 0.9) {
       insights.push('High confidence transformation - pattern can be reused reliably');
     }
-
     if (transformation.filesModified && transformation.filesModified.length > 1) {
       insights.push('Multi-file transformation - consider batch processing optimizations');
     }
   } else {
     insights.push('Transformation was not successful - no patterns learned');
   }
-
   return {
     newPatterns,
     insights,
@@ -311,13 +275,71 @@ async function handleLearning(input: {
   };
 }
 
+// Zod schema for summarization input
+const SummarizationInputSchema = z.object({
+  operation: z.literal('summarize'),
+  transformation: z.object({
+    id: z.string().optional(),
+    mode: z.string().optional(),
+    filesModified: z.array(z.string()).optional(),
+    success: z.boolean().optional(),
+    executionTime: z.number().optional(),
+    confidence: z.number().optional(),
+    appliedPatterns: z.array(z.object({
+      pattern: z.string(),
+      count: z.number(),
+    })).optional(),
+    summary: z.string().optional(),
+    error: z.string().optional(),
+  }).optional(),
+});
+
 async function handleSummarization(input: {
   operation: 'summarize';
   transformation?: unknown;
 }): Promise<AnalysisResult> {
-  // TODO: Implement transformation summarization
-  const transformation = input.transformation as { id?: string; mode?: string } | undefined;
+  // Validate input with Zod
+  const parsed = SummarizationInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      summary: 'Invalid summarization input',
+      insights: [JSON.stringify(parsed.error.issues)],
+      analysisTimestamp: Date.now(),
+    };
+  }
+  const transformation = parsed.data.transformation;
+  // Build a structured summary
+  let summary = '';
+  const insights: string[] = [];
+  if (!transformation) {
+    summary = 'No transformation data provided.';
+  } else {
+    summary = `Transformation ${transformation.id || 'unknown'} completed with ${transformation.mode || 'unknown'} mode.`;
+    if (typeof transformation.success === 'boolean') {
+      summary += ` Success: ${transformation.success ? 'Yes' : 'No'}.`;
+    }
+    if (transformation.executionTime !== undefined) {
+      summary += ` Execution time: ${transformation.executionTime}ms.`;
+    }
+    if (transformation.confidence !== undefined) {
+      summary += ` Confidence: ${(transformation.confidence * 100).toFixed(1)}%.`;
+    }
+    if (transformation.filesModified && transformation.filesModified.length > 0) {
+      insights.push(`Files modified: ${transformation.filesModified.join(', ')}`);
+    }
+    if (transformation.appliedPatterns && transformation.appliedPatterns.length > 0) {
+      insights.push(`Patterns applied: ${transformation.appliedPatterns.map(p => `${p.pattern} (${p.count})`).join(', ')}`);
+    }
+    if (transformation.summary) {
+      insights.push(`Transformation summary: ${transformation.summary}`);
+    }
+    if (transformation.error) {
+      insights.push(`Error: ${transformation.error}`);
+    }
+  }
   return {
-    summary: `Transformation ${transformation?.id || 'unknown'} completed with ${transformation?.mode || 'unknown'} mode`,
+    summary,
+    insights,
+    analysisTimestamp: Date.now(),
   };
 }

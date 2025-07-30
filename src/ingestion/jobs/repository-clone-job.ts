@@ -1,13 +1,18 @@
+// Zod schema for validating a safe directory path (basic, can be extended)
+const DirectoryPathSchema = z.string().min(1, 'Directory path must not be empty');
+import { rm } from 'fs/promises';
+import { task } from '@trigger.dev/sdk/v3';
+import { z } from 'zod';
+
+import { RepositoryManager } from '../repository-manager.ts';
+
 /**
  * Repository Clone Job for Trigger.dev
  *
- * Handles cloning and updating the TensorRT-LLM repository in the background.
+ * Handles cloning and updating any git repository in the background.
  * Includes progress tracking, error handling, and retry logic.
  */
 
-import { task } from '@trigger.dev/sdk';
-import { z } from 'zod';
-import { RepositoryManager, createTensorRTRepositoryManager } from '../repository-manager.ts';
 
 // =============================================================================
 // SCHEMAS
@@ -51,11 +56,11 @@ export const repositoryCloneJob = task({
   queue: {
     concurrencyLimit: 1, // Only one clone operation at a time
   },
-  run: async (payload: RepositoryClonePayload, { ctx, logger }) => {
+  run: async (payload: RepositoryClonePayload) => {
     const startTime = Date.now();
     
     try {
-      logger.info('Starting repository clone job', { 
+      console.log('Starting repository clone job', { 
         repositoryUrl: payload.repositoryUrl,
         localPath: payload.localPath,
         branch: payload.branch,
@@ -65,29 +70,47 @@ export const repositoryCloneJob = task({
       const validatedPayload = RepositoryClonePayloadSchema.parse(payload);
       
       // Create repository manager
-      const repoManager = new RepositoryManager(
-        {
-          url: validatedPayload.repositoryUrl,
-          localPath: validatedPayload.localPath,
-          branch: validatedPayload.branch,
-          depth: validatedPayload.depth,
-          includeSubmodules: validatedPayload.includeSubmodules,
-        }
-      );
+      const repoManager = new RepositoryManager({
+        url: validatedPayload.repositoryUrl,
+        localPath: validatedPayload.localPath,
+        branch: validatedPayload.branch,
+        includeSubmodules: validatedPayload.includeSubmodules,
+        ...(validatedPayload.depth !== undefined ? { depth: validatedPayload.depth } : {}),
+      });
 
       // Check if repository already exists
       const repoExists = await repoManager.repositoryExists();
       
       if (repoExists && !validatedPayload.forceClone) {
-        logger.info('Repository already exists, updating instead of cloning');
+  console.log('Repository already exists, updating instead of cloning');
         await repoManager.updateRepository();
       } else {
         if (repoExists && validatedPayload.forceClone) {
-          logger.info('Force clone requested, removing existing repository');
-          // In a real implementation, you'd remove the existing directory
+          console.log('Force clone requested, removing existing repository');
+          // Validate the directory path with Zod before removal
+          let safePath: string;
+          try {
+            safePath = DirectoryPathSchema.parse(validatedPayload.localPath);
+          } catch (validationErr) {
+            console.error('Invalid directory path for removal', {
+              path: validatedPayload.localPath,
+              error: validationErr instanceof Error ? validationErr.message : String(validationErr),
+            });
+            throw new Error(`Invalid directory path for removal: ${validatedPayload.localPath}`);
+          }
+          try {
+            await rm(safePath, { recursive: true, force: true });
+            console.log('Existing repository directory removed:', safePath);
+          } catch (removeErr) {
+            console.error('Failed to remove existing repository directory', {
+              path: safePath,
+              error: removeErr instanceof Error ? removeErr.message : String(removeErr),
+            });
+            throw new Error(`Failed to remove existing repository directory: ${safePath}`);
+          }
         }
         
-        logger.info('Cloning repository');
+  console.log('Cloning repository');
         await repoManager.cloneRepository();
       }
 
@@ -106,12 +129,12 @@ export const repositoryCloneJob = task({
         processingTime: Date.now() - startTime,
       };
 
-      logger.info('Repository clone job completed successfully', result);
+  console.log('Repository clone job completed successfully', result);
       return RepositoryCloneResultSchema.parse(result);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       
-      logger.error('Repository clone job failed', {
+      console.error('Repository clone job failed', {
         error: errorMessage,
         payload,
         processingTime: Date.now() - startTime,
@@ -136,24 +159,25 @@ export const repositoryCloneJob = task({
 // =============================================================================
 
 /**
- * Trigger repository clone job for TensorRT-LLM
+ * Trigger repository clone job for any repository
  */
-export async function triggerTensorRTClone(
+export async function triggerRepositoryClone(
+  repositoryUrl: string,
   localPath: string,
   options?: {
     branch?: string;
     forceClone?: boolean;
+    includeSubmodules?: boolean;
     depth?: number;
   }
 ) {
   const payload: RepositoryClonePayload = {
-    repositoryUrl: 'https://github.com/NVIDIA/TensorRT-LLM',
+    repositoryUrl,
     localPath,
     branch: options?.branch || 'main',
     forceClone: options?.forceClone || false,
-    includeSubmodules: false,
+    includeSubmodules: options?.includeSubmodules || false,
     depth: options?.depth,
   };
-
   return repositoryCloneJob.trigger(payload);
 }

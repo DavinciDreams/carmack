@@ -1,91 +1,78 @@
 import { fromPromise } from 'xstate';
-import { z } from 'zod';
-import type {
-  CodeEntity,
-  LanguageType,
-  EntityType,
-  DomainType,
-  ModuleDoc,
-  FunctionDoc,
-  ClassDoc,
-} from './types.js';
+import type { CodeEntity, EntityType, DomainType } from './types';
+
+// Extend LanguageType to include all supported languages
+export type LanguageType =
+  | 'typescript'
+  | 'javascript'
+  | 'cuda'
+  | 'cpp'
+  | 'c'
+  | 'python'
+  | 'java'
+  | 'go'
+  | 'rust'
+  | 'shell'
+  | 'yaml'
+  | 'markdown'
+  | 'unknown';
 import {
   validateCodeEntity,
   LanguageTypeSchema,
   EntityTypeSchema,
   DomainTypeSchema,
-} from './types.js';
+} from './types.ts';
 
-// Multi-language AST-grep patterns for TensorRT codebase analysis
-const TENSORRT_PATTERNS = {
+
+// Extensible multi-language AST-grep patterns for general codebase analysis
+const LANGUAGE_PATTERNS_MAP: Record<string, Record<string, string>> = {
   cuda: {
-    // CUDA kernel patterns
-    globalKernel: '__global__ void $NAME($$$PARAMS) { $$$BODY }',
+    kernel: '__global__ void $NAME($$$PARAMS) { $$$BODY }',
     deviceFunction: '__device__ $TYPE $NAME($$$PARAMS) { $$$BODY }',
     hostFunction: '__host__ $TYPE $NAME($$$PARAMS) { $$$BODY }',
-    sharedMemory: '__shared__ $TYPE $NAME[$SIZE]',
-    syncthreads: '__syncthreads()',
-    threadIdx: 'threadIdx.$DIM',
-    blockIdx: 'blockIdx.$DIM',
-    blockDim: 'blockDim.$DIM',
-    gridDim: 'gridDim.$DIM',
-    cudaMalloc: 'cudaMalloc($PTR, $SIZE)',
-    cudaMemcpy: 'cudaMemcpy($DST, $SRC, $SIZE, $KIND)',
-    cudaLaunch: '$KERNEL<<<$GRID, $BLOCK>>>($$$ARGS)',
   },
   cpp: {
-    // C++ template patterns
-    classTemplate: 'template<$$$PARAMS> class $NAME { $$$BODY }',
-    functionTemplate: 'template<$$$PARAMS> $TYPE $NAME($$$ARGS) { $$$BODY }',
-    namespace: 'namespace $NAME { $$$BODY }',
+    class: 'class $NAME { $$$BODY }',
     struct: 'struct $NAME { $$$BODY }',
-    enum: 'enum class $NAME { $$$VALUES }',
-    constructor: '$CLASS($$$PARAMS) : $$$INIT { $$$BODY }',
-    destructor: '~$CLASS() { $$$BODY }',
-    virtualFunction: 'virtual $TYPE $NAME($$$PARAMS)',
-    overrideFunction: '$TYPE $NAME($$$PARAMS) override',
-    constFunction: '$TYPE $NAME($$$PARAMS) const',
-    staticFunction: 'static $TYPE $NAME($$$PARAMS)',
-    inlineFunction: 'inline $TYPE $NAME($$$PARAMS)',
-    operatorOverload: '$TYPE operator$OP($$$PARAMS)',
-    smartPointer: 'std::$PTR_TYPE<$TYPE>',
-    stdVector: 'std::vector<$TYPE>',
-    stdMap: 'std::map<$KEY, $VALUE>',
-    stdUnique: 'std::unique_ptr<$TYPE>',
-    stdShared: 'std::shared_ptr<$TYPE>',
+    function: '$TYPE $NAME($$$ARGS) { $$$BODY }',
+    namespace: 'namespace $NAME { $$$BODY }',
   },
   python: {
-    // Python patterns for TensorRT bindings
-    classDefinition: 'class $NAME($$$BASES): $$$BODY',
-    functionDefinition: 'def $NAME($$$PARAMS): $$$BODY',
+    class: 'class $NAME($$$BASES): $$$BODY',
+    function: 'def $NAME($$$PARAMS): $$$BODY',
     asyncFunction: 'async def $NAME($$$PARAMS): $$$BODY',
-    decorator: '@$NAME',
-    property: '@property',
-    staticMethod: '@staticmethod',
-    classMethod: '@classmethod',
-    importStatement: 'import $MODULE',
-    fromImport: 'from $MODULE import $NAMES',
-    tryExcept: 'try: $$$TRY except $EXCEPTION: $$$EXCEPT',
-    withStatement: 'with $CONTEXT as $VAR: $$$BODY',
-    listComprehension: '[$EXPR for $VAR in $ITER]',
-    dictComprehension: '{$KEY: $VALUE for $VAR in $ITER}',
-    lambdaFunction: 'lambda $PARAMS: $EXPR',
   },
-  tensorrt: {
-    // TensorRT-specific patterns
-    builderCreate: 'nvinfer1::createInferBuilder($LOGGER)',
-    networkCreate: 'builder->createNetworkV2($FLAGS)',
-    layerAdd: 'network->add$LAYER($$$ARGS)',
-    engineBuild: 'builder->buildEngineWithConfig($NETWORK, $CONFIG)',
-    contextCreate: 'engine->createExecutionContext()',
-    contextExecute: 'context->execute($BATCH_SIZE, $BINDINGS)',
-    pluginCreator: 'class $NAME : public nvinfer1::IPluginV2 { $$$BODY }',
-    tensorRTLogger: 'class $NAME : public nvinfer1::ILogger { $$$BODY }',
-    calibrator: 'class $NAME : public nvinfer1::IInt8Calibrator { $$$BODY }',
-    onnxParser: 'nvonnxparser::createParser($NETWORK, $LOGGER)',
-    uffParser: 'nvuffparser::createUffParser()',
-    caffeParser: 'nvcaffeparser1::createCaffeParser()',
+  typescript: {
+    class: 'class $NAME { $$$BODY }',
+    function: 'function $NAME($$$) { $$$ }',
+    interface: 'interface $NAME { $$$ }',
+    type: 'type $NAME = $$$',
   },
+  javascript: {
+    class: 'class $NAME { $$$BODY }',
+    function: 'function $NAME($$$) { $$$ }',
+  },
+  go: {
+    function: 'func $NAME($$$PARAMS) $$$RETURNS { $$$BODY }',
+    struct: 'type $NAME struct { $$$BODY }',
+    interface: 'type $NAME interface { $$$BODY }',
+  },
+  rust: {
+    function: 'fn $NAME($$$PARAMS) -> $$$RETURNS { $$$BODY }',
+    struct: 'struct $NAME { $$$BODY }',
+    enum: 'enum $NAME { $$$BODY }',
+    trait: 'trait $NAME { $$$BODY }',
+  },
+  java: {
+    class: 'class $NAME { $$$BODY }',
+    interface: 'interface $NAME { $$$BODY }',
+    method: '$TYPE $NAME($$$ARGS) { $$$BODY }',
+  },
+  shell: {
+    function: '$NAME() { $$$BODY }',
+  },
+  yaml: {},
+  markdown: {},
 };
 
 // Language detection patterns
@@ -98,20 +85,22 @@ const LANGUAGE_PATTERNS = {
   javascript: [/\.js$/, /\.jsx$/, /function\s+\w+/, /const\s+\w+\s*=/, /=>\s*{/],
 };
 
-// Domain classification keywords
+
+// General domain classification keywords (can be extended per project)
 const DOMAIN_KEYWORDS = {
-  inference: ['execute', 'infer', 'forward', 'predict', 'run', 'context', 'engine'],
-  optimization: ['optimize', 'fuse', 'prune', 'quantize', 'calibrate', 'precision', 'fp16', 'int8'],
-  memory_management: ['malloc', 'free', 'alloc', 'buffer', 'memory', 'cuda', 'device', 'host'],
-  kernel_execution: ['kernel', 'launch', 'grid', 'block', 'thread', 'sync', 'barrier'],
-  graph_construction: ['network', 'layer', 'add', 'build', 'create', 'graph', 'node'],
-  serialization: ['serialize', 'deserialize', 'save', 'load', 'stream', 'file', 'binary'],
-  plugin_system: ['plugin', 'creator', 'registry', 'custom', 'operator', 'layer'],
-  builder_api: ['builder', 'config', 'profile', 'workspace', 'max', 'min', 'opt'],
-  runtime_api: ['runtime', 'context', 'execute', 'binding', 'tensor', 'shape'],
-  parser: ['parser', 'onnx', 'uff', 'caffe', 'parse', 'model', 'weight'],
-  utilities: ['util', 'helper', 'common', 'tool', 'logger', 'timer', 'profiler'],
-  testing: ['test', 'benchmark', 'sample', 'example', 'demo', 'verify'],
+  core: ['core', 'main', 'entry', 'init', 'start'],
+  io: ['input', 'output', 'read', 'write', 'file', 'stream', 'print', 'log'],
+  network: ['http', 'request', 'response', 'socket', 'server', 'client', 'api'],
+  database: ['db', 'database', 'query', 'sql', 'mongo', 'postgres', 'table', 'row'],
+  concurrency: ['thread', 'async', 'await', 'promise', 'future', 'lock', 'mutex', 'channel'],
+  error_handling: ['error', 'exception', 'try', 'catch', 'fail', 'throw'],
+  testing: ['test', 'assert', 'expect', 'mock', 'suite', 'case'],
+  config: ['config', 'settings', 'env', 'option', 'parameter'],
+  util: ['util', 'helper', 'common', 'tool', 'misc'],
+  docs: ['doc', 'readme', 'comment', 'description'],
+  build: ['build', 'compile', 'make', 'cmake', 'setup'],
+  security: ['auth', 'token', 'secure', 'encrypt', 'decrypt', 'hash'],
+  performance: ['perf', 'optimize', 'fast', 'slow', 'benchmark', 'profile'],
 };
 
 /**
@@ -216,32 +205,33 @@ export class MultiLanguageAnalyzer {
 
     const language = this.detectLanguage(filePath, content);
     const domain = this.classifyDomain(content, filePath);
-    const entities: CodeEntity[] = [];
+    let entities: CodeEntity[] = [];
 
     try {
       switch (language) {
         case 'cuda':
-          entities.push(...await this.extractCudaEntities(content, filePath, domain));
+          entities = await this.extractCudaEntities(content, filePath, domain);
           break;
         case 'cpp':
         case 'c':
-          entities.push(...await this.extractCppEntities(content, filePath, domain, language));
+          entities = await this.extractCppEntities(content, filePath, domain, language);
           break;
         case 'python':
-          entities.push(...await this.extractPythonEntities(content, filePath, domain));
+          entities = await this.extractPythonEntities(content, filePath, domain);
           break;
         case 'typescript':
         case 'javascript':
-          entities.push(...await this.extractJsEntities(content, filePath, domain, language));
+          entities = await this.extractJsEntities(content, filePath, domain, language);
           break;
         default:
-          entities.push(...await this.extractGenericEntities(content, filePath, domain, language));
+          entities = await this.extractGenericEntities(content, filePath, domain, language);
       }
     } catch (error) {
       console.warn(`Failed to extract entities from ${filePath}:`, error);
     }
 
-    return entities;
+    // Zod-validate all entities before returning
+    return entities.map(e => validateCodeEntity(e));
   }
 
   /**
@@ -267,65 +257,73 @@ export class MultiLanguageAnalyzer {
   ): Promise<CodeEntity[]> {
     const entities: CodeEntity[] = [];
     const parser = this.astGrepInstances.get('cuda');
+  const patterns = LANGUAGE_PATTERNS_MAP.cuda ?? {};
 
     if (parser) {
       try {
         const root = parser.parse(content);
-        
-        // Extract CUDA kernels
-        const kernels = root.findAll(TENSORRT_PATTERNS.cuda.globalKernel);
-        for (const kernel of kernels) {
-          const name = kernel.getMatch('NAME')?.text();
-          if (name) {
-            entities.push(await this.createEntity({
-              name,
-              type: 'kernel',
-              language: 'cuda',
-              filePath,
-              startLine: kernel.range().start.line,
-              endLine: kernel.range().end.line,
-              sourceCode: kernel.text(),
-              domain,
-              signature: this.extractSignature(kernel.text()),
-            }));
+        // Extract kernels
+        if (patterns.kernel) {
+          const kernels = root.findAll(patterns.kernel);
+          for (const kernel of kernels) {
+            const name = kernel.getMatch('NAME')?.text();
+            if (name) {
+              entities.push(await this.createEntity({
+                name,
+                type: 'kernel',
+                language: 'cuda',
+                filePath,
+                startLine: kernel.range().start.line,
+                endLine: kernel.range().end.line,
+                sourceCode: kernel.text(),
+                domain,
+                signature: this.extractSignature(kernel.text()),
+                description: this.findPrecedingComment(content, kernel.range().start.line, 'cuda') ?? '',
+                // complexity: this.computeComplexity(kernel.text(), 'cuda'), // Add to schema if needed
+              }));
+            }
           }
         }
-
-        // Extract device functions
-        const deviceFunctions = root.findAll(TENSORRT_PATTERNS.cuda.deviceFunction);
-        for (const func of deviceFunctions) {
-          const name = func.getMatch('NAME')?.text();
-          if (name) {
-            entities.push(await this.createEntity({
-              name,
-              type: 'device_function',
-              language: 'cuda',
-              filePath,
-              startLine: func.range().start.line,
-              endLine: func.range().end.line,
-              sourceCode: func.text(),
-              domain,
-              signature: this.extractSignature(func.text()),
-            }));
+        if (patterns.deviceFunction) {
+          const deviceFunctions = root.findAll(patterns.deviceFunction);
+          for (const func of deviceFunctions) {
+            const name = func.getMatch('NAME')?.text();
+            if (name) {
+              entities.push(await this.createEntity({
+                name,
+                type: 'device_function',
+                language: 'cuda',
+                filePath,
+                startLine: func.range().start.line,
+                endLine: func.range().end.line,
+                sourceCode: func.text(),
+                domain,
+                signature: this.extractSignature(func.text()),
+                description: this.findPrecedingComment(content, func.range().start.line, 'cuda') ?? '',
+                // complexity: this.computeComplexity(func.text(), 'cuda'), // Add to schema if needed
+              }));
+            }
           }
         }
-
-        // Extract host functions
-        const hostFunctions = root.findAll(TENSORRT_PATTERNS.cuda.hostFunction);
-        for (const func of hostFunctions) {
-          const name = func.getMatch('NAME')?.text();
-          if (name) {
-            entities.push(await this.createEntity({
-              name,
-              type: 'host_function',
-              language: 'cuda',
-              filePath,
-              startLine: func.range().start.line,
-              endLine: func.range().end.line,
-              sourceCode: func.text(),
-              domain,
-              signature: this.extractSignature(func.text()),
-            }));
+        if (patterns.hostFunction) {
+          const hostFunctions = root.findAll(patterns.hostFunction);
+          for (const func of hostFunctions) {
+            const name = func.getMatch('NAME')?.text();
+            if (name) {
+              entities.push(await this.createEntity({
+                name,
+                type: 'host_function',
+                language: 'cuda',
+                filePath,
+                startLine: func.range().start.line,
+                endLine: func.range().end.line,
+                sourceCode: func.text(),
+                domain,
+                signature: this.extractSignature(func.text()),
+                description: this.findPrecedingComment(content, func.range().start.line, 'cuda') ?? '',
+                // complexity: this.computeComplexity(func.text(), 'cuda'), // Add to schema if needed
+              }));
+            }
           }
         }
       } catch (error) {
@@ -335,7 +333,6 @@ export class MultiLanguageAnalyzer {
     } else {
       entities.push(...await this.extractCudaEntitiesRegex(content, filePath, domain));
     }
-
     return entities;
   }
 
@@ -350,63 +347,63 @@ export class MultiLanguageAnalyzer {
   ): Promise<CodeEntity[]> {
     const entities: CodeEntity[] = [];
     const parser = this.astGrepInstances.get('cpp');
+  const patterns = LANGUAGE_PATTERNS_MAP.cpp ?? {};
 
     if (parser) {
       try {
         const root = parser.parse(content);
-
-        // Extract templates
-        const templates = root.findAll(TENSORRT_PATTERNS.cpp.classTemplate);
-        for (const template of templates) {
-          const name = template.getMatch('NAME')?.text();
-          if (name) {
-            entities.push(await this.createEntity({
-              name,
-              type: 'template',
-              language,
-              filePath,
-              startLine: template.range().start.line,
-              endLine: template.range().end.line,
-              sourceCode: template.text(),
-              domain,
-              signature: this.extractSignature(template.text()),
-            }));
+        if (patterns.class) {
+          const classes = root.findAll(patterns.class);
+          for (const cls of classes) {
+            const name = cls.getMatch('NAME')?.text();
+            if (name) {
+              entities.push(await this.createEntity({
+                name,
+                type: 'class',
+                language,
+                filePath,
+                startLine: cls.range().start.line,
+                endLine: cls.range().end.line,
+                sourceCode: cls.text(),
+                domain,
+              }));
+            }
           }
         }
-
-        // Extract namespaces
-        const namespaces = root.findAll(TENSORRT_PATTERNS.cpp.namespace);
-        for (const ns of namespaces) {
-          const name = ns.getMatch('NAME')?.text();
-          if (name) {
-            entities.push(await this.createEntity({
-              name,
-              type: 'namespace',
-              language,
-              filePath,
-              startLine: ns.range().start.line,
-              endLine: ns.range().end.line,
-              sourceCode: ns.text(),
-              domain,
-            }));
+        if (patterns.struct) {
+          const structs = root.findAll(patterns.struct);
+          for (const struct of structs) {
+            const name = struct.getMatch('NAME')?.text();
+            if (name) {
+              entities.push(await this.createEntity({
+                name,
+                type: 'struct',
+                language,
+                filePath,
+                startLine: struct.range().start.line,
+                endLine: struct.range().end.line,
+                sourceCode: struct.text(),
+                domain,
+              }));
+            }
           }
         }
-
-        // Extract structs
-        const structs = root.findAll(TENSORRT_PATTERNS.cpp.struct);
-        for (const struct of structs) {
-          const name = struct.getMatch('NAME')?.text();
-          if (name) {
-            entities.push(await this.createEntity({
-              name,
-              type: 'struct',
-              language,
-              filePath,
-              startLine: struct.range().start.line,
-              endLine: struct.range().end.line,
-              sourceCode: struct.text(),
-              domain,
-            }));
+        if (patterns.namespace) {
+          const namespaces = root.findAll(patterns.namespace);
+          for (const ns of namespaces) {
+            const name = ns.getMatch('NAME')?.text();
+            if (name) {
+              entities.push(await this.createEntity({
+                name,
+                type: 'namespace',
+                language,
+                filePath,
+                startLine: ns.range().start.line,
+                endLine: ns.range().end.line,
+                sourceCode: ns.text(),
+                domain,
+              }));
+            }
           }
         }
       } catch (error) {
@@ -416,7 +413,6 @@ export class MultiLanguageAnalyzer {
     } else {
       entities.push(...await this.extractCppEntitiesRegex(content, filePath, domain, language));
     }
-
     return entities;
   }
 
@@ -430,46 +426,47 @@ export class MultiLanguageAnalyzer {
   ): Promise<CodeEntity[]> {
     const entities: CodeEntity[] = [];
     const parser = this.astGrepInstances.get('python');
+  const patterns = LANGUAGE_PATTERNS_MAP.python ?? {};
 
     if (parser) {
       try {
         const root = parser.parse(content);
-
-        // Extract classes
-        const classes = root.findAll(TENSORRT_PATTERNS.python.classDefinition);
-        for (const cls of classes) {
-          const name = cls.getMatch('NAME')?.text();
-          if (name) {
-            entities.push(await this.createEntity({
-              name,
-              type: 'class',
-              language: 'python',
-              filePath,
-              startLine: cls.range().start.line,
-              endLine: cls.range().end.line,
-              sourceCode: cls.text(),
-              domain,
-              signature: this.extractSignature(cls.text()),
-            }));
+        if (patterns.class) {
+          const classes = root.findAll(patterns.class);
+          for (const cls of classes) {
+            const name = cls.getMatch('NAME')?.text();
+            if (name) {
+              entities.push(await this.createEntity({
+                name,
+                type: 'class',
+                language: 'python',
+                filePath,
+                startLine: cls.range().start.line,
+                endLine: cls.range().end.line,
+                sourceCode: cls.text(),
+                domain,
+                signature: this.extractSignature(cls.text()),
+              }));
+            }
           }
         }
-
-        // Extract functions
-        const functions = root.findAll(TENSORRT_PATTERNS.python.functionDefinition);
-        for (const func of functions) {
-          const name = func.getMatch('NAME')?.text();
-          if (name) {
-            entities.push(await this.createEntity({
-              name,
-              type: 'function',
-              language: 'python',
-              filePath,
-              startLine: func.range().start.line,
-              endLine: func.range().end.line,
-              sourceCode: func.text(),
-              domain,
-              signature: this.extractSignature(func.text()),
-            }));
+        if (patterns.function) {
+          const functions = root.findAll(patterns.function);
+          for (const func of functions) {
+            const name = func.getMatch('NAME')?.text();
+            if (name) {
+              entities.push(await this.createEntity({
+                name,
+                type: 'function',
+                language: 'python',
+                filePath,
+                startLine: func.range().start.line,
+                endLine: func.range().end.line,
+                sourceCode: func.text(),
+                domain,
+                signature: this.extractSignature(func.text()),
+              }));
+            }
           }
         }
       } catch (error) {
@@ -479,7 +476,6 @@ export class MultiLanguageAnalyzer {
     } else {
       entities.push(...await this.extractPythonEntitiesRegex(content, filePath, domain));
     }
-
     return entities;
   }
 
@@ -737,17 +733,17 @@ export class MultiLanguageAnalyzer {
     description?: string;
   }): Promise<CodeEntity> {
     const { randomUUID } = await import('node:crypto');
-    
+    // Always validate with Zod
     return validateCodeEntity({
       id: randomUUID(),
       name: params.name,
-      type: params.type,
-      language: params.language,
+      type: EntityTypeSchema.parse(params.type),
+      language: LanguageTypeSchema.parse(params.language),
       filePath: params.filePath,
       startLine: params.startLine,
       endLine: params.endLine,
       sourceCode: params.sourceCode,
-      domain: params.domain,
+      domain: DomainTypeSchema.parse(params.domain),
       signature: params.signature,
       description: params.description || undefined,
       keywords: this.extractKeywords(params.sourceCode),
@@ -767,36 +763,105 @@ export class MultiLanguageAnalyzer {
     return code.substring(0, 200) + (code.length > 200 ? '...' : '');
   }
 
-  private async extractDescription(content: string, lineNumber: number): Promise<string | undefined> {
-    const lines = content.split('\n');
-    let description = '';
-
-    // Look for comments above the entity
-    for (let i = lineNumber - 2; i >= Math.max(0, lineNumber - 10); i--) {
-      const line = lines[i]?.trim();
-      if (!line) continue;
-
-      if (line.startsWith('/**') || line.startsWith('/*')) {
-        // Found comment block
-        for (let j = i; j < lineNumber; j++) {
-          const commentLine = lines[j]?.trim();
-          if (commentLine?.startsWith('*') && !commentLine.startsWith('*/')) {
-            description = `${commentLine.replace(/^\*\s?/, '')}\n${description}`;
+  /**
+   * Locate the nearest preceding comment (docstring or block comment) for a code entity using AST-grep.
+   * Supports language-specific comment patterns.
+   */
+  private findPrecedingComment(
+    content: string,
+    entityStartLine: number,
+    language: LanguageType
+  ): string | undefined {
+    const parser = this.astGrepInstances.get(language);
+    if (!parser) return undefined;
+    try {
+      const root = parser.parse(content);
+      // Find all comment nodes (language-specific)
+      let commentPattern: string | undefined;
+      switch (language) {
+        case 'python':
+          commentPattern = 'expression_statement > string'; // docstrings
+          break;
+        case 'typescript':
+        case 'javascript':
+        case 'cpp':
+        case 'c':
+        case 'java':
+        case 'go':
+        case 'rust':
+          commentPattern = 'comment';
+          break;
+        case 'shell':
+        case 'yaml':
+        case 'markdown':
+          commentPattern = 'comment';
+          break;
+        default:
+          commentPattern = 'comment';
+      }
+      const comments = root.findAll(commentPattern);
+      // Find the last comment before the entity's start line
+      let best: { text: string; line: number } | undefined;
+      for (const node of comments) {
+        const rng = node.range();
+        if (rng.end.line < entityStartLine) {
+          if (!best || rng.end.line > best.line) {
+            best = { text: node.text(), line: rng.end.line };
           }
-          if (commentLine?.includes('*/')) break;
         }
-        break;
       }
-
-      if (line.startsWith('//')) {
-        description = `${line.replace(/^\/\/\s?/, '')}\n${description}`;
-      } else if (!line.startsWith('*')) {
-        break;
-      }
+      return best?.text.trim();
+    } catch {
+      return undefined;
     }
-
-    return description.trim() || undefined;
   }
+
+  /**
+   * Compute a real code complexity score using AST-grep (e.g., cyclomatic complexity, nesting, etc).
+   * This is a simple example; can be extended for more metrics.
+   */
+  private computeComplexity(
+    content: string,
+    language: LanguageType
+  ): number {
+    const parser = this.astGrepInstances.get(language);
+    if (!parser) return 1;
+    try {
+      const root = parser.parse(content);
+      let complexity = 1;
+      // Example: count branching nodes (if, for, while, case, etc)
+      let branchPatterns: string[] = [];
+      switch (language) {
+        case 'python':
+          branchPatterns = ['if_statement', 'for_statement', 'while_statement', 'try_statement', 'with_statement'];
+          break;
+        case 'typescript':
+        case 'javascript':
+          branchPatterns = ['if_statement', 'for_statement', 'while_statement', 'switch_statement', 'catch_clause'];
+          break;
+        case 'cpp':
+        case 'c':
+        case 'java':
+        case 'go':
+        case 'rust':
+          branchPatterns = ['if_statement', 'for_statement', 'while_statement', 'switch_statement', 'case_statement', 'catch_clause'];
+          break;
+        case 'shell':
+          branchPatterns = ['if_clause', 'for_clause', 'while_clause', 'case_clause'];
+          break;
+        default:
+          branchPatterns = [];
+      }
+      for (const pattern of branchPatterns) {
+        const nodes = root.findAll(pattern);
+        complexity += nodes.length;
+      }
+      return complexity;
+    } catch {
+      return 1;
+    }
+  }
+  // ...existing code...
 
   private extractKeywords(code: string): string[] {
     const keywords = new Set<string>();

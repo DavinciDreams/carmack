@@ -1,3 +1,6 @@
+import { EpicTestingSystem } from '../index.js';
+
+
 /**
  * Complete EPIC-TESTING-METRICS System Validation Example
  * 
@@ -6,8 +9,6 @@
  * the TensorRT-LLM knowledge graph platform.
  */
 
-import { EpicTestingSystem } from '../index.js';
-import type { TestSuiteResult, CITestResult } from '../framework/test-orchestrator.js';
 
 /**
  * Main validation example
@@ -26,13 +27,11 @@ async function runCompleteValidationExample(): Promise<void> {
     enableEngagementTracking: true,
     enableLoadTesting: true,
     enableReporting: true,
-    outputDirectory: './test-reports',
-    reportFormat: 'html',
+    outputDir: './test-reports',
+    formatTypes: ['html'],
     alertingEnabled: true,
     continuousIntegration: false,
   });
-
-  console.log('✅ System initialized with full configuration');
   console.log('');
 
   try {
@@ -52,38 +51,12 @@ async function runCompleteValidationExample(): Promise<void> {
     console.log(`   Overall Score: ${validationResult.overallScore}/100`);
     console.log(`   Result: ${validationResult.passed ? 'PASSED ✅' : 'FAILED ❌'}`);
     console.log(`   Total Tests: ${validationResult.totalTests}`);
-    console.log(`   Passed: ${validationResult.passedTests} (${(validationResult.passedTests / validationResult.totalTests * 100).toFixed(1)}%)`);
-    console.log(`   Failed: ${validationResult.failedTests} (${(validationResult.failedTests / validationResult.totalTests * 100).toFixed(1)}%)`);
-    console.log('');
-
-    if (validationResult.recommendations.length > 0) {
-      console.log('💡 Recommendations:');
-      validationResult.recommendations.forEach(rec => console.log(`   • ${rec}`));
-      console.log('');
-    }
-
+    
     // 3. Validate specific performance targets
     console.log('3️⃣ Validating Specific Performance Targets...');
     const performanceTargets = await testingSystem.validatePerformanceTargets();
 
-    console.log('📊 Performance Target Results:');
-    console.log(`   Speed Improvement: ${performanceTargets.speedImprovement.actual.toFixed(1)}% (Target: ${performanceTargets.speedImprovement.target}%) - ${performanceTargets.speedImprovement.passed ? 'PASSED ✅' : 'FAILED ❌'}`);
-    console.log(`   Response Time: ${performanceTargets.responseTime.actual.toFixed(0)}ms (Target: <${performanceTargets.responseTime.target}ms) - ${performanceTargets.responseTime.passed ? 'PASSED ✅' : 'FAILED ❌'}`);
-    console.log(`   Accuracy: ${performanceTargets.accuracy.actual.toFixed(1)}% (Target: ${performanceTargets.accuracy.target}%) - ${performanceTargets.accuracy.passed ? 'PASSED ✅' : 'FAILED ❌'}`);
-    console.log(`   Concurrent Users: ${performanceTargets.concurrentUsers.actual} (Target: ${performanceTargets.concurrentUsers.target}) - ${performanceTargets.concurrentUsers.passed ? 'PASSED ✅' : 'FAILED ❌'}`);
-    console.log(`   System Uptime: ${performanceTargets.systemUptime.actual}% (Target: ${performanceTargets.systemUptime.target}%) - ${performanceTargets.systemUptime.passed ? 'PASSED ✅' : 'FAILED ❌'}`);
-    console.log('');
-
-    // 4. Run benchmark validation specifically
-    console.log('4️⃣ Running Benchmark Validation...');
-    const benchmarkResult = await testingSystem.runBenchmarkValidation();
-
-    console.log('📈 Benchmark Results:');
-    console.log(`   Historical Scenarios: ${benchmarkResult.totalScenarios}`);
-    console.log(`   Successful Runs: ${benchmarkResult.successfulRuns}`);
-    console.log(`   Average Speed Improvement: ${benchmarkResult.averageSpeedImprovement.toFixed(1)}%`);
-    console.log(`   Average Response Time: ${benchmarkResult.averageResponseTime.toFixed(0)}ms`);
-    console.log(`   Average Accuracy: ${(benchmarkResult.averageAccuracy * 100).toFixed(1)}%`);
+  console.log('');
     console.log('');
 
     // 5. Start engagement tracking
@@ -91,7 +64,7 @@ async function runCompleteValidationExample(): Promise<void> {
     testingSystem.startEngagementTracking();
 
     // Simulate some user activity
-    await simulateUserActivity(testingSystem);
+  await simulateUserActivity();
 
     const engagementMetrics = testingSystem.getCurrentEngagementMetrics();
     console.log('👥 Current Engagement Metrics:');
@@ -101,10 +74,8 @@ async function runCompleteValidationExample(): Promise<void> {
     console.log(`   Voluntary Usage Rate: ${(engagementMetrics.voluntaryUsageRate * 100).toFixed(1)}%`);
     console.log('');
 
-    // 6. Generate real-time dashboard
-    console.log('6️⃣ Generating Real-time Dashboard...');
-    const dashboard = testingSystem.generateDashboard();
 
+const dashboard = testingSystem.generateDashboard();
     console.log('📊 Real-time Dashboard Data:');
     console.log(`   Active Users: ${dashboard.realTimeMetrics.activeUsers}`);
     console.log(`   Queries/Minute: ${dashboard.realTimeMetrics.queriesPerMinute}`);
@@ -119,10 +90,23 @@ async function runCompleteValidationExample(): Promise<void> {
 
     console.log('📄 Report Generated:');
     console.log(`   Report ID: ${report.reportId}`);
-    console.log(`   Report Type: ${report.reportType}`);
-    console.log(`   Overall Score: ${report.summary.overallScore}/100`);
-    console.log(`   Total Tests: ${report.summary.totalTests}`);
-    console.log(`   Pass Rate: ${(report.summary.passedTests / report.summary.totalTests * 100).toFixed(1)}%`);
+    console.log(`   Generated Files: ${report.generatedFiles.map(f => f.path).join(', ')}`);
+    console.log(`   Generation Time: ${report.generationTime}ms`);
+    if (report.errors.length > 0) {
+      console.log(`   Errors: ${report.errors.join('; ')}`);
+    }
+    if (report.warnings.length > 0) {
+      console.log(`   Warnings: ${report.warnings.join('; ')}`);
+        // 6. Generate real-time dashboard
+        const dashboard = testingSystem.generateDashboard();
+        console.log('📊 Real-time Dashboard Data:');
+        console.log(`   Active Users: ${dashboard.realTimeMetrics.activeUsers}`);
+        console.log(`   Queries/Minute: ${dashboard.realTimeMetrics.queriesPerMinute}`);
+        console.log(`   Average Response Time: ${dashboard.realTimeMetrics.averageResponseTime}ms`);
+        console.log(`   Success Rate: ${(dashboard.realTimeMetrics.successRate * 100).toFixed(1)}%`);
+        console.log(`   System Health: ${dashboard.realTimeMetrics.systemHealth.toUpperCase()}`);
+        console.log('');
+    }
     console.log('');
 
     // 8. Final summary
@@ -165,21 +149,9 @@ async function runCompleteValidationExample(): Promise<void> {
 /**
  * Simulate user activity for engagement tracking
  */
-async function simulateUserActivity(testingSystem: EpicTestingSystem): Promise<void> {
+async function simulateUserActivity(): Promise<void> {
   console.log('   Simulating user activity...');
-
-  // Simulate multiple user sessions
-  const queries = [
-    'How does TensorRT-LLM scheduler handle preemption?',
-    'What are the memory management strategies in TensorRT-LLM?',
-    'Explain CUDA kernel optimizations in TensorRT-LLM',
-    'How does dynamic batching work in TensorRT-LLM?',
-    'What causes performance regressions in TensorRT-LLM?',
-  ];
-
-  // Simulate some delay for realistic activity
   await new Promise(resolve => setTimeout(resolve, 2000));
-
   console.log('   ✅ User activity simulation complete');
 }
 
@@ -209,17 +181,16 @@ async function runCIIntegrationExample(): Promise<void> {
     console.log(`   Commit: ${ciResult.commitHash}`);
     console.log(`   Branch: ${ciResult.branch}`);
     console.log(`   Overall Result: ${ciResult.overallResult.toUpperCase()}`);
-    console.log(`   Duration: ${Math.round(ciResult.duration / 1000)}s`);
-    console.log(`   Test Suites: ${ciResult.testSuites.length}`);
+  console.log(`   Duration: ${Math.round(ciResult.testResults.duration / 1000)}s`);
+  console.log(`   Total Tests: ${ciResult.testResults.totalTests}`);
     console.log(`   Quality Gate: ${ciResult.qualityGate.passed ? 'PASSED ✅' : 'FAILED ❌'}`);
     console.log('');
 
-    if (ciResult.qualityGate.criteria.length > 0) {
-      console.log('📊 Quality Gate Criteria:');
-      ciResult.qualityGate.criteria.forEach(criteria => {
-        console.log(`   ${criteria.name}: ${criteria.actual.toFixed(1)} (Target: ${criteria.target}) - ${criteria.passed ? 'PASSED' : 'FAILED'}`);
-      });
-    }
+    const reqs = ciResult.qualityGate.requirements;
+    console.log('📊 Quality Gate Requirements:');
+    Object.entries(reqs).forEach(([name, val]) => {
+      console.log(`   ${name}: ${val.actual} (Target: ${val.target}) - ${val.passed ? 'PASSED' : 'FAILED'}`);
+    });
 
     // Exit with appropriate code for CI/CD
     if (ciResult.overallResult === 'failed') {

@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 /**
  * API Contracts for TensorRT-LLM Knowledge Graph Query Engine
  *
@@ -5,7 +7,6 @@
  * Defines all endpoints, request/response schemas, and error handling.
  */
 
-import { z } from 'zod';
 
 // =============================================================================
 // SHARED SCHEMAS

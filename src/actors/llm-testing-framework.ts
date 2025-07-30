@@ -2,6 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
+
 import type { PatternAnnotation } from '../llm-annotation/types.js';
 import type { ComplexityMetrics, ValidationActorResult } from '../types.ts';
 
@@ -15,13 +16,11 @@ import type { ComplexityMetrics, ValidationActorResult } from '../types.ts';
  * - Integration testing across the entire pipeline
  * - Quality metrics and reporting
  */
-
 // Test case schema
 const TestCaseSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string(),
-
   // Input specification
   input: z.object({
     code: z.string(),
@@ -29,14 +28,12 @@ const TestCaseSchema = z.object({
     patterns: z.array(z.string()), // Pattern IDs to apply
     options: z.record(z.any()).optional(),
   }),
-
   // Expected output specification
   expected: z.object({
     code: z.string().optional(),
     transformationsApplied: z.number().optional(),
     filesModified: z.number().optional(),
     mode: z.enum(['template', 'ast', 'llm']).optional(),
-
     // Quality assertions
     assertions: z
       .array(
@@ -56,7 +53,6 @@ const TestCaseSchema = z.object({
       )
       .optional(),
   }),
-
   // Test metadata
   metadata: z.object({
     category: z.string(),
@@ -67,13 +63,11 @@ const TestCaseSchema = z.object({
     timeout: z.number().default(30000), // 30 seconds
   }),
 });
-
 const TestSuiteSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string(),
   testCases: z.array(TestCaseSchema),
-
   // Suite configuration
   config: z
     .object({
@@ -86,7 +80,6 @@ const TestSuiteSchema = z.object({
     .optional()
     .default({}),
 });
-
 const TestExecutionRequestSchema = z.object({
   suites: z.array(TestSuiteSchema),
   options: z
@@ -100,11 +93,9 @@ const TestExecutionRequestSchema = z.object({
     .optional()
     .default({}),
 });
-
 export type TestCase = z.infer<typeof TestCaseSchema>;
 export type TestSuite = z.infer<typeof TestSuiteSchema>;
 export type TestExecutionRequest = z.infer<typeof TestExecutionRequestSchema>;
-
 // Add proper Zod schemas for type safety
 const AssertionSchema = z.object({
   type: z.enum([
@@ -119,7 +110,6 @@ const AssertionSchema = z.object({
   value: z.any(),
   message: z.string().optional(),
 });
-
 const AssertionResultSchema = z.object({
   type: z.string(),
   passed: z.boolean(),
@@ -127,7 +117,6 @@ const AssertionResultSchema = z.object({
   actual: z.any().optional(),
   expected: z.any().optional(),
 });
-
 const PerformanceMetricsSchema = z.object({
   executionTime: z.number(),
   memoryUsage: z.number(),
@@ -135,7 +124,6 @@ const PerformanceMetricsSchema = z.object({
   mode: z.string().optional(),
   transformationsApplied: z.number().optional(),
 });
-
 const TransformationOutputSchema = z.object({
   content: z.string(),
   filesModified: z.array(z.string()),
@@ -151,7 +139,6 @@ const TransformationOutputSchema = z.object({
   success: z.boolean(),
   complexity: z.number().optional(), // Add complexity property for assertions
 });
-
 const TestResultSchema = z.object({
   testCase: TestCaseSchema,
   status: z.enum(['passed', 'failed', 'skipped', 'timeout']),
@@ -161,7 +148,6 @@ const TestResultSchema = z.object({
   assertions: z.array(AssertionResultSchema),
   performance: PerformanceMetricsSchema.optional(),
 });
-
 const SuiteResultSchema = z.object({
   suite: TestSuiteSchema,
   results: z.array(TestResultSchema),
@@ -173,7 +159,6 @@ const SuiteResultSchema = z.object({
     duration: z.number(),
   }),
 });
-
 const ExecutionResultSchema = z.object({
   suiteResults: z.array(SuiteResultSchema),
   summary: z.object({
@@ -186,7 +171,6 @@ const ExecutionResultSchema = z.object({
   }),
   timestamp: z.string(),
 });
-
 // Export properly typed interfaces
 export type Assertion = z.infer<typeof AssertionSchema>;
 export type AssertionResult = z.infer<typeof AssertionResultSchema>;
@@ -195,53 +179,41 @@ export type TransformationOutput = z.infer<typeof TransformationOutputSchema>;
 export type TestResult = z.infer<typeof TestResultSchema>;
 export type SuiteResult = z.infer<typeof SuiteResultSchema>;
 export type ExecutionResult = z.infer<typeof ExecutionResultSchema>;
-
 /**
  * LLM Testing Framework Actor
  */
 export const llmTestingFrameworkActor = fromPromise(
   async ({ input }: { input: TestExecutionRequest }) => {
     const validatedInput = TestExecutionRequestSchema.parse(input);
-
     console.log(
       `🧪 Starting LLM testing framework with ${validatedInput.suites.length} test suites`
     );
-
     const results = await executeTestSuites(validatedInput);
-
     console.log(
       `✅ Testing completed: ${results.summary.passed}/${results.summary.total} tests passed`
     );
-
     return results;
   }
 );
-
 /**
  * Execute all test suites
  */
 async function executeTestSuites(request: TestExecutionRequest) {
   const suiteResults: SuiteResult[] = [];
   const startTime = Date.now();
-
   // Ensure output directory exists
   await mkdir(request.options.outputDir, { recursive: true });
-
   for (const suite of request.suites) {
     console.log(`🏃 Running test suite: ${suite.name}`);
-
     const suiteResult = await executeTestSuite(suite, request.options);
     suiteResults.push(suiteResult);
-
     // Fail fast if enabled and suite failed
     if (request.options.failFast && suiteResult.summary.failed > 0) {
       console.log(`❌ Failing fast due to test failures in suite: ${suite.name}`);
       break;
     }
   }
-
   const totalDuration = Date.now() - startTime;
-
   // Calculate overall summary
   const summary = {
     total: suiteResults.reduce((sum, r) => sum + r.summary.total, 0),
@@ -251,21 +223,17 @@ async function executeTestSuites(request: TestExecutionRequest) {
     duration: totalDuration,
     suites: suiteResults.length,
   };
-
   const executionResult = {
     suiteResults,
     summary,
     timestamp: new Date().toISOString(),
   };
-
   // Generate reports if requested
   if (request.options.generateReport) {
     await generateTestReport(executionResult, request.options);
   }
-
   return executionResult;
 }
-
 /**
  * Execute a single test suite
  */
@@ -275,11 +243,9 @@ async function executeTestSuite(
 ): Promise<SuiteResult> {
   const results: TestResult[] = [];
   const startTime = Date.now();
-
   // Execute tests based on parallelization settings
   if (suite.config.parallel) {
     const chunks = chunkArray(suite.testCases, suite.config.maxConcurrency);
-
     for (const chunk of chunks) {
       const chunkResults = await Promise.all(
         chunk.map((testCase) => executeTestCase(testCase, options))
@@ -293,9 +259,7 @@ async function executeTestSuite(
       results.push(result);
     }
   }
-
   const duration = Date.now() - startTime;
-
   // Calculate suite summary
   const summary = {
     total: results.length,
@@ -304,14 +268,12 @@ async function executeTestSuite(
     skipped: results.filter((r) => r.status === 'skipped').length,
     duration,
   };
-
   return {
     suite,
     results,
     summary,
   };
 }
-
 /**
  * Execute a single test case
  */
@@ -320,25 +282,19 @@ async function executeTestCase(
   options: TestExecutionRequest['options']
 ): Promise<TestResult> {
   const startTime = Date.now();
-
   try {
     console.log(`  🔬 Running test: ${testCase.name}`);
-
     // Execute the transformation
     const actualOutput = await executeTransformation(testCase.input);
-
     // Run assertions
     const assertions = await runAssertions(testCase, actualOutput);
-
     const duration = Date.now() - startTime;
     const allPassed = assertions.every((a) => a.passed);
-
     // Collect performance metrics if enabled
     let performance: PerformanceMetrics | undefined;
     if (options.includePerformanceMetrics) {
       performance = await collectPerformanceMetrics(testCase, actualOutput, duration);
     }
-
     return {
       testCase,
       status: allPassed ? 'passed' : 'failed',
@@ -349,7 +305,6 @@ async function executeTestCase(
     };
   } catch (error) {
     const duration = Date.now() - startTime;
-
     return {
       testCase,
       status: duration > testCase.metadata.timeout ? 'timeout' : 'failed',
@@ -359,21 +314,17 @@ async function executeTestCase(
     };
   }
 }
-
 /**
  * Execute transformation for test case
  */
 async function executeTransformation(input: TestCase['input']): Promise<TransformationOutput> {
   // For testing purposes, we'll simulate the transformation results
   // In a real implementation, this would integrate with the actual pipeline
-
   try {
     // Simulate processing time
     await new Promise((resolve) => setTimeout(resolve, Math.random() * 50 + 10));
-
     // Simulate realistic transformation based on patterns
     let transformedCode = input.code;
-
     // Apply mock transformations based on patterns
     if (input.patterns && input.patterns.length > 0) {
       for (const pattern of input.patterns) {
@@ -394,7 +345,6 @@ async function executeTransformation(input: TestCase['input']): Promise<Transfor
         }
       }
     }
-
     // Create and validate the transformation result
     const result = {
       content: transformedCode,
@@ -408,14 +358,12 @@ async function executeTransformation(input: TestCase['input']): Promise<Transfor
       errors: [],
       success: true, // Transformation success is separate from test success (which is determined by assertions)
     };
-
     // Validate the result with Zod schema
     return TransformationOutputSchema.parse(result);
   } catch (error) {
     throw new Error(`Transformation failed: ${error}`);
   }
 }
-
 /**
  * Run assertions against test results
  */
@@ -425,7 +373,6 @@ async function runAssertions(
 ): Promise<AssertionResult[]> {
   const assertions = testCase.expected.assertions || [];
   const results: AssertionResult[] = [];
-
   for (const assertion of assertions) {
     try {
       const result = await runSingleAssertion(assertion, actualOutput, testCase);
@@ -445,10 +392,8 @@ async function runAssertions(
       results.push(validatedErrorResult);
     }
   }
-
   return results;
 }
-
 /**
  * Run a single assertion
  */
@@ -468,7 +413,6 @@ async function runSingleAssertion(
         expected: assertion.value,
       };
     }
-
     case 'not_contains': {
       const notContains = !actualOutput?.content?.includes(assertion.value);
       return {
@@ -479,7 +423,6 @@ async function runSingleAssertion(
         expected: assertion.value,
       };
     }
-
     case 'matches_regex': {
       const regex = new RegExp(assertion.value);
       const matches = regex.test(actualOutput?.content || '');
@@ -491,7 +434,6 @@ async function runSingleAssertion(
         expected: assertion.value,
       };
     }
-
     case 'syntax_valid': {
       const isValid = await validateSyntax(actualOutput?.content || '', testCase.input.language);
       return {
@@ -502,7 +444,6 @@ async function runSingleAssertion(
         expected: 'valid syntax',
       };
     }
-
     case 'performance_under': {
       const duration = actualOutput?.performance?.duration || 0;
       const underLimit = duration < assertion.value;
@@ -514,7 +455,6 @@ async function runSingleAssertion(
         expected: assertion.value,
       };
     }
-
     case 'complexity_reduced': {
       const complexityReduced = await checkComplexityReduction(
         testCase.input.code,
@@ -528,7 +468,6 @@ async function runSingleAssertion(
         expected: 'reduced complexity',
       };
     }
-
     case 'type_safe': {
       const typeSafe = await checkTypesSafety(actualOutput?.content, testCase.input.language);
       return {
@@ -539,12 +478,10 @@ async function runSingleAssertion(
         expected: 'type-safe code',
       };
     }
-
     default:
       throw new Error(`Unknown assertion type: ${assertion.type}`);
   }
 }
-
 /**
  * Validate syntax of generated code
  */
@@ -555,7 +492,6 @@ async function validateSyntax(code: string, language: string): Promise<boolean> 
       try {
         const ts = await import('typescript');
         const sourceFile = ts.createSourceFile('test.ts', code, ts.ScriptTarget.Latest, true);
-
         // Check if the source file was created successfully
         return sourceFile !== undefined;
       } catch (_error) {
@@ -577,7 +513,6 @@ async function validateSyntax(code: string, language: string): Promise<boolean> 
     return !code.includes('{{{') && !code.includes('invalid syntax') && !code.trim().endsWith('{');
   }
 }
-
 /**
  * Check if complexity was reduced
  */
@@ -588,7 +523,6 @@ async function checkComplexityReduction(
   try {
     const { complexityActor } = await import('./complexity');
     const { createActor } = await import('xstate');
-
     // Calculate complexity for both versions
     const originalComplexity = await new Promise<ComplexityMetrics>((resolve) => {
       const actor = createActor(complexityActor, {
@@ -599,7 +533,6 @@ async function checkComplexityReduction(
         complete: () => resolve(actor.getSnapshot().output as ComplexityMetrics),
       });
     });
-
     const transformedComplexity = await new Promise<ComplexityMetrics>((resolve) => {
       const actor = createActor(complexityActor, {
         input: { files: ['transformed.ts'] },
@@ -609,23 +542,19 @@ async function checkComplexityReduction(
         complete: () => resolve(actor.getSnapshot().output as ComplexityMetrics),
       });
     });
-
     return transformedComplexity.cyclomaticComplexity < originalComplexity.cyclomaticComplexity;
   } catch {
     return false; // Assume no reduction if we can't measure
   }
 }
-
 /**
  * Check type safety
  */
 async function checkTypesSafety(_code: string, language: string): Promise<boolean> {
   if (language !== 'typescript') return true; // Skip for JavaScript
-
   try {
     const { validationActor } = await import('./validation');
     const { createActor } = await import('xstate');
-
     const result = await new Promise<ValidationActorResult>((resolve) => {
       const actor = createActor(validationActor, {
         input: {
@@ -642,13 +571,11 @@ async function checkTypesSafety(_code: string, language: string): Promise<boolea
         },
       });
     });
-
     return result.errors?.length === 0;
   } catch {
     return false; // Assume not type-safe if we can't validate
   }
 }
-
 /**
  * Collect performance metrics
  async function collectPerformanceMetrics(testCase: TestCase, actualOutput: TransformationOutput, duration: number): Promise<PerformanceMetrics> {
@@ -661,7 +588,6 @@ async function checkTypesSafety(_code: string, language: string): Promise<boolea
    };
  }
 }
-
 /**
  * Generate test report
  */
@@ -670,26 +596,21 @@ async function generateTestReport(
   options: TestExecutionRequest['options']
 ) {
   const reportPath = join(options.outputDir, `test-report-${Date.now()}.json`);
-
   // Generate JSON report
   await writeFile(reportPath, JSON.stringify(executionResult, null, 2), 'utf-8');
-
   // Generate HTML report if requested
   if (options.generateReport) {
     const htmlReportPath = join(options.outputDir, `test-report-${Date.now()}.html`);
     const htmlContent = generateHtmlReport(executionResult);
     await writeFile(htmlReportPath, htmlContent, 'utf-8');
   }
-
   console.log(`📊 Test report generated: ${reportPath}`);
 }
-
 /**
  * Generate HTML test report
  */
 function generateHtmlReport(executionResult: ExecutionResult): string {
   const { summary, suiteResults } = executionResult;
-
   return `
 <!DOCTYPE html>
 <html>
@@ -772,7 +693,6 @@ function generateHtmlReport(executionResult: ExecutionResult): string {
 </html>
   `;
 }
-
 /**
  * Utility function to chunk array
  */
@@ -783,7 +703,6 @@ function chunkArray<T>(array: T[], chunkSize: number): T[][] {
   }
   return chunks;
 }
-
 /**
  * Built-in test suites for common transformation scenarios
  */
@@ -871,7 +790,6 @@ export const BUILTIN_TEST_SUITES: TestSuite[] = [
       },
     ],
   },
-
   {
     id: 'performance-tests',
     name: 'Performance Tests',
@@ -915,7 +833,6 @@ export const BUILTIN_TEST_SUITES: TestSuite[] = [
       },
     ],
   },
-
   {
     id: 'error-handling',
     name: 'Error Handling Tests',
@@ -957,7 +874,6 @@ export const BUILTIN_TEST_SUITES: TestSuite[] = [
     ],
   },
 ];
-
 /**
  * Test case generator for pattern-based testing
  */
@@ -1003,11 +919,9 @@ async function collectPerformanceMetrics(
   } catch {
     memoryUsage = 0;
   }
-
   // Calculate transformation speed (chars/ms)
   const codeLength = testCase.input.code.length || 1;
   const transformationSpeed = duration > 0 ? codeLength / duration : 0;
-
   return {
     executionTime: duration,
     memoryUsage,

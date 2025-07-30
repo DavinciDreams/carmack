@@ -1,3 +1,21 @@
+
+import { getDatabaseOperations } from '../db/operations.ts';
+
+import {
+  validateQueryRequest,
+  type QueryRequest,
+  type QueryResponse,
+  type QueryIntent,
+  type QueryComplexity,
+  type EvidenceItem,
+} from './contracts.ts';
+import type {
+  Artifact,
+  SearchResult,
+  SearchFilters,
+  SemanticSearchInput,
+} from '../db/schema.ts';
+
 /**
  * Core Query Engine for TensorRT-LLM Knowledge Graph
  *
@@ -6,29 +24,7 @@
  * Follows Carmack's principles of performance optimization and correctness.
  */
 
-import { z } from 'zod';
-import type {
-  QueryRequest,
-  QueryResponse,
-  QueryIntent,
-  QueryComplexity,
-  EvidenceItem,
-  SearchRequest,
-  SearchResponse,
-} from './contracts.ts';
-import {
-  validateQueryRequest,
-  validateSearchRequest,
-  QueryIntentSchema,
-  QueryComplexitySchema,
-} from './contracts.ts';
-import { getDatabaseOperations } from '../db/operations.ts';
-import type {
-  Artifact,
-  SearchResult,
-  SearchFilters,
-  SemanticSearchInput,
-} from '../db/schema.ts';
+
 
 // =============================================================================
 // QUERY ENGINE ERRORS

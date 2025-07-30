@@ -1,8 +1,8 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
-import { filterPatternsByLanguageAndMode, PRESET_FILTERS } from '../utils/pattern-filtering.js';
-import { detectLanguageFromFile } from '../utils/language-detection.js';
+
+
 
 /**
  * Enhanced Template Engine for Ultra-Fast Code Transformations
@@ -21,7 +21,7 @@ import { detectLanguageFromFile } from '../utils/language-detection.js';
 // Enhanced template pattern schema with sophisticated matching
 const TemplatePatternSchema = z.object({
   id: z.string(),
-  language: z.enum(['typescript', 'javascript', 'cpp', 'c']),
+  language: z.string(),
 
   // Pattern matching configuration
   pattern: z.object({
@@ -177,9 +177,10 @@ export const templateEngineActor = fromPromise(
    console.log('🔍 Applying language-aware pattern filtering for template engine...');
    
    // Convert TemplatePattern[] to AstPattern[] for compatibility with filtering system
+   // Language-agnostic: pass through language as-is
    const astPatterns = request.patterns.map(templatePattern => ({
      id: templatePattern.id,
-     language: templatePattern.language === 'typescript' ? 'typescript' : 'javascript',
+     language: templatePattern.language,
      pattern: templatePattern.pattern.template,
      replacement: templatePattern.replacement.template,
      description: templatePattern.description,
@@ -188,50 +189,22 @@ export const templateEngineActor = fromPromise(
      mode: 'template' as const,
    }));
  
-   // Use language-aware pattern filtering
-   const filterResult = filterPatternsByLanguageAndMode(
-     astPatterns,
-     request.targetFiles,
-     'template',
-     {
-       maxComplexity: request.options.maxComplexity,
-       allowedRiskLevels: ['low', 'medium', 'high'], // Template engine can handle all risk levels
-       strictLanguageMatching: true,
-     }
-   );
- 
-   console.log(`📋 Filtered to ${filterResult.filteredCount} template patterns for ${request.targetFiles.length} files`);
-   
-   if (filterResult.warnings.length > 0) {
-     console.log('⚠️ Pattern filtering warnings:', filterResult.warnings);
-   }
-   
-   if (filterResult.errors.length > 0) {
-     console.log('❌ Pattern filtering errors:', filterResult.errors);
-   }
- 
-   // Convert filtered AstPatterns back to TemplatePatterns
-   const activePatterns = filterResult.filteredPatterns.map(astPattern => {
-     const originalPattern = request.patterns.find(p => p.id === astPattern.id);
-     return originalPattern || {
-       id: astPattern.id,
-       language: astPattern.language === 'typescript' ? 'typescript' as const : 'javascript' as const,
-       pattern: {
-         template: astPattern.pattern,
-         flags: 'g',
-       },
-       replacement: {
-         template: astPattern.replacement,
-       },
-       description: astPattern.description,
-       complexity: astPattern.complexity,
-       riskLevel: astPattern.riskLevel,
-       category: 'auto-converted',
-     };
-   }).filter(Boolean);
- 
-   // Sort patterns for optimal processing
-   const sortedPatterns = preparePatterns(activePatterns, request.options.maxComplexity);
+   // Language-agnostic: filter patterns by maxComplexity and riskLevel
+   const activePatterns = astPatterns
+     .filter(p =>
+       p.complexity <= request.options.maxComplexity &&
+       ['low', 'medium', 'high'].includes(p.riskLevel)
+     )
+     .map(p => ({
+       id: p.id,
+       language: p.language,
+       pattern: { template: p.pattern, flags: 'g' },
+       replacement: { template: p.replacement },
+       description: p.description,
+       complexity: p.complexity,
+       riskLevel: p.riskLevel,
+       category: 'auto',
+     }));
   for (const filePath of request.targetFiles) {
     try {
       const content = await readFile(filePath, 'utf-8');
@@ -277,21 +250,6 @@ export const templateEngineActor = fromPromise(
 /**
  * Prepare patterns for optimal processing
  */
-function preparePatterns(patterns: TemplatePattern[], maxComplexity: number): TemplatePattern[] {
-  return patterns
-    .filter((p) => p.complexity <= maxComplexity)
-    .sort((a, b) => {
-      // Sort by priority first, then by complexity (lower = faster)
-      const aPriority = a.performance?.priority ?? 5;
-      const bPriority = b.performance?.priority ?? 5;
-
-      if (aPriority !== bPriority) {
-        return bPriority - aPriority; // Higher priority first
-      }
-
-      return a.complexity - b.complexity; // Lower complexity first
-    });
-}
 
 /**
  * Transform a single file with template patterns

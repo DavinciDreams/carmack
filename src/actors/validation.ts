@@ -1,16 +1,459 @@
-import { execSync } from 'node:child_process';
+
 import { ESLint } from 'eslint';
+import { execSync } from 'node:child_process';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
 import type { ErrorInfo, ValidationResult } from '../types.js';
 
+// --- Language detection utility ---
+function detectLanguage(filePath: string):
+  | 'typescript'
+  | 'javascript'
+  | 'python'
+  | 'json'
+  | 'cpp'
+  | 'c'
+  | 'java'
+  | 'go'
+  | 'rust'
+  | 'shell'
+  | 'yaml'
+  | 'markdown'
+  | 'unknown' {
+  if (filePath.endsWith('.ts') || filePath.endsWith('.tsx')) return 'typescript';
+  if (filePath.endsWith('.js') || filePath.endsWith('.jsx')) return 'javascript';
+  if (filePath.endsWith('.py')) return 'python';
+  if (filePath.endsWith('.json')) return 'json';
+  if (filePath.endsWith('.cpp') || filePath.endsWith('.cc') || filePath.endsWith('.cxx') || filePath.endsWith('.hpp') || filePath.endsWith('.h')) return 'cpp';
+  if (filePath.endsWith('.c')) return 'c';
+  if (filePath.endsWith('.java')) return 'java';
+  if (filePath.endsWith('.go')) return 'go';
+  if (filePath.endsWith('.rs')) return 'rust';
+  if (filePath.endsWith('.sh') || filePath.endsWith('.bash')) return 'shell';
+  if (filePath.endsWith('.yaml') || filePath.endsWith('.yml')) return 'yaml';
+  if (filePath.endsWith('.md')) return 'markdown';
+  return 'unknown';
+}
+
+// --- Language-agnostic validation router ---
+async function validateByLanguage(type: string, files: string[], extra?: any): Promise<ValidationResult> {
+  // Group files by detected language
+  const filesByLang: Record<string, string[]> = {};
+  for (const file of files) {
+    const lang = detectLanguage(file);
+    if (!filesByLang[lang]) filesByLang[lang] = [];
+    filesByLang[lang].push(file);
+  }
+
+  let results: ValidationResult[] = [];
+  for (const [lang, langFiles] of Object.entries(filesByLang)) {
+    switch (lang) {
+      case 'typescript':
+      case 'javascript':
+        if (type === 'format') results.push(await validateFormat(langFiles));
+        else if (type === 'formatFix') results.push(await fixFormat(langFiles));
+        else if (type === 'types') results.push(await validateTypes(langFiles));
+        else if (type === 'typeFix') results.push(await fixTypes(langFiles, extra?.errors || []));
+        else if (type === 'quality') results.push(await validateQuality(langFiles));
+        break;
+      case 'python':
+        results.push(await validatePython(langFiles, type, extra));
+        break;
+      case 'json':
+        results.push(await validateJson(langFiles, type, extra));
+        break;
+      case 'cpp':
+      case 'c':
+        results.push(await validateCpp(langFiles, type, extra));
+        break;
+      case 'java':
+        results.push(await validateJava(langFiles, type, extra));
+        break;
+      case 'go':
+        results.push(await validateGo(langFiles, type, extra));
+        break;
+      case 'rust':
+        results.push(await validateRust(langFiles, type, extra));
+        break;
+      case 'shell':
+        results.push(await validateShell(langFiles, type, extra));
+        break;
+      case 'yaml':
+        results.push(await validateYaml(langFiles, type, extra));
+        break;
+      case 'markdown':
+        results.push(await validateMarkdown(langFiles, type, extra));
+        break;
+      default:
+        results.push({
+          isValid: true,
+          errors: [],
+          warnings: langFiles.map(f => ({
+            code: 'LANG_UNKNOWN',
+            message: `No validator for file: ${f}`,
+            file: f,
+            severity: 'warning',
+          })),
+          fixableIssues: 0,
+        });
+    }
+  }
+// --- C/C++ validation (clang-tidy, clang-format) ---
+async function validateCpp(files: string[], type: string, _extra: any): Promise<ValidationResult> {
+  const errors: ErrorInfo[] = [];
+  const warnings: ErrorInfo[] = [];
+  let fixableIssues = 0;
+  for (const file of files) {
+    try {
+      if (type === 'format' || type === 'formatFix') {
+        // Try clang-format
+        const { execSync } = await import('node:child_process');
+        try {
+          execSync(`clang-format -n --Werror ${file}`, { stdio: 'pipe', encoding: 'utf8', timeout: 2000 });
+        } catch (err) {
+          fixableIssues++;
+          warnings.push({
+            code: 'CLANG_FORMAT',
+            message: `Formatting issues in ${file}`,
+            file,
+            severity: 'warning',
+          });
+        }
+      }
+      if (type === 'quality' || type === 'types') {
+        // Try clang-tidy
+        const { execSync } = await import('node:child_process');
+        try {
+          execSync(`clang-tidy ${file} --warnings-as-errors=*`, { stdio: 'pipe', encoding: 'utf8', timeout: 4000 });
+        } catch (err) {
+          errors.push({
+            code: 'CLANG_TIDY',
+            message: `clang-tidy found issues in ${file}`,
+            file,
+            severity: 'error',
+          });
+        }
+      }
+    } catch (e) {
+      warnings.push({
+        code: 'CPP_VALIDATION_ERROR',
+        message: `C/C++ validation failed for ${file}: ${e instanceof Error ? e.message : String(e)}`,
+        file,
+        severity: 'warning',
+      });
+    }
+  }
+  return {
+    isValid: errors.length === 0,
+    errors,
+    warnings,
+    fixableIssues,
+  };
+}
+
+// --- Java validation (checkstyle, google-java-format) ---
+async function validateJava(files: string[], type: string, _extra: any): Promise<ValidationResult> {
+  const errors: ErrorInfo[] = [];
+  const warnings: ErrorInfo[] = [];
+  let fixableIssues = 0;
+  for (const file of files) {
+    try {
+      if (type === 'format' || type === 'formatFix') {
+        // Try google-java-format (must be installed)
+        const { execSync } = await import('node:child_process');
+        try {
+          execSync(`google-java-format --dry-run --set-exit-if-changed ${file}`, { stdio: 'pipe', encoding: 'utf8', timeout: 2000 });
+        } catch (err) {
+          fixableIssues++;
+          warnings.push({
+            code: 'GOOGLE_JAVA_FORMAT',
+            message: `Formatting issues in ${file}`,
+            file,
+            severity: 'warning',
+          });
+        }
+      }
+      if (type === 'quality' || type === 'types') {
+        // Try checkstyle (must be installed)
+        const { execSync } = await import('node:child_process');
+        try {
+          execSync(`checkstyle -c /google_checks.xml ${file}`, { stdio: 'pipe', encoding: 'utf8', timeout: 4000 });
+        } catch (err) {
+          errors.push({
+            code: 'CHECKSTYLE',
+            message: `Checkstyle found issues in ${file}`,
+            file,
+            severity: 'error',
+          });
+        }
+      }
+    } catch (e) {
+      warnings.push({
+        code: 'JAVA_VALIDATION_ERROR',
+        message: `Java validation failed for ${file}: ${e instanceof Error ? e.message : String(e)}`,
+        file,
+        severity: 'warning',
+      });
+    }
+  }
+  return {
+    isValid: errors.length === 0,
+    errors,
+    warnings,
+    fixableIssues,
+  };
+}
+
+// --- Go validation (gofmt, golint) ---
+async function validateGo(files: string[], type: string, _extra: any): Promise<ValidationResult> {
+  const errors: ErrorInfo[] = [];
+  const warnings: ErrorInfo[] = [];
+  let fixableIssues = 0;
+  for (const file of files) {
+    try {
+      if (type === 'format' || type === 'formatFix') {
+        const { execSync } = await import('node:child_process');
+        try {
+          execSync(`gofmt -l ${file}`, { stdio: 'pipe', encoding: 'utf8', timeout: 2000 });
+        } catch (err) {
+          fixableIssues++;
+          warnings.push({
+            code: 'GOFMT',
+            message: `Formatting issues in ${file}`,
+            file,
+            severity: 'warning',
+          });
+        }
+      }
+      if (type === 'quality' || type === 'types') {
+        const { execSync } = await import('node:child_process');
+        try {
+          execSync(`golint ${file}`, { stdio: 'pipe', encoding: 'utf8', timeout: 4000 });
+        } catch (err) {
+          errors.push({
+            code: 'GOLINT',
+            message: `golint found issues in ${file}`,
+            file,
+            severity: 'error',
+          });
+        }
+      }
+    } catch (e) {
+      warnings.push({
+        code: 'GO_VALIDATION_ERROR',
+        message: `Go validation failed for ${file}: ${e instanceof Error ? e.message : String(e)}`,
+        file,
+        severity: 'warning',
+      });
+    }
+  }
+  return {
+    isValid: errors.length === 0,
+    errors,
+    warnings,
+    fixableIssues,
+  };
+}
+
+// --- Rust validation (rustfmt, clippy) ---
+async function validateRust(files: string[], type: string, _extra: any): Promise<ValidationResult> {
+  const errors: ErrorInfo[] = [];
+  const warnings: ErrorInfo[] = [];
+  let fixableIssues = 0;
+  for (const file of files) {
+    try {
+      if (type === 'format' || type === 'formatFix') {
+        const { execSync } = await import('node:child_process');
+        try {
+          execSync(`rustfmt --check ${file}`, { stdio: 'pipe', encoding: 'utf8', timeout: 2000 });
+        } catch (err) {
+          fixableIssues++;
+          warnings.push({
+            code: 'RUSTFMT',
+            message: `Formatting issues in ${file}`,
+            file,
+            severity: 'warning',
+          });
+        }
+      }
+      if (type === 'quality' || type === 'types') {
+        const { execSync } = await import('node:child_process');
+        try {
+          execSync(`clippy-driver ${file}`, { stdio: 'pipe', encoding: 'utf8', timeout: 4000 });
+        } catch (err) {
+          errors.push({
+            code: 'CLIPPY',
+            message: `clippy found issues in ${file}`,
+            file,
+            severity: 'error',
+          });
+        }
+      }
+    } catch (e) {
+      warnings.push({
+        code: 'RUST_VALIDATION_ERROR',
+        message: `Rust validation failed for ${file}: ${e instanceof Error ? e.message : String(e)}`,
+        file,
+        severity: 'warning',
+      });
+    }
+  }
+  return {
+    isValid: errors.length === 0,
+    errors,
+    warnings,
+    fixableIssues,
+  };
+}
+
+// --- Shell validation (shellcheck, shfmt) ---
+async function validateShell(files: string[], type: string, _extra: any): Promise<ValidationResult> {
+  const errors: ErrorInfo[] = [];
+  const warnings: ErrorInfo[] = [];
+  let fixableIssues = 0;
+  for (const file of files) {
+    try {
+      if (type === 'format' || type === 'formatFix') {
+        const { execSync } = await import('node:child_process');
+        try {
+          execSync(`shfmt -d ${file}`, { stdio: 'pipe', encoding: 'utf8', timeout: 2000 });
+        } catch (err) {
+          fixableIssues++;
+          warnings.push({
+            code: 'SHFMT',
+            message: `Formatting issues in ${file}`,
+            file,
+            severity: 'warning',
+          });
+        }
+      }
+      if (type === 'quality' || type === 'types') {
+        const { execSync } = await import('node:child_process');
+        try {
+          execSync(`shellcheck ${file}`, { stdio: 'pipe', encoding: 'utf8', timeout: 4000 });
+        } catch (err) {
+          errors.push({
+            code: 'SHELLCHECK',
+            message: `shellcheck found issues in ${file}`,
+            file,
+            severity: 'error',
+          });
+        }
+      }
+    } catch (e) {
+      warnings.push({
+        code: 'SHELL_VALIDATION_ERROR',
+        message: `Shell validation failed for ${file}: ${e instanceof Error ? e.message : String(e)}`,
+        file,
+        severity: 'warning',
+      });
+    }
+  }
+  return {
+    isValid: errors.length === 0,
+    errors,
+    warnings,
+    fixableIssues,
+  };
+}
+
+// --- YAML validation (yamllint) ---
+async function validateYaml(files: string[], type: string, _extra: any): Promise<ValidationResult> {
+  const errors: ErrorInfo[] = [];
+  const warnings: ErrorInfo[] = [];
+  let fixableIssues = 0;
+  for (const file of files) {
+    try {
+      // yamllint for both format and quality
+      const { execSync } = await import('node:child_process');
+      try {
+        execSync(`yamllint ${file}`, { stdio: 'pipe', encoding: 'utf8', timeout: 4000 });
+      } catch (err) {
+        errors.push({
+          code: 'YAMLLINT',
+          message: `yamllint found issues in ${file}`,
+          file,
+          severity: 'error',
+        });
+      }
+    } catch (e) {
+      warnings.push({
+        code: 'YAML_VALIDATION_ERROR',
+        message: `YAML validation failed for ${file}: ${e instanceof Error ? e.message : String(e)}`,
+        file,
+        severity: 'warning',
+      });
+    }
+  }
+  return {
+    isValid: errors.length === 0,
+    errors,
+    warnings,
+    fixableIssues,
+  };
+}
+
+// --- Markdown validation (placeholder) ---
+async function validateMarkdown(files: string[], type: string, _extra: any): Promise<ValidationResult> {
+  return {
+    isValid: true,
+    errors: [],
+    warnings: files.map(f => ({
+      code: 'MARKDOWN_VALIDATION_PLACEHOLDER',
+      message: `Markdown validation not yet implemented for ${f}`,
+      file: f,
+      severity: 'info',
+    })),
+    fixableIssues: 0,
+  };
+}
+  // Merge results
+  return mergeValidationResults(results);
+}
+
+function mergeValidationResults(results: ValidationResult[]): ValidationResult {
+  return {
+    isValid: results.every(r => r.isValid),
+    errors: results.flatMap(r => r.errors),
+    warnings: results.flatMap(r => r.warnings),
+    fixableIssues: results.reduce((sum, r) => sum + (r.fixableIssues || 0), 0),
+  };
+}
+
+// --- Placeholder for Python validation ---
+async function validatePython(files: string[], type: string, _extra: any): Promise<ValidationResult> {
+  // TODO: Integrate flake8, black, mypy, etc.
+  return {
+    isValid: true,
+    errors: [],
+    warnings: files.map(f => ({
+      code: 'PY_VALIDATION_PLACEHOLDER',
+      message: `Python validation not yet implemented for ${f}`,
+      file: f,
+      severity: 'info',
+    })),
+    fixableIssues: 0,
+  };
+}
+
+// --- Placeholder for JSON validation ---
+async function validateJson(files: string[], type: string, _extra: any): Promise<ValidationResult> {
+  // TODO: Integrate JSON schema validation, formatting, etc.
+  return {
+    isValid: true,
+    errors: [],
+    warnings: files.map(f => ({
+      code: 'JSON_VALIDATION_PLACEHOLDER',
+      message: `JSON validation not yet implemented for ${f}`,
+      file: f,
+      severity: 'info',
+    })),
+    fixableIssues: 0,
+  };
+}
+
 const eslint = new ESLint({
-  overrideConfigFile: true,
   overrideConfig: {
-    languageOptions: {
-      ecmaVersion: 'latest',
-      sourceType: 'module',
-    },
     rules: {
       // Code quality rules
       'prefer-const': 'warn',
@@ -115,23 +558,9 @@ type ValidationInput = z.infer<typeof ValidationInputSchema>;
  */
 export const validationActor = fromPromise(async ({ input }: { input: ValidationInput }) => {
   const validatedInput = ValidationInputSchema.parse(input);
-
   console.log(`Running ${validatedInput.type} validation on ${validatedInput.files.length} files`);
-
-  switch (validatedInput.type) {
-    case 'format':
-      return await validateFormat(validatedInput.files);
-    case 'formatFix':
-      return await fixFormat(validatedInput.files);
-    case 'types':
-      return await validateTypes(validatedInput.files);
-    case 'typeFix':
-      return await fixTypes(validatedInput.files, validatedInput.errors);
-    case 'quality':
-      return await validateQuality(validatedInput.files);
-    default:
-      throw new Error('Unknown validation type');
-  }
+  // Route to language-agnostic validation
+  return await validateByLanguage(validatedInput.type, validatedInput.files, validatedInput);
 });
 
 async function validateFormat(files: string[]): Promise<ValidationResult> {
@@ -894,79 +1323,7 @@ async function validateQuality(files: string[]): Promise<ValidationResult> {
   let fixableIssues = 0;
 
   try {
-    // Try to use ESLint programmatically with timeout
-    const { ESLint } = await import('eslint');
-
-    const eslint = new ESLint({
-      overrideConfigFile: true,
-      overrideConfig: {
-        languageOptions: {
-          ecmaVersion: 'latest',
-          sourceType: 'module',
-        },
-        rules: {
-          // Code quality rules
-          'prefer-const': 'warn',
-          'no-var': 'error',
-          'no-unused-vars': 'warn',
-          eqeqeq: 'error',
-          'no-console': 'warn',
-          complexity: ['warn', { max: 15 }],
-          'max-depth': ['warn', { max: 4 }],
-          'max-lines-per-function': ['warn', { max: 50 }],
-          'no-duplicate-imports': 'error',
-          'prefer-arrow-callback': 'warn',
-          'arrow-spacing': 'warn',
-          'object-shorthand': 'warn',
-          'prefer-template': 'warn',
-        },
-      },
-    });
-
-    // Add timeout wrapper for ESLint operations
-    const lintWithTimeout = (filePath: string): Promise<void> => {
-      return new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error(`ESLint timeout for ${filePath}`));
-        }, 3000); // 3 second timeout per file
-
-        // Run ESLint in an async IIFE to avoid async promise executor
-        (async () => {
-          try {
-            const results = await eslint.lintFiles([filePath]);
-
-            for (const result of results) {
-              for (const message of result.messages) {
-                const errorInfo: ErrorInfo = {
-                  code: message.ruleId || 'ESLINT_ERROR',
-                  message: message.message,
-                  file: result.filePath,
-                  line: message.line,
-                  column: message.column,
-                  severity: message.severity === 2 ? 'error' : 'warning',
-                };
-
-                if (message.severity === 2) {
-                  errors.push(errorInfo);
-                } else {
-                  warnings.push(errorInfo);
-                }
-
-                if (message.fix) {
-                  fixableIssues++;
-                }
-              }
-            }
-            clearTimeout(timeout);
-            resolve();
-          } catch (error) {
-            clearTimeout(timeout);
-            reject(error);
-          }
-        })();
-      });
-    };
-
+    // Process files with ESLint directly using the lint function
 
     for (const filePath of files) {
       try {
@@ -975,7 +1332,6 @@ async function validateQuality(files: string[]): Promise<ValidationResult> {
           errors.push(...result.errors);
           warnings.push(...result.warnings);
           fixableIssues += result.fixableIssues;
-
         }
       } catch (error) {
         console.warn(`ESLint failed or timed out for ${filePath}:`, error);

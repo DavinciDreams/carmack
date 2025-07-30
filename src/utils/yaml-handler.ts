@@ -1,15 +1,7 @@
-import { readFile, writeFile } from 'node:fs/promises';
 import * as yaml from 'js-yaml';
+import { readFile, writeFile } from 'node:fs/promises';
 import { z } from 'zod';
 
-/**
- * YAML Handler - Provably correct YAML processing with Zod validation
- *
- * Following Carmack principles:
- * 1. Type Safety First - Zod schemas for all operations
- * 2. Error Resilience - Explicit error handling
- * 3. Performance - Efficient parsing and serialization
- */
 
 // Error types for explicit error handling
 export class YamlParseError extends Error {
@@ -22,7 +14,6 @@ export class YamlParseError extends Error {
     this.name = 'YamlParseError';
   }
 }
-
 export class YamlSerializationError extends Error {
   constructor(
     message: string,
@@ -33,7 +24,6 @@ export class YamlSerializationError extends Error {
     this.name = 'YamlSerializationError';
   }
 }
-
 // Configuration schema for YAML operations
 const YamlOptionsSchema = z
   .object({
@@ -45,29 +35,21 @@ const YamlOptionsSchema = z
     forceQuotes: z.boolean().default(false),
   })
   .strict();
-
 export type YamlOptions = z.infer<typeof YamlOptionsSchema>;
-
 /**
- * Parse YAML string to JavaScript object with type safety
+ * Parse YAML string to JavaScript object with type safety (schema required)
  * @param yamlString - YAML content as string
- * @param schema - Optional Zod schema for validation
+ * @param schema - Zod schema for validation (required)
  * @returns Parsed and validated object
  */
-export function parseYamlString<T>(yamlString: string, schema?: z.ZodType<T>): T {
+export function parseYamlString<T>(yamlString: string, schema: z.ZodType<T>): T {
   try {
     const parsed = yaml.load(yamlString);
-
-    if (schema) {
-      return schema.parse(parsed);
-    }
-
-    return parsed as T;
+    return schema.parse(parsed);
   } catch (error) {
     if (error instanceof z.ZodError) {
       throw new YamlParseError(`YAML validation failed: ${error.message}`, undefined, error);
     }
-
     throw new YamlParseError(
       `Failed to parse YAML: ${error instanceof Error ? error.message : 'Unknown error'}`,
       undefined,
@@ -75,14 +57,13 @@ export function parseYamlString<T>(yamlString: string, schema?: z.ZodType<T>): T
     );
   }
 }
-
 /**
- * Parse YAML file with type safety and validation
+ * Parse YAML file with type safety and validation (schema required)
  * @param filePath - Path to YAML file
- * @param schema - Optional Zod schema for validation
+ * @param schema - Zod schema for validation (required)
  * @returns Parsed and validated object
  */
-export async function parseYamlFile<T>(filePath: string, schema?: z.ZodType<T>): Promise<T> {
+export async function parseYamlFile<T>(filePath: string, schema: z.ZodType<T>): Promise<T> {
   try {
     const fileContent = await readFile(filePath, 'utf-8');
     return parseYamlString(fileContent, schema);
@@ -90,7 +71,6 @@ export async function parseYamlFile<T>(filePath: string, schema?: z.ZodType<T>):
     if (error instanceof YamlParseError) {
       throw new YamlParseError(error.message, filePath, error.originalError);
     }
-
     throw new YamlParseError(
       `Failed to read YAML file: ${error instanceof Error ? error.message : 'Unknown error'}`,
       filePath,
@@ -98,17 +78,17 @@ export async function parseYamlFile<T>(filePath: string, schema?: z.ZodType<T>):
     );
   }
 }
-
 /**
- * Serialize object to YAML string with proper formatting
+ * Serialize object to YAML string with schema validation
  * @param data - Object to serialize
+ * @param schema - Zod schema for validation (required)
  * @param options - YAML formatting options
  * @returns YAML string
  */
-export function serializeToYaml(data: unknown, options: Partial<YamlOptions> = {}): string {
+export function serializeToYaml<T>(data: T, schema: z.ZodType<T>, options: Partial<YamlOptions> = {}): string {
   try {
+    schema.parse(data); // Validate before serializing
     const validatedOptions = YamlOptionsSchema.parse(options);
-
     return yaml.dump(data, {
       indent: validatedOptions.indent,
       lineWidth: validatedOptions.lineWidth,
@@ -125,26 +105,26 @@ export function serializeToYaml(data: unknown, options: Partial<YamlOptions> = {
     );
   }
 }
-
 /**
- * Write object to YAML file with proper formatting
+ * Write object to YAML file with schema validation
  * @param filePath - Path to write YAML file
  * @param data - Object to serialize
+ * @param schema - Zod schema for validation (required)
  * @param options - YAML formatting options
  */
-export async function writeYamlFile(
+export async function writeYamlFile<T>(
   filePath: string,
-  data: unknown,
+  data: T,
+  schema: z.ZodType<T>,
   options: Partial<YamlOptions> = {}
 ): Promise<void> {
   try {
-    const yamlContent = serializeToYaml(data, options);
+    const yamlContent = serializeToYaml(data, schema, options);
     await writeFile(filePath, yamlContent, 'utf-8');
   } catch (error) {
     if (error instanceof YamlSerializationError) {
       throw error;
     }
-
     throw new YamlSerializationError(
       `Failed to write YAML file: ${error instanceof Error ? error.message : 'Unknown error'}`,
       data,
@@ -152,11 +132,10 @@ export async function writeYamlFile(
     );
   }
 }
-
 /**
- * Validate YAML file against schema without parsing
+ * Validate YAML file against schema
  * @param filePath - Path to YAML file
- * @param schema - Zod schema for validation
+ * @param schema - Zod schema for validation (required)
  * @returns Validation result
  */
 export async function validateYamlFile<T>(
@@ -170,27 +149,23 @@ export async function validateYamlFile<T>(
     if (error instanceof YamlParseError && error.originalError instanceof z.ZodError) {
       return { valid: false, errors: error.originalError };
     }
-
-    // Re-throw non-validation errors (like file not found) so they can be handled by the caller
     throw error;
   }
 }
-
 /**
- * Safe YAML parsing with default value fallback
+ * Safe YAML parsing with default value fallback (schema required)
  * @param yamlString - YAML content
  * @param defaultValue - Default value if parsing fails
- * @param schema - Optional validation schema
+ * @param schema - Validation schema (required)
  * @returns Parsed value or default
  */
-export function safeParseYaml<T>(yamlString: string, defaultValue: T, schema?: z.ZodType<T>): T {
+export function safeParseYaml<T>(yamlString: string, defaultValue: T, schema: z.ZodType<T>): T {
   try {
     return parseYamlString(yamlString, schema);
   } catch {
     return defaultValue;
   }
 }
-
 // Pre-defined schemas for common YAML configurations
 export const CommonYamlSchemas = {
   // Environment configuration schema
@@ -201,7 +176,6 @@ export const CommonYamlSchemas = {
       services: z.array(z.string()).optional(),
     })
     .strict(),
-
   // CI/CD pipeline schema
   pipeline: z
     .object({
@@ -215,7 +189,6 @@ export const CommonYamlSchemas = {
       ),
     })
     .strict(),
-
   // Docker Compose schema (simplified)
   dockerCompose: z
     .object({
@@ -232,8 +205,7 @@ export const CommonYamlSchemas = {
     })
     .strict(),
 };
-
-// Export convenience functions
+// Export convenience functions (schema-driven only)
 export const YAML = {
   parse: parseYamlString,
   parseFile: parseYamlFile,

@@ -257,8 +257,10 @@ export const validateDocumentationResult = (data: unknown): DocumentationResult 
   return DocumentationResultSchema.parse(data);
 };
 
+import { ArtifactSchema } from '../db/schema';
 // TensorRT-specific schemas for semantic indexing
 export const CodeEntitySchema = z.object({
+  entityKind: z.literal('codeEntity'),
   id: z.string().uuid(),
   name: z.string(),
   type: EntityTypeSchema,
@@ -280,6 +282,12 @@ export const CodeEntitySchema = z.object({
   sourceCode: z.string(),
   metadata: z.record(z.any()).optional(),
 });
+
+// Canonical union for artifact/code entity traversal
+export const ArtifactOrCodeEntitySchema = z.union([
+  ArtifactSchema,
+  CodeEntitySchema,
+]);
 
 export const SemanticEmbeddingSchema = z.object({
   entityId: z.string().uuid(),

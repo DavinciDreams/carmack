@@ -6,8 +6,16 @@ RUN apk add --no-cache \
     git \
     openssh-client \
     ca-certificates \
-    dafny \
+    curl \
+    unzip \
+    dotnet6-sdk \
+    icu-data-full \
     && rm -rf /var/cache/apk/*
+
+# Install Dafny manually (latest release)
+RUN apk add --no-cache jq
+RUN echo "Available Dafny assets:" \
+    && curl -s https://api.github.com/repos/dafny-lang/dafny/releases/latest | jq -r '.assets[].name'
 
 # Set working directory
 WORKDIR /app
@@ -22,14 +30,14 @@ RUN bun install --frozen-lockfile
 COPY . .
 
 # Create workspace directory
-RUN mkdir -p /tmp/carmack-workspace
+RUN mkdir -p /workspace && chown -R 1001:1001 /workspace
 
 # Build the application
 RUN bun run build
 
 # Set environment variables
 ENV NODE_ENV=production
-ENV CARMACK_WORKSPACE=/tmp/carmack-workspace
+ENV CARMACK_WORKSPACE=/workspace
 ENV CARMACK_LOG_LEVEL=info
 
 # Create non-root user for security
@@ -37,7 +45,7 @@ RUN addgroup -g 1001 -S carmack && \
     adduser -S carmack -u 1001
 
 # Set proper permissions
-RUN chown -R carmack:carmack /app /tmp/carmack-workspace
+RUN chown -R carmack:carmack /app /workspace
 
 # Switch to non-root user
 USER carmack

@@ -136,6 +136,11 @@ export const MachineContextSchema = z.object({
     enableLearning: z.boolean().default(true),
     gitIntegration: z.boolean().default(true),
   }),
+  qualityValidationResponses: z.array(z.object({
+    query: z.string(),
+    response: z.any(), // Should be QueryResponse, but keep flexible for now
+    topic: z.string().optional(),
+  })).default([]),
 });
 
 // Events for state machine

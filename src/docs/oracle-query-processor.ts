@@ -1,16 +1,16 @@
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
+
+import { SemanticIndexer } from './semantic-indexer.ts';
+
 import type {
   OracleQuery,
   CodeEntity,
   KnowledgePattern,
   LanguageType,
   DomainType,
-} from './types.js';
-import {
-  validateOracleQuery,
-} from './types.js';
-import { SemanticIndexer } from './semantic-indexer.js';
+} from './types.ts';
+import { validateOracleQuery } from './types.ts';
 
 // Query intent classification
 const INTENT_PATTERNS = {
@@ -105,10 +105,9 @@ const LANGUAGE_KEYWORDS = {
  */
 export class OracleQueryProcessor {
   private indexer: SemanticIndexer;
-  private dbConfig: any;
+  // ...existing code...
 
   constructor(dbConfig: any) {
-    this.dbConfig = dbConfig;
     this.indexer = new SemanticIndexer(dbConfig);
   }
 
@@ -160,6 +159,7 @@ export class OracleQueryProcessor {
       const responseTime = Date.now() - startTime;
       const { randomUUID } = await import('node:crypto');
 
+      // Zod-validate the OracleQuery result
       return validateOracleQuery({
         id: randomUUID(),
         query,
@@ -529,13 +529,14 @@ export class OracleQueryProcessor {
   }
 
   private async getEntitiesByIds(entityIds: string[]): Promise<CodeEntity[]> {
-    if (entityIds.length === 0) return [];
+  if (entityIds.length === 0) return [];
 
-    const placeholders = entityIds.map((_, i) => `$${i + 1}`).join(',');
-    const sql = `SELECT * FROM artifacts WHERE id IN (${placeholders})`;
-    
-    const result = await this.indexer['dbClient'].query(sql, entityIds);
-    return result.rows.map((row: any) => this.indexer['rowToArtifact'](row));
+  const placeholders = entityIds.map((_, i) => `$${i + 1}`).join(',');
+  const sql = `SELECT * FROM artifacts WHERE id IN (${placeholders})`;
+  const dbClient = this.indexer['dbClient'];
+  if (!dbClient) return [];
+  const result = await dbClient.query(sql, entityIds);
+  return result.rows.map((row: any) => this.indexer['rowToArtifact'](row));
   }
 
   private async findRelatedPatterns(
@@ -579,21 +580,20 @@ export class OracleQueryProcessor {
     return languageMap[language] || 'text';
   }
 
-  private generateSuggestions(query: string): string {
-    let suggestions = "**Suggestions:**\n\n";
-    suggestions += "- Try using more specific technical terms\n";
-    suggestions += "- Include language keywords (CUDA, C++, Python)\n";
-    suggestions += "- Mention specific TensorRT components (engine, builder, context)\n";
-    suggestions += "- Use domain-specific terms (inference, optimization, serialization)\n\n";
-    
-    suggestions += "**Example queries:**\n";
-    suggestions += "- \"Find CUDA kernel implementations for convolution\"\n";
-    suggestions += "- \"Show me TensorRT engine serialization patterns\"\n";
-    suggestions += "- \"How to optimize inference performance?\"\n";
-    suggestions += "- \"Python API usage for model conversion\"\n";
-
-    return suggestions;
-  }
+    private generateSuggestions(query: string): string {
+      let suggestions = "**Suggestions:**\n\n";
+      suggestions += "- Try using more specific technical terms\n";
+      suggestions += "- Include language keywords (e.g., Python, C++, Java, Go, Rust)\n";
+      suggestions += "- Mention specific components (API, function, class, module, config, test)\n";
+      suggestions += "- Use domain-specific terms (database, network, concurrency, performance, security)\n\n";
+      suggestions += "**Example queries:**\n";
+      suggestions += "- \"Find Python function for reading a CSV file\"\n";
+      suggestions += "- \"Show me C++ class for HTTP server implementation\"\n";
+      suggestions += "- \"How to optimize Go routine performance?\"\n";
+      suggestions += "- \"Java API usage for database connection\"\n";
+      suggestions += "- \"Rust trait for error handling patterns\"\n";
+      return suggestions;
+    }
 }
 
 // Create and export the oracle query processor actor

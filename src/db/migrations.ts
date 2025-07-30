@@ -1,3 +1,11 @@
+import { readFile } from 'fs/promises';
+import { join } from 'path';
+import { z } from 'zod';
+
+import { getDatabaseManager } from './connection.ts';
+import { type SchemaMigration } from './schema.ts';
+
+
 /**
  * Database Migration Management for TensorRT-LLM Knowledge Graph
  *
@@ -6,12 +14,6 @@
  * and safe database operations.
  */
 
-import { readFile } from 'fs/promises';
-import { join } from 'path';
-import type { PoolClient } from 'pg';
-import { z } from 'zod';
-import { getDatabaseManager } from './connection.ts';
-import { SchemaMigrationSchema, type SchemaMigration } from './schema.ts';
 
 // =============================================================================
 // MIGRATION CONFIGURATION

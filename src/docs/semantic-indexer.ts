@@ -1,38 +1,45 @@
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
+
+import { getDatabaseManager } from '../db/connection.js';
+import { MultiLanguageAnalyzer } from './multi-language-analyzer.ts';
+import { ContentProcessor } from '../ingestion/content-processor.ts';
 import type {
   CodeEntity,
-  SemanticEmbedding,
   KnowledgePattern,
   RepositoryAnalysis,
   LanguageType,
   DomainType,
-} from './types.js';
+} from './types.ts';
 import {
   validateCodeEntity,
-  validateSemanticEmbedding,
   validateKnowledgePattern,
   validateRepositoryAnalysis,
-} from './types.js';
-import { MultiLanguageAnalyzer } from './multi-language-analyzer.js';
-import { getDatabaseManager } from '../db/connection.js';
+} from './types.ts';
 
 // PostgreSQL connection configuration
-interface DatabaseConfig {
-  host: string;
-  port: number;
-  database: string;
-  user: string;
-  password: string;
-  schema: string;
-}
+export const DatabaseConfigSchema = z.object({
+  host: z.string(),
+  port: z.number(),
+  database: z.string(),
+  user: z.string(),
+  password: z.string(),
+  schema: z.string(),
+});
+export type DatabaseConfig = z.infer<typeof DatabaseConfigSchema>;
 
 // Embedding service configuration
-interface EmbeddingConfig {
-  model: string;
-  apiKey?: string;
-  maxTokens: number;
-  batchSize: number;
+export const EmbeddingConfigSchema = z.object({
+  model: z.string(),
+  apiKey: z.string().optional(),
+  maxTokens: z.number(),
+  batchSize: z.number(),
+});
+export type EmbeddingConfig = z.infer<typeof EmbeddingConfigSchema>;
+
+// Add a minimal DB client interface for type safety
+interface PgClient {
+  query: (sql: string, params?: unknown[]) => Promise<{ rows: unknown[] }>;
 }
 
 /**
@@ -40,10 +47,10 @@ interface EmbeddingConfig {
  * Handles code entity extraction, embedding generation, and database storage
  */
 export class SemanticIndexer {
-  private dbConfig: DatabaseConfig;
+  // private dbConfig: DatabaseConfig;
   private embeddingConfig: EmbeddingConfig;
   private analyzer: MultiLanguageAnalyzer;
-  private dbClient: any = null;
+  private dbClient: PgClient | null = null;
 
   constructor(
     dbConfig: DatabaseConfig,
@@ -53,8 +60,8 @@ export class SemanticIndexer {
       batchSize: 100,
     }
   ) {
-    this.dbConfig = dbConfig;
-    this.embeddingConfig = embeddingConfig;
+  // this.dbConfig = dbConfig;
+    this.embeddingConfig = EmbeddingConfigSchema.parse(embeddingConfig);
     this.analyzer = new MultiLanguageAnalyzer();
   }
 /**
@@ -62,7 +69,7 @@ export class SemanticIndexer {
  */
 async initialize(): Promise<void> {
   try {
-    this.dbClient = getDatabaseManager();
+    this.dbClient = getDatabaseManager() as PgClient;
     console.log('✅ Database connection established');
   } catch (error) {
     console.error('❌ Failed to connect to database:', error);
@@ -73,10 +80,10 @@ async initialize(): Promise<void> {
 /**
  * Close database connection
  */
-async close(): Promise<void> {
-  // Connection is managed centrally, no need to close here
-  this.dbClient = null;
-}
+
+  async close(): Promise<void> {
+    // Connection is managed centrally, no need to close here
+    this.dbClient = null;
   }
 
   /**
@@ -214,12 +221,13 @@ async close(): Promise<void> {
       sql += ` ORDER BY similarity DESC LIMIT $${paramIndex}`;
       params.push(limit);
 
+      if (!this.dbClient) throw new Error('DB client not initialized');
       const result = await this.dbClient.query(sql, params);
-
-      return result.rows.map((row: any) => ({
-        entity: this.rowToArtifact(row),
-        similarity: parseFloat(row.similarity),
-      }));
+      return result.rows.map((row: unknown) => {
+        const entity = this.rowToCodeEntity(row);
+        const similarity = z.number().parse((row as any).similarity);
+        return { entity, similarity };
+      });
     } catch (error) {
       console.error('❌ Semantic search failed:', error);
       throw error;
@@ -274,8 +282,9 @@ async close(): Promise<void> {
       sql += ` ORDER BY frequency DESC, confidence DESC LIMIT $${paramIndex}`;
       params.push(limit);
 
+      if (!this.dbClient) throw new Error('DB client not initialized');
       const result = await this.dbClient.query(sql, params);
-      return result.rows.map((row: any) => this.rowToKnowledgePattern(row));
+      return result.rows.map((row: unknown) => this.rowToKnowledgePattern(row));
     } catch (error) {
       console.error('❌ Pattern search failed:', error);
       throw error;
@@ -285,7 +294,7 @@ async close(): Promise<void> {
   /**
    * Get repository statistics
    */
-  async getRepositoryStats(repositoryId?: string): Promise<any> {
+  async getRepositoryStats(repositoryId?: string): Promise<unknown> {
     try {
       let sql = `
         SELECT
@@ -309,6 +318,7 @@ async close(): Promise<void> {
 
       sql += ` GROUP BY ROLLUP(language, COALESCE(metadata->>'domain', 'unknown'), type)`;
 
+      if (!this.dbClient) throw new Error('DB client not initialized');
       const result = await this.dbClient.query(sql, params);
       return this.processStatsResult(result.rows);
     } catch (error) {
@@ -423,6 +433,7 @@ async close(): Promise<void> {
       
       for (const entity of batch) {
         try {
+          if (!this.dbClient) throw new Error('DB client not initialized');
           await this.dbClient.query(sql, [
             entity.id,
             entity.name,
@@ -489,16 +500,32 @@ async close(): Promise<void> {
     return parts.filter(Boolean).join(' ').trim();
   }
 
+
+  /**
+   * Generate an embedding using OpenAI's API (or compatible service)
+   */
+
+  // Use ContentProcessor for embedding generation
   private async generateTextEmbedding(text: string): Promise<number[]> {
-    // This is a placeholder - in a real implementation, you would call
-    // an embedding service like OpenAI's text-embedding-3-small
-    // For now, return a mock 512-dimensional vector
-    return Array.from({ length: 512 }, () => Math.random() - 0.5);
+    const processor = new ContentProcessor({
+      embeddingModel: this.embeddingConfig.model,
+      batchSize: this.embeddingConfig.batchSize,
+    });
+    const embeddings = await processor.generateEmbeddings([text]);
+    if (!embeddings[0]) throw new Error('Embedding generation failed');
+    return embeddings[0];
   }
 
+  /**
+   * Batch embedding generation using OpenAI API (if supported)
+   */
+
   private async generateTextEmbeddings(texts: string[]): Promise<number[][]> {
-    // Generate embeddings for multiple texts
-    return Promise.all(texts.map(text => this.generateTextEmbedding(text)));
+    const processor = new ContentProcessor({
+      embeddingModel: this.embeddingConfig.model,
+      batchSize: this.embeddingConfig.batchSize,
+    });
+    return processor.generateEmbeddings(texts);
   }
 
   private async storeEmbeddings(entities: CodeEntity[], embeddings: number[][]): Promise<void> {
@@ -512,13 +539,20 @@ async close(): Promise<void> {
     `;
 
     for (let i = 0; i < entities.length; i++) {
+      const entity = entities[i];
+      if (!entity?.id) {
+        console.warn('Skipping embedding storage for entity with missing id:', entity);
+        continue;
+      }
       try {
+        if (!this.dbClient) throw new Error('DB client not initialized');
         await this.dbClient.query(sql, [
+          entity.id,
           JSON.stringify(embeddings[i]),
           this.embeddingConfig.model,
         ]);
       } catch (error) {
-        console.warn(`Failed to store embedding for entity ${entities[i]?.id}:`, error);
+        console.warn(`Failed to store embedding for entity ${entity.id}:`, error);
       }
     }
   }
@@ -547,6 +581,7 @@ async close(): Promise<void> {
 
     for (const pattern of patterns) {
       try {
+        if (!this.dbClient) throw new Error('DB client not initialized');
         await this.dbClient.query(sql, [
           pattern.id,
           pattern.name,
@@ -604,7 +639,8 @@ async close(): Promise<void> {
       RETURNING id
     `;
 
-    const result = await this.dbClient.query(sql, [
+    if (!this.dbClient) throw new Error('DB client not initialized');
+    await this.dbClient.query(sql, [
       analysis.id,
       analysis.repositoryPath,
       analysis.name,
@@ -621,39 +657,39 @@ async close(): Promise<void> {
     return analysis;
   }
 
-  private rowToCodeEntity(row: any): CodeEntity {
+  private rowToCodeEntity(row: unknown): CodeEntity {
     return validateCodeEntity({
-      id: row.id,
-      name: row.name,
-      type: row.type,
-      language: row.language,
-      filePath: row.file_path,
-      startLine: row.start_line,
-      endLine: row.end_line,
-      signature: row.signature,
-      description: row.description,
-      parameters: row.parameters ? JSON.parse(row.parameters) : undefined,
-      returnType: row.return_type,
-      complexity: row.complexity,
-      domain: row.domain,
-      keywords: row.keywords ? JSON.parse(row.keywords) : undefined,
-      sourceCode: row.source_code,
-      metadata: row.metadata ? JSON.parse(row.metadata) : undefined,
+      id: (row as any).id,
+      name: (row as any).name,
+      type: (row as any).type,
+      language: (row as any).language,
+      filePath: (row as any).file_path,
+      startLine: (row as any).start_line,
+      endLine: (row as any).end_line,
+      signature: (row as any).signature,
+      description: (row as any).description,
+      parameters: (row as any).parameters ? JSON.parse((row as any).parameters) : undefined,
+      returnType: (row as any).return_type,
+      complexity: (row as any).complexity,
+      domain: (row as any).domain,
+      keywords: (row as any).keywords ? JSON.parse((row as any).keywords) : undefined,
+      sourceCode: (row as any).source_code,
+      metadata: (row as any).metadata ? JSON.parse((row as any).metadata) : undefined,
     });
   }
 
-  private rowToKnowledgePattern(row: any): KnowledgePattern {
+  private rowToKnowledgePattern(row: unknown): KnowledgePattern {
     return validateKnowledgePattern({
-      id: row.id,
-      name: row.name,
-      description: row.description,
-      category: row.category,
-      language: row.language,
-      pattern: row.pattern,
-      examples: JSON.parse(row.examples),
-      frequency: row.frequency,
-      confidence: row.confidence,
-      domain: row.domain,
+      id: (row as any).id,
+      name: (row as any).name,
+      description: (row as any).description,
+      category: (row as any).category,
+      language: (row as any).language,
+      pattern: (row as any).pattern,
+      examples: JSON.parse((row as any).examples),
+      frequency: (row as any).frequency,
+      confidence: (row as any).confidence,
+      domain: (row as any).domain,
     });
   }
 
@@ -667,23 +703,33 @@ async close(): Promise<void> {
     };
 
     for (const row of rows) {
-      if (!row.language && !row.domain && !row.type) {
+      const safeRow = z.object({
+        total_entities: z.string().optional(),
+        languages_count: z.string().optional(),
+        domains_count: z.string().optional(),
+        files_count: z.string().optional(),
+        language: z.string().optional(),
+        domain: z.string().optional(),
+        type: z.string().optional(),
+        count: z.string().optional(),
+      }).parse(row);
+      if (!safeRow.language && !safeRow.domain && !safeRow.type) {
         // Total row
         stats.total = {
-          totalEntities: parseInt(row.total_entities),
-          languagesCount: parseInt(row.languages_count),
-          domainsCount: parseInt(row.domains_count),
-          filesCount: parseInt(row.files_count),
+          totalEntities: parseInt(safeRow.total_entities || '0'),
+          languagesCount: parseInt(safeRow.languages_count || '0'),
+          domainsCount: parseInt(safeRow.domains_count || '0'),
+          filesCount: parseInt(safeRow.files_count || '0'),
         };
-      } else if (row.language && !row.domain && !row.type) {
+      } else if (safeRow.language && !safeRow.domain && !safeRow.type) {
         // Language totals
-        stats.byLanguage[row.language] = parseInt(row.count);
-      } else if (row.domain && !row.language && !row.type) {
+        stats.byLanguage[safeRow.language] = parseInt(safeRow.count || '0');
+      } else if (safeRow.domain && !safeRow.language && !safeRow.type) {
         // Domain totals
-        stats.byDomain[row.domain] = parseInt(row.count);
-      } else if (row.type && !row.language && !row.domain) {
+        stats.byDomain[safeRow.domain] = parseInt(safeRow.count || '0');
+      } else if (safeRow.type && !safeRow.language && !safeRow.domain) {
         // Type totals
-        stats.byType[row.type] = parseInt(row.count);
+        stats.byType[safeRow.type] = parseInt(safeRow.count || '0');
       }
     }
 
@@ -693,53 +739,47 @@ async close(): Promise<void> {
 
 // Create and export the semantic indexer actor
 export const semanticIndexerActor = fromPromise(
-  async ({ input }: { 
-    input: { 
-      operation: string;
-      repositoryPath?: string;
-      name?: string;
-      query?: string;
-      options?: any;
-    } 
-  }) => {
-    const dbConfig: DatabaseConfig = {
+  async ({ input }: { input: unknown }) => {
+    // Validate actor input
+    const InputSchema = z.object({
+      operation: z.string(),
+      repositoryPath: z.string().optional(),
+      name: z.string().optional(),
+      query: z.string().optional(),
+      options: z.record(z.unknown()).optional(),
+    });
+    const parsedInput = InputSchema.parse(input);
+    const dbConfig: DatabaseConfig = DatabaseConfigSchema.parse({
       host: process.env.POSTGRES_HOST || 'localhost',
       port: parseInt(process.env.POSTGRES_PORT || '5432'),
       database: process.env.POSTGRES_DB || 'tensorrt_oracle',
       user: process.env.POSTGRES_USER || 'postgres',
       password: process.env.POSTGRES_PASSWORD || 'your_secure_password',
       schema: process.env.POSTGRES_SCHEMA || 'tensorrt_oracle',
-    };
-
+    });
     const indexer = new SemanticIndexer(dbConfig);
-    
     try {
       await indexer.initialize();
-
-      switch (input.operation) {
+      switch (parsedInput.operation) {
         case 'index':
-          if (!input.repositoryPath || !input.name) {
+          if (!parsedInput.repositoryPath || !parsedInput.name) {
             throw new Error('Repository path and name are required for indexing');
           }
-          return await indexer.indexRepository(input.repositoryPath, input.name);
-        
+          return await indexer.indexRepository(parsedInput.repositoryPath, parsedInput.name);
         case 'search':
-          if (!input.query) {
+          if (!parsedInput.query) {
             throw new Error('Query is required for search');
           }
-          return await indexer.searchSimilar(input.query, input.options || {});
-        
+          return await indexer.searchSimilar(parsedInput.query, parsedInput.options || {});
         case 'patterns':
-          if (!input.query) {
+          if (!parsedInput.query) {
             throw new Error('Query is required for pattern search');
           }
-          return await indexer.findPatterns(input.query, input.options || {});
-        
+          return await indexer.findPatterns(parsedInput.query, parsedInput.options || {});
         case 'stats':
           return await indexer.getRepositoryStats();
-        
         default:
-          throw new Error(`Unknown operation: ${input.operation}`);
+          throw new Error(`Unknown operation: ${parsedInput.operation}`);
       }
     } finally {
       await indexer.close();

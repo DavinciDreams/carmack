@@ -1,3 +1,20 @@
+
+
+import { z } from 'zod';
+import { getDatabaseOperations } from '../db/operations.ts';
+import type { QuerySession } from '../db/schema.ts';
+import {
+  validateContinueQueryRequest,
+  SessionInfoSchema,
+  InvestigationThreadSchema,
+} from './contracts.ts';
+import type {
+  SessionInfo,
+  InvestigationThread,
+  QueryResponse,
+  ContinueQueryRequest,
+} from './contracts.ts';
+
 /**
  * Session Manager for Multi-Turn Conversations
  *
@@ -6,20 +23,6 @@
  * Follows Carmack's principles of state management and data integrity.
  */
 
-import { z } from 'zod';
-import type {
-  SessionInfo,
-  InvestigationThread,
-  QueryResponse,
-  ContinueQueryRequest,
-} from './contracts.ts';
-import {
-  validateContinueQueryRequest,
-  SessionInfoSchema,
-  InvestigationThreadSchema,
-} from './contracts.ts';
-import { getDatabaseOperations } from '../db/operations.ts';
-import type { QuerySession } from '../db/schema.ts';
 
 // =============================================================================
 // SESSION MANAGER ERRORS

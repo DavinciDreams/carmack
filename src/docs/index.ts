@@ -1,3 +1,11 @@
+import { DocumentationGenerator } from './generator.ts';
+
+import type { DocumentationRequest, DocumentationResult } from './types.ts';
+import {
+  validateDocumentationRequest,
+  validateDocumentationResult,
+} from './types.ts';
+
 /**
  * Carmack Coder Documentation System
  *
@@ -5,12 +13,10 @@
  * for generating API docs, architecture diagrams, pattern catalogs, and more.
  */
 
-export * from './ast-analyzer.js';
-export * from './generator.js';
-export * from './types.js';
+export * from './ast-analyzer.ts';
+export * from './generator.ts';
+export * from './types.ts';
 
-import { DocumentationGenerator } from './generator.js';
-import type { DocumentationRequest, DocumentationResult } from './types.js';
 
 /**
  * Main documentation API
@@ -35,7 +41,7 @@ export class DocumentationSystem {
       sourceDir?: string;
     } = {}
   ): Promise<DocumentationResult> {
-    const request: DocumentationRequest = {
+    const request = validateDocumentationRequest({
       type: 'api',
       format: options.format || 'markdown',
       outputPath: options.outputPath || './docs/api.md',
@@ -44,9 +50,9 @@ export class DocumentationSystem {
       includeExamples: true,
       sourceDir: options.sourceDir,
       sourceFiles: options.sourceFiles,
-    };
-
-    return await this.generator.generateDocumentation(request);
+    });
+    const result = await this.generator.generateDocumentation(request);
+    return validateDocumentationResult(result);
   }
 
   /**
@@ -55,7 +61,7 @@ export class DocumentationSystem {
   async generateArchitectureDocumentation(
     options: { outputPath?: string; format?: 'markdown' | 'html' | 'json'; sourceFiles?: string[]; sourceDir?: string } = {}
   ): Promise<DocumentationResult> {
-    const request: DocumentationRequest = {
+    const request = validateDocumentationRequest({
       type: 'architecture',
       format: options.format || 'markdown',
       outputPath: options.outputPath || './docs/architecture.md',
@@ -64,9 +70,9 @@ export class DocumentationSystem {
       includeExamples: true,
       sourceDir: options.sourceDir,
       sourceFiles: options.sourceFiles,
-    };
-
-    return await this.generator.generateDocumentation(request);
+    });
+    const result = await this.generator.generateDocumentation(request);
+    return validateDocumentationResult(result);
   }
 
   /**
@@ -75,7 +81,7 @@ export class DocumentationSystem {
   async generatePatternDocumentation(
     options: { outputPath?: string; format?: 'markdown' | 'html' | 'json'; sourceFiles?: string[]; sourceDir?: string } = {}
   ): Promise<DocumentationResult> {
-    const request: DocumentationRequest = {
+    const request = validateDocumentationRequest({
       type: 'patterns',
       format: options.format || 'markdown',
       outputPath: options.outputPath || './docs/patterns.md',
@@ -84,9 +90,9 @@ export class DocumentationSystem {
       includeExamples: true,
       sourceDir: options.sourceDir,
       sourceFiles: options.sourceFiles,
-    };
-
-    return await this.generator.generateDocumentation(request);
+    });
+    const result = await this.generator.generateDocumentation(request);
+    return validateDocumentationResult(result);
   }
 
   /**
@@ -95,7 +101,7 @@ export class DocumentationSystem {
   async generateUsageDocumentation(
     options: { outputPath?: string; format?: 'markdown' | 'html' | 'json'; sourceFiles?: string[]; sourceDir?: string } = {}
   ): Promise<DocumentationResult> {
-    const request: DocumentationRequest = {
+    const request = validateDocumentationRequest({
       type: 'usage',
       format: options.format || 'markdown',
       outputPath: options.outputPath || './docs/usage.md',
@@ -104,9 +110,9 @@ export class DocumentationSystem {
       includeExamples: true,
       sourceDir: options.sourceDir,
       sourceFiles: options.sourceFiles,
-    };
-
-    return await this.generator.generateDocumentation(request);
+    });
+    const result = await this.generator.generateDocumentation(request);
+    return validateDocumentationResult(result);
   }
 
   /**
@@ -164,7 +170,9 @@ export class DocumentationSystem {
    * Write documentation to files
    */
   async writeDocumentation(result: DocumentationResult): Promise<void> {
-    if (!result.outputPath) {
+    // Validate result before writing
+    const validated = validateDocumentationResult(result);
+    if (!validated.outputPath) {
       throw new Error('No output path specified');
     }
 
@@ -172,12 +180,12 @@ export class DocumentationSystem {
     const { dirname } = await import('node:path');
 
     // Ensure directory exists
-    await mkdir(dirname(result.outputPath), { recursive: true });
+    await mkdir(dirname(validated.outputPath), { recursive: true });
 
     // Write content
-    await writeFile(result.outputPath, result.content, 'utf-8');
+    await writeFile(validated.outputPath, validated.content, 'utf-8');
 
-    console.log(`Documentation written to ${result.outputPath}`);
+    console.log(`Documentation written to ${validated.outputPath}`);
   }
 
   /**

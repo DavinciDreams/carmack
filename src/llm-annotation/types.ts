@@ -1,5 +1,25 @@
 import { z } from 'zod';
 
+// CLI Options Schema (moved from llm-annotate.ts)
+export const CLIOptionsSchema = z.object({
+  directory: z.string().optional(),
+  output: z.string().optional(),
+  format: z.enum(['json', 'markdown', 'yaml']).optional(),
+  depth: z.enum(['surface', 'detailed', 'comprehensive']).optional(),
+  focus: z
+    .array(z.enum(['patterns', 'architecture', 'performance', 'security', 'maintainability']))
+    .optional(),
+  include: z.array(z.string()).optional(),
+  exclude: z.array(z.string()).optional(),
+  help: z.boolean().optional(),
+  verbose: z.boolean().optional(),
+  'no-prompts': z.boolean().optional(),
+});
+export type CLIOptions = z.infer<typeof CLIOptionsSchema>;
+export const validateCLIOptions = (data: unknown): CLIOptions => {
+  return CLIOptionsSchema.parse(data);
+};
+
 // Core annotation types for LLM consumption
 export const CodeContextSchema = z.object({
   filePath: z.string(),

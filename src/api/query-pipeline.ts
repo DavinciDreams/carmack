@@ -1,29 +1,20 @@
-/**
- * Query Processing Pipeline for TensorRT-LLM Knowledge Graph
- *
- * Orchestrates the complete query processing workflow including hybrid search,
- * graph traversal, AI analysis, and response synthesis. Follows Carmack's
- * principles of pipeline architecture and deterministic processing.
- */
 
-import { z } from 'zod';
-import type {
-  QueryRequest,
-  QueryResponse,
-  ContinueQueryRequest,
-  QueryIntent,
-  QueryComplexity,
-  EvidenceItem,
-  InvestigationThread,
-} from './contracts.ts';
+// import { z } from 'zod';
+import { AIProcessor } from './ai-processor.ts';
+import { GraphWalker } from './graph-walker.ts';
+import { QueryEngine } from './query-engine.ts';
+import { SessionManager } from './session-manager.ts';
 import {
   validateQueryRequest,
   validateContinueQueryRequest,
+  type QueryRequest,
+  type QueryResponse,
+  type ContinueQueryRequest,
+  type QueryIntent,
+  type QueryComplexity,
+  type EvidenceItem,
+  type InvestigationThread,
 } from './contracts.ts';
-import { QueryEngine } from './query-engine.ts';
-import { SessionManager } from './session-manager.ts';
-import { GraphWalker } from './graph-walker.ts';
-import { AIProcessor } from './ai-processor.ts';
 
 // =============================================================================
 // PIPELINE ERRORS
@@ -231,17 +222,31 @@ export class QueryProcessingPipeline {
       // Stage 5: AI Processing
       await this.executeStage(context, 'ai_processing', async () => {
         if (this.config.ai_processing_enabled) {
-          const aiResult = await this.aiProcessor.processQuery({
+          // Use the correct AIProcessor methods for facts, hypotheses, and synthesis
+          context.ai_facts = await this.aiProcessor.extractFacts({
             query: context.query,
             evidence: context.search_results,
             intent: context.intent,
             complexity: context.complexity,
             context: { graph_paths: context.graph_paths },
           });
-          
-          context.ai_facts = aiResult.facts;
-          context.ai_hypotheses = aiResult.hypotheses;
-          context.ai_synthesis = aiResult.synthesis;
+
+          context.ai_hypotheses = await this.aiProcessor.generateHypotheses({
+            query: context.query,
+            facts: context.ai_facts,
+            intent: context.intent,
+            complexity: context.complexity,
+            context: { graph_paths: context.graph_paths },
+          });
+
+          context.ai_synthesis = await this.aiProcessor.synthesize({
+            query: context.query,
+            facts: context.ai_facts,
+            hypotheses: context.ai_hypotheses,
+            intent: context.intent,
+            complexity: context.complexity,
+            context: { graph_paths: context.graph_paths },
+          });
         }
       });
 
@@ -314,7 +319,8 @@ export class QueryProcessingPipeline {
       const validatedRequest = validateContinueQueryRequest(request);
 
       // Get session and context hints
-      const { session, context_hints } = await this.sessionManager.continueInvestigation(
+
+      const { context_hints } = await this.sessionManager.continueInvestigation(
         sessionToken,
         validatedRequest
       );

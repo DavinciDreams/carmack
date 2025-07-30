@@ -1,5 +1,6 @@
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
+
 import type { ASTNode, ClassDoc, FunctionDoc, ModuleDoc } from './types.js';
 
 // Define proper AST-grep interfaces - exported for reuse
@@ -14,12 +15,10 @@ export interface ASTGrepNode {
   root: () => ASTGrepNode;
   getMultipleMatches?: () => Record<string, ASTGrepNode | ASTGrepNode[]>;
 }
-
 export interface ASTGrepParser {
   parse: (content: string) => ASTGrepNode;
   parseString?: (content: string, lang?: string) => ASTGrepNode;
 }
-
 // AST-grep Zod schemas for type safety - using proper interfaces instead of z.any()
 export const ASTGrepMatchSchema = z.object({
   text: z.function().returns(z.string()),
@@ -40,13 +39,11 @@ export const ASTGrepMatchSchema = z.object({
   getNode: z.function().returns(z.unknown()).optional(),
   getMultipleMatches: z.function().returns(z.array(z.unknown())).optional(),
 });
-
 export const ASTGrepLanguageSchema = z.object({
   parseString: z.function().args(z.string()).returns(z.unknown()),
   kind: z.string(),
   name: z.string(),
 });
-
 export const ASTGrepRuleSchema = z.object({
   pattern: z.string(),
   kind: z.string().optional(),
@@ -56,14 +53,12 @@ export const ASTGrepRuleSchema = z.object({
   any: z.array(z.unknown()).optional(),
   all: z.array(z.unknown()).optional(),
 });
-
 export const ASTGrepConfigSchema = z.object({
   rule: ASTGrepRuleSchema,
   constraints: z.record(z.string()).optional(),
   language: z.union([z.string(), ASTGrepLanguageSchema]).optional(),
   utils: z.record(z.unknown()).optional(),
 });
-
 export const ASTGrepInstanceSchema = z.object({
   findAll: z
     .function()
@@ -77,27 +72,22 @@ export const ASTGrepInstanceSchema = z.object({
   parse: z.function().args(z.string()).returns(z.unknown()),
   lang: z.function().args(z.string()).returns(ASTGrepLanguageSchema),
 });
-
 // Type exports for AST-grep
 export type ASTGrepMatch = z.infer<typeof ASTGrepMatchSchema>;
 export type ASTGrepLanguage = z.infer<typeof ASTGrepLanguageSchema>;
 export type ASTGrepRule = z.infer<typeof ASTGrepRuleSchema>;
 export type ASTGrepConfig = z.infer<typeof ASTGrepConfigSchema>;
 export type ASTGrepInstance = z.infer<typeof ASTGrepInstanceSchema>;
-
 // Validation helpers for AST-grep types
 export const validateASTGrepMatch = (data: unknown): ASTGrepMatch => {
   return ASTGrepMatchSchema.parse(data);
 };
-
 export const validateASTGrepConfig = (data: unknown): ASTGrepConfig => {
   return ASTGrepConfigSchema.parse(data);
 };
-
 export const validateASTGrepInstance = (data: unknown): ASTGrepInstance => {
   return ASTGrepInstanceSchema.parse(data);
 };
-
 // AST-grep integration for code analysis
 export interface ASTAnalyzer {
   analyzeFile(filePath: string): Promise<ModuleDoc>;
@@ -107,7 +97,6 @@ export interface ASTAnalyzer {
   extractImports(filePath: string): Promise<Array<{ module: string; imports: string[] }>>;
   findPatternUsage(pattern: string, filePath: string): Promise<ASTNode[]>;
 }
-
 // AST-grep patterns for TypeScript/JavaScript analysis with Zod validation
 const ASTPatternSchema = z.object({
   functions: z.object({
@@ -136,7 +125,6 @@ const ASTPatternSchema = z.object({
     typeImport: z.string(),
   }),
 });
-
 const AST_PATTERNS = ASTPatternSchema.parse({
   functions: {
     // Function declarations - using more generic wildcards
@@ -167,17 +155,14 @@ const AST_PATTERNS = ASTPatternSchema.parse({
     typeImport: 'import type { $NAMES } from "$MODULE"',
   },
 });
-
 /**
  * AST Analyzer implementation using AST-grep
  */
 export class ASTGrepAnalyzer implements ASTAnalyzer {
   private astGrep: ASTGrepParser | null = null;
-
   constructor() {
     this.initializeASTGrep();
   }
-
   private async initializeASTGrep() {
     try {
       // Import AST-grep NAPI bindings - correct destructuring
@@ -189,7 +174,6 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
       this.astGrep = null;
     }
   }
-
   async analyzeFile(filePath: string): Promise<ModuleDoc> {
     const [functions, classes, , imports] = await Promise.all([
       this.extractFunctions(filePath),
@@ -197,14 +181,12 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
       this.extractExports(filePath),
       this.extractImports(filePath),
     ]);
-
     // Extract module name from file path
     const moduleName =
       filePath
         .split('/')
         .pop()
         ?.replace(/\.(ts|js)$/, '') || 'unknown';
-
     return {
       name: moduleName,
       filePath,
@@ -219,11 +201,9 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
       dependencies: imports.map((imp) => imp.module),
     };
   }
-
   async extractFunctions(filePath: string): Promise<FunctionDoc[]> {
     const content = await this.readFile(filePath);
     const functions: FunctionDoc[] = [];
-
     if (this.astGrep) {
       // Use AST-grep for precise extraction
       functions.push(...(await this.extractFunctionsWithASTGrep(content, filePath)));
@@ -231,34 +211,27 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
       // Fallback to regex-based extraction
       functions.push(...(await this.extractFunctionsWithRegex(content, filePath)));
     }
-
     return functions;
   }
-
   async extractClasses(filePath: string): Promise<ClassDoc[]> {
     const content = await this.readFile(filePath);
     const classes: ClassDoc[] = [];
-
     if (this.astGrep) {
       classes.push(...(await this.extractClassesWithASTGrep(content, filePath)));
     } else {
       classes.push(...(await this.extractClassesWithRegex(content, filePath)));
     }
-
     return classes;
   }
-
   async extractExports(filePath: string): Promise<string[]> {
     const content = await this.readFile(filePath);
     const exports: string[] = [];
-
     // Extract export statements
     const exportPatterns = [
       /export\s+(?:function|class|interface|type|const|let|var)\s+(\w+)/g,
       /export\s+\{\s*([^}]+)\s*\}/g,
       /export\s+default\s+(\w+)/g,
     ];
-
     for (const pattern of exportPatterns) {
       let match: RegExpExecArray | null;
       // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex exec pattern
@@ -274,24 +247,19 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
         }
       }
     }
-
     return [...new Set(exports)]; // Remove duplicates
   }
-
   async extractImports(filePath: string): Promise<Array<{ module: string; imports: string[] }>> {
     const content = await this.readFile(filePath);
     const imports: Array<{ module: string; imports: string[] }> = [];
-
     // Extract import statements
     const importPattern =
       /import\s+(?:(?:\{([^}]+)\})|(?:(\w+))|(?:\*\s+as\s+(\w+)))\s+from\s+['"]([^'"]+)['"]/g;
-
     let match: RegExpExecArray | null;
     // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex exec pattern
     while ((match = importPattern.exec(content)) !== null) {
       const [, namedImports, defaultImport, namespaceImport, module] = match;
       const importNames: string[] = [];
-
       if (namedImports) {
         importNames.push(...namedImports.split(',').map((name) => name.trim()));
       }
@@ -301,24 +269,19 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
       if (namespaceImport) {
         importNames.push(namespaceImport);
       }
-
       if (module) {
         imports.push({ module, imports: importNames });
       }
     }
-
     return imports;
   }
-
   async findPatternUsage(pattern: string, filePath: string): Promise<ASTNode[]> {
     const content = await this.readFile(filePath);
     const nodes: ASTNode[] = [];
-
     if (this.astGrep) {
       try {
         const root = this.astGrep.parse(content);
         const matches = root.findAll(pattern);
-
         for (const match of matches) {
           nodes.push({
             type: 'pattern_match',
@@ -334,10 +297,8 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
         console.warn(`Failed to find pattern ${pattern} in ${filePath}:`, error);
       }
     }
-
     return nodes;
   }
-
   // Private helper methods
   private async readFile(filePath: string): Promise<string> {
     try {
@@ -348,33 +309,26 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
       return '';
     }
   }
-
   private async extractFunctionsWithASTGrep(
     content: string,
     filePath: string
   ): Promise<FunctionDoc[]> {
     const functions: FunctionDoc[] = [];
-
     try {
       if (!this.astGrep) {
         throw new Error('AST-grep not available');
       }
-
       // Parse the source content - correct API usage based on documentation
       const root = this.astGrep.parse(content);
       const rootNode = root.root();
-
       // Find function declarations using string patterns (not pattern objects)
       const functionMatches = rootNode.findAll(AST_PATTERNS.functions.functionDeclaration);
       const arrowMatches = rootNode.findAll(AST_PATTERNS.functions.arrowFunction);
-
       for (const match of [...functionMatches, ...arrowMatches]) {
         const nameMatch = match.getMatch('NAME')?.text();
-
         // Extract parameters from the match text since we use generic wildcards
         const matchText = match.text();
         const params = this.extractParametersFromText(matchText, nameMatch || '');
-
         if (nameMatch) {
           functions.push({
             name: nameMatch,
@@ -393,24 +347,20 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
     } catch (error) {
       console.warn('AST-grep function extraction failed:', error);
     }
-
     return functions;
   }
-
   private async extractFunctionsWithRegex(
     content: string,
     filePath: string
   ): Promise<FunctionDoc[]> {
     const functions: FunctionDoc[] = [];
     // const _lines = content.split('\n');
-
     // Function patterns
     const patterns = [
       /(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*\(([^)]*)\)/g,
       /(?:export\s+)?const\s+(\w+)\s*=\s*(?:async\s+)?\(([^)]*)\)\s*=>/g,
       /(\w+)\s*\(([^)]*)\)\s*\{/g, // Method definitions
     ];
-
     for (const pattern of patterns) {
       let match: RegExpExecArray | null;
       // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex exec pattern
@@ -418,7 +368,6 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
         const [fullMatch, name, params] = match;
         if (!name) continue;
         const lineNumber = content.substring(0, match.index).split('\n').length;
-
         functions.push({
           name,
           signature: `${name}(${params || ''})`,
@@ -431,29 +380,22 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
         });
       }
     }
-
     return functions;
   }
-
   private async extractClassesWithASTGrep(content: string, filePath: string): Promise<ClassDoc[]> {
     const classes: ClassDoc[] = [];
-
     try {
       if (!this.astGrep) {
         throw new Error('AST-grep not available');
       }
-
       // Parse the source content - correct API usage
       const root = this.astGrep.parse(content);
       const rootNode = root.root();
-
       // Find class declarations using string patterns
       const classMatches = rootNode.findAll(AST_PATTERNS.classes.classDeclaration);
-
       for (const match of classMatches) {
         const name = match.getMatch('NAME')?.text() || 'anonymous';
         const body = match.getMatch('BODY')?.text() || '';
-
         classes.push({
           name,
           type: content.includes(`class ${name}`) ? 'class' : 'interface',
@@ -468,22 +410,17 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
     } catch (error) {
       console.warn('AST-grep class extraction failed:', error);
     }
-
     return classes;
   }
-
   private async extractClassesWithRegex(content: string, filePath: string): Promise<ClassDoc[]> {
     const classes: ClassDoc[] = [];
-
     const classPattern =
       /(?:export\s+)?(?:class|interface)\s+(\w+)(?:\s+extends\s+(\w+))?\s*\{([^}]+)\}/g;
     let match: RegExpExecArray | null;
-
     // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex exec pattern
     while ((match = classPattern.exec(content)) !== null) {
       const [fullMatch, name, parent, body] = match;
       const lineNumber = content.substring(0, match.index).split('\n').length;
-
       classes.push({
         name: name || 'unknown',
         type: fullMatch.includes('class') ? 'class' : 'interface',
@@ -496,10 +433,8 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
         isExported: fullMatch.includes('export'),
       });
     }
-
     return classes;
   }
-
   /**
    * Extract parameter list from function text when using generic wildcards
    */
@@ -510,36 +445,30 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
       if (functionMatch?.[1] !== undefined) {
         return functionMatch[1].trim();
       }
-
       // For arrow functions: const name = (params) => ...
       const arrowMatch = functionText.match(/const\s+\w+\s*=\s*\(([^)]*)\)\s*=>/);
       if (arrowMatch?.[1] !== undefined) {
         return arrowMatch[1].trim();
       }
-
       // For arrow functions without parentheses: const name = param => ...
       const singleParamMatch = functionText.match(/const\s+\w+\s*=\s*(\w+)\s*=>/);
       if (singleParamMatch?.[1] !== undefined) {
         return singleParamMatch[1].trim();
       }
-
       return '';
     } catch (_error) {
       console.warn(`Failed to extract parameters from: ${functionText.substring(0, 50)}...`);
       return '';
     }
   }
-
   private parseParameters(
     params: string
   ): Array<{ name: string; type: string; optional: boolean }> {
     if (!params.trim()) return [];
-
     return params.split(',').map((param) => {
       const trimmed = param.trim();
       const optional = trimmed.includes('?');
       const [name, type] = trimmed.split(':').map((s) => s.trim());
-
       return {
         name: name?.replace('?', '') || 'unknown',
         type: type || 'unknown',
@@ -547,14 +476,12 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
       };
     });
   }
-
   private parseClassProperties(
     body: string
   ): Array<{ name: string; type: string; optional: boolean; readonly: boolean }> {
     const properties: Array<{ name: string; type: string; optional: boolean; readonly: boolean }> =
       [];
     const propertyPattern = /(readonly\s+)?(\w+)(\?)?\s*:\s*([^;,\n]+)/g;
-
     let match: RegExpExecArray | null;
     // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex exec pattern
     while ((match = propertyPattern.exec(body)) !== null) {
@@ -568,14 +495,11 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
         });
       }
     }
-
     return properties;
   }
-
   private async parseClassMethods(body: string, filePath: string): Promise<FunctionDoc[]> {
     const methods: FunctionDoc[] = [];
     const methodPattern = /(\w+)\s*\(([^)]*)\)\s*(?::\s*([^{]+))?\s*\{/g;
-
     let match: RegExpExecArray | null;
     // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex exec pattern
     while ((match = methodPattern.exec(body)) !== null) {
@@ -593,22 +517,18 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
         });
       }
     }
-
     return methods;
   }
-
   private async extractJSDocDescription(
     content: string,
     lineNumber: number
   ): Promise<string | undefined> {
     const lines = content.split('\n');
     let description = '';
-
     // Look backwards from the function/class line for JSDoc comments
     for (let i = lineNumber - 2; i >= 0; i--) {
       const line = lines[i]?.trim();
       if (!line) continue;
-
       if (line.startsWith('/**')) {
         // Found start of JSDoc, collect until */
         for (let j = i; j < lineNumber; j++) {
@@ -620,15 +540,12 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
         }
         break;
       }
-
       if (!line.startsWith('*') && !line.startsWith('//')) {
         break; // Hit non-comment line
       }
     }
-
     return description.trim() || undefined;
   }
-
   private isExported(content: string, name: string): boolean {
     return (
       content.includes(`export { ${name}`) ||
@@ -640,24 +557,19 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
       content.includes(`export default ${name}`)
     );
   }
-
   private async extractModuleDescription(filePath: string): Promise<string | undefined> {
     const content = await this.readFile(filePath);
     const lines = content.split('\n');
-
     // Look for file-level JSDoc or comments at the top
     let description = '';
     let inComment = false;
-
     for (const line of lines.slice(0, 20)) {
       // Check first 20 lines
       const trimmed = line.trim();
-
       if (trimmed.startsWith('/**')) {
         inComment = true;
         continue;
       }
-
       if (inComment) {
         if (trimmed.includes('*/')) {
           inComment = false;
@@ -667,41 +579,32 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
           description += `${trimmed.replace(/^\*\s?/, '')}\n`;
         }
       }
-
       if (trimmed && !trimmed.startsWith('//') && !trimmed.startsWith('import') && !inComment) {
         break; // Hit actual code
       }
     }
-
     return description.trim() || undefined;
   }
-
   private async extractTypes(filePath: string): Promise<string[]> {
     const content = await this.readFile(filePath);
     const types: string[] = [];
-
     const typePattern = /(?:export\s+)?type\s+(\w+)/g;
     let match: RegExpExecArray | null;
-
     // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex exec pattern
     while ((match = typePattern.exec(content)) !== null) {
       if (match[1]) {
         types.push(match[1]);
       }
     }
-
     return types;
   }
-
   private async extractConstants(
     filePath: string
   ): Promise<Array<{ name: string; type: string; value?: string }>> {
     const content = await this.readFile(filePath);
     const constants: Array<{ name: string; type: string; value?: string }> = [];
-
     const constPattern = /(?:export\s+)?const\s+(\w+)(?:\s*:\s*([^=]+))?\s*=\s*([^;,\n]+)/g;
     let match: RegExpExecArray | null;
-
     // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex exec pattern
     while ((match = constPattern.exec(content)) !== null) {
       const [, name, type, value] = match;
@@ -713,16 +616,13 @@ export class ASTGrepAnalyzer implements ASTAnalyzer {
         });
       }
     }
-
     return constants;
   }
 }
-
 // Create and export the analyzer actor
 export const astAnalyzerActor = fromPromise(
   async ({ input }: { input: { filePath: string; operation: string } }) => {
     const analyzer = new ASTGrepAnalyzer();
-
     switch (input.operation) {
       case 'analyze':
         return await analyzer.analyzeFile(input.filePath);

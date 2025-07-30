@@ -1,14 +1,16 @@
+import { Octokit } from '@octokit/rest';
+import { z } from 'zod';
+
+import { getEnvironmentConfig } from '../config/environment.ts';
+
 /**
- * GitHub Client for TensorRT-LLM Knowledge Graph Ingestion
+ * GitHub Client for Universal Knowledge Graph Ingestion
  *
  * Handles GitHub API operations including PR data extraction, issue fetching,
  * and commit-PR relationship mapping. Includes rate limiting and retry logic
  * following Carmack's principles of robust error handling.
  */
 
-import { Octokit } from '@octokit/rest';
-import { z } from 'zod';
-import { getEnvironmentConfig } from '../config/environment.ts';
 
 // =============================================================================
 // SCHEMAS AND TYPES
@@ -22,7 +24,7 @@ export const GitHubConfigSchema = z.object({
   owner: z.string(),
   repo: z.string(),
   baseUrl: z.string().url().default('https://api.github.com'),
-  userAgent: z.string().default('TensorRT-LLM-Knowledge-Graph/1.0'),
+  userAgent: z.string().default('Carmack-Knowledge-Graph/1.0'),
   requestTimeout: z.number().int().positive().default(30000),
   retryAttempts: z.number().int().min(0).default(3),
   retryDelay: z.number().int().positive().default(1000),
@@ -434,7 +436,7 @@ export class GitHubClient {
         comments: pr.comments || 0,
         reviewComments: pr.review_comments || 0,
         maintainerCanModify: pr.maintainer_can_modify || false,
-        rebaseable: pr.rebaseable,
+  rebaseable: pr.rebaseable ?? null,
         mergeable: pr.mergeable,
         mergeableState: pr.mergeable_state || 'unknown',
       };
@@ -546,7 +548,8 @@ export class GitHubClient {
 
       // Return the first (most relevant) PR
       const pr = response.data[0];
-      return this.getPullRequestDetails(pr.number);
+  if (!pr) throw new Error('Pull request not found');
+  return this.getPullRequestDetails(pr.number);
     } catch (error) {
       console.warn(`⚠️ Failed to find PR for commit ${commitSha}:`, error);
       return null;
@@ -604,7 +607,7 @@ export class GitHubClient {
             id: issue.id,
             number: issue.number,
             title: issue.title,
-            body: issue.body,
+            body: issue.body ?? null,
             state: issue.state as 'open' | 'closed',
             createdAt: issue.created_at,
             updatedAt: issue.updated_at,
@@ -766,14 +769,14 @@ export class GitHubClient {
 // UTILITY FUNCTIONS
 // =============================================================================
 
+
 /**
- * Create GitHub client for TensorRT-LLM repository
+ * Create a GitHub client for any repository
+ * Usage: createGitHubClient({ owner, repo, token? })
  */
-export function createTensorRTGitHubClient(token?: string): GitHubClient {
+export function createGitHubClient(config: Partial<GitHubConfig>): GitHubClient {
   return new GitHubClient({
-    owner: 'NVIDIA',
-    repo: 'TensorRT-LLM',
-    token,
+    ...config,
   });
 }
 

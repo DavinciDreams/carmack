@@ -1,12 +1,15 @@
-import { readFile, writeFile } from 'node:fs/promises';
-// Import AST-grep for syntax tree parsing
 import { js, ts } from '@ast-grep/napi';
+import { readFile, writeFile } from 'node:fs/promises';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
-import type { AstPattern, TransformationRequest } from '../types.js';
-import { type EnhancedLLMTransformationInput, EnhancedLLMTransformer } from './llm-transformation-enhanced.js';
+
+import { detectLanguageFromFile } from '../utils/language-detection.ts';
 import { filterPatternsByLanguageAndMode, createPatternFilter } from '../utils/pattern-filtering.js';
-import { detectLanguageFromFile } from '../utils/language-detection.js';
+import { type EnhancedLLMTransformationInput, EnhancedLLMTransformer } from './llm-transformation-enhanced.js';
+
+import type { AstPattern, TransformationRequest } from '../types.ts';
+
+// Import AST-grep for syntax tree parsing
 
 // AST-grep language interface
 // (Removed unused AstGrepLanguage interface)
