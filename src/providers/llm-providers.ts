@@ -291,13 +291,13 @@ validatedRequest.options?.jsonMode
         });
       } catch (error) {
         retryCount++;
-        console.error(`[LLMProvider] OpenAI request error:`, error);
+
         if (retryCount > maxRetries) {
           throw error;
         }
 
         const delay = Math.min(1000 * 2 ** retryCount, 10000);
-        console.warn(
+
           `OpenAI request failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms...`
         );
         await new Promise((resolve) => setTimeout(resolve, delay));
@@ -394,7 +394,7 @@ validatedRequest.options?.maxRetries
         }
 
         const delay = Math.min(1000 * 2 ** retryCount, 10000);
-        console.warn(
+
           `Anthropic request failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms...`
         );
         await new Promise((resolve) => setTimeout(resolve, delay));
@@ -500,7 +500,7 @@ validatedRequest.options?.maxRetries
         }
 
         const delay = Math.min(1000 * 2 ** retryCount, 10000);
-        console.warn(
+
           `OpenRouter request failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms...`
         );
         await new Promise((resolve) => setTimeout(resolve, delay));
@@ -584,7 +584,7 @@ validatedRequest.options?.maxRetries
         }
 
         const delay = Math.min(1000 * 2 ** retryCount, 5000);
-        console.warn(
+
           `Ollama request failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms...`
         );
         await new Promise((resolve) => setTimeout(resolve, delay));
@@ -656,14 +656,14 @@ export class LLMProviderManager {
         }
 
         const provider = this.getProvider(providerName, config);
-        console.log(`🤖 Attempting LLM request with ${providerName}...`);
+
 
         const response = await provider.makeRequest(request);
-        console.log(`✅ LLM request successful with ${providerName}`);
+
         return response;
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
-        console.warn(`❌ LLM request failed with ${providerName}:`, lastError.message);
+
       }
     }
 

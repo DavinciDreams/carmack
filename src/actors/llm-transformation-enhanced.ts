@@ -476,7 +476,7 @@ export class EnhancedLLMTransformer {
     const patterns = this.detectCodePatterns(content);
     const issues = this.detectCodeIssues(content);
 
-    const detectedFramework = context?.framework || this.detectFramework(imports);
+context?.framework
 
     const result: {
       language: string;
@@ -520,7 +520,7 @@ export class EnhancedLLMTransformer {
     context: FileContextAnalysis,
     request?: TransformationRequest
   ): string {
-    const customPrompt = request?.prompt || this.getDefaultLLMTransformationGoals(context);
+request?.prompt
 
     return `You are an expert code transformation assistant specializing in complex transformations that require semantic understanding and type inference. This code has already been processed by template and AST transformations - you should focus on intelligent, context-aware improvements.
 
@@ -603,7 +603,7 @@ Focus on modern best practices and clean code principles.`;
     } catch (parseError) {
       // If not JSON, try to extract code from markdown blocks
       const codeMatch = response.match(/```[\w]*\n([\s\S]*?)\n```/);
-      const extractedCode = codeMatch?.[1]?.trim() || null;
+codeMatch?.[1]?.trim
 
       // Use Zod to create a valid response with defaults
       const fallbackResponse = LLMTransformationResponseSchema.parse({
