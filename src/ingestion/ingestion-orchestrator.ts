@@ -1,10 +1,31 @@
+// =====================
+// ENTITY INTERFACES
+// =====================
+
+export interface PRArtifact {
+  number: number;
+  mergeCommitSha?: string;
+  [key: string]: unknown;
+}
+
+export interface Artifact {
+  id: string | number;
+  commit_hash?: string;
+  metadata?: {
+    number?: number;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
 import { z } from 'zod';
 
 import { getDatabaseManager } from '../db/connection.ts';
-import { ASTAnalyzer } from './ast-analyzer.ts';
-import { ContentProcessor } from './content-processor.ts';
-import { GitHubClient } from './github-client.ts';
+import { ASTAnalyzer } from '../docs-generator/ast-analyzer';
+import { ModuleDocSchema } from '../docs-generator/types';
+import { ContentProcessor, ProcessingResultSchema } from './content-processor.ts';
+import { GitHubClient, PullRequestSchema } from './github-client.ts';
 import { RepositoryManager, createRepositoryManager } from './repository-manager.ts';
+import { CommitMetadataSchema, FileContentMetadataSchema, FileMetadataSchema } from '../types/unified-schemas.ts';
 
 
 /**
@@ -208,38 +229,49 @@ export class IngestionOrchestrator {
       const commits = await this.extractCommits();
       
       // Phase 3: Fetch GitHub Data
-      let prs: any[] = [];
+  let prs: z.infer<typeof PullRequestSchema>[] = [];
       if (this.config.enableGitHubData) {
         await this.updateProgress('fetching_prs', 'Fetching GitHub PR data');
         prs = await this.fetchPRs();
       }
-      
+
       // Phase 4: Filter and Process Files
       await this.updateProgress('filtering_files', 'Filtering relevant files');
       const files = await this.filterFiles();
-      
+
       // Phase 5: AST Analysis
-      let astResults: Map<string, any> = new Map();
+      let astResults: Map<string, z.infer<typeof ModuleDocSchema>> = new Map();
       if (this.config.enableAST) {
         await this.updateProgress('analyzing_ast', 'Analyzing code structure');
-        astResults = await this.analyzeAST(files);
+        // Map FileContentMetadata to FileMetadataSchema shape for AST analysis
+        const fileMetas = files.map(f => ({
+          id: f.id,
+          repositoryId: f.repositoryId || 'unknown-repo-id',
+          path: f.path,
+          language: f.language,
+          size: f.size,
+          createdAt: f.createdAt,
+          updatedAt: f.updatedAt,
+          embedding: undefined,
+        }));
+        astResults = await this.analyzeAST(fileMetas);
       }
-      
+
       // Phase 6: Content Processing
       await this.updateProgress('processing_content', 'Processing file content');
       const processedContent = await this.processContent(files, astResults);
-      
+
       // Phase 7: Store Data
       await this.updateProgress('storing_data', 'Storing data in knowledge graph');
-      const { artifacts, cstNodes } = await this.storeData(commits, prs, processedContent);
-      
+  const { artifacts } = await this.storeData(commits, prs, processedContent);
+
       // Phase 8: Build Relationships
       await this.updateProgress('building_relationships', 'Building graph relationships');
-      const relationships = await this.buildRelationships(commits, prs, artifacts, cstNodes);
-      
+      const relationships = await this.buildRelationships(prs, artifacts);
+
       // Phase 9: Complete
       await this.updateProgress('completed', 'Ingestion completed successfully');
-      
+
       const result: IngestionResult = {
         success: true,
         progress: this.progress,
@@ -260,7 +292,7 @@ export class IngestionOrchestrator {
 
       console.log('✅ Ingestion completed successfully!');
       console.log(`📊 Summary: ${artifacts.length} artifacts, ${relationships.length} relationships`);
-      
+
       return IngestionResultSchema.parse(result);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -341,33 +373,11 @@ export class IngestionOrchestrator {
     }
   }
 
-  /**
-   * Clone or update repository
-   */
-  private async cloneRepository(): Promise<void> {
-    try {
-      const exists = await this.repositoryManager.repositoryExists();
-      
-      if (exists) {
-        console.log('📁 Repository exists, updating...');
-        await this.repositoryManager.updateRepository();
-      } else {
-        console.log('📥 Cloning repository...');
-        await this.repositoryManager.cloneRepository();
-      }
-    } catch (error) {
-      throw new IngestionError(
-        'Failed to clone repository',
-        'cloning_repository',
-        { error: error instanceof Error ? error.message : String(error) }
-      );
-    }
-  }
 
   /**
    * Extract commit history
    */
-  private async extractCommits(): Promise<any[]> {
+  private async extractCommits(): Promise<z.infer<typeof CommitMetadataSchema>[]> {
     try {
       console.log('📜 Extracting commit history...');
       
@@ -375,11 +385,11 @@ export class IngestionOrchestrator {
         maxCount: this.config.maxCommits,
         includeDiff: true,
       });
-      
-      this.progress.metrics.commitsProcessed = commits.length;
-      console.log(`✅ Extracted ${commits.length} commits`);
-      
-      return commits;
+      // Validate all commits
+  const safeCommits = commits.map(c => CommitMetadataSchema.parse(c));
+      this.progress.metrics.commitsProcessed = safeCommits.length;
+      console.log(`✅ Extracted ${safeCommits.length} commits`);
+      return safeCommits;
     } catch (error) {
       throw new IngestionError(
         'Failed to extract commits',
@@ -392,7 +402,7 @@ export class IngestionOrchestrator {
   /**
    * Fetch GitHub PR data
    */
-  private async fetchPRs(): Promise<any[]> {
+  private async fetchPRs(): Promise<z.infer<typeof PullRequestSchema>[]> {
     try {
       console.log('🔄 Fetching GitHub PR data...');
       
@@ -400,11 +410,11 @@ export class IngestionOrchestrator {
         state: 'all',
         maxPages: Math.ceil(this.config.maxPRs / 100),
       });
-      
-      this.progress.metrics.prsProcessed = prs.length;
-      console.log(`✅ Fetched ${prs.length} PRs`);
-      
-      return prs;
+      // Validate all PRs
+  const safePRs = prs.map(pr => PullRequestSchema.parse(pr));
+      this.progress.metrics.prsProcessed = safePRs.length;
+      console.log(`✅ Fetched ${safePRs.length} PRs`);
+      return safePRs;
     } catch (error) {
       this.progress.warnings.push(`Failed to fetch PRs: ${error}`);
       console.warn('⚠️ Failed to fetch PRs, continuing without GitHub data');
@@ -415,26 +425,25 @@ export class IngestionOrchestrator {
   /**
    * Filter relevant files
    */
-  private async filterFiles(): Promise<any[]> {
+  private async filterFiles(): Promise<z.infer<typeof FileContentMetadataSchema>[]> {
     try {
       console.log('🔍 Filtering relevant files...');
       
       const filePaths = await this.repositoryManager.getFilteredFiles();
       const limitedPaths = filePaths.slice(0, this.config.maxFiles);
       
-      const files: any[] = [];
+  const files: z.infer<typeof FileContentMetadataSchema>[] = [];
       for (const filePath of limitedPaths) {
         try {
           const fileContent = await this.repositoryManager.readFileContent(filePath);
-          files.push(fileContent);
+          // Validate file content
+          files.push(FileContentMetadataSchema.parse(fileContent));
         } catch (error) {
           this.progress.warnings.push(`Failed to read file ${filePath}: ${error}`);
         }
       }
-      
       this.progress.metrics.filesProcessed = files.length;
       console.log(`✅ Filtered ${files.length} files`);
-      
       return files;
     } catch (error) {
       throw new IngestionError(
@@ -448,17 +457,25 @@ export class IngestionOrchestrator {
   /**
    * Analyze AST for files
    */
-  private async analyzeAST(files: any[]): Promise<Map<string, any>> {
+  private async analyzeAST(files: z.infer<typeof FileMetadataSchema>[]): Promise<Map<string, z.infer<typeof ModuleDocSchema>>> {
     try {
       console.log('🔍 Analyzing AST structures...');
       
-      const astResults = new Map();
-      const results = await this.astAnalyzer.analyzeFiles(files);
-      
-      for (const result of results) {
-        astResults.set(result.filePath, result);
+      const astResults = new Map<string, z.infer<typeof ModuleDocSchema>>();
+      const results: z.infer<typeof ModuleDocSchema>[] = [];
+      for (const file of files) {
+        try {
+          const result = await this.astAnalyzer.analyzeFile(file.path);
+          if (result && result.filePath) {
+            // Validate AST result
+            const safeResult = ModuleDocSchema.parse(result);
+            astResults.set(result.filePath, safeResult);
+            results.push(safeResult);
+          }
+        } catch (error) {
+          this.progress.warnings.push(`AST analysis failed for file: ${file?.path || '[unknown]'}: ${error}`);
+        }
       }
-      
       console.log(`✅ Analyzed AST for ${results.length} files`);
       return astResults;
     } catch (error) {
@@ -471,17 +488,31 @@ export class IngestionOrchestrator {
   /**
    * Process content and generate embeddings
    */
-  private async processContent(files: any[], astResults: Map<string, any>): Promise<any[]> {
+  private async processContent(
+    files: z.infer<typeof FileContentMetadataSchema>[],
+    astResults: Map<string, z.infer<typeof ModuleDocSchema>>
+  ): Promise<z.infer<typeof ProcessingResultSchema>[]> {
     try {
       console.log('🔄 Processing content and generating embeddings...');
-      
-      const results = await this.contentProcessor.processFiles(files, astResults);
-      
-      const totalEmbeddings = results.reduce((sum, r) => sum + r.embeddings.length, 0);
+      // Map FileContentMetadata to FileMetadataSchema shape (repositoryId required, content, etc.)
+      const fileMetas = files.map(f => ({
+        id: f.id,
+        repositoryId: f.repositoryId || 'unknown-repo-id',
+        path: f.path,
+        language: f.language,
+        size: f.size,
+        createdAt: f.createdAt,
+        updatedAt: f.updatedAt,
+        embedding: undefined,
+        content: f.content,
+      }));
+      const results = await this.contentProcessor.processFiles(fileMetas, astResults);
+      // Validate all processing results
+      const safeResults = results.map(r => ProcessingResultSchema.parse(r));
+      const totalEmbeddings = safeResults.reduce((sum, r) => sum + r.embeddings.length, 0);
       this.progress.metrics.embeddingsGenerated = totalEmbeddings;
-      
-      console.log(`✅ Processed ${results.length} files, generated ${totalEmbeddings} embeddings`);
-      return results;
+      console.log(`✅ Processed ${safeResults.length} files, generated ${totalEmbeddings} embeddings`);
+      return safeResults;
     } catch (error) {
       throw new IngestionError(
         'Failed to process content',
@@ -495,10 +526,10 @@ export class IngestionOrchestrator {
    * Store data in database
    */
   private async storeData(
-    commits: any[],
-    prs: any[],
-    processedContent: any[]
-  ): Promise<{ artifacts: any[]; cstNodes: any[] }> {
+  commits: z.infer<typeof CommitMetadataSchema>[],
+  prs: z.infer<typeof PullRequestSchema>[],
+  processedContent: z.infer<typeof ProcessingResultSchema>[]
+  ): Promise<{ artifacts: unknown[]; cstNodes: unknown[] }> {
     try {
       console.log('💾 Storing data in knowledge graph...');
       
@@ -522,12 +553,10 @@ export class IngestionOrchestrator {
             diff: commit.diff,
           },
         };
-        
         const result = await db.query(
           'INSERT INTO artifacts (type, name, description, commit_hash, author_name, author_email, created_date, repository_url, metadata) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id',
           [artifact.type, artifact.name, artifact.description, artifact.commit_hash, artifact.author_name, artifact.author_email, artifact.created_date, artifact.repository_url, JSON.stringify(artifact.metadata)]
         );
-        
         artifacts.push({ ...artifact, id: result.rows[0].id });
       }
       
@@ -548,12 +577,10 @@ export class IngestionOrchestrator {
             labels: pr.labels,
           },
         };
-        
         const result = await db.query(
           'INSERT INTO artifacts (type, name, description, author_name, created_date, repository_url, metadata) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
           [artifact.type, artifact.name, artifact.description, artifact.author_name, artifact.created_date, artifact.repository_url, JSON.stringify(artifact.metadata)]
         );
-        
         artifacts.push({ ...artifact, id: result.rows[0].id });
       }
       
@@ -571,12 +598,10 @@ export class IngestionOrchestrator {
             chunkCount: content.chunks.length,
           },
         };
-        
         const result = await db.query(
           'INSERT INTO artifacts (type, name, description, file_path, language, repository_url, metadata) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
           [artifact.type, artifact.name, artifact.description, artifact.file_path, artifact.language, artifact.repository_url, JSON.stringify(artifact.metadata)]
         );
-        
         artifacts.push({ ...artifact, id: result.rows[0].id });
       }
       
@@ -596,46 +621,74 @@ export class IngestionOrchestrator {
   /**
    * Build relationships between artifacts
    */
+  // Zod schemas for relationship building
+  private static readonly RelationshipSchema = z.object({
+    source_id: z.union([z.string(), z.number()]),
+    target_id: z.union([z.string(), z.number()]),
+    relation_type: z.string(),
+    confidence: z.number(),
+    evidence: z.string(),
+  }).strict();
+
+  private static readonly PRArtifactSchema = z.object({
+    number: z.number(),
+    mergeCommitSha: z.string().optional(),
+    // ... add more fields as needed
+  }).passthrough();
+
+  private static readonly ArtifactSchema = z.object({
+    id: z.union([z.string(), z.number()]),
+    commit_hash: z.string().optional(),
+    metadata: z.object({
+      number: z.number().optional(),
+    }).passthrough().optional(),
+  }).passthrough();
+
+  /**
+   * Build relationships between artifacts, with Zod validation
+   */
   private async buildRelationships(
-    commits: any[],
-    prs: any[],
-    artifacts: any[],
-    cstNodes: any[]
-  ): Promise<any[]> {
+    prs: unknown[],
+    artifacts: unknown[]
+  ): Promise<Array<z.infer<typeof IngestionOrchestrator.RelationshipSchema>>> {
     try {
       console.log('🔗 Building graph relationships...');
       
       const db = getDatabaseManager();
-      const relationships: any[] = [];
-      
+      const relationships: Array<z.infer<typeof IngestionOrchestrator.RelationshipSchema>> = [];
+
+      // Zod-validate all inputs
+  const safePRs = prs.map((pr) => IngestionOrchestrator.PRArtifactSchema.parse(pr));
+  const safeArtifacts = artifacts.map((a) => IngestionOrchestrator.ArtifactSchema.parse(a));
+
       // Create commit-PR relationships
-      for (const pr of prs) {
+      for (const pr of safePRs) {
         if (pr.mergeCommitSha) {
-          const commitArtifact = artifacts.find(a => a.commit_hash === pr.mergeCommitSha);
-          const prArtifact = artifacts.find(a => a.metadata?.number === pr.number);
-          
+          const commitArtifact = safeArtifacts.find(a => a.commit_hash === pr.mergeCommitSha);
+          const prArtifact = safeArtifacts.find(a => a.metadata?.number === pr.number);
+
           if (commitArtifact && prArtifact) {
-            const relationship = {
+            const relationship = IngestionOrchestrator.RelationshipSchema.parse({
               source_id: commitArtifact.id,
               target_id: prArtifact.id,
               relation_type: 'pr_link',
               confidence: 1.0,
               evidence: 'Merge commit SHA match',
-            };
-            
+            });
+
             await db.query(
               'INSERT INTO graph_edges (source_id, target_id, relation_type, confidence, evidence) VALUES ($1, $2, $3, $4, $5)',
               [relationship.source_id, relationship.target_id, relationship.relation_type, relationship.confidence, relationship.evidence]
             );
-            
+
             relationships.push(relationship);
           }
         }
       }
-      
+
       this.progress.metrics.relationshipsCreated = relationships.length;
       console.log(`✅ Built ${relationships.length} relationships`);
-      
+
       return relationships;
     } catch (error) {
       throw new IngestionError(

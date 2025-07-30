@@ -19,8 +19,8 @@ export * from './jobs/index.ts';
 // Testing and CLI
 
 export { main as IngestionTestMain } from './test-ingestion-pipeline.ts';
-export { IngestionCLI, parseCommandLineArgs } from './cli.ts';
-export { main as IngestionCLIMain } from './cli.ts';
+export { IngestionCLI, parseCommandLineArgs } from '../cli/knowledge-graph-cli.ts';
+export { main as IngestionCLIMain } from '../cli/knowledge-graph-cli.ts';
 
 // Re-export commonly used functions
 

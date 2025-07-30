@@ -14,7 +14,7 @@ import { analysisActor } from '../../src/actors/analysis.js';
 import { gitActor } from '../../src/actors/git.js';
 import { patternDiscoveryActor } from '../../src/actors/pattern-discovery.js';
 import { patternLearningActor } from '../../src/actors/pattern-learning.js';
-import { transformationActor } from '../../src/actors/transformation.js';
+import { astGrepTransformationActor } from '../../src/actors/ast-grep-transformation.js';
 import { validationActor } from '../../src/actors/validation.js';
 // Import types
 import type { AstPattern } from '../../src/types.js';
@@ -98,18 +98,36 @@ export class IntegrationTestSuite {
 
     // 2. Transformation
     const transformationInput = {
-      mode: 'template' as const,
-      files: [testFile],
-      patterns,
+      options: {
+        dryRun: false,
+        maxComplexity: 10,
+        enableBatching: true,
+        skipConflicts: false,
+        preserveFormatting: true,
+        maxMatchesPerPattern: 100,
+      },
+      patterns: patterns.map((p) => ({
+        ...p,
+        category: typeof p.category === 'string' ? p.category : 'uncategorized',
+        pattern: {
+          rule: {
+            pattern: typeof p.pattern === 'string' ? p.pattern : undefined,
+          },
+        },
+        replacement: typeof p.replacement === 'string'
+          ? { template: p.replacement }
+          : p.replacement,
+      })),
+      targetFiles: [testFile],
     };
 
-    const transformationActorInstance = createActor(transformationActor, {
+    const astGrepTransformationActorInstance = createActor(astGrepTransformationActor, {
       input: transformationInput,
     });
-    transformationActorInstance.start();
+    astGrepTransformationActorInstance.start();
 
     const transformationResult = await waitFor(
-      transformationActorInstance,
+      astGrepTransformationActorInstance,
       (state) => state.status === 'done',
       { timeout: 15000 }
     );
@@ -177,18 +195,36 @@ export class IntegrationTestSuite {
 
     // Transformation with multiple files
     const transformationInput = {
-      mode: 'template' as const,
-      files,
-      patterns,
+      options: {
+        dryRun: false,
+        maxComplexity: 10,
+        enableBatching: true,
+        skipConflicts: false,
+        preserveFormatting: true,
+        maxMatchesPerPattern: 100,
+      },
+      patterns: patterns.map((p) => ({
+        ...p,
+        category: typeof p.category === 'string' ? p.category : 'uncategorized',
+        pattern: {
+          rule: {
+            pattern: typeof p.pattern === 'string' ? p.pattern : undefined,
+          },
+        },
+        replacement: typeof p.replacement === 'string'
+          ? { template: p.replacement }
+          : p.replacement,
+      })),
+      targetFiles: files,
     };
 
-    const transformationActorInstance = createActor(transformationActor, {
+    const astGrepTransformationActorInstance = createActor(astGrepTransformationActor, {
       input: transformationInput,
     });
-    transformationActorInstance.start();
+    astGrepTransformationActorInstance.start();
 
     const transformationResult = await waitFor(
-      transformationActorInstance,
+      astGrepTransformationActorInstance,
       (state) => state.status === 'done',
       { timeout: 20000 }
     );
@@ -245,12 +281,30 @@ export class IntegrationTestSuite {
     ];
 
     const transformationInput = {
-      mode: 'ast' as const,
-      files: [testFile],
-      patterns: astPatterns,
+      options: {
+        dryRun: false,
+        maxComplexity: 10,
+        enableBatching: true,
+        skipConflicts: false,
+        preserveFormatting: true,
+        maxMatchesPerPattern: 100,
+      },
+      patterns: astPatterns.map((p) => ({
+        ...p,
+        category: typeof p.category === 'string' ? p.category : 'uncategorized',
+        pattern: {
+          rule: {
+            pattern: typeof p.pattern === 'string' ? p.pattern : undefined,
+          },
+        },
+        replacement: typeof p.replacement === 'string'
+          ? { template: p.replacement }
+          : p.replacement,
+      })),
+      targetFiles: [testFile],
     };
 
-    const transformationActorInstance = createActor(transformationActor, {
+    const transformationActorInstance = createActor(astGrepTransformationActor, {
       input: transformationInput,
     });
     transformationActorInstance.start();
@@ -460,6 +514,7 @@ export class IntegrationTestSuite {
 
     // Test pattern learning
     const learningInput = {
+      id: 'test-learning-input',
       operation: 'learn' as const,
       transformation: {
         id: 'test-transformation',
@@ -469,11 +524,25 @@ export class IntegrationTestSuite {
         endTime: Date.now(),
         errors: [],
         summary: 'Test transformation',
+        complexity: {
+          cyclomaticComplexity: 1,
+          cognitiveComplexity: 1,
+          linesOfCode: 10,
+          nestingDepth: 1,
+          functionCount: 1,
+          classCount: 1,
+        },
+        validation: {
+          isValid: true,
+          errors: [],
+          warnings: [],
+          fixableIssues: 0,
+        },
       },
       patterns: TestFixtures.createTestPatterns().safe,
       context: {
         codebase: {
-          language: 'typescript',
+          language: 'typescript' as const,
           complexity: 5,
           size: 1000,
         },
@@ -485,7 +554,8 @@ export class IntegrationTestSuite {
       },
     };
 
-    const learningActorInstance = createActor(patternLearningActor, { input: learningInput });
+  console.log('LEARNING INPUT DEBUG:', JSON.stringify(learningInput, null, 2));
+  const learningActorInstance = createActor(patternLearningActor, { input: learningInput });
     learningActorInstance.start();
 
     const learningResult = await waitFor(
@@ -624,12 +694,30 @@ export class PerformanceRegressionSuite {
     const startTime = performance.now();
 
     const transformationInput = {
-      mode: 'template' as const,
-      files: [testFile],
-      patterns,
+      options: {
+        dryRun: false,
+        maxComplexity: 10,
+        enableBatching: true,
+        skipConflicts: false,
+        preserveFormatting: true,
+        maxMatchesPerPattern: 100,
+      },
+      patterns: patterns.map((p) => ({
+        ...p,
+        category: typeof p.category === 'string' ? p.category : 'uncategorized',
+        pattern: {
+          rule: {
+            pattern: typeof p.pattern === 'string' ? p.pattern : undefined,
+          },
+        },
+        replacement: typeof p.replacement === 'string'
+          ? { template: p.replacement }
+          : p.replacement,
+      })),
+      targetFiles: [testFile],
     };
 
-    const transformationActorInstance = createActor(transformationActor, {
+    const transformationActorInstance = createActor(astGrepTransformationActor, {
       input: transformationInput,
     });
     transformationActorInstance.start();

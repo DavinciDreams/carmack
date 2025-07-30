@@ -13,7 +13,9 @@ import type { AstPattern, ComplexityMetrics } from '../types.js';
 
 // Canonical language enum (should match pattern-discovery)
 export const SupportedLanguageEnum = [
-  'typescript', 'javascript', 'python', 'cpp', 'c', 'java', 'go', 'rust', 'ruby', 'php', 'csharp', 'kotlin', 'swift', 'scala', 'haskell', 'elixir', 'shell', 'json', 'yaml', 'toml', 'lua', 'perl', 'r', 'dart', 'other',
+  'typescript', 'javascript', 'python', 'cpp', 'c', 'java', 'go', 'rust', 'ruby', 'php', 'csharp', 'kotlin', 'swift', 'scala', 'haskell', 'elixir', 'shell', 'json', 'yaml', 'toml', 'lua', 'perl', 'r', 'dart',
+  'xml', 'ini', 'sql', 'docker', 'make',
+  'other',
 ] as const;
 export type SupportedLanguage = typeof SupportedLanguageEnum[number];
 

@@ -1,7 +1,7 @@
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
 
-import { SemanticIndexer } from './semantic-indexer.ts';
+import { SemanticIndexer } from '../ingestion/semantic-indexer.ts';
 
 import type {
   OracleQuery,
@@ -9,8 +9,8 @@ import type {
   KnowledgePattern,
   LanguageType,
   DomainType,
-} from './types.ts';
-import { validateOracleQuery } from './types.ts';
+} from '../docs-generator/types.ts';
+import { validateOracleQuery } from '../docs-generator/types.ts';
 
 // Query intent classification
 const INTENT_PATTERNS = {

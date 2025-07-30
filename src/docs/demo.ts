@@ -1,6 +1,7 @@
 import { Pool } from 'pg';
-import { SemanticIndexer } from './semantic-indexer';
+
 import { OracleQueryProcessor } from './oracle-query-processor';
+import { SemanticIndexer } from '../ingestion/semantic-indexer';
 
 async function runDemo() {
   console.log('🚀 Starting TensorRT Knowledge Graph Demo\n');

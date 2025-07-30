@@ -406,12 +406,38 @@ export class GitHubClient {
           name: reviewer.name || null,
           avatarUrl: reviewer.avatar_url,
         })),
-        labels: (pr.labels || []).map(label => ({
-          id: typeof label === 'object' && label && 'id' in label ? label.id as number : 0,
-          name: typeof label === 'string' ? label : (label as any)?.name || '',
-          color: typeof label === 'object' && label && 'color' in label ? (label as any).color : '',
-          description: typeof label === 'object' && label && 'description' in label ? (label as any).description : null,
-        })),
+        labels: (pr.labels || []).map(label => {
+          if (typeof label === 'object' && label && 'id' in label && 'name' in label && 'color' in label) {
+            const safeLabel = z.object({
+              id: z.number().int(),
+              name: z.string(),
+              color: z.string(),
+              description: z.string().nullable().optional(),
+            }).safeParse(label);
+            if (safeLabel.success) {
+              return {
+                id: safeLabel.data.id,
+                name: safeLabel.data.name,
+                color: safeLabel.data.color,
+                description: safeLabel.data.description ?? null,
+              };
+            }
+          }
+          if (typeof label === 'string') {
+            return {
+              id: 0,
+              name: label,
+              color: '',
+              description: null,
+            };
+          }
+          return {
+            id: 0,
+            name: '',
+            color: '',
+            description: null,
+          };
+        }),
         head: {
           ref: pr.head.ref,
           sha: pr.head.sha,
@@ -624,12 +650,38 @@ export class GitHubClient {
               name: assignee?.name || null,
               avatarUrl: assignee?.avatar_url || '',
             })),
-            labels: (issue.labels || []).map(label => ({
-              id: typeof label === 'object' && label && 'id' in label ? label.id as number : 0,
-              name: typeof label === 'string' ? label : (label as any)?.name || '',
-              color: typeof label === 'object' && label && 'color' in label ? (label as any).color : '',
-              description: typeof label === 'object' && label && 'description' in label ? (label as any).description : null,
-            })),
+            labels: (issue.labels || []).map(label => {
+              if (typeof label === 'object' && label && 'id' in label && 'name' in label && 'color' in label) {
+                const safeLabel = z.object({
+                  id: z.number().int(),
+                  name: z.string(),
+                  color: z.string(),
+                  description: z.string().nullable().optional(),
+                }).safeParse(label);
+                if (safeLabel.success) {
+                  return {
+                    id: safeLabel.data.id,
+                    name: safeLabel.data.name,
+                    color: safeLabel.data.color,
+                    description: safeLabel.data.description ?? null,
+                  };
+                }
+              }
+              if (typeof label === 'string') {
+                return {
+                  id: 0,
+                  name: label,
+                  color: '',
+                  description: null,
+                };
+              }
+              return {
+                id: 0,
+                name: '',
+                color: '',
+                description: null,
+              };
+            }),
             comments: issue.comments || 0,
             locked: issue.locked || false,
             milestone: issue.milestone ? {
@@ -740,29 +792,30 @@ export class GitHubClient {
   /**
    * Retry request with exponential backoff
    */
-  private async retryRequest<T>(
-    request: () => Promise<T>,
-    attempt = 1
-  ): Promise<T> {
-    try {
-      return await request();
-    } catch (error: any) {
-      if (attempt >= this.config.retryAttempts) {
-        throw error;
-      }
 
-      const isRetryable = error.status >= 500 || error.status === 429;
-      if (!isRetryable) {
-        throw error;
-      }
 
-      const delay = this.config.retryDelay * Math.pow(2, attempt - 1);
-      console.log(`⚠️ Request failed (attempt ${attempt}), retrying in ${delay}ms...`);
-      
-      await new Promise(resolve => setTimeout(resolve, delay));
-      return this.retryRequest(request, attempt + 1);
+    private async retryRequest<T>(
+      request: () => Promise<T>,
+      attempt = 1
+    ): Promise<T> {
+      try {
+        return await request();
+      } catch (error) {
+        const errorObj = typeof error === 'object' && error !== null ? error as Record<string, unknown> : {};
+        const status = typeof errorObj['status'] === 'number' ? errorObj['status'] as number : 0;
+        if (attempt >= this.config.retryAttempts) {
+          throw error;
+        }
+        const isRetryable = status >= 500 || status === 429;
+        if (!isRetryable) {
+          throw error;
+        }
+        const delay = this.config.retryDelay * Math.pow(2, attempt - 1);
+        console.log(`⚠️ Request failed (attempt ${attempt}), retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return this.retryRequest(request, attempt + 1);
+      }
     }
-  }
 }
 
 // =============================================================================

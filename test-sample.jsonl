@@ -1,4 +1,0 @@
-{"uuid": "test-1", "timestamp": "2024-01-01T10:00:00Z", "parentUuid": null, "message": {"role": "user", "content": "Hello, can you help me?"}}
-{"uuid": "test-2", "timestamp": "2024-01-01T10:00:01Z", "parentUuid": "test-1", "message": {"role": "assistant", "content": "Hello! I'd be happy to help you. What do you need assistance with?"}}
-{"uuid": "test-3", "timestamp": "2024-01-01T10:00:02Z", "parentUuid": "test-2", "message": {"role": "user", "content": "I need help with understanding TypeScript types."}}
-{"uuid": "test-4", "timestamp": "2024-01-01T10:00:03Z", "parentUuid": "test-3", "message": {"role": "assistant", "content": "TypeScript types are a way to specify the shape of data in your code. They help catch errors at compile time..."}}
