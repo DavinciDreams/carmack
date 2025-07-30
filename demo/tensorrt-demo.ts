@@ -11,10 +11,11 @@
  */
 
 import { OracleQueryProcessor } from '../src/docs/oracle-query-processor.js';
-import { SemanticIndexer } from '../src/docs/semantic-indexer.js';
+import { SemanticIndexer } from '../src/ingestion/semantic-indexer.js';
 import { getDatabaseManager } from '../src/db/connection.ts';
 import { getEnvironmentConfig } from '../src/config/environment.js';
 import { performance } from 'perf_hooks';
+import { z } from 'zod';
 
 // Demo configuration
 const DEMO_CONFIG = {
@@ -100,7 +101,12 @@ class TensorRTDemo {
     };
     
     this.processor = new OracleQueryProcessor(dbConfig);
-    this.indexer = new SemanticIndexer(dbConfig);
+    this.indexer = new SemanticIndexer({
+      model: process.env.SEMANTIC_INDEXER_MODEL || 'gpt-3.5-turbo',
+      maxTokens: process.env.SEMANTIC_INDEXER_MAX_TOKENS ? Number(process.env.SEMANTIC_INDEXER_MAX_TOKENS) : 2048,
+      batchSize: process.env.SEMANTIC_INDEXER_BATCH_SIZE ? Number(process.env.SEMANTIC_INDEXER_BATCH_SIZE) : 32,
+      apiKey: process.env.ANTHROPIC_API_KEY, // Uncomment if needed
+    });
     this.metrics = {
       totalQueries: 0,
       averageResponseTime: 0,
@@ -142,7 +148,27 @@ class TensorRTDemo {
       console.log('✅ TensorRT Oracle schema validated');
       
       // Show database schema info
-      const stats = await this.indexer.getRepositoryStats();
+      const statsRaw = await this.indexer.getRepositoryStats();
+
+      // Zod schema for stats validation
+      const StatsSchema = z.object({
+        total: z.object({
+          totalEntities: z.number(),
+          languagesCount: z.number(),
+          domainsCount: z.number(),
+          filesCount: z.number(),
+        }).strict().optional()
+      }).strict();
+
+      let stats: z.infer<typeof StatsSchema>;
+      try {
+        stats = StatsSchema.parse(statsRaw);
+      } catch (e) {
+        console.error('❌ Invalid stats object:', e);
+        console.log('  • Database ready for ingestion');
+        return;
+      }
+
       console.log('\n📊 Database Status:');
       if (stats.total && stats.total.totalEntities > 0) {
         console.log(`  • Total Entities: ${stats.total.totalEntities}`);
@@ -435,7 +461,26 @@ class TensorRTDemo {
 
     try {
       await this.indexer.initialize();
-      const dbStats = await this.indexer.getRepositoryStats();
+      const dbStatsRaw = await this.indexer.getRepositoryStats();
+
+      // Zod schema for stats validation
+      const StatsSchema = z.object({
+        total: z.object({
+          totalEntities: z.number(),
+          languagesCount: z.number(),
+          domainsCount: z.number(),
+          filesCount: z.number(),
+        }).strict().optional()
+      }).strict();
+
+      let dbStats: z.infer<typeof StatsSchema>;
+      try {
+        dbStats = StatsSchema.parse(dbStatsRaw);
+      } catch (e) {
+        console.log('Database metrics unavailable (invalid format)');
+        await this.indexer.close();
+        return;
+      }
       
       console.log('\n🗄️ DATABASE METRICS:');
       if (dbStats.total && dbStats.total.totalEntities > 0) {

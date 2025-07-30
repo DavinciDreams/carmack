@@ -123,7 +123,7 @@ export class OracleQueryProcessor {
   private indexer: SemanticIndexer;
 
   constructor(dbConfig: unknown) {
-    const validatedConfig = DbConfigSchema.parse(dbConfig);
+    DbConfigSchema.parse(dbConfig);
     // Provide required model, maxTokens, and batchSize for SemanticIndexer
     this.indexer = new SemanticIndexer({
       model: process.env.SEMANTIC_INDEXER_MODEL || 'default-model',
@@ -211,7 +211,7 @@ export class OracleQueryProcessor {
 
       if (oracleQuery.results.length === 0) {
         response += "I couldn't find any relevant code entities for your query. Try rephrasing or using different keywords.\n\n";
-        response += this.generateSuggestions(oracleQuery.query);
+        response += this.generateSuggestions();
         return response;
       }
 
@@ -603,7 +603,7 @@ export class OracleQueryProcessor {
     return languageMap[language] || 'text';
   }
 
-    private generateSuggestions(query: string): string {
+    private generateSuggestions(): string {
       let suggestions = "**Suggestions:**\n\n";
       suggestions += "- Try using more specific technical terms\n";
       suggestions += "- Include language keywords (e.g., Python, C++, Java, Go, Rust)\n";

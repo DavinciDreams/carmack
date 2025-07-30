@@ -7,13 +7,12 @@ import { astGrepTransformationActor } from '../actors/ast-grep-transformation.ts
 import { complexityActor } from '../actors/complexity.ts';
 import { feedbackLoopActor } from '../actors/feedback-loop.ts';
 import { llmTestingFrameworkActor } from '../actors/llm-testing-framework.ts';
-import { createEnhancedLLMTransformer, enhancedLLMTransformationActor } from '../actors/llm-transformation-enhanced.ts';
+import { enhancedLLMTransformationActor } from '../actors/llm-transformation-enhanced.ts';
 import { patternDiscoveryActor } from '../actors/pattern-discovery.ts';
 import { patternLearningActor } from '../actors/pattern-learning.ts';
 import { templateEngineActor } from '../actors/template-engine.ts';
 import { enhancedTransformationOrchestratorActor } from '../actors/transformation-enhanced.ts';
 import { validationActor } from '../utils/validation.ts';
-import { DocumentationGenerator } from '../docs-generator/generator.ts';
 
 import type {
 

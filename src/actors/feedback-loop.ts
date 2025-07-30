@@ -174,12 +174,10 @@ export async function applyASTGrepPattern({
   code,
   pattern,
   language,
-  options,
 }: {
   code: string;
   pattern: string;
   language: string;
-  options?: Record<string, unknown>;
 }): Promise<{ matches: any[] }> {
   // Try to resolve language to a supported enum, fallback to string
   let lang: string | Lang = language;

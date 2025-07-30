@@ -570,12 +570,6 @@ export class CarmackPipelineOrchestrator {
 
   // ===== HELPER METHODS =====
 
-  private async analyzeRepositoryReadiness(
-    _repoPath: string
-  ): Promise<{ fileCount: number; complexity: string }> {
-    // Placeholder for repository analysis
-    return { fileCount: 42, complexity: 'medium' };
-  }
 
   private async discoverEligibleFiles(repoPath: string, args: EnhancedCLIArgs): Promise<string[]> {
     // Use existing file discovery logic from production.ts

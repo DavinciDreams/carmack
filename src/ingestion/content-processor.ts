@@ -154,7 +154,7 @@ export class ContentProcessor {
    */
   async processFileContent(
     fileContent: z.infer<typeof FileMetadataSchema> & { content: string },
-  astResult?: unknown
+    astResult?: unknown
   ): Promise<ProcessingResult> {
     const startTime = Date.now();
 
@@ -165,8 +165,7 @@ export class ContentProcessor {
       const chunks = this.chunkContent(fileContent);
 
       // Step 2: Generate semantic annotation using BAML
-      const annotation = await this.generateSemanticAnnotation(fileContent, astResult);
-
+      const annotation = await this.generateSemanticAnnotation(fileContent);
       // Step 3: Generate embeddings for chunks
       const embeddingVectors = await this.generateEmbeddings(chunks.map(c => c.content));
 
@@ -481,8 +480,7 @@ export class ContentProcessor {
    * Generate semantic annotation using BAML
    */
   private async generateSemanticAnnotation(
-    fileContent: z.infer<typeof FileMetadataSchema> & { content: string },
-    astResult?: unknown
+    fileContent: z.infer<typeof FileMetadataSchema> & { content: string }
   ): Promise<SemanticAnnotation> {
     try {
       // Use BAML for semantic annotation
@@ -639,79 +637,8 @@ export class ContentProcessor {
     return 'code_block';
   }
 
-  /**
-   * Generate summary for file
-   */
-  private generateSummary(fileContent: z.infer<typeof FileMetadataSchema> & { content: string }, domains: string[]): string {
-    const fileName = fileContent.path.split('/').pop() || 'file';
-    const primaryDomain = domains[0] || 'general';
-    const lineCount = fileContent.content.split('\n').length;
 
-    return `${fileName} - ${primaryDomain} implementation (${lineCount} lines)`;
-  }
 
-  /**
-   * Infer purpose of file
-   */
-  private inferPurpose(domains: string[]): string {
-
-    if (domains.includes('scheduling')) {
-      return 'Manages task scheduling and execution ordering';
-    }
-    if (domains.includes('memory_management')) {
-      return 'Handles memory allocation and management';
-    }
-    if (domains.includes('gpu_computing')) {
-      return 'Implements GPU kernel functions and CUDA operations';
-    }
-    if (domains.includes('python_bindings')) {
-      return 'Provides Python interface bindings';
-    }
-    if (domains.includes('testing')) {
-      return 'Contains unit tests and validation logic';
-    }
-
-    return 'General implementation file';
-  }
-
-  /**
-   * Extract dependencies from content
-   */
-  private extractDependencies(content: string): string[] {
-    const dependencies = new Set<string>();
-    
-    // C++ includes
-    const includeMatches = content.match(/#include\s*[<"](.*?)[>"]/g);
-    if (includeMatches) {
-      includeMatches.forEach(match => {
-        const dep = match.replace(/#include\s*[<"]/, '').replace(/[>"].*/, '');
-        dependencies.add(dep);
-      });
-    }
-    
-    // Python imports
-    const importMatches = content.match(/(?:from\s+(\S+)\s+)?import\s+(\S+)/g);
-    if (importMatches) {
-      importMatches.forEach(match => {
-        const parts = match.split(/\s+/);
-        if (parts.includes('from')) {
-          const fromIndex = parts.indexOf('from') + 1;
-          const fromPart = parts[fromIndex];
-          if (fromPart) {
-            dependencies.add(fromPart);
-          }
-        } else {
-          const importIndex = parts.indexOf('import') + 1;
-          const importPart = parts[importIndex];
-          if (importPart) {
-            dependencies.add(importPart);
-          }
-        }
-      });
-    }
-    
-    return Array.from(dependencies).slice(0, 10); // Limit dependencies
-  }
 
   /**
    * Retry request with exponential backoff

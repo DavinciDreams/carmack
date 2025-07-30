@@ -735,51 +735,5 @@ export class GraphWalker {
     };
   }
 
-  /**
-   * Convert artifact to record for response
-   */
-  private artifactToRecord(artifact: Artifact): Record<string, unknown> {
-    return {
-      id: artifact.id,
-      type: artifact.type,
-      name: artifact.name,
-      description: artifact.description,
-      file_path: artifact.file_path,
-      line_start: artifact.line_start,
-      line_end: artifact.line_end,
-      language: artifact.language,
-      repository_url: artifact.repository_url,
-      commit_hash: artifact.commit_hash,
-      author_name: artifact.author_name,
-      author_email: artifact.author_email,
-      created_date: artifact.created_date,
-      modified_date: artifact.modified_date,
-      metadata: artifact.metadata,
-      complexity_score: artifact.complexity_score,
-      performance_impact: artifact.performance_impact,
-      quality_score: artifact.quality_score,
-      created_at: artifact.created_at,
-      updated_at: artifact.updated_at,
-    };
-  }
 
-  /**
-   * Convert graph edge to record for response
-   */
-  private edgeToRecord(edge: GraphEdge): Record<string, unknown> {
-    return {
-      id: edge.id,
-      source_id: edge.source_id,
-      target_id: edge.target_id,
-      relation_type: edge.relation_type,
-      confidence: edge.confidence,
-      weight: edge.weight,
-      is_bidirectional: edge.is_bidirectional,
-      metadata: edge.metadata,
-      evidence: edge.evidence,
-      evidence_type: edge.evidence_type,
-      created_at: edge.created_at,
-      updated_at: edge.updated_at,
-    };
-  }
 }
