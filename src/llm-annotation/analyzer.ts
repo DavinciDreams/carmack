@@ -1,7 +1,7 @@
 import * as yaml from 'js-yaml';
 import { fromPromise } from 'xstate';
+import { z } from 'zod';
 import { ASTAnalyzer } from '../docs-generator/ast-analyzer.js';
-
 import type {
   AnnotationRequest,
   AnnotationResult,
@@ -12,7 +12,7 @@ import type {
   TransformationOpportunity,
 } from './types';
 import { AnnotationRequestSchema, LLMAnnotationSchema } from './types.js';
-import { z } from 'zod';
+
 // Zod schemas for file paths and directories
 const FilePathSchema = z.string().min(1, 'File path must not be empty');
 const DirectoryPathSchema = z.string().min(1, 'Directory path must not be empty');
@@ -228,12 +228,11 @@ export class LLMAnnotationAnalyzer {
       // Analyze first 20 files
       for (const patternDef of patternDefinitions) {
         try {
-
           if (!this.astAnalyzer) throw new Error('ASTAnalyzer not initialized');
           // Use extractEntities for pattern extraction
           const entities = await this.astAnalyzer.extractEntities(filePath);
           // Filter entities by pattern if needed (pseudo-code, adapt as needed)
-          const matches = entities.filter(e => e.name === patternDef.name);
+          const matches = entities.filter((e) => e.name === patternDef.name);
 
           if (matches) {
             for (const match of matches) {
@@ -389,15 +388,11 @@ export class LLMAnnotationAnalyzer {
         // Use extractEntities for module analysis
         const entities = await this.astAnalyzer.extractEntities(filePath);
         // Group entities by type for architectural annotation
-        const functions = entities.filter(e => e.type === 'function');
-        const classes = entities.filter(e => e.type === 'class');
+        const functions = entities.filter((e) => e.type === 'function');
+        const classes = entities.filter((e) => e.type === 'class');
         if (functions.length > 0 || classes.length > 0) {
           const componentType =
-            classes.length > 0
-              ? 'class'
-              : functions.length > 3
-                ? 'module'
-                : 'utility';
+            classes.length > 0 ? 'class' : functions.length > 3 ? 'module' : 'utility';
 
           architecture.push({
             component: filePath,
@@ -809,7 +804,11 @@ export class LLMAnnotationAnalyzer {
     return 'General application logic and business rules';
   }
 
-  private inferComponentRole(module: { filePath: string; functions: any[]; classes: any[] }): string {
+  private inferComponentRole(module: {
+    filePath: string;
+    functions: any[];
+    classes: any[];
+  }): string {
     if (module.classes.length > 0) {
       return 'Data model and business logic container';
     }
@@ -822,7 +821,11 @@ export class LLMAnnotationAnalyzer {
     return 'Application component with specific functionality';
   }
 
-  private extractResponsibilities(module: { filePath: string; functions: any[]; classes: any[] }): string[] {
+  private extractResponsibilities(module: {
+    filePath: string;
+    functions: any[];
+    classes: any[];
+  }): string[] {
     const responsibilities: string[] = [];
     if (module.functions.length > 0) {
       responsibilities.push('Function execution and data processing');
@@ -834,23 +837,39 @@ export class LLMAnnotationAnalyzer {
     return responsibilities.length > 0 ? responsibilities : ['Core application functionality'];
   }
 
-  private analyzeRelationships(_: { filePath: string; functions: any[]; classes: any[] }): ArchitecturalAnnotation['relationships'] {
+  private analyzeRelationships(_: {
+    filePath: string;
+    functions: any[];
+    classes: any[];
+  }): ArchitecturalAnnotation['relationships'] {
     // No dependency info in new structure; return empty array
     return [];
   }
 
-  private calculateCohesion(module: { filePath: string; functions: any[]; classes: any[] }): number {
+  private calculateCohesion(module: {
+    filePath: string;
+    functions: any[];
+    classes: any[];
+  }): number {
     // Simple heuristic: fewer responsibilities = higher cohesion
     const totalExports = module.functions.length + module.classes.length;
     return Math.max(0, Math.min(1, 1 - totalExports / 10));
   }
 
-  private calculateCoupling(_module: { filePath: string; functions: any[]; classes: any[] }): number {
+  private calculateCoupling(_module: {
+    filePath: string;
+    functions: any[];
+    classes: any[];
+  }): number {
     // No dependency info in new structure; return 0
     return 0;
   }
 
-  private assessTestability(module: { filePath: string; functions: any[]; classes: any[] }): number {
+  private assessTestability(module: {
+    filePath: string;
+    functions: any[];
+    classes: any[];
+  }): number {
     // Simple heuristic: pure functions are more testable
     const pureFunctionCount = module.functions.filter(
       (fn) => !fn.isAsync && (fn.parameters?.length || 0) <= 3
@@ -859,7 +878,11 @@ export class LLMAnnotationAnalyzer {
     return totalFunctions > 0 ? pureFunctionCount / totalFunctions : 0.5;
   }
 
-  private identifyDesignPrinciples(module: { filePath: string; functions: any[]; classes: any[] }): string[] {
+  private identifyDesignPrinciples(module: {
+    filePath: string;
+    functions: any[];
+    classes: any[];
+  }): string[] {
     const principles: string[] = [];
     if (module.functions.length > 0 && module.classes.length === 0) {
       principles.push('Functional programming approach');
@@ -871,7 +894,11 @@ export class LLMAnnotationAnalyzer {
     return principles;
   }
 
-  private detectViolations(module: { filePath: string; functions: any[]; classes: any[] }): string[] {
+  private detectViolations(module: {
+    filePath: string;
+    functions: any[];
+    classes: any[];
+  }): string[] {
     const violations: string[] = [];
     if (module.functions.length > 10) {
       violations.push('Too many functions in single module');
@@ -951,8 +978,8 @@ export class LLMAnnotationAnalyzer {
     const { writeFile, mkdir } = await import('node:fs/promises');
     const { join } = await import('node:path');
 
-  const outputDir = request.targetDirectory || './output/annotations';
-  DirectoryPathSchema.parse(outputDir);
+    const outputDir = request.targetDirectory || './output/annotations';
+    DirectoryPathSchema.parse(outputDir);
     await mkdir(outputDir, { recursive: true });
 
     const filename = `annotation-${annotation.id}.${request.outputFormat}`;
@@ -1034,7 +1061,7 @@ export class LLMAnnotationAnalyzer {
         quotingType: '"',
         forceQuotes: false,
       });
-    } catch (error) {
+    } catch (_error) {
       // Fallback to simple YAML-like format if serialization fails
       return `# LLM Annotation (Error in YAML serialization)
 id: ${annotation.id}

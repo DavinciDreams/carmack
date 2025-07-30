@@ -1,11 +1,9 @@
 // Utility: Run a real query and assign result to qualityValidationResponses
-import { QueryProcessingPipeline } from './api/query-pipeline.ts';
-import type { QueryRequest } from './api/contracts.ts';
 
 // (assignQueryResultToValidation is now deprecated for use inside assigners; see docs for async event pattern)
 import { assign, setup } from 'xstate';
-import { z } from 'zod';
-
+import type { z } from 'zod';
+import type { AnalysisResult } from './actors/analysis.ts';
 import { analysisActor } from './actors/analysis.ts';
 import { astGrepTransformationActor } from './actors/ast-grep-transformation.ts';
 import { complexityActor } from './actors/complexity.ts';
@@ -20,13 +18,12 @@ import { type TemplatePattern, templateEngineActor } from './actors/template-eng
 import { enhancedTransformationActor } from './actors/transformation-enhanced.ts';
 import {
   accuracyValidationActor,
+  dataIntegrityActor,
   graphTraversalActor,
-  dataIntegrityActor
 } from './testing/validation/quality-validator.ts';
-import { MachineContextSchema, MachineEventSchema } from './types.ts';
-
-import type { AnalysisResult } from './actors/analysis.ts';
 import type { AstPattern, MachineContext } from './types.ts';
+import { MachineContextSchema, type MachineEventSchema } from './types.ts';
+
 // Removed unused and non-exported type imports
 
 // Actor imports
@@ -137,8 +134,8 @@ const _carmackCoderMachine = setup({
     },
   },
   actions: {
-  assignPatternLearningResult: assign(({ context }) => context),
-  assignSummaryResult: assign(({ context }) => context),
+    assignPatternLearningResult: assign(({ context }) => context),
+    assignSummaryResult: assign(({ context }) => context),
     assignComplexityResult: assign(({ context, event }) => {
       if (!context.currentTransformation) return context;
       if (!event || typeof event !== 'object' || !('output' in event)) return context;
@@ -184,12 +181,12 @@ const _carmackCoderMachine = setup({
         },
       };
     }),
-    setStartTime: assign(({ context }) => (
+    setStartTime: assign(({ context }) =>
       MachineContextSchema.parse({
         ...context,
         startTime: Date.now(),
       })
-    )),
+    ),
     assignCheckpoint: assign(({ context, event }) => {
       // event.output is the checkpoint object from gitActor
       return MachineContextSchema.parse({
@@ -288,42 +285,42 @@ const _carmackCoderMachine = setup({
       }
       return context;
     }),
-    incrementRetries: assign(({ context }) => (
+    incrementRetries: assign(({ context }) =>
       MachineContextSchema.parse({
         ...context,
         currentRetries: context.currentRetries + 1,
       })
-    )),
-    resetRetries: assign(({ context }) => (
+    ),
+    resetRetries: assign(({ context }) =>
       MachineContextSchema.parse({
         ...context,
         currentRetries: 0,
       })
-    )),
-    markCompleted: assign(({ context }) => (
+    ),
+    markCompleted: assign(({ context }) =>
       MachineContextSchema.parse({
         ...context,
         currentTransformation: context.currentTransformation
           ? { ...context.currentTransformation, status: 'completed' as const }
           : undefined,
       })
-    )),
-    markFailed: assign(({ context }) => (
+    ),
+    markFailed: assign(({ context }) =>
       MachineContextSchema.parse({
         ...context,
         currentTransformation: context.currentTransformation
           ? { ...context.currentTransformation, status: 'failed' as const }
           : undefined,
       })
-    )),
-    markRolledBack: assign(({ context }) => (
+    ),
+    markRolledBack: assign(({ context }) =>
       MachineContextSchema.parse({
         ...context,
         currentTransformation: context.currentTransformation
           ? { ...context.currentTransformation, status: 'rolled_back' as const }
           : undefined,
       })
-    )),
+    ),
     logTransformation: ({ context }) => {
       // You can customize this logging as needed
       console.log('Transformation state:', context.currentTransformation);
@@ -358,11 +355,11 @@ const _carmackCoderMachine = setup({
     },
 
     creatingCheckpoint: {
-    onDone: {
-      target: 'analyzing',
-      actions: 'assignCheckpoint',
+      onDone: {
+        target: 'analyzing',
+        actions: 'assignCheckpoint',
+      },
     },
-  },
 
     analyzing: {
       invoke: {
@@ -658,8 +655,13 @@ const _carmackCoderMachine = setup({
         id: 'quality-analysis',
         src: 'accuracyValidationActor',
         input: (ctx) => ({
-          responses: (ctx.context.qualityValidationResponses as Array<{ query: string; response: import('./api/contracts.ts').QueryResponse; topic?: string }>)
-            .filter(r => r.response),
+          responses: (
+            ctx.context.qualityValidationResponses as Array<{
+              query: string;
+              response: import('./api/contracts.ts').QueryResponse;
+              topic?: string;
+            }>
+          ).filter((r) => r.response),
           config: {
             accuracyThreshold: 0.85,
             relevanceThreshold: 0.8,
@@ -671,7 +673,8 @@ const _carmackCoderMachine = setup({
             enableHybridValidation: true,
             sampleSize: 100,
           },
-          knowledgeBase: new (require('./testing/validation/quality-validator.ts').MockKnowledgeBase)(),
+          knowledgeBase:
+            new (require('./testing/validation/quality-validator.ts').MockKnowledgeBase)(),
         }),
         onDone: {
           target: 'learningFromFeedback',
@@ -714,7 +717,8 @@ const _carmackCoderMachine = setup({
               success: ctx.context.currentTransformation?.errors.length === 0,
               performance: {
                 transformationTime:
-                  ctx.context.currentTransformation?.endTime && ctx.context.currentTransformation?.startTime
+                  ctx.context.currentTransformation?.endTime &&
+                  ctx.context.currentTransformation?.startTime
                     ? ctx.context.currentTransformation.endTime -
                       ctx.context.currentTransformation.startTime
                     : 0,
@@ -811,7 +815,7 @@ const _carmackCoderMachine = setup({
           actions: ['addError', 'markFailed', 'logTransformation'],
         },
       },
-  // (removed misplaced assignSummaryResult)
+      // (removed misplaced assignSummaryResult)
     },
 
     succeeded: {

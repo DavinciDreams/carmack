@@ -379,4 +379,4 @@ export class VectorUtils {
   static scale(vector: Vector, scalar: number): Vector {
     return vector.map((val) => val * scalar);
   }
-}
+}

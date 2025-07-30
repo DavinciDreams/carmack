@@ -1,9 +1,9 @@
-import { z } from 'zod';
 import { task } from '@trigger.dev/sdk/v3';
-import { runRepositoryCloneJob } from './repository-clone-job';
+import { z } from 'zod';
 import { runCommitProcessingJob } from './commit-processing-job';
-import { runPRExtractionJob } from './pr-extraction-job';
 import { runEmbeddingGenerationJob } from './embedding-generation-job';
+import { runPRExtractionJob } from './pr-extraction-job';
+import { runRepositoryCloneJob } from './repository-clone-job';
 
 export const IngestionOrchestratorJobInputSchema = z.object({
   repositoryUrl: z.string().url(),
@@ -36,7 +36,7 @@ export const ingestionOrchestratorJob = task({
         forceClone: true,
         includeSubmodules: false,
       });
-      if (!cloneResult.success) throw new Error('Clone failed: ' + (cloneResult.error || 'unknown'));
+      if (!cloneResult.success) throw new Error(`Clone failed: ${cloneResult.error || 'unknown'}`);
 
       // 2. Process latest commit (stub: use lastCommit from clone)
       steps.push('analyze-commits');
@@ -45,7 +45,8 @@ export const ingestionOrchestratorJob = task({
         repositoryUrl: input.repositoryUrl,
         commitHash,
       });
-      if (!commitResult.success) throw new Error('Commit processing failed: ' + (commitResult.error || 'unknown'));
+      if (!commitResult.success)
+        throw new Error(`Commit processing failed: ${commitResult.error || 'unknown'}`);
 
       // 3. Extract PRs (stub: use PR #1)
       steps.push('extract-prs');
@@ -53,16 +54,18 @@ export const ingestionOrchestratorJob = task({
         repositoryUrl: input.repositoryUrl,
         prNumber: 1,
       });
-      if (!prResult.success) throw new Error('PR extraction failed: ' + (prResult.error || 'unknown'));
+      if (!prResult.success)
+        throw new Error(`PR extraction failed: ${prResult.error || 'unknown'}`);
 
       // 4. Generate embedding (stub: use first file if available)
       steps.push('generate-embeddings');
-      const filePath = cloneResult.repositoryPath + '/README.md';
+      const filePath = `${cloneResult.repositoryPath}/README.md`;
       const embeddingResult = await runEmbeddingGenerationJob({
         repositoryUrl: input.repositoryUrl,
         filePath,
       });
-      if (!embeddingResult.success) throw new Error('Embedding generation failed: ' + (embeddingResult.error || 'unknown'));
+      if (!embeddingResult.success)
+        throw new Error(`Embedding generation failed: ${embeddingResult.error || 'unknown'}`);
 
       const result: IngestionOrchestratorJobResult = {
         success: true,

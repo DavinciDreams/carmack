@@ -11,7 +11,6 @@ import { getEnvironmentConfig } from '../config/environment.ts';
  * following Carmack's principles of robust error handling.
  */
 
-
 // =============================================================================
 // SCHEMAS AND TYPES
 // =============================================================================
@@ -54,31 +53,39 @@ export const PullRequestSchema = z.object({
     email: z.string().email().nullable(),
     avatarUrl: z.string().url(),
   }),
-  assignees: z.array(z.object({
-    login: z.string(),
-    id: z.number().int(),
-    name: z.string().nullable(),
-    avatarUrl: z.string().url(),
-  })),
-  reviewers: z.array(z.object({
-    login: z.string(),
-    id: z.number().int(),
-    name: z.string().nullable(),
-    avatarUrl: z.string().url(),
-  })),
-  labels: z.array(z.object({
-    id: z.number().int(),
-    name: z.string(),
-    color: z.string(),
-    description: z.string().nullable(),
-  })),
+  assignees: z.array(
+    z.object({
+      login: z.string(),
+      id: z.number().int(),
+      name: z.string().nullable(),
+      avatarUrl: z.string().url(),
+    })
+  ),
+  reviewers: z.array(
+    z.object({
+      login: z.string(),
+      id: z.number().int(),
+      name: z.string().nullable(),
+      avatarUrl: z.string().url(),
+    })
+  ),
+  labels: z.array(
+    z.object({
+      id: z.number().int(),
+      name: z.string(),
+      color: z.string(),
+      description: z.string().nullable(),
+    })
+  ),
   head: z.object({
     ref: z.string(),
     sha: z.string().length(40),
-    repo: z.object({
-      name: z.string(),
-      fullName: z.string(),
-    }).nullable(),
+    repo: z
+      .object({
+        name: z.string(),
+        fullName: z.string(),
+      })
+      .nullable(),
   }),
   base: z.object({
     ref: z.string(),
@@ -121,28 +128,34 @@ export const IssueSchema = z.object({
     name: z.string().nullable(),
     avatarUrl: z.string().url(),
   }),
-  assignees: z.array(z.object({
-    login: z.string(),
-    id: z.number().int(),
-    name: z.string().nullable(),
-    avatarUrl: z.string().url(),
-  })),
-  labels: z.array(z.object({
-    id: z.number().int(),
-    name: z.string(),
-    color: z.string(),
-    description: z.string().nullable(),
-  })),
+  assignees: z.array(
+    z.object({
+      login: z.string(),
+      id: z.number().int(),
+      name: z.string().nullable(),
+      avatarUrl: z.string().url(),
+    })
+  ),
+  labels: z.array(
+    z.object({
+      id: z.number().int(),
+      name: z.string(),
+      color: z.string(),
+      description: z.string().nullable(),
+    })
+  ),
   comments: z.number().int(),
   locked: z.boolean(),
-  milestone: z.object({
-    id: z.number().int(),
-    title: z.string(),
-    description: z.string().nullable(),
-    state: z.enum(['open', 'closed']),
-    createdAt: z.string().datetime(),
-    dueOn: z.string().datetime().nullable(),
-  }).nullable(),
+  milestone: z
+    .object({
+      id: z.number().int(),
+      title: z.string(),
+      description: z.string().nullable(),
+      state: z.enum(['open', 'closed']),
+      createdAt: z.string().datetime(),
+      dueOn: z.string().datetime().nullable(),
+    })
+    .nullable(),
 });
 
 export type Issue = z.infer<typeof IssueSchema>;
@@ -174,32 +187,44 @@ export const GitHubCommitSchema = z.object({
       payload: z.string().nullable(),
     }),
   }),
-  author: z.object({
-    login: z.string(),
-    id: z.number().int(),
-    avatarUrl: z.string().url(),
-  }).nullable(),
-  committer: z.object({
-    login: z.string(),
-    id: z.number().int(),
-    avatarUrl: z.string().url(),
-  }).nullable(),
-  parents: z.array(z.object({
-    sha: z.string().length(40),
-  })),
-  stats: z.object({
-    total: z.number().int(),
-    additions: z.number().int(),
-    deletions: z.number().int(),
-  }).optional(),
-  files: z.array(z.object({
-    filename: z.string(),
-    status: z.string(),
-    additions: z.number().int(),
-    deletions: z.number().int(),
-    changes: z.number().int(),
-    patch: z.string().optional(),
-  })).optional(),
+  author: z
+    .object({
+      login: z.string(),
+      id: z.number().int(),
+      avatarUrl: z.string().url(),
+    })
+    .nullable(),
+  committer: z
+    .object({
+      login: z.string(),
+      id: z.number().int(),
+      avatarUrl: z.string().url(),
+    })
+    .nullable(),
+  parents: z.array(
+    z.object({
+      sha: z.string().length(40),
+    })
+  ),
+  stats: z
+    .object({
+      total: z.number().int(),
+      additions: z.number().int(),
+      deletions: z.number().int(),
+    })
+    .optional(),
+  files: z
+    .array(
+      z.object({
+        filename: z.string(),
+        status: z.string(),
+        additions: z.number().int(),
+        deletions: z.number().int(),
+        changes: z.number().int(),
+        patch: z.string().optional(),
+      })
+    )
+    .optional(),
 });
 
 export type GitHubCommit = z.infer<typeof GitHubCommitSchema>;
@@ -275,14 +300,16 @@ export class GitHubClient {
   /**
    * Get all pull requests with pagination
    */
-  async getAllPullRequests(options: {
-    state?: 'open' | 'closed' | 'all';
-    sort?: 'created' | 'updated' | 'popularity';
-    direction?: 'asc' | 'desc';
-    since?: Date;
-    perPage?: number;
-    maxPages?: number;
-  } = {}): Promise<PullRequest[]> {
+  async getAllPullRequests(
+    options: {
+      state?: 'open' | 'closed' | 'all';
+      sort?: 'created' | 'updated' | 'popularity';
+      direction?: 'asc' | 'desc';
+      since?: Date;
+      perPage?: number;
+      maxPages?: number;
+    } = {}
+  ): Promise<PullRequest[]> {
     try {
       console.log(`🔄 Fetching pull requests from ${this.config.owner}/${this.config.repo}...`);
 
@@ -334,16 +361,11 @@ export class GitHubClient {
       console.log(`✅ Fetched ${pullRequests.length} total pull requests`);
       return pullRequests;
     } catch (error) {
-      throw new GitHubAPIError(
-        'Failed to fetch pull requests',
-        0,
-        'FETCH_PRS_FAILED',
-        {
-          owner: this.config.owner,
-          repo: this.config.repo,
-          error: error instanceof Error ? error.message : String(error),
-        }
-      );
+      throw new GitHubAPIError('Failed to fetch pull requests', 0, 'FETCH_PRS_FAILED', {
+        owner: this.config.owner,
+        repo: this.config.repo,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -394,26 +416,34 @@ export class GitHubClient {
           email: pr.user?.email || null,
           avatarUrl: pr.user?.avatar_url || '',
         },
-        assignees: (pr.assignees || []).map(assignee => ({
+        assignees: (pr.assignees || []).map((assignee) => ({
           login: assignee?.login || '',
           id: assignee?.id || 0,
           name: assignee?.name || null,
           avatarUrl: assignee?.avatar_url || '',
         })),
-        reviewers: (reviewersResponse.data.users || []).map(reviewer => ({
+        reviewers: (reviewersResponse.data.users || []).map((reviewer) => ({
           login: reviewer.login,
           id: reviewer.id,
           name: reviewer.name || null,
           avatarUrl: reviewer.avatar_url,
         })),
-        labels: (pr.labels || []).map(label => {
-          if (typeof label === 'object' && label && 'id' in label && 'name' in label && 'color' in label) {
-            const safeLabel = z.object({
-              id: z.number().int(),
-              name: z.string(),
-              color: z.string(),
-              description: z.string().nullable().optional(),
-            }).safeParse(label);
+        labels: (pr.labels || []).map((label) => {
+          if (
+            typeof label === 'object' &&
+            label &&
+            'id' in label &&
+            'name' in label &&
+            'color' in label
+          ) {
+            const safeLabel = z
+              .object({
+                id: z.number().int(),
+                name: z.string(),
+                color: z.string(),
+                description: z.string().nullable().optional(),
+              })
+              .safeParse(label);
             if (safeLabel.success) {
               return {
                 id: safeLabel.data.id,
@@ -441,10 +471,12 @@ export class GitHubClient {
         head: {
           ref: pr.head.ref,
           sha: pr.head.sha,
-          repo: pr.head.repo ? {
-            name: pr.head.repo.name,
-            fullName: pr.head.repo.full_name,
-          } : null,
+          repo: pr.head.repo
+            ? {
+                name: pr.head.repo.name,
+                fullName: pr.head.repo.full_name,
+              }
+            : null,
         },
         base: {
           ref: pr.base.ref,
@@ -462,7 +494,7 @@ export class GitHubClient {
         comments: pr.comments || 0,
         reviewComments: pr.review_comments || 0,
         maintainerCanModify: pr.maintainer_can_modify || false,
-  rebaseable: pr.rebaseable ?? null,
+        rebaseable: pr.rebaseable ?? null,
         mergeable: pr.mergeable,
         mergeableState: pr.mergeable_state || 'unknown',
       };
@@ -498,7 +530,7 @@ export class GitHubClient {
 
       this.updateRateLimit(response.headers);
 
-      const commits = response.data.map(commit => ({
+      const commits = response.data.map((commit) => ({
         sha: commit.sha,
         commit: {
           author: {
@@ -522,22 +554,26 @@ export class GitHubClient {
             payload: commit.commit.verification?.payload || null,
           },
         },
-        author: commit.author ? {
-          login: commit.author.login,
-          id: commit.author.id,
-          avatarUrl: commit.author.avatar_url,
-        } : null,
-        committer: commit.committer ? {
-          login: commit.committer.login,
-          id: commit.committer.id,
-          avatarUrl: commit.committer.avatar_url,
-        } : null,
-        parents: commit.parents.map(parent => ({
+        author: commit.author
+          ? {
+              login: commit.author.login,
+              id: commit.author.id,
+              avatarUrl: commit.author.avatar_url,
+            }
+          : null,
+        committer: commit.committer
+          ? {
+              login: commit.committer.login,
+              id: commit.committer.id,
+              avatarUrl: commit.committer.avatar_url,
+            }
+          : null,
+        parents: commit.parents.map((parent) => ({
           sha: parent.sha,
         })),
       }));
 
-      return commits.map(commit => GitHubCommitSchema.parse(commit));
+      return commits.map((commit) => GitHubCommitSchema.parse(commit));
     } catch (error) {
       throw new GitHubAPIError(
         'Failed to fetch pull request commits',
@@ -574,8 +610,8 @@ export class GitHubClient {
 
       // Return the first (most relevant) PR
       const pr = response.data[0];
-  if (!pr) throw new Error('Pull request not found');
-  return this.getPullRequestDetails(pr.number);
+      if (!pr) throw new Error('Pull request not found');
+      return this.getPullRequestDetails(pr.number);
     } catch (error) {
       console.warn(`⚠️ Failed to find PR for commit ${commitSha}:`, error);
       return null;
@@ -585,14 +621,16 @@ export class GitHubClient {
   /**
    * Get all issues with pagination
    */
-  async getAllIssues(options: {
-    state?: 'open' | 'closed' | 'all';
-    sort?: 'created' | 'updated' | 'comments';
-    direction?: 'asc' | 'desc';
-    since?: Date;
-    perPage?: number;
-    maxPages?: number;
-  } = {}): Promise<Issue[]> {
+  async getAllIssues(
+    options: {
+      state?: 'open' | 'closed' | 'all';
+      sort?: 'created' | 'updated' | 'comments';
+      direction?: 'asc' | 'desc';
+      since?: Date;
+      perPage?: number;
+      maxPages?: number;
+    } = {}
+  ): Promise<Issue[]> {
     try {
       console.log(`🔄 Fetching issues from ${this.config.owner}/${this.config.repo}...`);
 
@@ -644,20 +682,28 @@ export class GitHubClient {
               name: issue.user?.name || null,
               avatarUrl: issue.user?.avatar_url || '',
             },
-            assignees: (issue.assignees || []).map(assignee => ({
+            assignees: (issue.assignees || []).map((assignee) => ({
               login: assignee?.login || '',
               id: assignee?.id || 0,
               name: assignee?.name || null,
               avatarUrl: assignee?.avatar_url || '',
             })),
-            labels: (issue.labels || []).map(label => {
-              if (typeof label === 'object' && label && 'id' in label && 'name' in label && 'color' in label) {
-                const safeLabel = z.object({
-                  id: z.number().int(),
-                  name: z.string(),
-                  color: z.string(),
-                  description: z.string().nullable().optional(),
-                }).safeParse(label);
+            labels: (issue.labels || []).map((label) => {
+              if (
+                typeof label === 'object' &&
+                label &&
+                'id' in label &&
+                'name' in label &&
+                'color' in label
+              ) {
+                const safeLabel = z
+                  .object({
+                    id: z.number().int(),
+                    name: z.string(),
+                    color: z.string(),
+                    description: z.string().nullable().optional(),
+                  })
+                  .safeParse(label);
                 if (safeLabel.success) {
                   return {
                     id: safeLabel.data.id,
@@ -684,14 +730,16 @@ export class GitHubClient {
             }),
             comments: issue.comments || 0,
             locked: issue.locked || false,
-            milestone: issue.milestone ? {
-              id: issue.milestone.id,
-              title: issue.milestone.title,
-              description: issue.milestone.description,
-              state: issue.milestone.state as 'open' | 'closed',
-              createdAt: issue.milestone.created_at,
-              dueOn: issue.milestone.due_on,
-            } : null,
+            milestone: issue.milestone
+              ? {
+                  id: issue.milestone.id,
+                  title: issue.milestone.title,
+                  description: issue.milestone.description,
+                  state: issue.milestone.state as 'open' | 'closed',
+                  createdAt: issue.milestone.created_at,
+                  dueOn: issue.milestone.due_on,
+                }
+              : null,
           };
 
           issues.push(IssueSchema.parse(processedIssue));
@@ -708,16 +756,11 @@ export class GitHubClient {
       console.log(`✅ Fetched ${issues.length} total issues`);
       return issues;
     } catch (error) {
-      throw new GitHubAPIError(
-        'Failed to fetch issues',
-        0,
-        'FETCH_ISSUES_FAILED',
-        {
-          owner: this.config.owner,
-          repo: this.config.repo,
-          error: error instanceof Error ? error.message : String(error),
-        }
-      );
+      throw new GitHubAPIError('Failed to fetch issues', 0, 'FETCH_ISSUES_FAILED', {
+        owner: this.config.owner,
+        repo: this.config.repo,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -727,7 +770,7 @@ export class GitHubClient {
   async getRateLimit(): Promise<RateLimit> {
     try {
       const response = await this.octokit.rest.rateLimit.get();
-      
+
       const rateLimit: RateLimit = {
         limit: response.data.rate.limit,
         remaining: response.data.rate.remaining,
@@ -739,14 +782,9 @@ export class GitHubClient {
       this.rateLimitInfo = rateLimit;
       return RateLimitSchema.parse(rateLimit);
     } catch (error) {
-      throw new GitHubAPIError(
-        'Failed to get rate limit',
-        0,
-        'RATE_LIMIT_FAILED',
-        {
-          error: error instanceof Error ? error.message : String(error),
-        }
-      );
+      throw new GitHubAPIError('Failed to get rate limit', 0, 'RATE_LIMIT_FAILED', {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -768,7 +806,7 @@ export class GitHubClient {
 
       if (waitTime > 0) {
         console.log(`⏳ Rate limit approaching, waiting ${Math.ceil(waitTime / 1000)}s...`);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
+        await new Promise((resolve) => setTimeout(resolve, waitTime));
         await this.getRateLimit(); // Refresh rate limit info
       }
     }
@@ -780,10 +818,10 @@ export class GitHubClient {
   private updateRateLimit(headers: any): void {
     if (headers['x-ratelimit-remaining']) {
       this.rateLimitInfo = {
-        limit: parseInt(headers['x-ratelimit-limit'] || '5000'),
-        remaining: parseInt(headers['x-ratelimit-remaining'] || '0'),
-        reset: parseInt(headers['x-ratelimit-reset'] || '0'),
-        used: parseInt(headers['x-ratelimit-used'] || '0'),
+        limit: Number.parseInt(headers['x-ratelimit-limit'] || '5000'),
+        remaining: Number.parseInt(headers['x-ratelimit-remaining'] || '0'),
+        reset: Number.parseInt(headers['x-ratelimit-reset'] || '0'),
+        used: Number.parseInt(headers['x-ratelimit-used'] || '0'),
         resource: 'core',
       };
     }
@@ -793,35 +831,31 @@ export class GitHubClient {
    * Retry request with exponential backoff
    */
 
-
-    private async retryRequest<T>(
-      request: () => Promise<T>,
-      attempt = 1
-    ): Promise<T> {
-      try {
-        return await request();
-      } catch (error) {
-        const errorObj = typeof error === 'object' && error !== null ? error as Record<string, unknown> : {};
-        const status = typeof errorObj['status'] === 'number' ? errorObj['status'] as number : 0;
-        if (attempt >= this.config.retryAttempts) {
-          throw error;
-        }
-        const isRetryable = status >= 500 || status === 429;
-        if (!isRetryable) {
-          throw error;
-        }
-        const delay = this.config.retryDelay * Math.pow(2, attempt - 1);
-        console.log(`⚠️ Request failed (attempt ${attempt}), retrying in ${delay}ms...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-        return this.retryRequest(request, attempt + 1);
+  private async retryRequest<T>(request: () => Promise<T>, attempt = 1): Promise<T> {
+    try {
+      return await request();
+    } catch (error) {
+      const errorObj =
+        typeof error === 'object' && error !== null ? (error as Record<string, unknown>) : {};
+      const status = typeof errorObj.status === 'number' ? (errorObj.status as number) : 0;
+      if (attempt >= this.config.retryAttempts) {
+        throw error;
       }
+      const isRetryable = status >= 500 || status === 429;
+      if (!isRetryable) {
+        throw error;
+      }
+      const delay = this.config.retryDelay * 2 ** (attempt - 1);
+      console.log(`⚠️ Request failed (attempt ${attempt}), retrying in ${delay}ms...`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      return this.retryRequest(request, attempt + 1);
     }
+  }
 }
 
 // =============================================================================
 // UTILITY FUNCTIONS
 // =============================================================================
-
 
 /**
  * Create a GitHub client for any repository

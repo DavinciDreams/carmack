@@ -11,14 +11,14 @@ import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { simpleGit } from 'simple-git';
 import { createActor } from 'xstate';
+import { z } from 'zod';
+import { carmackCoderMachine } from '../machine.ts';
 // ...existing code...
 import {
   defaultProductionConfig,
   type ProductionConfig,
   ProductionConfigSchema,
 } from '../production/production.config.ts';
-import { carmackCoderMachine } from '../machine.ts';
-import { z } from 'zod';
 import {
   type MachineEvent,
   type TransformationRequest,
@@ -137,7 +137,7 @@ async function setupWorkspace(config: ProductionConfig, customWorkspace?: string
   return workspaceDir;
 }
 
-async function cloneRepository(
+async function _cloneRepository(
   repoUrl: string,
   branch: string,
   workspaceDir: string
@@ -161,7 +161,7 @@ async function cloneRepository(
   console.log('✅ Repository ready');
 }
 
-async function validateRepository(repoDir: string, config: ProductionConfig): Promise<void> {
+async function _validateRepository(repoDir: string, config: ProductionConfig): Promise<void> {
   console.log('🔍 Validating repository structure...');
 
   // Check for project indicators across multiple languages and build systems
@@ -169,20 +169,20 @@ async function validateRepository(repoDir: string, config: ProductionConfig): Pr
     // JavaScript/TypeScript/Node.js
     'package.json',
     'tsconfig.json',
-    
+
     // Python
     'pyproject.toml',
     'setup.py',
     'requirements.txt',
-    
+
     // Rust
     'Cargo.toml',
-    
+
     // Java/Maven/Gradle
     'pom.xml',
     'build.gradle',
     'build.gradle.kts',
-    
+
     // C++/CUDA/CMake
     'CMakeLists.txt',
     'Makefile',
@@ -193,25 +193,25 @@ async function validateRepository(repoDir: string, config: ProductionConfig): Pr
     'meson.build',
     'BUILD',
     'BUILD.bazel',
-    
+
     // C/C++ project files
     'vcpkg.json',
     'conanfile.txt',
     'conanfile.py',
-    
+
     // Go
     'go.mod',
-    
+
     // .NET
     '*.csproj',
     '*.sln',
-    
+
     // Generic project indicators
     'README.md',
     'README.txt',
-    'LICENSE'
+    'LICENSE',
   ];
-  
+
   const hasProjectFile = indicators.some((file) => {
     if (file.includes('*')) {
       // Handle wildcard patterns like *.csproj
@@ -231,7 +231,8 @@ async function validateRepository(repoDir: string, config: ProductionConfig): Pr
     throw new ProductionError('No recognized project structure found', 'INVALID_PROJECT', {
       repoDir,
       checkedFiles: indicators,
-      message: 'Repository must contain at least one project indicator file (CMakeLists.txt, Makefile, package.json, etc.)',
+      message:
+        'Repository must contain at least one project indicator file (CMakeLists.txt, Makefile, package.json, etc.)',
     });
   }
 
@@ -333,7 +334,6 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
   // }
   // Only clone when explicitly requested by repository manager or via CLI.
 
-
   // Discover eligible files for transformation
   console.log('🔍 Discovering eligible files...');
   const eligibleFilesRaw = await discoverEligibleFiles(repoDir, config);
@@ -399,30 +399,36 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
   return new Promise<void>((resolve, reject) => {
     // Load and filter transformation patterns using language-aware filtering
     Promise.all([
-      import('../utils/index.ts').then(m => m.loadAllPatterns('./patterns.json', './src/patterns/enhanced-templates.json')),
-      import('../utils/pattern-filtering.ts')
+      import('../utils/index.ts').then((m) =>
+        m.loadAllPatterns('./patterns.json', './src/patterns/enhanced-templates.json')
+      ),
+      import('../utils/pattern-filtering.ts'),
     ])
       .then(([allPatternsRaw, filteringModule]) => {
         // Zod-validate loaded patterns as array of objects with required fields
-        const PatternSchema = z.object({
-          id: z.string(),
-          description: z.string(),
-          language: z.enum(['typescript', 'javascript', 'cpp', 'c']),
-          pattern: z.string(),
-          replacement: z.string(),
-          complexity: z.number(),
-          riskLevel: z.enum(['low', 'medium', 'high']),
-          mode: z.enum(['template', 'ast', 'llm']),
-          category: z.string().optional(),
-          performance: z.object({
-            priority: z.number(),
-            batchable: z.boolean(),
-            conflicts: z.array(z.string()).optional(),
-            maxMatches: z.number().optional(),
-          }).optional(),
-          verification: z.any().optional(),
-          testCases: z.any().optional(),
-        }).strict();
+        const PatternSchema = z
+          .object({
+            id: z.string(),
+            description: z.string(),
+            language: z.enum(['typescript', 'javascript', 'cpp', 'c']),
+            pattern: z.string(),
+            replacement: z.string(),
+            complexity: z.number(),
+            riskLevel: z.enum(['low', 'medium', 'high']),
+            mode: z.enum(['template', 'ast', 'llm']),
+            category: z.string().optional(),
+            performance: z
+              .object({
+                priority: z.number(),
+                batchable: z.boolean(),
+                conflicts: z.array(z.string()).optional(),
+                maxMatches: z.number().optional(),
+              })
+              .optional(),
+            verification: z.any().optional(),
+            testCases: z.any().optional(),
+          })
+          .strict();
         const PatternsArraySchema = z.array(PatternSchema);
         const allPatterns = PatternsArraySchema.parse(allPatternsRaw);
 
@@ -437,15 +443,17 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
           {
             maxComplexity: config.transformation.maxComplexityThreshold,
             allowedRiskLevels: ['low', 'medium'],
-            strictLanguageMatching: true
+            strictLanguageMatching: true,
           }
         );
 
-        console.log(`🎯 Filtered to ${filterResult.filteredCount}/${filterResult.totalPatterns} patterns for target languages: ${filterResult.filterCriteria.targetLanguages.join(', ')}`);
+        console.log(
+          `🎯 Filtered to ${filterResult.filteredCount}/${filterResult.totalPatterns} patterns for target languages: ${filterResult.filterCriteria.targetLanguages.join(', ')}`
+        );
 
         if (filterResult.warnings.length > 0) {
           console.log('⚠️  Pattern filtering warnings:');
-          filterResult.warnings.forEach(warning => console.log(`   - ${warning}`));
+          filterResult.warnings.forEach((warning) => console.log(`   - ${warning}`));
         }
 
         transformationActor.subscribe((state) => {

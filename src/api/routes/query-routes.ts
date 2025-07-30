@@ -1,21 +1,15 @@
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-
-
 import { AIProcessor } from '../ai-processor.ts';
-import { QueryEngine } from '../query-engine.ts';
-import { SessionManager } from '../session-manager.ts';
-import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import {
-  validateQueryRequest,
-  validateContinueQueryRequest,
-  API_ENDPOINTS,
-} from '../contracts.ts';
 import type {
-  QueryRequest,
-  QueryResponse,
   ContinueQueryRequest,
   ErrorResponse,
+  QueryRequest,
+  QueryResponse,
 } from '../contracts.ts';
+import { API_ENDPOINTS, validateContinueQueryRequest, validateQueryRequest } from '../contracts.ts';
+import { QueryEngine } from '../query-engine.ts';
+import { SessionManager } from '../session-manager.ts';
 
 // =============================================================================
 // ROUTE HANDLER ERRORS
@@ -62,11 +56,11 @@ export class QueryRouteHandlers {
       // Get or create session
       const sessionToken = request.headers['x-session-token'] as string;
       let session;
-      
+
       if (sessionToken) {
         try {
           session = await this.sessionManager.getSession(sessionToken);
-        } catch (error) {
+        } catch (_error) {
           // Create new session if existing one is invalid
           session = await this.sessionManager.createSession({
             investigation_goal: `Query: ${validatedRequest.query}`,
@@ -106,13 +100,13 @@ export class QueryRouteHandlers {
         complexity: queryResult.complexity,
         context: queryResult.session_context,
       });
-      const enhanced_evidence = this.aiProcessor['enhanceEvidence']
-        ? this.aiProcessor['enhanceEvidence'](queryResult.evidence_chain, facts)
+      const enhanced_evidence = this.aiProcessor.enhanceEvidence
+        ? this.aiProcessor.enhanceEvidence(queryResult.evidence_chain, facts)
         : queryResult.evidence_chain;
       const investigationThreads = this.aiProcessor.generateInvestigationThreads(hypotheses, facts);
 
       // Update session with query results
-      const updatedSession = await this.sessionManager.updateSessionWithQuery(
+      const _updatedSession = await this.sessionManager.updateSessionWithQuery(
         session.id,
         validatedRequest.query,
         {
@@ -245,8 +239,8 @@ export class QueryRouteHandlers {
         complexity: queryResult.complexity,
         context: { ...queryResult.session_context, ...context_hints },
       });
-      const enhanced_evidence = this.aiProcessor['enhanceEvidence']
-        ? this.aiProcessor['enhanceEvidence'](queryResult.evidence_chain, facts)
+      const enhanced_evidence = this.aiProcessor.enhanceEvidence
+        ? this.aiProcessor.enhanceEvidence(queryResult.evidence_chain, facts)
         : queryResult.evidence_chain;
       const investigationThreads = this.aiProcessor.generateInvestigationThreads(hypotheses, facts);
 
@@ -318,12 +312,9 @@ export class QueryRouteHandlers {
     try {
       // In a full implementation, we would store and retrieve query results
       // For now, return a not found error
-      throw new RouteHandlerError(
-        `Query not found: ${queryId}`,
-        404,
-        'QUERY_NOT_FOUND',
-        { queryId }
-      );
+      throw new RouteHandlerError(`Query not found: ${queryId}`, 404, 'QUERY_NOT_FOUND', {
+        queryId,
+      });
     } catch (error) {
       const errorResponse = this.buildErrorResponse(error, queryId);
       reply.status(errorResponse.statusCode || 500);
@@ -341,7 +332,7 @@ export class QueryRouteHandlers {
   private buildErrorResponse(
     error: unknown,
     requestId?: string,
-    executionTime?: number
+    _executionTime?: number
   ): { error: ErrorResponse; statusCode: number } {
     let statusCode = 500;
     let code = 'INTERNAL_SERVER_ERROR';
@@ -374,7 +365,6 @@ export class QueryRouteHandlers {
   }
 }
 
-
 // Route registration function
 export function registerQueryRoutes(fastify: FastifyInstance) {
   const handlers = new QueryRouteHandlers();
@@ -399,7 +389,13 @@ export function registerQueryRoutes(fastify: FastifyInstance) {
           focus_artifacts: { type: 'array', items: { type: 'string', format: 'uuid' } },
           investigation_direction: {
             type: 'string',
-            enum: ['deeper_analysis', 'broader_context', 'related_patterns', 'historical_evolution', 'performance_impact'],
+            enum: [
+              'deeper_analysis',
+              'broader_context',
+              'related_patterns',
+              'historical_evolution',
+              'performance_impact',
+            ],
           },
         },
         required: ['follow_up_query'],

@@ -2,7 +2,6 @@ import { fromPromise } from 'xstate';
 import { z } from 'zod';
 
 import type {
-
   AstPattern,
   ComplexityMetrics,
   TransformationMode,
@@ -94,9 +93,7 @@ async function analyzeComplexity(files: string[]): Promise<ComplexityMetrics> {
         maxNestingDepth = Math.max(maxNestingDepth, metrics.nestingDepth);
         totalFunctionCount += metrics.functionCount;
         totalClassCount += metrics.classCount;
-      } catch (error) {
-
-      }
+      } catch (_error) {}
     }
     return {
       cyclomaticComplexity: totalCyclomaticComplexity,
@@ -106,8 +103,7 @@ async function analyzeComplexity(files: string[]): Promise<ComplexityMetrics> {
       functionCount: totalFunctionCount,
       classCount: totalClassCount,
     };
-  } catch (error) {
-
+  } catch (_error) {
     // Fallback to mock data if file reading fails
     return {
       cyclomaticComplexity: Math.floor(Math.random() * 20) + 1,
@@ -278,20 +274,26 @@ async function handleLearning(input: {
 // Zod schema for summarization input
 const SummarizationInputSchema = z.object({
   operation: z.literal('summarize'),
-  transformation: z.object({
-    id: z.string().optional(),
-    mode: z.string().optional(),
-    filesModified: z.array(z.string()).optional(),
-    success: z.boolean().optional(),
-    executionTime: z.number().optional(),
-    confidence: z.number().optional(),
-    appliedPatterns: z.array(z.object({
-      pattern: z.string(),
-      count: z.number(),
-    })).optional(),
-    summary: z.string().optional(),
-    error: z.string().optional(),
-  }).optional(),
+  transformation: z
+    .object({
+      id: z.string().optional(),
+      mode: z.string().optional(),
+      filesModified: z.array(z.string()).optional(),
+      success: z.boolean().optional(),
+      executionTime: z.number().optional(),
+      confidence: z.number().optional(),
+      appliedPatterns: z
+        .array(
+          z.object({
+            pattern: z.string(),
+            count: z.number(),
+          })
+        )
+        .optional(),
+      summary: z.string().optional(),
+      error: z.string().optional(),
+    })
+    .optional(),
 });
 
 async function handleSummarization(input: {
@@ -328,7 +330,9 @@ async function handleSummarization(input: {
       insights.push(`Files modified: ${transformation.filesModified.join(', ')}`);
     }
     if (transformation.appliedPatterns && transformation.appliedPatterns.length > 0) {
-      insights.push(`Patterns applied: ${transformation.appliedPatterns.map(p => `${p.pattern} (${p.count})`).join(', ')}`);
+      insights.push(
+        `Patterns applied: ${transformation.appliedPatterns.map((p) => `${p.pattern} (${p.count})`).join(', ')}`
+      );
     }
     if (transformation.summary) {
       insights.push(`Transformation summary: ${transformation.summary}`);

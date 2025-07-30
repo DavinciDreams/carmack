@@ -1,11 +1,10 @@
 import { z } from 'zod';
 
 import type {
-    QueryIntent,
-  QueryComplexity,
   EvidenceItem,
-  Hypothesis,
   InvestigationThread,
+  QueryComplexity,
+  QueryIntent,
 } from './contracts.ts';
 
 /**
@@ -15,8 +14,6 @@ import type {
  * hypothesis generation, and response synthesis. Follows Carmack's principles
  * of deterministic AI processing and structured outputs.
  */
-
-
 
 // =============================================================================
 // AI PROCESSOR ERRORS
@@ -50,25 +47,31 @@ export class BAMLIntegrationError extends AIProcessorError {
  * Fact extraction result schema
  */
 export const FactExtractionSchema = z.object({
-  facts: z.array(z.object({
-    statement: z.string(),
-    confidence: z.number().min(0).max(1),
-    source_artifact_id: z.string().uuid(),
-    evidence_text: z.string(),
-    fact_type: z.enum(['technical', 'historical', 'performance', 'architectural']),
-  })),
+  facts: z.array(
+    z.object({
+      statement: z.string(),
+      confidence: z.number().min(0).max(1),
+      source_artifact_id: z.string().uuid(),
+      evidence_text: z.string(),
+      fact_type: z.enum(['technical', 'historical', 'performance', 'architectural']),
+    })
+  ),
   key_concepts: z.array(z.string()),
-  technical_terms: z.array(z.object({
-    term: z.string(),
-    definition: z.string(),
-    context: z.string(),
-  })),
-  relationships: z.array(z.object({
-    source_concept: z.string(),
-    target_concept: z.string(),
-    relationship_type: z.string(),
-    confidence: z.number().min(0).max(1),
-  })),
+  technical_terms: z.array(
+    z.object({
+      term: z.string(),
+      definition: z.string(),
+      context: z.string(),
+    })
+  ),
+  relationships: z.array(
+    z.object({
+      source_concept: z.string(),
+      target_concept: z.string(),
+      relationship_type: z.string(),
+      confidence: z.number().min(0).max(1),
+    })
+  ),
 });
 
 export type FactExtraction = z.infer<typeof FactExtractionSchema>;
@@ -77,18 +80,22 @@ export type FactExtraction = z.infer<typeof FactExtractionSchema>;
  * Hypothesis generation schema
  */
 export const HypothesisGenerationSchema = z.object({
-  hypotheses: z.array(z.object({
-    statement: z.string(),
-    confidence: z.number().min(0).max(1),
-    reasoning: z.string(),
-    testable_predictions: z.array(z.string()),
-    required_evidence: z.array(z.string()),
-  })),
-  investigation_directions: z.array(z.object({
-    direction: z.string(),
-    priority: z.enum(['low', 'medium', 'high', 'critical']),
-    expected_findings: z.array(z.string()),
-  })),
+  hypotheses: z.array(
+    z.object({
+      statement: z.string(),
+      confidence: z.number().min(0).max(1),
+      reasoning: z.string(),
+      testable_predictions: z.array(z.string()),
+      required_evidence: z.array(z.string()),
+    })
+  ),
+  investigation_directions: z.array(
+    z.object({
+      direction: z.string(),
+      priority: z.enum(['low', 'medium', 'high', 'critical']),
+      expected_findings: z.array(z.string()),
+    })
+  ),
 });
 
 export type HypothesisGeneration = z.infer<typeof HypothesisGenerationSchema>;
@@ -101,11 +108,13 @@ export const ResponseSynthesisSchema = z.object({
   supporting_evidence: z.array(z.string()),
   confidence_assessment: z.object({
     overall_confidence: z.number().min(0).max(1),
-    confidence_factors: z.array(z.object({
-      factor: z.string(),
-      impact: z.enum(['positive', 'negative', 'neutral']),
-      weight: z.number().min(0).max(1),
-    })),
+    confidence_factors: z.array(
+      z.object({
+        factor: z.string(),
+        impact: z.enum(['positive', 'negative', 'neutral']),
+        weight: z.number().min(0).max(1),
+      })
+    ),
   }),
   follow_up_suggestions: z.array(z.string()),
   knowledge_gaps: z.array(z.string()),
@@ -150,7 +159,10 @@ interface BAMLClient {
     reasoning: string;
   }>;
 
-  assessComplexity(query: string, intent: QueryIntent): Promise<{
+  assessComplexity(
+    query: string,
+    intent: QueryIntent
+  ): Promise<{
     complexity: QueryComplexity;
     factors: string[];
     reasoning: string;
@@ -165,10 +177,6 @@ declare class RealBAMLClient implements BAMLClient {
   classifyIntent: BAMLClient['classifyIntent'];
   assessComplexity: BAMLClient['assessComplexity'];
 }
-
-
-
-
 
 // =============================================================================
 // AI PROCESSOR CORE
@@ -193,21 +201,20 @@ export class AIProcessor {
     try {
       return await this.bamlClient.classifyIntent(query);
     } catch (error) {
-      throw new AIProcessorError(
-        'Intent classification failed',
-        'INTENT_CLASSIFICATION_ERROR',
-        {
-          query,
-          error: error instanceof Error ? error.message : String(error),
-        }
-      );
+      throw new AIProcessorError('Intent classification failed', 'INTENT_CLASSIFICATION_ERROR', {
+        query,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
   /**
    * Assess query complexity using AI
    */
-  async assessComplexity(query: string, intent: QueryIntent): Promise<{
+  async assessComplexity(
+    query: string,
+    intent: QueryIntent
+  ): Promise<{
     complexity: QueryComplexity;
     factors: string[];
     reasoning: string;
@@ -215,15 +222,11 @@ export class AIProcessor {
     try {
       return await this.bamlClient.assessComplexity(query, intent);
     } catch (error) {
-      throw new AIProcessorError(
-        'Complexity assessment failed',
-        'COMPLEXITY_ASSESSMENT_ERROR',
-        {
-          query,
-          intent,
-          error: error instanceof Error ? error.message : String(error),
-        }
-      );
+      throw new AIProcessorError('Complexity assessment failed', 'COMPLEXITY_ASSESSMENT_ERROR', {
+        query,
+        intent,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -245,11 +248,10 @@ export class AIProcessor {
         context: input.context || {},
       });
     } catch (error) {
-      throw new AIProcessorError(
-        'Fact extraction failed',
-        'FACT_EXTRACTION_ERROR',
-        { input, error: error instanceof Error ? error.message : String(error) }
-      );
+      throw new AIProcessorError('Fact extraction failed', 'FACT_EXTRACTION_ERROR', {
+        input,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -271,11 +273,10 @@ export class AIProcessor {
         complexity: input.complexity,
       });
     } catch (error) {
-      throw new AIProcessorError(
-        'Hypothesis generation failed',
-        'HYPOTHESIS_GENERATION_ERROR',
-        { input, error: error instanceof Error ? error.message : String(error) }
-      );
+      throw new AIProcessorError('Hypothesis generation failed', 'HYPOTHESIS_GENERATION_ERROR', {
+        input,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -299,25 +300,24 @@ export class AIProcessor {
         intent: input.intent,
       });
     } catch (error) {
-      throw new AIProcessorError(
-        'Response synthesis failed',
-        'RESPONSE_SYNTHESIS_ERROR',
-        { input, error: error instanceof Error ? error.message : String(error) }
-      );
+      throw new AIProcessorError('Response synthesis failed', 'RESPONSE_SYNTHESIS_ERROR', {
+        input,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
   generateInvestigationThreads(
     hypotheses: HypothesisGeneration,
-    facts: FactExtraction
+    _facts: FactExtraction
   ): InvestigationThread[] {
-    return hypotheses.investigation_directions.map(direction => ({
+    return hypotheses.investigation_directions.map((direction) => ({
       id: crypto.randomUUID(),
       title: direction.direction,
       description: `Investigation into ${direction.direction.toLowerCase()}`,
       priority: direction.priority,
       status: 'active' as const,
-      hypotheses: hypotheses.hypotheses.slice(0, 2).map(h => ({
+      hypotheses: hypotheses.hypotheses.slice(0, 2).map((h) => ({
         id: crypto.randomUUID(),
         statement: h.statement,
         confidence: h.confidence,
@@ -325,32 +325,11 @@ export class AIProcessor {
         supporting_relationships: [],
         generated_at: new Date(),
       })),
-      follow_up_questions: direction.expected_findings.map(finding => 
-        `What evidence supports ${finding.toLowerCase()}?`
+      follow_up_questions: direction.expected_findings.map(
+        (finding) => `What evidence supports ${finding.toLowerCase()}?`
       ),
       created_at: new Date(),
       updated_at: new Date(),
     }));
-  }
-
-  private enhanceEvidence(evidence: EvidenceItem[], facts: FactExtraction): EvidenceItem[] {
-    return evidence.map(item => {
-      // Find related facts
-      const relatedFacts = facts.facts.filter(fact => 
-        fact.source_artifact_id === item.artifact_id
-      );
-
-      // Enhance explanation with AI insights
-      let enhancedExplanation = item.explanation;
-      if (relatedFacts.length > 0) {
-        const topFact = relatedFacts[0]!;
-        enhancedExplanation += ` AI Analysis: ${topFact.statement}`;
-      }
-
-      return {
-        ...item,
-        explanation: enhancedExplanation,
-      };
-    });
   }
 }

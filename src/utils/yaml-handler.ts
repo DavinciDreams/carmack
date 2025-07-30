@@ -1,7 +1,6 @@
-import * as yaml from 'js-yaml';
 import { readFile, writeFile } from 'node:fs/promises';
+import * as yaml from 'js-yaml';
 import { z } from 'zod';
-
 
 // Error types for explicit error handling
 export class YamlParseError extends Error {
@@ -85,7 +84,11 @@ export async function parseYamlFile<T>(filePath: string, schema: z.ZodType<T>): 
  * @param options - YAML formatting options
  * @returns YAML string
  */
-export function serializeToYaml<T>(data: T, schema: z.ZodType<T>, options: Partial<YamlOptions> = {}): string {
+export function serializeToYaml<T>(
+  data: T,
+  schema: z.ZodType<T>,
+  options: Partial<YamlOptions> = {}
+): string {
   try {
     schema.parse(data); // Validate before serializing
     const validatedOptions = YamlOptionsSchema.parse(options);

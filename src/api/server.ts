@@ -6,9 +6,9 @@ export function createServer(options?: { port?: number }) {
   return serve({
     async fetch(req) {
       const url = new URL(req.url);
-      const route = routes.find(r => r.method === req.method && r.path === url.pathname);
+      const route = routes.find((r) => r.method === req.method && r.path === url.pathname);
       if (!route) {
-        return new Response(JSON.stringify({ error: "Not found" }), { status: 404 });
+        return new Response(JSON.stringify({ error: 'Not found' }), { status: 404 });
       }
       try {
         return await route.handler(req);
@@ -29,15 +29,16 @@ export function stopServer() {
 export function setupGracefulShutdown() {
   // No-op for now; add signal handling if needed
 }
-import { serve } from "bun";
 
-import { getEnvironmentConfig } from "../config/environment.ts";
-import { initializeTelemetry } from "../telemetry/collector.ts";
-import { fileRoutes } from "./routes/file";
-import { patternRoutes } from "./routes/pattern";
-import { repositoryRoutes } from "./routes/repository";
-import { telemetryRoutes } from "./routes/telemetry";
-import { vectorRoutes } from "./routes/vector";
+import { serve } from 'bun';
+
+import { getEnvironmentConfig } from '../config/environment.ts';
+import { initializeTelemetry } from '../telemetry/collector.ts';
+import { fileRoutes } from './routes/file';
+import { patternRoutes } from './routes/pattern';
+import { repositoryRoutes } from './routes/repository';
+import { telemetryRoutes } from './routes/telemetry';
+import { vectorRoutes } from './routes/vector';
 
 // Unified API Server Entrypoint for Carmack Coder
 
@@ -67,14 +68,13 @@ const routes = [
   ...telemetryRoutes,
 ];
 
-
 export function startServer(portOverride?: number) {
   const server = serve({
     async fetch(req) {
       const url = new URL(req.url);
-      const route = routes.find(r => r.method === req.method && r.path === url.pathname);
+      const route = routes.find((r) => r.method === req.method && r.path === url.pathname);
       if (!route) {
-        return new Response(JSON.stringify({ error: "Not found" }), { status: 404 });
+        return new Response(JSON.stringify({ error: 'Not found' }), { status: 404 });
       }
       try {
         // Optionally pass env/config to handlers if needed

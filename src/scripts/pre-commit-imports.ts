@@ -6,7 +6,6 @@ import { readFile, writeFile } from 'node:fs/promises';
  * Automatically organizes imports and removes unused code before commits
  */
 
-
 // Future enhancement: Use AST-grep for more sophisticated import transformations
 // Currently using simple regex-based approach for reliability
 
@@ -41,7 +40,12 @@ async function organizeImports(filePath: string): Promise<boolean> {
         i++;
         continue;
       }
-      if (line.trim().startsWith('//') || line.trim().startsWith('/*') || line.trim().startsWith('*') || line.trim().startsWith('*/')) {
+      if (
+        line.trim().startsWith('//') ||
+        line.trim().startsWith('/*') ||
+        line.trim().startsWith('*') ||
+        line.trim().startsWith('*/')
+      ) {
         leadingComments.push(line);
         i++;
         continue;
@@ -73,7 +77,7 @@ async function organizeImports(filePath: string): Promise<boolean> {
       const trimmed = line.trim();
 
       if (trimmed.startsWith('import ')) {
-        const moduleMatch = line.match(/from ['"]([^'\"]+)['\"]/);
+        const moduleMatch = line.match(/from ['"]([^'"]+)['"]/);
         const module = moduleMatch ? moduleMatch[1] : '';
         const isNodeModule = module ? !module.startsWith('.') && !module.startsWith('/') : false;
         const isTypeOnly = line.includes('import type');
@@ -247,4 +251,4 @@ if (import.meta.main) {
     console.error('Fatal error:', errorMessage);
     process.exit(1);
   });
-}
+}

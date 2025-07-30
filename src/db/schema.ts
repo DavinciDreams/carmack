@@ -8,7 +8,6 @@ import { z } from 'zod';
  * runtime validation.
  */
 
-
 // =============================================================================
 // CORE KNOWLEDGE GRAPH SCHEMAS
 // =============================================================================
@@ -17,8 +16,18 @@ import { z } from 'zod';
  * Artifact types for engineering artifacts
  */
 export const ArtifactTypeSchema = z.enum([
-  'commit', 'issue', 'pr', 'code_line', 'function', 'class', 'file',
-  'module', 'test', 'documentation', 'config', 'build_script'
+  'commit',
+  'issue',
+  'pr',
+  'code_line',
+  'function',
+  'class',
+  'file',
+  'module',
+  'test',
+  'documentation',
+  'config',
+  'build_script',
 ]);
 
 /**
@@ -46,18 +55,18 @@ const BaseArtifactSchema = z.object({
   author_email: z.string().email().optional(),
   created_date: z.date().optional(),
   modified_date: z.date().optional(),
-  
+
   // Semantic embedding (384 dimensions)
   embedding: z.array(z.number()).length(384).optional(),
-  
+
   // Metadata as flexible object
   metadata: z.record(z.unknown()).default({}),
-  
+
   // Performance and quality metrics
   complexity_score: z.number().min(0).default(0),
   performance_impact: PerformanceImpactSchema.default('normal'),
   quality_score: z.number().min(0).max(1).default(0),
-  
+
   // Audit fields
   created_at: z.date().default(() => new Date()),
   updated_at: z.date().default(() => new Date()),
@@ -68,7 +77,7 @@ const BaseArtifactSchema = z.object({
  */
 export const ArtifactSchema = BaseArtifactSchema.refine(
   (data) => !data.line_start || !data.line_end || data.line_start <= data.line_end,
-  { message: "line_start must be less than or equal to line_end" }
+  { message: 'line_start must be less than or equal to line_end' }
 );
 
 export type Artifact = z.infer<typeof ArtifactSchema>;
@@ -77,9 +86,21 @@ export type Artifact = z.infer<typeof ArtifactSchema>;
  * Relationship types for graph edges
  */
 export const RelationTypeSchema = z.enum([
-  'causal', 'reference', 'dependency', 'tradeoff', 'cst_structure',
-  'historical_change', 'pr_link', 'implements', 'calls', 'inherits',
-  'uses', 'optimizes', 'tests', 'documents', 'configures'
+  'causal',
+  'reference',
+  'dependency',
+  'tradeoff',
+  'cst_structure',
+  'historical_change',
+  'pr_link',
+  'implements',
+  'calls',
+  'inherits',
+  'uses',
+  'optimizes',
+  'tests',
+  'documents',
+  'configures',
 ]);
 
 /**
@@ -110,7 +131,7 @@ const BaseGraphEdgeSchema = z.object({
  */
 export const GraphEdgeSchema = BaseGraphEdgeSchema.refine(
   (data) => data.source_id !== data.target_id,
-  { message: "source_id and target_id cannot be the same (no self-references)" }
+  { message: 'source_id and target_id cannot be the same (no self-references)' }
 );
 
 export type GraphEdge = z.infer<typeof GraphEdgeSchema>;
@@ -147,8 +168,14 @@ export type QuerySession = z.infer<typeof QuerySessionSchema>;
  * Step types for intermediates
  */
 export const StepTypeSchema = z.enum([
-  'query_analysis', 'semantic_search', 'graph_traversal', 'context_assembly',
-  'reasoning', 'code_analysis', 'pattern_matching', 'synthesis'
+  'query_analysis',
+  'semantic_search',
+  'graph_traversal',
+  'context_assembly',
+  'reasoning',
+  'code_analysis',
+  'pattern_matching',
+  'synthesis',
 ]);
 
 /**
@@ -303,9 +330,10 @@ const BaseCSTNodeSchema = z.object({
  * CST nodes table schema with validation
  */
 export const CSTNodeSchema = BaseCSTNodeSchema.refine(
-  (data) => data.start_line <= data.end_line && 
-           (data.start_line < data.end_line || data.start_column <= data.end_column),
-  { message: "Invalid position: start must be before or equal to end" }
+  (data) =>
+    data.start_line <= data.end_line &&
+    (data.start_line < data.end_line || data.start_column <= data.end_column),
+  { message: 'Invalid position: start must be before or equal to end' }
 );
 
 export type CSTNode = z.infer<typeof CSTNodeSchema>;
@@ -318,7 +346,13 @@ export type CSTNode = z.infer<typeof CSTNodeSchema>;
  * Keyword categories
  */
 export const KeywordCategorySchema = z.enum([
-  'technical', 'domain', 'action', 'quality', 'performance', 'security', 'general'
+  'technical',
+  'domain',
+  'action',
+  'quality',
+  'performance',
+  'security',
+  'general',
 ]);
 
 /**
@@ -363,15 +397,26 @@ export type ArtifactDomain = z.infer<typeof ArtifactDomainSchema>;
  * Query types
  */
 export const QueryTypeSchema = z.enum([
-  'semantic_search', 'graph_traversal', 'code_analysis', 'pattern_search',
-  'historical_analysis', 'impact_analysis', 'similarity_search'
+  'semantic_search',
+  'graph_traversal',
+  'code_analysis',
+  'pattern_search',
+  'historical_analysis',
+  'impact_analysis',
+  'similarity_search',
 ]);
 
 /**
  * Query intents
  */
 export const QueryIntentSchema = z.enum([
-  'explain', 'find', 'compare', 'optimize', 'debug', 'history', 'impact'
+  'explain',
+  'find',
+  'compare',
+  'optimize',
+  'debug',
+  'history',
+  'impact',
 ]);
 
 /**
@@ -473,10 +518,12 @@ export const SearchFiltersSchema = z.object({
   languages: z.array(z.string()).optional(),
   repositories: z.array(z.string()).optional(),
   authors: z.array(z.string()).optional(),
-  date_range: z.object({
-    start: z.date(),
-    end: z.date(),
-  }).optional(),
+  date_range: z
+    .object({
+      start: z.date(),
+      end: z.date(),
+    })
+    .optional(),
   performance_impact: z.array(PerformanceImpactSchema).optional(),
   min_quality_score: z.number().min(0).max(1).optional(),
   min_complexity_score: z.number().min(0).optional(),
@@ -550,11 +597,13 @@ export type SearchResult = z.infer<typeof SearchResultSchema>;
  * Graph traversal result schema
  */
 export const GraphTraversalResultSchema = z.object({
-  path: z.array(z.object({
-    artifact: ArtifactSchema,
-    edge: GraphEdgeSchema.optional(),
-    depth: z.number().int().min(0),
-  })),
+  path: z.array(
+    z.object({
+      artifact: ArtifactSchema,
+      edge: GraphEdgeSchema.optional(),
+      depth: z.number().int().min(0),
+    })
+  ),
   total_paths: z.number().int().min(0),
   max_depth_reached: z.number().int().min(0),
 });
@@ -623,7 +672,6 @@ export function safeParseSchema<T>(
   const result = schema.safeParse(data);
   if (result.success) {
     return { success: true, data: result.data };
-  } else {
-    return { success: false, error: result.error };
   }
+  return { success: false, error: result.error };
 }

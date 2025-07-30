@@ -451,7 +451,7 @@ async function applyAdvancedCppPattern(
 
       for (const line of lines) {
         const includeMatch = line.match(/#include\s*[<"](.*)[>"]/);
-        if (includeMatch && includeMatch[1]) {
+        if (includeMatch?.[1]) {
           const includePath = includeMatch[1];
           if (!seenIncludes.has(includePath)) {
             seenIncludes.add(includePath);

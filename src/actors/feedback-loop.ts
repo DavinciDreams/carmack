@@ -1,7 +1,7 @@
+import { randomUUID } from 'node:crypto';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
 import { getDatabaseManager } from '../db/connection.js';
-import { randomUUID } from 'node:crypto';
 
 /**
  * Feedback Loop System for Continuous Pattern Improvement
@@ -165,11 +165,12 @@ export const feedbackLoopActor = fromPromise(async ({ input }: { input: Feedback
 
   return result;
 });
+
 /**
  * AST-grep pattern application stub (to be implemented with @ast-grep/napi)
  * This function should apply an AST-grep query to code in any language.
  */
-import { parse, pattern as compilePattern, Lang } from '@ast-grep/napi';
+import { pattern as compilePattern, Lang, parse } from '@ast-grep/napi';
 export async function applyASTGrepPattern({
   code,
   pattern,
@@ -229,8 +230,8 @@ async function collectFeedback(request: FeedbackLoopRequest) {
     await db.query(sql, [
       feedback.transformationId || randomUUID(),
       feedback.patternId,
-  // Use fileId if present in context, otherwise null
-  feedback.context && 'fileId' in feedback.context ? (feedback.context as any).fileId : null,
+      // Use fileId if present in context, otherwise null
+      feedback.context && 'fileId' in feedback.context ? (feedback.context as any).fileId : null,
       null,
       null,
       JSON.stringify(feedback),
@@ -314,9 +315,7 @@ async function optimizePatterns(request: FeedbackLoopRequest) {
     try {
       const optimization = await applyOptimization(recommendation, config);
       appliedOptimizations.push(optimization);
-    } catch (error) {
-
-    }
+    } catch (_error) {}
   }
   // Update pattern confidence scores
   const confidenceUpdates = await updateConfidenceScores(analysisResult.patternMetrics, config);
@@ -393,7 +392,7 @@ function groupFeedbackByPattern(feedback: FeedbackData[]): Record<string, Feedba
     if (!groups[item.patternId]) {
       groups[item.patternId] = [];
     }
-groups[item.patternId]?.push
+    groups[item.patternId]?.push;
   }
   return groups;
 }

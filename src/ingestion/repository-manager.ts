@@ -6,22 +6,21 @@
  * and efficient processing.
  */
 
+import { readFile, stat } from 'node:fs/promises';
+import { extname, join } from 'node:path';
 import { glob } from 'glob';
-import { join, extname } from 'path';
-import { stat, readFile } from 'fs/promises';
+import type { LogResult, SimpleGit } from 'simple-git';
 import { simpleGit } from 'simple-git';
 import { z } from 'zod';
-
 import { getTelemetryCollector } from '../telemetry/index.ts';
-import {
-  TelemetryEventSchema,
-  CommitMetadataSchema,
-  CommitDiffSchema,
-  FileContentMetadataSchema,
-} from '../types/unified-schemas.ts';
 
 import type { CommitMetadata, FileContentMetadata } from '../types/unified-schemas.ts';
-import type { SimpleGit, LogResult } from 'simple-git';
+import {
+  CommitDiffSchema,
+  CommitMetadataSchema,
+  FileContentMetadataSchema,
+  TelemetryEventSchema,
+} from '../types/unified-schemas.ts';
 // =============================================================================
 // SCHEMAS AND TYPES
 // =============================================================================
@@ -30,62 +29,95 @@ import type { SimpleGit, LogResult } from 'simple-git';
  * File filter configuration schema
  */
 export const FileFilterConfigSchema = z.object({
-  includePatterns: z.array(z.string()).default([
-    '**/*.ts',
-    '**/*.tsx',
-    '**/*.js',
-    '**/*.jsx',
-    '**/*.py',
-    '**/*.java',
-    '**/*.go',
-    '**/*.rs',
-    '**/*.cpp',
-    '**/*.c',
-    '**/*.h',
-    '**/*.hpp',
-    '**/*.cxx',
-    '**/*.cu',
-    '**/*.cuh',
-    '**/*.sh',
-    '**/*.yaml',
-    '**/*.yml',
-    '**/*.md',
-    '**/*.json',
-    '**/*.toml',
-    '**/*.xml',
-    '**/*.ini',
-    '**/*.conf',
-    '**/*.bat',
-    '**/*.ps1',
-    '**/src/**',
-    '**/include/**',
-    '**/lib/**',
-    '**/app/**',
-    '**/bin/**',
-    '**/scripts/**',
-    '**/config/**',
-  ]),
-  excludePatterns: z.array(z.string()).default([
-    '**/test/**',
-    '**/tests/**',
-    '**/*_test.*',
-    '**/*_tests.*',
-    '**/build/**',
-    '**/dist/**',
-    '**/node_modules/**',
-    '**/.git/**',
-    '**/__pycache__/**',
-    '**/*.pyc',
-    '**/*.o',
-    '**/*.so',
-    '**/*.a',
-  ]),
-  maxFileSize: z.number().int().positive().default(1024 * 1024), // 1MB
-  supportedExtensions: z.array(z.string()).default([
-    '.ts', '.tsx', '.js', '.jsx', '.py', '.java', '.go', '.rs',
-    '.cpp', '.c', '.h', '.hpp', '.cxx', '.cu', '.cuh', '.sh',
-    '.yaml', '.yml', '.md', '.json', '.toml', '.xml', '.ini', '.conf', '.bat', '.ps1',
-  ]),
+  includePatterns: z
+    .array(z.string())
+    .default([
+      '**/*.ts',
+      '**/*.tsx',
+      '**/*.js',
+      '**/*.jsx',
+      '**/*.py',
+      '**/*.java',
+      '**/*.go',
+      '**/*.rs',
+      '**/*.cpp',
+      '**/*.c',
+      '**/*.h',
+      '**/*.hpp',
+      '**/*.cxx',
+      '**/*.cu',
+      '**/*.cuh',
+      '**/*.sh',
+      '**/*.yaml',
+      '**/*.yml',
+      '**/*.md',
+      '**/*.json',
+      '**/*.toml',
+      '**/*.xml',
+      '**/*.ini',
+      '**/*.conf',
+      '**/*.bat',
+      '**/*.ps1',
+      '**/src/**',
+      '**/include/**',
+      '**/lib/**',
+      '**/app/**',
+      '**/bin/**',
+      '**/scripts/**',
+      '**/config/**',
+    ]),
+  excludePatterns: z
+    .array(z.string())
+    .default([
+      '**/test/**',
+      '**/tests/**',
+      '**/*_test.*',
+      '**/*_tests.*',
+      '**/build/**',
+      '**/dist/**',
+      '**/node_modules/**',
+      '**/.git/**',
+      '**/__pycache__/**',
+      '**/*.pyc',
+      '**/*.o',
+      '**/*.so',
+      '**/*.a',
+    ]),
+  maxFileSize: z
+    .number()
+    .int()
+    .positive()
+    .default(1024 * 1024), // 1MB
+  supportedExtensions: z
+    .array(z.string())
+    .default([
+      '.ts',
+      '.tsx',
+      '.js',
+      '.jsx',
+      '.py',
+      '.java',
+      '.go',
+      '.rs',
+      '.cpp',
+      '.c',
+      '.h',
+      '.hpp',
+      '.cxx',
+      '.cu',
+      '.cuh',
+      '.sh',
+      '.yaml',
+      '.yml',
+      '.md',
+      '.json',
+      '.toml',
+      '.xml',
+      '.ini',
+      '.conf',
+      '.bat',
+      '.ps1',
+    ]),
 });
 
 export type FileFilterConfig = z.infer<typeof FileFilterConfigSchema>;
@@ -148,8 +180,9 @@ export class RepositoryManager {
       url: config.url,
       localPath: config.localPath,
       branch: config.branch || 'main',
-      depth: typeof config.depth === "number" ? config.depth : undefined,
-      includeSubmodules: typeof config.includeSubmodules === "boolean" ? config.includeSubmodules : undefined,
+      depth: typeof config.depth === 'number' ? config.depth : undefined,
+      includeSubmodules:
+        typeof config.includeSubmodules === 'boolean' ? config.includeSubmodules : undefined,
     };
     this.filterConfig = FileFilterConfigSchema.parse(filterConfig || {});
     this.git = simpleGit();
@@ -161,11 +194,8 @@ export class RepositoryManager {
   async cloneRepository(): Promise<void> {
     try {
       console.log(`🔄 Cloning repository: ${this.config.url}`);
-      
-      const cloneOptions = [
-        '--branch', this.config.branch,
-        '--single-branch',
-      ];
+
+      const cloneOptions = ['--branch', this.config.branch, '--single-branch'];
 
       if (this.config.depth) {
         cloneOptions.push('--depth', this.config.depth.toString());
@@ -175,10 +205,10 @@ export class RepositoryManager {
         cloneOptions.push('--recurse-submodules');
       }
       await this.git.clone(this.config.url, this.config.localPath, cloneOptions);
-      
+
       // Switch to the cloned repository
       this.git = simpleGit(this.config.localPath);
-      
+
       // Emit telemetry event for successful clone
       try {
         const event = TelemetryEventSchema.parse({
@@ -217,15 +247,11 @@ export class RepositoryManager {
       } catch (telemetryError) {
         console.warn('Telemetry emission failed:', telemetryError);
       }
-      throw new RepositoryError(
-        'Failed to clone repository',
-        'CLONE_FAILED',
-        {
-          url: this.config.url,
-          localPath: this.config.localPath,
-          error: error instanceof Error ? error.message : String(error),
-        }
-      );
+      throw new RepositoryError('Failed to clone repository', 'CLONE_FAILED', {
+        url: this.config.url,
+        localPath: this.config.localPath,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -235,12 +261,12 @@ export class RepositoryManager {
   async updateRepository(): Promise<void> {
     try {
       console.log(`🔄 Updating repository: ${this.config.localPath}`);
-      
+
       this.git = simpleGit(this.config.localPath);
-      
+
       await this.git.fetch();
       await this.git.pull('origin', this.config.branch);
-      
+
       // Emit telemetry event for successful update
       try {
         const event = TelemetryEventSchema.parse({
@@ -253,12 +279,12 @@ export class RepositoryManager {
             branch: this.config.branch,
           },
         });
-  getTelemetryCollector().emitUnifiedEvent(event);
+        getTelemetryCollector().emitUnifiedEvent(event);
       } catch (telemetryError) {
         console.warn('Telemetry emission failed:', telemetryError);
       }
 
-      console.log(`✅ Repository updated`);
+      console.log('✅ Repository updated');
     } catch (error) {
       // Emit telemetry event for update error
       try {
@@ -277,14 +303,10 @@ export class RepositoryManager {
       } catch (telemetryError) {
         console.warn('Telemetry emission failed:', telemetryError);
       }
-      throw new RepositoryError(
-        'Failed to update repository',
-        'UPDATE_FAILED',
-        {
-          localPath: this.config.localPath,
-          error: error instanceof Error ? error.message : String(error),
-        }
-      );
+      throw new RepositoryError('Failed to update repository', 'UPDATE_FAILED', {
+        localPath: this.config.localPath,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -292,17 +314,12 @@ export class RepositoryManager {
    * Get commit history with metadata
    */
   async getCommitHistory(
-    options: {
-      since?: Date;
-      until?: Date;
-      maxCount?: number;
-      includeDiff?: boolean;
-    } = {}
+    options: { since?: Date; until?: Date; maxCount?: number; includeDiff?: boolean } = {}
   ): Promise<CommitMetadata[]> {
     try {
-      console.log(`📊 Extracting commit history...`);
+      console.log('📊 Extracting commit history...');
 
-  const logOptions: Record<string, unknown> = {
+      const logOptions: Record<string, unknown> = {
         format: {
           hash: '%H',
           shortHash: '%h',
@@ -333,15 +350,15 @@ export class RepositoryManager {
 
       const logResult: LogResult = await this.git.log(logOptions);
 
-  const commits: CommitMetadata[] = [];
+      const commits: CommitMetadata[] = [];
 
       for (const commit of logResult.all) {
-        let diffData: z.infer<typeof CommitDiffSchema> | undefined = undefined;
+        let diffData: z.infer<typeof CommitDiffSchema> | undefined;
         if (options.includeDiff) {
           try {
             const diffResult = await this.git.diffSummary([`${commit.hash}^`, commit.hash]);
             diffData = CommitDiffSchema.parse({
-              files: diffResult.files.map(file => ({
+              files: diffResult.files.map((file) => ({
                 file: file.file,
                 changes: 'changes' in file ? file.changes : 0,
                 insertions: 'insertions' in file ? file.insertions : 0,
@@ -370,7 +387,9 @@ export class RepositoryManager {
           message: commit.message,
           subject: (commit as any).subject,
           body: (commit as any).body || undefined,
-          parentHashes: (commit as any).parentHashes ? (commit as any).parentHashes.split(' ').filter(Boolean) : [],
+          parentHashes: (commit as any).parentHashes
+            ? (commit as any).parentHashes.split(' ').filter(Boolean)
+            : [],
           refs: (commit as any).refs || undefined,
           diff: diffData,
         };
@@ -381,13 +400,9 @@ export class RepositoryManager {
       console.log(`✅ Extracted ${commits.length} commits`);
       return commits;
     } catch (error) {
-      throw new RepositoryError(
-        'Failed to get commit history',
-        'COMMIT_HISTORY_FAILED',
-        {
-          error: error instanceof Error ? error.message : String(error),
-        }
-      );
+      throw new RepositoryError('Failed to get commit history', 'COMMIT_HISTORY_FAILED', {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -399,14 +414,10 @@ export class RepositoryManager {
       const diff = await this.git.show([commitHash, '--format=']);
       return diff;
     } catch (error) {
-      throw new RepositoryError(
-        'Failed to get commit diff',
-        'COMMIT_DIFF_FAILED',
-        {
-          commitHash,
-          error: error instanceof Error ? error.message : String(error),
-        }
-      );
+      throw new RepositoryError('Failed to get commit diff', 'COMMIT_DIFF_FAILED', {
+        commitHash,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -415,8 +426,8 @@ export class RepositoryManager {
    */
   async getFilteredFiles(): Promise<string[]> {
     try {
-      console.log(`🔍 Filtering files in repository...`);
-      
+      console.log('🔍 Filtering files in repository...');
+
       const allFiles: string[] = [];
 
       // Use glob patterns to find included files
@@ -433,7 +444,7 @@ export class RepositoryManager {
       const uniqueFiles = [...new Set(allFiles)];
 
       // Filter out excluded patterns
-      const filteredFiles = uniqueFiles.filter(file => {
+      const filteredFiles = uniqueFiles.filter((file) => {
         // Check exclude patterns
         for (const excludePattern of this.filterConfig.excludePatterns) {
           if (this.matchesPattern(file, excludePattern)) {
@@ -456,7 +467,7 @@ export class RepositoryManager {
         try {
           const fullPath = join(this.config.localPath, file);
           const stats = await stat(fullPath);
-          
+
           if (stats.size <= this.filterConfig.maxFileSize) {
             validFiles.push(file);
           } else {
@@ -470,13 +481,9 @@ export class RepositoryManager {
       console.log(`✅ Filtered ${validFiles.length} files from ${uniqueFiles.length} total`);
       return validFiles;
     } catch (error) {
-      throw new RepositoryError(
-        'Failed to filter files',
-        'FILE_FILTER_FAILED',
-        {
-          error: error instanceof Error ? error.message : String(error),
-        }
-      );
+      throw new RepositoryError('Failed to filter files', 'FILE_FILTER_FAILED', {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -493,7 +500,11 @@ export class RepositoryManager {
       if (commitHash) {
         // Read file from specific commit
         content = await this.git.show([`${commitHash}:${filePath}`]);
-        stats = { size: Buffer.byteLength(content, 'utf8'), mtime: new Date(), birthtime: new Date() };
+        stats = {
+          size: Buffer.byteLength(content, 'utf8'),
+          mtime: new Date(),
+          birthtime: new Date(),
+        };
       } else {
         // Read current file
         content = await readFile(fullPath, 'utf-8');
@@ -506,7 +517,7 @@ export class RepositoryManager {
       // Use Zod to validate the returned metadata
       return FileContentMetadataSchema.parse({
         id: crypto.randomUUID(),
-        repositoryId: "",
+        repositoryId: '',
         path: fullPath,
         language,
         size: stats.size,
@@ -515,14 +526,10 @@ export class RepositoryManager {
         content,
       });
     } catch (error) {
-      throw new FileFilterError(
-        'Failed to read file content',
-        filePath,
-        {
-          commitHash,
-          error: error instanceof Error ? error.message : String(error),
-        }
-      );
+      throw new FileFilterError('Failed to read file content', filePath, {
+        commitHash,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -532,16 +539,12 @@ export class RepositoryManager {
   async getChangedFiles(commitHash: string): Promise<string[]> {
     try {
       const diffResult = await this.git.diffSummary([`${commitHash}^`, commitHash]);
-      return diffResult.files.map(file => file.file);
+      return diffResult.files.map((file) => file.file);
     } catch (error) {
-      throw new RepositoryError(
-        'Failed to get changed files',
-        'CHANGED_FILES_FAILED',
-        {
-          commitHash,
-          error: error instanceof Error ? error.message : String(error),
-        }
-      );
+      throw new RepositoryError('Failed to get changed files', 'CHANGED_FILES_FAILED', {
+        commitHash,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -565,13 +568,9 @@ export class RepositoryManager {
       const status = await this.git.status();
       return status.current || 'unknown';
     } catch (error) {
-      throw new RepositoryError(
-        'Failed to get current branch',
-        'BRANCH_FAILED',
-        {
-          error: error instanceof Error ? error.message : String(error),
-        }
-      );
+      throw new RepositoryError('Failed to get current branch', 'BRANCH_FAILED', {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -582,7 +581,7 @@ export class RepositoryManager {
     try {
       const status = await this.git.status();
       const log = await this.git.log({ maxCount: 1 });
-      
+
       return {
         branch: status.current,
         ahead: status.ahead,
@@ -596,13 +595,9 @@ export class RepositoryManager {
         lastCommit: log.latest,
       };
     } catch (error) {
-      throw new RepositoryError(
-        'Failed to get repository status',
-        'STATUS_FAILED',
-        {
-          error: error instanceof Error ? error.message : String(error),
-        }
-      );
+      throw new RepositoryError('Failed to get repository status', 'STATUS_FAILED', {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -615,11 +610,8 @@ export class RepositoryManager {
    */
   private matchesPattern(filePath: string, pattern: string): boolean {
     // Simple glob pattern matching
-    const regex = pattern
-      .replace(/\*\*/g, '.*')
-      .replace(/\*/g, '[^/]*')
-      .replace(/\?/g, '[^/]');
-    
+    const regex = pattern.replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*').replace(/\?/g, '[^/]');
+
     return new RegExp(`^${regex}$`).test(filePath);
   }
 
@@ -628,7 +620,7 @@ export class RepositoryManager {
    */
   private detectLanguage(filePath: string): string {
     const ext = extname(filePath).toLowerCase();
-    
+
     const languageMap: Record<string, string> = {
       '.cc': 'cpp',
       '.cpp': 'cpp',
@@ -672,7 +664,6 @@ export class RepositoryManager {
 // UTILITY FUNCTIONS
 // =============================================================================
 
-
 /**
  * Create repository manager for any repository
  */
@@ -696,7 +687,7 @@ export function createRepositoryManager(
     localPath,
     branch: options?.branch || 'main',
   };
-  if (typeof options?.depth === "number") config.depth = options.depth;
+  if (typeof options?.depth === 'number') config.depth = options.depth;
   config.includeSubmodules = false;
   return new RepositoryManager(config, options?.customFilters);
 }

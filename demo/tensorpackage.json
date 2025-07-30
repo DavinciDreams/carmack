@@ -18,13 +18,7 @@
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f"
   },
-  "keywords": [
-    "tensorrt",
-    "knowledge-graph",
-    "semantic-search",
-    "ai",
-    "llm"
-  ],
+  "keywords": ["tensorrt", "knowledge-graph", "semantic-search", "ai", "llm"],
   "author": "AI Carmack",
   "license": "MIT",
   "dependencies": {

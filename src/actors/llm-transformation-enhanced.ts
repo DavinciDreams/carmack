@@ -5,15 +5,14 @@ import { z } from 'zod';
 import { getLLMProviderManager, type LLMRequest } from '../providers/llm-providers.js';
 
 import type {
-
-/**
- * Enhanced LLM Transformation Actor
- *
- * This module provides production-ready LLM-based code transformations using
- * the new provider system with real API integrations, fallback mechanisms,
- * context-aware transformations, advanced prompt engineering, and comprehensive
- * error handling with rollback capabilities.
- */
+  /**
+   * Enhanced LLM Transformation Actor
+   *
+   * This module provides production-ready LLM-based code transformations using
+   * the new provider system with real API integrations, fallback mechanisms,
+   * context-aware transformations, advanced prompt engineering, and comprehensive
+   * error handling with rollback capabilities.
+   */
 
   ContextAwarePrompt,
   EnhancedTransformationContext,
@@ -195,8 +194,6 @@ export const enhancedLLMTransformationActor = fromPromise(
   async ({ input }: { input: EnhancedLLMTransformationInput }) => {
     const validatedInput = EnhancedLLMTransformationInputSchema.parse(input);
 
-
-
     const transformer = new EnhancedLLMTransformer(validatedInput.config);
     return await transformer.transformFiles(validatedInput);
   }
@@ -256,18 +253,14 @@ export class EnhancedLLMTransformer {
             warnings.push(...result.warnings);
           }
 
-
-            `✅ Enhanced LLM transformed ${filePath} (confidence: ${result.confidence?.toFixed(2) || 'N/A'})`
-          ;
+          `✅ Enhanced LLM transformed ${filePath} (confidence: ${result.confidence?.toFixed(2) || 'N/A'})`;
         } else {
           const errorMsg = `Failed to transform ${filePath}: ${result.error}`;
           errors.push(errorMsg);
-
         }
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error);
         errors.push(`Error transforming ${filePath}: ${errorMsg}`);
-
       }
     }
 
@@ -328,9 +321,8 @@ export class EnhancedLLMTransformer {
       const cachedResult = this.cache.get(cacheKey);
 
       if (cachedResult) {
-
         this.stats.cacheHits++;
-        
+
         // Validate and extract cached transformation result with comprehensive error handling
         return this.extractValidatedCacheResult(cachedResult);
       }
@@ -399,7 +391,6 @@ export class EnhancedLLMTransformer {
       // Apply the transformation if it's different
       const finalTransformedCode = transformationResult.transformedCode || originalContent;
       if (originalContent !== finalTransformedCode) {
-
         await writeFile(filePath, finalTransformedCode, 'utf-8');
 
         const result = {
@@ -471,40 +462,40 @@ export class EnhancedLLMTransformer {
     // Enhanced complexity calculation
     const complexity = this.calculateEnhancedComplexity(content);
 
-  // Detect code patterns and issues
-  const patterns = this.detectCodePatterns(content);
-  const issues = this.detectCodeIssues(content);
+    // Detect code patterns and issues
+    const patterns = this.detectCodePatterns(content);
+    const issues = this.detectCodeIssues(content);
 
-  // Detect framework from imports
-  const detectedFramework = this.detectFramework(imports);
+    // Detect framework from imports
+    const detectedFramework = this.detectFramework(imports);
 
-  const result: {
-    language: string;
-    framework?: string;
-    complexity: number;
-    patterns: string[];
-    imports: string[];
-    exports: string[];
-    functions: number;
-    classes: number;
-    issues: string[];
-  } = {
-    language,
-    complexity,
-    patterns,
-    imports,
-    exports,
-    functions,
-    classes,
-    issues,
-  };
+    const result: {
+      language: string;
+      framework?: string;
+      complexity: number;
+      patterns: string[];
+      imports: string[];
+      exports: string[];
+      functions: number;
+      classes: number;
+      issues: string[];
+    } = {
+      language,
+      complexity,
+      patterns,
+      imports,
+      exports,
+      functions,
+      classes,
+      issues,
+    };
 
-  if (detectedFramework) {
-    result.framework = detectedFramework;
+    if (detectedFramework) {
+      result.framework = detectedFramework;
+    }
+
+    return result;
   }
-
-  return result;
-}
 
   /**
    * Generate enhanced transformation prompt focused on complex LLM-specific tasks
@@ -520,9 +511,8 @@ export class EnhancedLLMTransformer {
     context: FileContextAnalysis,
     request?: TransformationRequest
   ): string {
-const customPrompt =
-request?.prompt
-  this.getDefaultLLMTransformationGoals(context);
+    const customPrompt = request?.prompt;
+    this.getDefaultLLMTransformationGoals(context);
 
     return `You are a world class software engineer specializing in complex enterprise systems. You've always been able to hold a multitude of interrelated parts in your mind and keep them in context many layers deep. Your keen intellect cuts through crud like a gordian knot, easily finding performant and elegant solutions to intractable problems. You excel at navigating multiple levels of abstraction and delivering optimized solutions so quickly you make VonNeumann jealous. You'll need deep understanding to make meaningful improvements to this code base, it is large and in production. Junior engineers have already annotated and analysed it with AST grep to address common patterns and issues to no avail, so you've been called in to architect the answer. This isn't your first rodeo so no cowboy coding, just clean well crafted commits ready for production deployment.
 
@@ -602,21 +592,21 @@ Focus on modern best practices and clean code principles.`;
       });
 
       return validatedResponse;
-    } catch (parseError) {
-// If not JSON, try to extract code from markdown blocks
-const codeMatch = response.match(/```[\w]*\n([\s\S]*?)\n```/);
-const extractedCode = codeMatch && codeMatch[1] ? codeMatch[1].trim() : undefined;
+    } catch (_parseError) {
+      // If not JSON, try to extract code from markdown blocks
+      const codeMatch = response.match(/```[\w]*\n([\s\S]*?)\n```/);
+      const extractedCode = codeMatch?.[1] ? codeMatch[1].trim() : undefined;
 
-// Use Zod to create a valid response with defaults
-const fallbackResponse = LLMTransformationResponseSchema.parse({
-  transformedCode: extractedCode || originalCode,
-  explanation: 'Raw response from LLM - could not parse JSON',
-  confidence: extractedCode ? 0.4 : 0.1,
-  warnings: ['Could not parse structured JSON response'],
-  appliedTransformations: extractedCode ? ['markdown-extraction'] : ['no-transformation'],
-});
+      // Use Zod to create a valid response with defaults
+      const fallbackResponse = LLMTransformationResponseSchema.parse({
+        transformedCode: extractedCode || originalCode,
+        explanation: 'Raw response from LLM - could not parse JSON',
+        confidence: extractedCode ? 0.4 : 0.1,
+        warnings: ['Could not parse structured JSON response'],
+        appliedTransformations: extractedCode ? ['markdown-extraction'] : ['no-transformation'],
+      });
 
-return fallbackResponse;
+      return fallbackResponse;
     }
   }
 
@@ -760,34 +750,27 @@ return fallbackResponse;
     try {
       // Validate cache entry structure using Zod schema for runtime type safety
       const validatedCache = TransformationCacheEntrySchema.parse(cachedResult);
-      
+
       // Check cache freshness and integrity
       const cacheAge = Date.now() - validatedCache.timestamp;
       const maxCacheAge = 24 * 60 * 60 * 1000; // 24 hours
-      
-      if (cacheAge > maxCacheAge) {
 
+      if (cacheAge > maxCacheAge) {
       }
-      
+
       // Efficient object construction using destructuring and computed properties
       // This approach minimizes memory allocations and ensures type safety
-      const {
-        success,
-        transformationCount,
-        confidence,
-        warnings,
-        error
-      } = validatedCache;
-      
+      const { success, transformationCount, confidence, warnings, error } = validatedCache;
+
       // Validate business logic constraints
       if (transformationCount < 0) {
         throw new Error(`Invalid transformation count: ${transformationCount}`);
       }
-      
+
       if (confidence !== undefined && (confidence < 0 || confidence > 1)) {
         throw new Error(`Invalid confidence value: ${confidence}`);
       }
-      
+
       // Construct result object with validated properties
       // Using conditional property assignment for optimal memory usage
       const result: TransformationMethodResult = {
@@ -795,48 +778,39 @@ return fallbackResponse;
         transformationCount,
         ...(confidence !== undefined && { confidence }),
         ...(warnings && warnings.length > 0 && { warnings: [...warnings] }), // Defensive copy
-        ...(error && { error })
+        ...(error && { error }),
       };
-      
+
       // Log cache hit with performance metrics
 
-      
       return result;
-      
     } catch (validationError) {
       // Comprehensive error handling with context preservation
-      const errorMessage = validationError instanceof Error
-        ? validationError.message
-        : String(validationError);
-      
+      const errorMessage =
+        validationError instanceof Error ? validationError.message : String(validationError);
 
-      
       // Graceful degradation: attempt to extract basic properties safely
       try {
         const fallbackResult: TransformationMethodResult = {
           success: Boolean(cachedResult.success),
           transformationCount: Math.max(0, Number(cachedResult.transformationCount) || 0),
           ...(cachedResult.confidence &&
-              typeof cachedResult.confidence === 'number' &&
-              cachedResult.confidence >= 0 &&
-              cachedResult.confidence <= 1 &&
-              { confidence: cachedResult.confidence }),
+            typeof cachedResult.confidence === 'number' &&
+            cachedResult.confidence >= 0 &&
+            cachedResult.confidence <= 1 && { confidence: cachedResult.confidence }),
           warnings: ['Cache validation failed, using fallback extraction'],
-          ...(cachedResult.error && { error: String(cachedResult.error) })
+          ...(cachedResult.error && { error: String(cachedResult.error) }),
         };
-        
 
         return fallbackResult;
-        
-      } catch (fallbackError) {
+      } catch (_fallbackError) {
         // Ultimate fallback: return safe default values
 
-        
         return {
           success: false,
           transformationCount: 0,
           error: `Cache corruption detected: ${errorMessage}`,
-          warnings: ['Cache entry corrupted, returning safe defaults']
+          warnings: ['Cache entry corrupted, returning safe defaults'],
         };
       }
     }
@@ -845,25 +819,25 @@ return fallbackResponse;
   /**
    * Helper methods (reused from original implementation)
    */
-private detectLanguage(filePath: string): string {
-  const ext = filePath.split('.').pop()?.toLowerCase();
-  switch (ext) {
-    case 'ts':
-    case 'tsx':
-      return 'typescript';
-    case 'js':
-    case 'jsx':
-      return 'javascript';
-    case 'py':
-      return 'python';
-    case 'rs':
-      return 'rust';
-    case 'go':
-      return 'go';
-    default:
-      return 'unknown';
+  private detectLanguage(filePath: string): string {
+    const ext = filePath.split('.').pop()?.toLowerCase();
+    switch (ext) {
+      case 'ts':
+      case 'tsx':
+        return 'typescript';
+      case 'js':
+      case 'jsx':
+        return 'javascript';
+      case 'py':
+        return 'python';
+      case 'rs':
+        return 'rust';
+      case 'go':
+        return 'go';
+      default:
+        return 'unknown';
+    }
   }
-}
 
   private extractImports(content: string): string[] {
     const imports = content.match(/import\s+.*?from\s+['"][^'"]+['"]/g) || [];

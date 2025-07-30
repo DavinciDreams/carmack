@@ -1,16 +1,8 @@
-
 import { z } from 'zod';
 import { getDatabaseManager } from './connection.ts';
 import { getDatabaseOperations } from './operations.ts';
-import {
-  ArtifactTypeSchema,
-  RelationTypeSchema,
-  PerformanceImpactSchema,
-} from './schema.ts';
-import type {
-  CreateArtifactInput,
-  CreateGraphEdgeInput,
-} from './schema.ts';
+import type { CreateArtifactInput, CreateGraphEdgeInput } from './schema.ts';
+import { ArtifactTypeSchema, PerformanceImpactSchema, RelationTypeSchema } from './schema.ts';
 
 /**
  * Database Seeding and Testing Utilities for TensorRT-LLM Knowledge Graph
@@ -19,7 +11,6 @@ import type {
  * and validating database operations. Follows Carmack's principles of provable
  * correctness and comprehensive testing.
  */
-
 
 // =============================================================================
 // SEEDING CONFIGURATION
@@ -62,7 +53,7 @@ export class TestDataGenerator {
 
   constructor(config: SeedingConfig) {
     this.config = config;
-    
+
     // Use seeded random for reproducible test data
     if (config.randomSeed !== undefined) {
       let seed = config.randomSeed;
@@ -82,14 +73,14 @@ export class TestDataGenerator {
     const types = ArtifactTypeSchema.options;
     const impacts = PerformanceImpactSchema.options;
     const languages = ['cpp', 'cuda', 'python', 'c', 'cmake'];
-    
-    const type = types[Math.floor(this.random() * types.length)] as typeof types[number];
+
+    const type = types[Math.floor(this.random() * types.length)] as (typeof types)[number];
     const language = languages[Math.floor(this.random() * languages.length)] as string;
-    const impact = impacts[Math.floor(this.random() * impacts.length)] as typeof impacts[number];
-    
+    const impact = impacts[Math.floor(this.random() * impacts.length)] as (typeof impacts)[number];
+
     const names = this.getNamesByType(type);
     const name = names[Math.floor(this.random() * names.length)] as string;
-    
+
     return {
       entityKind: 'artifact',
       type,
@@ -119,8 +110,10 @@ export class TestDataGenerator {
    */
   generateGraphEdge(sourceId: string, targetId: string): CreateGraphEdgeInput {
     const relationTypes = RelationTypeSchema.options;
-    const relationType = relationTypes[Math.floor(this.random() * relationTypes.length)] as typeof relationTypes[number];
-    
+    const relationType = relationTypes[
+      Math.floor(this.random() * relationTypes.length)
+    ] as (typeof relationTypes)[number];
+
     return {
       source_id: sourceId,
       target_id: targetId,
@@ -144,11 +137,29 @@ export class TestDataGenerator {
 
   private getNamesByType(type: string): string[] {
     const nameMap: Record<string, string[]> = {
-      function: ['processData', 'calculateMetrics', 'optimizeKernel', 'validateInput', 'transformTensor'],
-      class: ['TensorProcessor', 'KernelOptimizer', 'DataValidator', 'MetricsCalculator', 'TensorTransform'],
+      function: [
+        'processData',
+        'calculateMetrics',
+        'optimizeKernel',
+        'validateInput',
+        'transformTensor',
+      ],
+      class: [
+        'TensorProcessor',
+        'KernelOptimizer',
+        'DataValidator',
+        'MetricsCalculator',
+        'TensorTransform',
+      ],
       file: ['tensor_ops', 'kernel_utils', 'data_processor', 'metrics', 'optimizer'],
       module: ['core', 'utils', 'kernels', 'optimizations', 'transforms'],
-      test: ['test_tensor_ops', 'test_kernels', 'test_optimizer', 'test_metrics', 'test_transforms'],
+      test: [
+        'test_tensor_ops',
+        'test_kernels',
+        'test_optimizer',
+        'test_metrics',
+        'test_transforms',
+      ],
       documentation: ['README', 'API_GUIDE', 'TUTORIAL', 'EXAMPLES', 'CHANGELOG'],
       config: ['config', 'settings', 'parameters', 'options', 'preferences'],
       build_script: ['CMakeLists', 'Makefile', 'build', 'setup', 'install'],
@@ -157,7 +168,7 @@ export class TestDataGenerator {
       pr: ['feature', 'bugfix', 'hotfix', 'docs', 'refactor'],
       code_line: ['declaration', 'assignment', 'function_call', 'return_statement', 'loop'],
     };
-    
+
     return nameMap[type] || ['generic_item'];
   }
 
@@ -179,7 +190,7 @@ export class TestDataGenerator {
         `Implementation file for ${name} module`,
       ],
     };
-    
+
     const typeTemplates = templates[type] || [`Generated ${type} for ${name}`];
     return typeTemplates[Math.floor(this.random() * typeTemplates.length)] as string;
   }
@@ -201,7 +212,7 @@ export class TestDataGenerator {
         ],
       },
     };
-    
+
     const langTemplates = contentTemplates[type]?.[language] || ['// Generated content'];
     return langTemplates[Math.floor(this.random() * langTemplates.length)] as string;
   }
@@ -214,10 +225,10 @@ export class TestDataGenerator {
       c: '.c',
       cmake: '.cmake',
     };
-    
+
     const ext = extensions[language] || '.txt';
     const basePath = type === 'test' ? 'tests/' : 'src/';
-    
+
     return `${basePath}${name}_${index}${ext}`;
   }
 
@@ -232,8 +243,14 @@ export class TestDataGenerator {
 
   private generateAuthorName(): string {
     const names = [
-      'Alice Johnson', 'Bob Smith', 'Carol Davis', 'David Wilson',
-      'Eva Brown', 'Frank Miller', 'Grace Lee', 'Henry Taylor',
+      'Alice Johnson',
+      'Bob Smith',
+      'Carol Davis',
+      'David Wilson',
+      'Eva Brown',
+      'Frank Miller',
+      'Grace Lee',
+      'Henry Taylor',
     ];
     return names[Math.floor(this.random() * names.length)] as string;
   }
@@ -247,7 +264,7 @@ export class TestDataGenerator {
 
   private generateDate(): Date {
     const now = Date.now();
-    const yearAgo = now - (365 * 24 * 60 * 60 * 1000);
+    const yearAgo = now - 365 * 24 * 60 * 60 * 1000;
     return new Date(yearAgo + this.random() * (now - yearAgo));
   }
 
@@ -277,10 +294,10 @@ export class TestDataGenerator {
       file: ['source', 'header', 'implementation'],
       test: ['unit-test', 'integration', 'validation'],
     };
-    
+
     const baseTags = tagMap[type] || ['general'];
     const numTags = Math.floor(this.random() * 3) + 1;
-    
+
     return baseTags.slice(0, numTags);
   }
 
@@ -292,7 +309,7 @@ export class TestDataGenerator {
       uses: ['Dependency detected', 'Imports or includes found'],
       references: ['Reference found in documentation', 'Mentioned in comments'],
     };
-    
+
     const evidenceList = evidenceMap[relationType] || ['Relationship detected'];
     return evidenceList[Math.floor(this.random() * evidenceList.length)] as string;
   }
@@ -389,7 +406,7 @@ export class DatabaseSeeder {
    */
   private async seedArtifacts(): Promise<number> {
     const artifacts: CreateArtifactInput[] = [];
-    
+
     for (let i = 0; i < this.config.seedArtifacts; i++) {
       artifacts.push(this.generator.generateArtifact(i));
     }
@@ -404,45 +421,44 @@ export class DatabaseSeeder {
   private async seedGraphEdges(): Promise<number> {
     // Get existing artifacts to create edges between them
     const artifacts = await this.ops.artifacts.search({}, this.config.seedArtifacts);
-    
+
     if (artifacts.length < 2) {
       return 0;
     }
 
     const edges: CreateGraphEdgeInput[] = [];
-    
+
     for (let i = 0; i < this.config.seedEdges; i++) {
       const sourceIndex = Math.floor(Math.random() * artifacts.length);
       let targetIndex = Math.floor(Math.random() * artifacts.length);
-      
+
       // Ensure source and target are different
       while (targetIndex === sourceIndex) {
         targetIndex = Math.floor(Math.random() * artifacts.length);
       }
-      
+
       const sourceArtifact = artifacts[sourceIndex];
       const targetArtifact = artifacts[targetIndex];
-      
+
       if (sourceArtifact && targetArtifact) {
-        const edge = this.generator.generateGraphEdge(
-          sourceArtifact.id,
-          targetArtifact.id
-        );
-        
+        const edge = this.generator.generateGraphEdge(sourceArtifact.id, targetArtifact.id);
+
         edges.push(edge);
       }
     }
 
     // Create edges in batches
     let created = 0;
-    
+
     for (const edge of edges) {
       try {
         await this.ops.edges.create(edge);
         created++;
       } catch (error) {
         // Skip duplicate edges
-        console.warn(`Skipped edge creation: ${error instanceof Error ? error.message : String(error)}`);
+        console.warn(
+          `Skipped edge creation: ${error instanceof Error ? error.message : String(error)}`
+        );
       }
     }
 
@@ -486,9 +502,12 @@ export async function clearTestData(): Promise<void> {
 /**
  * Create a test database fixture
  */
-export async function createTestFixture(name: string, config?: Partial<SeedingConfig>): Promise<SeedingResult> {
+export async function createTestFixture(
+  name: string,
+  config?: Partial<SeedingConfig>
+): Promise<SeedingResult> {
   console.log(`🔧 Creating test fixture: ${name}`);
-  
+
   const fixtureConfig = SeedingConfigSchema.parse({
     clearExistingData: true,
     seedArtifacts: 50,
@@ -497,7 +516,7 @@ export async function createTestFixture(name: string, config?: Partial<SeedingCo
     randomSeed: 12345, // Fixed seed for reproducible tests
     ...config,
   });
-  
+
   return seedDatabase(fixtureConfig);
 }
 
@@ -507,7 +526,7 @@ export async function createTestFixture(name: string, config?: Partial<SeedingCo
 export async function validateDatabaseIntegrity(): Promise<{ isValid: boolean; errors: string[] }> {
   const db = getDatabaseManager();
   const errors: string[] = [];
-  
+
   try {
     // Check for orphaned edges
     const orphanedEdges = await db.query(`
@@ -515,31 +534,31 @@ export async function validateDatabaseIntegrity(): Promise<{ isValid: boolean; e
       WHERE NOT EXISTS (SELECT 1 FROM artifacts a WHERE a.id = ge.source_id)
          OR NOT EXISTS (SELECT 1 FROM artifacts a WHERE a.id = ge.target_id)
     `);
-    
+
     if (orphanedEdges.rows[0]?.count > 0) {
       errors.push(`Found ${orphanedEdges.rows[0].count} orphaned graph edges`);
     }
-    
+
     // Check for invalid embeddings
     const invalidEmbeddings = await db.query(`
       SELECT COUNT(*) as count FROM artifacts 
       WHERE embedding IS NOT NULL 
       AND array_length(embedding::float[], 1) != 384
     `);
-    
+
     if (invalidEmbeddings.rows[0]?.count > 0) {
       errors.push(`Found ${invalidEmbeddings.rows[0].count} artifacts with invalid embeddings`);
     }
-    
+
     // Check for missing required fields
     const missingNames = await db.query(`
       SELECT COUNT(*) as count FROM artifacts WHERE name IS NULL OR name = ''
     `);
-    
+
     if (missingNames.rows[0]?.count > 0) {
       errors.push(`Found ${missingNames.rows[0].count} artifacts with missing names`);
     }
-    
+
     return {
       isValid: errors.length === 0,
       errors,
@@ -547,7 +566,9 @@ export async function validateDatabaseIntegrity(): Promise<{ isValid: boolean; e
   } catch (error) {
     return {
       isValid: false,
-      errors: [`Database integrity check failed: ${error instanceof Error ? error.message : String(error)}`],
+      errors: [
+        `Database integrity check failed: ${error instanceof Error ? error.message : String(error)}`,
+      ],
     };
   }
 }

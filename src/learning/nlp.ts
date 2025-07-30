@@ -440,7 +440,7 @@ class SentimentAnalyzer {
     let intensifier = 1.0;
 
     for (let i = 0; i < words.length; i++) {
-      const word = words[i]!.replace(/[^\w]/g, '');
+      const word = words[i]?.replace(/[^\w]/g, '');
 
       // Check for intensifiers
       if (this.intensifiers.has(word)) {

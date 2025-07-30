@@ -87,12 +87,12 @@ export class QLearningAgent {
     if (!this.qTable.has(stateKey)) {
       this.qTable.set(stateKey, new Map());
     }
-    if (!this.qTable.get(stateKey)!.has(actionKey)) {
-      this.qTable.get(stateKey)!.set(actionKey, 0);
+    if (!this.qTable.get(stateKey)?.has(actionKey)) {
+      this.qTable.get(stateKey)?.set(actionKey, 0);
     }
 
     // Current Q-value
-    const currentQ = this.qTable.get(stateKey)!.get(actionKey)!;
+    const currentQ = this.qTable.get(stateKey)?.get(actionKey)!;
 
     // Maximum Q-value for next state
     let maxNextQ = 0;
@@ -105,7 +105,7 @@ export class QLearningAgent {
     const targetQ = reward + this.config.discountFactor * maxNextQ;
     const newQ = currentQ + this.config.learningRate * (targetQ - currentQ);
 
-    this.qTable.get(stateKey)!.set(actionKey, newQ);
+    this.qTable.get(stateKey)?.set(actionKey, newQ);
 
     // Decay exploration rate
     this.explorationRate = Math.max(
@@ -125,7 +125,7 @@ export class QLearningAgent {
       return 0;
     }
 
-    return this.qTable.get(stateKey)!.get(actionKey) || 0;
+    return this.qTable.get(stateKey)?.get(actionKey) || 0;
   }
 
   /**
@@ -298,7 +298,7 @@ export class PolicyGradientAgent {
     // Calculate discounted rewards backwards
     for (let i = this.episodeHistory.length - 1; i >= 0; i--) {
       discountedReward =
-        this.episodeHistory[i]!.reward + this.config.discountFactor * discountedReward;
+        this.episodeHistory[i]?.reward + this.config.discountFactor * discountedReward;
       rewards.unshift(discountedReward);
     }
 
@@ -562,7 +562,6 @@ export class RewardCalculator {
         return reward > 0 ? Math.exp(reward) - 1 : -(Math.exp(-reward) - 1);
       case 'logarithmic':
         return reward > 0 ? Math.log(1 + reward) : -Math.log(1 - reward);
-      case 'linear':
       default:
         return reward;
     }

@@ -3,14 +3,19 @@
  */
 
 // Bun/Node compatible fetch with timeout utility.
-async function fetchWithTimeout(resource: RequestInfo, options: any = {}, timeoutMs: number = 30000): Promise<Response> {
+async function fetchWithTimeout(
+  resource: RequestInfo,
+  options: any = {},
+  timeoutMs = 30000
+): Promise<Response> {
   return Promise.race([
     fetch(resource, options),
     new Promise<Response>((_, reject) =>
       setTimeout(() => reject(new Error(`Fetch timeout after ${timeoutMs}ms`)), timeoutMs)
-    )
+    ),
   ]) as Promise<Response>;
 }
+
 import { z } from 'zod';
 import { getEnvironmentConfig } from '../config/environment.js';
 
@@ -145,10 +150,10 @@ class RateLimiter {
     state.totalCost += cost;
   }
 
-getTotalCost(provider: string, model: string): number {
-  const key = `${provider}-${model}`;
-  return this.state.get(key)?.totalCost ?? 0;
-}
+  getTotalCost(provider: string, model: string): number {
+    const key = `${provider}-${model}`;
+    return this.state.get(key)?.totalCost ?? 0;
+  }
 }
 
 const globalRateLimiter = new RateLimiter();
@@ -178,7 +183,6 @@ abstract class BaseLLMProvider {
 
     if (!canProceed) {
       if (attempt >= MAX_ATTEMPTS) {
-
         throw new Error(`Rate limit wait exceeded maximum attempts (${MAX_ATTEMPTS}).`);
       }
       // Calculate wait time based on oldest request
@@ -204,108 +208,110 @@ abstract class BaseLLMProvider {
 // =============================================================================
 
 export class OpenAIProvider extends BaseLLMProvider {
-async makeRequest(request: LLMRequest): Promise<LLMResponse> {
-  const validatedRequest = LLMRequestSchema.parse(request);
-  const estimatedTokens = this.estimateTokens(validatedRequest.prompt);
+  async makeRequest(request: LLMRequest): Promise<LLMResponse> {
+    const validatedRequest = LLMRequestSchema.parse(request);
+    const estimatedTokens = this.estimateTokens(validatedRequest.prompt);
 
-  await this.waitForRateLimit(estimatedTokens);
+    await this.waitForRateLimit(estimatedTokens);
 
-  if (!this.config.apiKey) {
-    throw new Error('OpenAI API key not configured');
-  }
-
-  const startTime = Date.now();
-  let retryCount = 0;
-  const maxRetries = validatedRequest.options?.maxRetries ?? this.config.retries ?? 3;
-
-  while (retryCount <= maxRetries) {
-    try {
-
-      const response = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${this.config.apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: this.config.model,
-          messages: [
-            ...(validatedRequest.systemPrompt
-              ? [
-                  {
-                    role: 'system',
-                    content: validatedRequest.systemPrompt,
-                  },
-                ]
-              : []),
-            {
-              role: 'user',
-              content: validatedRequest.prompt,
-            },
-          ],
-          max_tokens: this.config.maxTokens,
-          temperature: this.config.temperature,
-          ...(validatedRequest.options?.jsonMode
-            ? { response_format: { type: 'json_object' } }
-            : {}),
-        }),
-      }, this.config.timeout);
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-
-        throw new Error(
-          `OpenAI API error: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`
-        );
-      }
-
-      const data = await response.json();
-      const content = data.choices?.[0]?.message?.content || '';
-      const usage = data.usage || {};
-      const cost = this.calculateCost(usage.total_tokens || estimatedTokens);
-
-      // Record usage for rate limiting
-      await this.rateLimiter.recordRequest(
-        this.config.provider,
-        this.config,
-        usage.total_tokens || estimatedTokens,
-        cost
-      );
-
-
-      return LLMResponseSchema.parse({
-        content,
-        usage: {
-          promptTokens: usage.prompt_tokens || 0,
-          completionTokens: usage.completion_tokens || 0,
-          totalTokens: usage.total_tokens || 0,
-          cost,
-        },
-        model: this.config.model,
-        provider: 'openai',
-        metadata: {
-          requestId: data.id,
-          processingTime: Date.now() - startTime,
-          retryCount,
-        },
-      });
-    } catch (error) {
-      retryCount++;
-
-      if (retryCount > maxRetries) {
-        throw error;
-      }
-
-      const delay = Math.min(1000 * 2 ** retryCount, 10000);
-
-      // Optionally log retry here
-      // console.warn(`OpenAI request failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms...`);
-      await new Promise((resolve) => setTimeout(resolve, delay));
+    if (!this.config.apiKey) {
+      throw new Error('OpenAI API key not configured');
     }
-  }
 
-  throw new Error('Max retries exceeded');
-}
+    const startTime = Date.now();
+    let retryCount = 0;
+    const maxRetries = validatedRequest.options?.maxRetries ?? this.config.retries ?? 3;
+
+    while (retryCount <= maxRetries) {
+      try {
+        const response = await fetchWithTimeout(
+          'https://api.openai.com/v1/chat/completions',
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${this.config.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: this.config.model,
+              messages: [
+                ...(validatedRequest.systemPrompt
+                  ? [
+                      {
+                        role: 'system',
+                        content: validatedRequest.systemPrompt,
+                      },
+                    ]
+                  : []),
+                {
+                  role: 'user',
+                  content: validatedRequest.prompt,
+                },
+              ],
+              max_tokens: this.config.maxTokens,
+              temperature: this.config.temperature,
+              ...(validatedRequest.options?.jsonMode
+                ? { response_format: { type: 'json_object' } }
+                : {}),
+            }),
+          },
+          this.config.timeout
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+
+          throw new Error(
+            `OpenAI API error: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`
+          );
+        }
+
+        const data = await response.json();
+        const content = data.choices?.[0]?.message?.content || '';
+        const usage = data.usage || {};
+        const cost = this.calculateCost(usage.total_tokens || estimatedTokens);
+
+        // Record usage for rate limiting
+        await this.rateLimiter.recordRequest(
+          this.config.provider,
+          this.config,
+          usage.total_tokens || estimatedTokens,
+          cost
+        );
+
+        return LLMResponseSchema.parse({
+          content,
+          usage: {
+            promptTokens: usage.prompt_tokens || 0,
+            completionTokens: usage.completion_tokens || 0,
+            totalTokens: usage.total_tokens || 0,
+            cost,
+          },
+          model: this.config.model,
+          provider: 'openai',
+          metadata: {
+            requestId: data.id,
+            processingTime: Date.now() - startTime,
+            retryCount,
+          },
+        });
+      } catch (error) {
+        retryCount++;
+
+        if (retryCount > maxRetries) {
+          throw error;
+        }
+
+        const delay = Math.min(1000 * 2 ** retryCount, 10000);
+
+        // Optionally log retry here
+        // console.warn(`OpenAI request failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms...`);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+
+    throw new Error('Max retries exceeded');
+  }
 }
 
 // =============================================================================
@@ -323,33 +329,37 @@ export class AnthropicProvider extends BaseLLMProvider {
       throw new Error('Anthropic API key not configured');
     }
 
-const startTime = Date.now();
-let retryCount = 0;
-const maxRetries = validatedRequest.options?.maxRetries ?? this.config.retries ?? 3;
+    const startTime = Date.now();
+    let retryCount = 0;
+    const maxRetries = validatedRequest.options?.maxRetries ?? this.config.retries ?? 3;
 
-while (retryCount <= maxRetries) {
+    while (retryCount <= maxRetries) {
       try {
-        const response = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: {
-            'x-api-key': this.config.apiKey,
-            'Content-Type': 'application/json',
-            'anthropic-version': '2023-06-01',
+        const response = await fetchWithTimeout(
+          'https://api.anthropic.com/v1/messages',
+          {
+            method: 'POST',
+            headers: {
+              'x-api-key': this.config.apiKey,
+              'Content-Type': 'application/json',
+              'anthropic-version': '2023-06-01',
+            },
+            body: JSON.stringify({
+              model: this.config.model || 'claude-3-5-sonnet-20241022',
+              max_tokens: this.config.maxTokens,
+              temperature: this.config.temperature,
+              system:
+                validatedRequest.systemPrompt || 'You are an expert code transformation assistant.',
+              messages: [
+                {
+                  role: 'user',
+                  content: validatedRequest.prompt,
+                },
+              ],
+            }),
           },
-          body: JSON.stringify({
-            model: this.config.model || 'claude-3-5-sonnet-20241022',
-            max_tokens: this.config.maxTokens,
-            temperature: this.config.temperature,
-            system:
-              validatedRequest.systemPrompt || 'You are an expert code transformation assistant.',
-            messages: [
-              {
-                role: 'user',
-                content: validatedRequest.prompt,
-              },
-            ],
-          }),
-        }, this.config.timeout);
+          this.config.timeout
+        );
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
@@ -395,8 +405,8 @@ while (retryCount <= maxRetries) {
 
         const delay = Math.min(1000 * 2 ** retryCount, 10000);
 
-          // Optionally log retry here
-          // console.warn(`Anthropic request failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms...`);
+        // Optionally log retry here
+        // console.warn(`Anthropic request failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms...`);
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
@@ -420,42 +430,46 @@ export class OpenRouterProvider extends BaseLLMProvider {
       throw new Error('OpenRouter API key not configured');
     }
 
-const baseURL = this.config.baseURL || 'https://openrouter.ai/api/v1';
-const startTime = Date.now();
-let retryCount = 0;
-const maxRetries = validatedRequest.options?.maxRetries ?? this.config.retries ?? 3;
+    const baseURL = this.config.baseURL || 'https://openrouter.ai/api/v1';
+    const startTime = Date.now();
+    let retryCount = 0;
+    const maxRetries = validatedRequest.options?.maxRetries ?? this.config.retries ?? 3;
 
-while (retryCount <= maxRetries) {
+    while (retryCount <= maxRetries) {
       try {
-        const response = await fetchWithTimeout(`${baseURL}/chat/completions`, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${this.config.apiKey}`,
-            'Content-Type': 'application/json',
-            'HTTP-Referer': 'https://github.com/DavinciDreams/carmack',
-            'X-Title': 'Carmack Coder',
+        const response = await fetchWithTimeout(
+          `${baseURL}/chat/completions`,
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${this.config.apiKey}`,
+              'Content-Type': 'application/json',
+              'HTTP-Referer': 'https://github.com/DavinciDreams/carmack',
+              'X-Title': 'Carmack Coder',
+            },
+            body: JSON.stringify({
+              model: this.config.model || 'anthropic/claude-3.5-sonnet',
+              messages: [
+                ...(validatedRequest.systemPrompt
+                  ? [
+                      {
+                        role: 'system',
+                        content: validatedRequest.systemPrompt,
+                      },
+                    ]
+                  : []),
+                {
+                  role: 'user',
+                  content: validatedRequest.prompt,
+                },
+              ],
+              max_tokens: this.config.maxTokens,
+              temperature: this.config.temperature,
+              stream: false,
+            }),
           },
-          body: JSON.stringify({
-            model: this.config.model || 'anthropic/claude-3.5-sonnet',
-            messages: [
-              ...(validatedRequest.systemPrompt
-                ? [
-                    {
-                      role: 'system',
-                      content: validatedRequest.systemPrompt,
-                    },
-                  ]
-                : []),
-              {
-                role: 'user',
-                content: validatedRequest.prompt,
-              },
-            ],
-            max_tokens: this.config.maxTokens,
-            temperature: this.config.temperature,
-            stream: false,
-          }),
-        }, this.config.timeout);
+          this.config.timeout
+        );
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
@@ -501,8 +515,8 @@ while (retryCount <= maxRetries) {
 
         const delay = Math.min(1000 * 2 ** retryCount, 10000);
 
-          // Optionally log retry here
-          // console.warn(`OpenRouter request failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms...`);
+        // Optionally log retry here
+        // console.warn(`OpenRouter request failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms...`);
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
@@ -520,37 +534,45 @@ export class OllamaProvider extends BaseLLMProvider {
     const validatedRequest = LLMRequestSchema.parse(request);
     const estimatedTokens = this.estimateTokens(validatedRequest.prompt);
 
-const baseURL = this.config.baseURL || 'http://localhost:11434';
-const startTime = Date.now();
-let retryCount = 0;
-const maxRetries = validatedRequest.options?.maxRetries ?? this.config.retries ?? 3;
+    const baseURL = this.config.baseURL || 'http://localhost:11434';
+    const startTime = Date.now();
+    let retryCount = 0;
+    const maxRetries = validatedRequest.options?.maxRetries ?? this.config.retries ?? 3;
 
-while (retryCount <= maxRetries) {
+    while (retryCount <= maxRetries) {
       try {
         // Check if Ollama is running
-        await fetchWithTimeout(`${baseURL}/api/tags`, {
-          method: 'GET',
-        }, 5000);
+        await fetchWithTimeout(
+          `${baseURL}/api/tags`,
+          {
+            method: 'GET',
+          },
+          5000
+        );
 
         const prompt = validatedRequest.systemPrompt
           ? `${validatedRequest.systemPrompt}\n\n${validatedRequest.prompt}`
           : validatedRequest.prompt;
 
-        const response = await fetchWithTimeout(`${baseURL}/api/generate`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: this.config.model || 'codellama',
-            prompt,
-            stream: false,
-            options: {
-              temperature: this.config.temperature,
-              num_predict: this.config.maxTokens,
+        const response = await fetchWithTimeout(
+          `${baseURL}/api/generate`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
             },
-          }),
-        }, this.config.timeout);
+            body: JSON.stringify({
+              model: this.config.model || 'codellama',
+              prompt,
+              stream: false,
+              options: {
+                temperature: this.config.temperature,
+                num_predict: this.config.maxTokens,
+              },
+            }),
+          },
+          this.config.timeout
+        );
 
         if (!response.ok) {
           throw new Error(`Ollama API error: ${response.status} ${response.statusText}`);
@@ -585,7 +607,7 @@ while (retryCount <= maxRetries) {
 
         const delay = Math.min(1000 * 2 ** retryCount, 5000);
 
-          // Ollama request failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms...
+        // Ollama request failed (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms...
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
@@ -656,19 +678,15 @@ export class LLMProviderManager {
 
         const provider = this.getProvider(providerName, config);
 
-
         const response = await provider.makeRequest(request);
 
         return response;
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
-
       }
     }
 
-    throw new Error(
-lastError?.message
-    );
+    throw new Error(lastError?.message);
   }
 
   getTotalCost(): Record<string, number> {

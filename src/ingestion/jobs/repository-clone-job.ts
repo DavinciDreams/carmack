@@ -1,6 +1,7 @@
 // Zod schema for validating a safe directory path (basic, can be extended)
 const DirectoryPathSchema = z.string().min(1, 'Directory path must not be empty');
-import { rm } from 'fs/promises';
+
+import { rm } from 'node:fs/promises';
 import { task } from '@trigger.dev/sdk/v3';
 import { z } from 'zod';
 
@@ -12,7 +13,6 @@ import { RepositoryManager } from '../repository-manager.ts';
  * Handles cloning and updating any git repository in the background.
  * Includes progress tracking, error handling, and retry logic.
  */
-
 
 // =============================================================================
 // SCHEMAS
@@ -45,7 +45,9 @@ export type RepositoryCloneResult = z.infer<typeof RepositoryCloneResultSchema>;
 // REPOSITORY CLONE JOB
 // =============================================================================
 
-export async function runRepositoryCloneJob(payload: RepositoryClonePayload): Promise<RepositoryCloneResult> {
+export async function runRepositoryCloneJob(
+  payload: RepositoryClonePayload
+): Promise<RepositoryCloneResult> {
   const startTime = Date.now();
   try {
     console.log('Starting repository clone job', {

@@ -15,11 +15,13 @@ export const QualityResultSchema = z.object({
     fair: z.number(),
     poor: z.number(),
   }),
-  commonIssues: z.array(z.object({
-    issue: z.string(),
-    frequency: z.number(),
-    impact: z.enum(['high', 'medium', 'low']),
-  })),
+  commonIssues: z.array(
+    z.object({
+      issue: z.string(),
+      frequency: z.number(),
+      impact: z.enum(['high', 'medium', 'low']),
+    })
+  ),
   recommendations: z.array(z.string()),
   totalResponses: z.number(),
   validatedResponses: z.number(),
@@ -33,15 +35,15 @@ export const EngagementResultSchema = z.object({
   averageSessionDuration: z.number(),
 });
 export type EngagementResult = z.infer<typeof EngagementResultSchema>;
+
 import { z } from 'zod';
 
 /**
  * Type Definitions for EPIC-TESTING-METRICS System
- * 
+ *
  * Comprehensive type definitions for the TensorRT-LLM knowledge graph
  * testing and validation system.
  */
-
 
 // =============================================================================
 // BENCHMARK TESTING TYPES
@@ -201,11 +203,13 @@ export const LoadTestResultSchema = z.object({
   errorRate: z.number().min(0).max(1),
   peakMemoryUsage: z.number(),
   averageCpuUsage: z.number(),
-  errors: z.array(z.object({
-    type: z.string(),
-    message: z.string(),
-    count: z.number(),
-  })),
+  errors: z.array(
+    z.object({
+      type: z.string(),
+      message: z.string(),
+      count: z.number(),
+    })
+  ),
   passed: z.boolean(),
 });
 
@@ -242,13 +246,15 @@ export type AccuracyValidation = z.infer<typeof AccuracyValidationSchema>;
 export const SearchRelevanceSchema = z.object({
   queryId: z.string().uuid(),
   query: z.string(),
-  results: z.array(z.object({
-    artifactId: z.string().uuid(),
-    rank: z.number(),
-    score: z.number().min(0).max(1),
-    relevanceRating: z.number().min(1).max(5),
-    explanation: z.string().optional(),
-  })),
+  results: z.array(
+    z.object({
+      artifactId: z.string().uuid(),
+      rank: z.number(),
+      score: z.number().min(0).max(1),
+      relevanceRating: z.number().min(1).max(5),
+      explanation: z.string().optional(),
+    })
+  ),
   ndcg: z.number().min(0).max(1), // Normalized Discounted Cumulative Gain
   map: z.number().min(0).max(1), // Mean Average Precision
   precision: z.number().min(0).max(1),
@@ -284,18 +290,22 @@ export const TestReportSummarySchema = z.object({
   }),
   keyMetrics: z.record(z.number()),
   recommendations: z.array(z.string()),
-  trends: z.array(z.object({
-    metric: z.string(),
-    trend: z.enum(['improving', 'stable', 'declining']),
-    changePercent: z.number(),
-  })),
-  alerts: z.array(z.object({
-    severity: z.enum(['critical', 'warning', 'info']),
-    message: z.string(),
-    metric: z.string(),
-    threshold: z.number(),
-    actualValue: z.number(),
-  })),
+  trends: z.array(
+    z.object({
+      metric: z.string(),
+      trend: z.enum(['improving', 'stable', 'declining']),
+      changePercent: z.number(),
+    })
+  ),
+  alerts: z.array(
+    z.object({
+      severity: z.enum(['critical', 'warning', 'info']),
+      message: z.string(),
+      metric: z.string(),
+      threshold: z.number(),
+      actualValue: z.number(),
+    })
+  ),
 });
 
 export type TestReportSummary = z.infer<typeof TestReportSummarySchema>;
@@ -366,7 +376,13 @@ export type DashboardData = z.infer<typeof DashboardDataSchema>;
 export const TensorRTTestScenarioSchema = z.object({
   id: z.string(),
   name: z.string(),
-  category: z.enum(['scheduler_performance', 'memory_management', 'cuda_kernels', 'performance_regression', 'architecture']),
+  category: z.enum([
+    'scheduler_performance',
+    'memory_management',
+    'cuda_kernels',
+    'performance_regression',
+    'architecture',
+  ]),
   description: z.string(),
   testQuery: z.string(),
   expectedInsights: z.array(z.string()),

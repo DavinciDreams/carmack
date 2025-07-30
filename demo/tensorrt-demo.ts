@@ -2,7 +2,7 @@
 
 /**
  * TensorRT Knowledge Graph Platform - Comprehensive Interactive Demo
- * 
+ *
  * This demo showcases all four implemented epics:
  * 1. EPIC-SETUP-INFRASTRUCTURE: Database schema and connection management
  * 2. EPIC-INGESTION-PIPELINE: Repository ingestion and CST extraction
@@ -10,12 +10,11 @@
  * 4. EPIC-TESTING-METRICS: Performance metrics and validation results
  */
 
+import { performance } from 'node:perf_hooks';
+import { z } from 'zod';
+import { getDatabaseManager } from '../src/db/connection.ts';
 import { OracleQueryProcessor } from '../src/docs/oracle-query-processor.js';
 import { SemanticIndexer } from '../src/ingestion/semantic-indexer.js';
-import { getDatabaseManager } from '../src/db/connection.ts';
-import { getEnvironmentConfig } from '../src/config/environment.js';
-import { performance } from 'perf_hooks';
-import { z } from 'zod';
 
 // Demo configuration
 const DEMO_CONFIG = {
@@ -28,44 +27,44 @@ const DEMO_CONFIG = {
     showMetrics: true,
     verboseOutput: false,
     interactiveMode: true,
-  }
+  },
 };
 
 // Demo scenarios for different user personas
 const DEMO_SCENARIOS = {
   engineer: {
-    title: "🔧 Software Engineer Workflow",
-    description: "Investigating TensorRT implementation details and debugging issues",
+    title: '🔧 Software Engineer Workflow',
+    description: 'Investigating TensorRT implementation details and debugging issues',
     queries: [
-      "Find CUDA kernel implementations for convolution operations",
-      "Show me memory allocation patterns in TensorRT engines",
-      "How does TensorRT handle FP16 precision optimization?",
-      "Find examples of custom plugin implementations",
-      "What are common error handling patterns in the codebase?"
-    ]
+      'Find CUDA kernel implementations for convolution operations',
+      'Show me memory allocation patterns in TensorRT engines',
+      'How does TensorRT handle FP16 precision optimization?',
+      'Find examples of custom plugin implementations',
+      'What are common error handling patterns in the codebase?',
+    ],
   },
   researcher: {
-    title: "🔬 AI Researcher Workflow", 
-    description: "Understanding TensorRT architecture and optimization techniques",
+    title: '🔬 AI Researcher Workflow',
+    description: 'Understanding TensorRT architecture and optimization techniques',
     queries: [
       "Explain TensorRT's graph optimization strategies",
-      "Compare different quantization approaches in the codebase",
-      "Show me performance benchmarking implementations",
-      "How does TensorRT implement layer fusion?",
-      "What are the architectural patterns for inference engines?"
-    ]
+      'Compare different quantization approaches in the codebase',
+      'Show me performance benchmarking implementations',
+      'How does TensorRT implement layer fusion?',
+      'What are the architectural patterns for inference engines?',
+    ],
   },
   manager: {
-    title: "📊 Engineering Manager Workflow",
-    description: "Getting high-level insights and architectural understanding",
+    title: '📊 Engineering Manager Workflow',
+    description: 'Getting high-level insights and architectural understanding',
     queries: [
-      "What are the main components of TensorRT architecture?",
-      "Show me the most complex parts of the codebase",
-      "What are the key performance optimization areas?",
-      "How is error handling implemented across the system?",
-      "What are the main API patterns used in TensorRT?"
-    ]
-  }
+      'What are the main components of TensorRT architecture?',
+      'Show me the most complex parts of the codebase',
+      'What are the key performance optimization areas?',
+      'How is error handling implemented across the system?',
+      'What are the main API patterns used in TensorRT?',
+    ],
+  },
 };
 
 // Performance metrics tracking
@@ -88,8 +87,8 @@ class TensorRTDemo {
   constructor() {
     // Initialize database connection using centralized manager
     // This properly handles POSTGRES_URL parsing in Docker environments
-    const dbManager = getDatabaseManager();
-    
+    const _dbManager = getDatabaseManager();
+
     // Create a basic config object - the actual connection will use POSTGRES_URL
     const dbConfig = {
       host: 'localhost',
@@ -99,12 +98,16 @@ class TensorRTDemo {
       password: 'oracle_secure_password',
       schema: 'tensorrt_oracle',
     };
-    
+
     this.processor = new OracleQueryProcessor(dbConfig);
     this.indexer = new SemanticIndexer({
       model: process.env.SEMANTIC_INDEXER_MODEL || 'gpt-3.5-turbo',
-      maxTokens: process.env.SEMANTIC_INDEXER_MAX_TOKENS ? Number(process.env.SEMANTIC_INDEXER_MAX_TOKENS) : 2048,
-      batchSize: process.env.SEMANTIC_INDEXER_BATCH_SIZE ? Number(process.env.SEMANTIC_INDEXER_BATCH_SIZE) : 32,
+      maxTokens: process.env.SEMANTIC_INDEXER_MAX_TOKENS
+        ? Number(process.env.SEMANTIC_INDEXER_MAX_TOKENS)
+        : 2048,
+      batchSize: process.env.SEMANTIC_INDEXER_BATCH_SIZE
+        ? Number(process.env.SEMANTIC_INDEXER_BATCH_SIZE)
+        : 32,
       apiKey: process.env.ANTHROPIC_API_KEY, // Uncomment if needed
     });
     this.metrics = {
@@ -122,14 +125,14 @@ class TensorRTDemo {
 
   async initialize(): Promise<void> {
     console.log('🔮 Initializing TensorRT Knowledge Graph Platform Demo...\n');
-    
+
     try {
       // EPIC 1: Infrastructure Setup
       await this.demonstrateInfrastructure();
-      
+
       // EPIC 4: Testing & Metrics (Database validation)
       await this.validateDatabaseSetup();
-      
+
       console.log('✅ Demo initialization complete!\n');
     } catch (error) {
       console.error('❌ Demo initialization failed:', error);
@@ -139,26 +142,31 @@ class TensorRTDemo {
 
   async demonstrateInfrastructure(): Promise<void> {
     console.log('📋 EPIC 1: SETUP-INFRASTRUCTURE');
-    console.log('=' .repeat(50));
-    
+    console.log('='.repeat(50));
+
     try {
       await this.indexer.initialize();
       console.log('✅ PostgreSQL connection established');
       console.log('✅ pgvector extension verified');
       console.log('✅ TensorRT Oracle schema validated');
-      
+
       // Show database schema info
       const statsRaw = await this.indexer.getRepositoryStats();
 
       // Zod schema for stats validation
-      const StatsSchema = z.object({
-        total: z.object({
-          totalEntities: z.number(),
-          languagesCount: z.number(),
-          domainsCount: z.number(),
-          filesCount: z.number(),
-        }).strict().optional()
-      }).strict();
+      const StatsSchema = z
+        .object({
+          total: z
+            .object({
+              totalEntities: z.number(),
+              languagesCount: z.number(),
+              domainsCount: z.number(),
+              filesCount: z.number(),
+            })
+            .strict()
+            .optional(),
+        })
+        .strict();
 
       let stats: z.infer<typeof StatsSchema>;
       try {
@@ -178,7 +186,7 @@ class TensorRTDemo {
       } else {
         console.log('  • Database ready for ingestion');
       }
-      
+
       await this.indexer.close();
       console.log('✅ Infrastructure validation complete\n');
     } catch (error) {
@@ -189,20 +197,20 @@ class TensorRTDemo {
 
   async validateDatabaseSetup(): Promise<void> {
     console.log('🧪 EPIC 4: TESTING-METRICS (Database Validation)');
-    console.log('=' .repeat(50));
-    
+    console.log('='.repeat(50));
+
     try {
       await this.indexer.initialize();
-      
+
       // Test vector operations
       console.log('🔍 Testing vector similarity operations...');
-      const testVector = Array.from({length: 512}, () => Math.random());
-      
+      const _testVector = Array.from({ length: 512 }, () => Math.random());
+
       // This would test actual vector operations if we had data
       console.log('✅ Vector operations functional');
       console.log('✅ Semantic search capabilities verified');
       console.log('✅ Performance indices operational');
-      
+
       await this.indexer.close();
       console.log('✅ Database validation complete\n');
     } catch (error) {
@@ -214,16 +222,16 @@ class TensorRTDemo {
   async runPersonaDemo(persona: keyof typeof DEMO_SCENARIOS): Promise<void> {
     const scenario = DEMO_SCENARIOS[persona];
     console.log(`\n${scenario.title}`);
-    console.log('=' .repeat(50));
+    console.log('='.repeat(50));
     console.log(`${scenario.description}\n`);
 
     for (let i = 0; i < scenario.queries.length; i++) {
       const query = scenario.queries[i];
       console.log(`\n🔍 Query ${i + 1}: "${query}"`);
-      console.log('-' .repeat(40));
-      
+      console.log('-'.repeat(40));
+
       await this.processQuery(query);
-      
+
       // Pause between queries for readability
       if (i < scenario.queries.length - 1) {
         await this.pause(1000);
@@ -237,7 +245,7 @@ class TensorRTDemo {
 
     try {
       console.log('⏳ Processing query...');
-      
+
       // EPIC 3: Graph Query Engine
       const oracleQuery = await this.processor.processQuery(query);
       const response = await this.processor.generateResponse(oracleQuery);
@@ -246,8 +254,8 @@ class TensorRTDemo {
 
       // Update metrics
       this.metrics.successfulQueries++;
-      this.metrics.averageResponseTime = 
-        (this.metrics.averageResponseTime * (this.metrics.successfulQueries - 1) + responseTime) / 
+      this.metrics.averageResponseTime =
+        (this.metrics.averageResponseTime * (this.metrics.successfulQueries - 1) + responseTime) /
         this.metrics.successfulQueries;
 
       // Display results
@@ -261,21 +269,22 @@ class TensorRTDemo {
       if (DEMO_CONFIG.demo.showMetrics) {
         console.log('\n📊 Performance Metrics:');
         console.log(`  Total queries: ${this.metrics.totalQueries}`);
-        console.log(`  Success rate: ${Math.round((this.metrics.successfulQueries / this.metrics.totalQueries) * 100)}%`);
+        console.log(
+          `  Success rate: ${Math.round((this.metrics.successfulQueries / this.metrics.totalQueries) * 100)}%`
+        );
         console.log(`  Average response time: ${Math.round(this.metrics.averageResponseTime)}ms`);
       }
 
       // Show abbreviated response for demo
       console.log('\n💬 Oracle Response (Preview):');
-      console.log('=' .repeat(60));
+      console.log('='.repeat(60));
       const lines = response.split('\n');
       const preview = lines.slice(0, 10).join('\n');
       console.log(preview);
       if (lines.length > 10) {
         console.log(`\n... (${lines.length - 10} more lines) ...`);
       }
-      console.log('=' .repeat(60));
-
+      console.log('='.repeat(60));
     } catch (error) {
       this.metrics.failedQueries++;
       console.error('❌ Query failed:', error);
@@ -284,7 +293,7 @@ class TensorRTDemo {
 
   async demonstrateIngestionPipeline(): Promise<void> {
     console.log('\n📥 EPIC 2: INGESTION-PIPELINE');
-    console.log('=' .repeat(50));
+    console.log('='.repeat(50));
     console.log('Demonstrating repository ingestion and CST extraction...\n');
 
     // This would show the ingestion process if we had a repository
@@ -311,8 +320,8 @@ class TensorRTDemo {
 
   async showSystemArchitecture(): Promise<void> {
     console.log('\n🏗️ SYSTEM ARCHITECTURE OVERVIEW');
-    console.log('=' .repeat(50));
-    
+    console.log('='.repeat(50));
+
     console.log(`
 ┌─────────────────────────────────────────────────────────────┐
 │                    TensorRT Knowledge Graph                 │
@@ -341,7 +350,7 @@ class TensorRTDemo {
                     │ • Monitoring    │    │ • API           │
                     └─────────────────┘    └─────────────────┘
 `);
-    
+
     console.log('\n🔧 Technical Stack:');
     console.log('  • Runtime: Bun (TypeScript)');
     console.log('  • Database: PostgreSQL 16 + pgvector');
@@ -436,7 +445,6 @@ class TensorRTDemo {
 
         // Process as a regular query
         await this.processQuery(input);
-
       } catch (error) {
         console.error('❌ Error:', error);
       }
@@ -450,38 +458,47 @@ class TensorRTDemo {
     const totalTime = this.metrics.endTime - this.metrics.startTime;
 
     console.log('\n📊 DEMO PERFORMANCE METRICS');
-    console.log('=' .repeat(50));
+    console.log('='.repeat(50));
     console.log(`Demo Duration: ${Math.round(totalTime / 1000)}s`);
     console.log(`Total Queries: ${this.metrics.totalQueries}`);
     console.log(`Successful Queries: ${this.metrics.successfulQueries}`);
     console.log(`Failed Queries: ${this.metrics.failedQueries}`);
-    console.log(`Success Rate: ${Math.round((this.metrics.successfulQueries / Math.max(this.metrics.totalQueries, 1)) * 100)}%`);
+    console.log(
+      `Success Rate: ${Math.round((this.metrics.successfulQueries / Math.max(this.metrics.totalQueries, 1)) * 100)}%`
+    );
     console.log(`Average Response Time: ${Math.round(this.metrics.averageResponseTime)}ms`);
-    console.log(`Queries per Minute: ${Math.round((this.metrics.totalQueries / (totalTime / 60000)) * 100) / 100}`);
+    console.log(
+      `Queries per Minute: ${Math.round((this.metrics.totalQueries / (totalTime / 60000)) * 100) / 100}`
+    );
 
     try {
       await this.indexer.initialize();
       const dbStatsRaw = await this.indexer.getRepositoryStats();
 
       // Zod schema for stats validation
-      const StatsSchema = z.object({
-        total: z.object({
-          totalEntities: z.number(),
-          languagesCount: z.number(),
-          domainsCount: z.number(),
-          filesCount: z.number(),
-        }).strict().optional()
-      }).strict();
+      const StatsSchema = z
+        .object({
+          total: z
+            .object({
+              totalEntities: z.number(),
+              languagesCount: z.number(),
+              domainsCount: z.number(),
+              filesCount: z.number(),
+            })
+            .strict()
+            .optional(),
+        })
+        .strict();
 
       let dbStats: z.infer<typeof StatsSchema>;
       try {
         dbStats = StatsSchema.parse(dbStatsRaw);
-      } catch (e) {
+      } catch (_e) {
         console.log('Database metrics unavailable (invalid format)');
         await this.indexer.close();
         return;
       }
-      
+
       console.log('\n🗄️ DATABASE METRICS:');
       if (dbStats.total && dbStats.total.totalEntities > 0) {
         console.log(`Total Entities: ${dbStats.total.totalEntities}`);
@@ -491,15 +508,15 @@ class TensorRTDemo {
       } else {
         console.log('Database ready for data ingestion');
       }
-      
+
       await this.indexer.close();
-    } catch (error) {
+    } catch (_error) {
       console.log('Database metrics unavailable');
     }
   }
 
   private async pause(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 
@@ -552,7 +569,6 @@ async function main(): Promise<void> {
 
     // Default: interactive mode
     await demo.runInteractiveMode();
-
   } catch (error) {
     console.error('❌ Demo failed:', error);
     process.exit(1);

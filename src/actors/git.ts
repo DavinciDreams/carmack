@@ -44,7 +44,6 @@ export const gitActor = fromPromise(async ({ input }: { input: GitInput }) => {
   }
 });
 async function createCheckpoint(description: string): Promise<GitCheckpoint> {
-
   try {
     const git = simpleGit();
     // Ensure we're in a git repository
@@ -75,8 +74,7 @@ async function createCheckpoint(description: string): Promise<GitCheckpoint> {
       timestamp: Date.now(),
       description,
     };
-  } catch (error) {
-
+  } catch (_error) {
     // Fallback to mock implementation
     return {
       hash: 'a'.repeat(40), // Mock git hash
@@ -87,7 +85,6 @@ async function createCheckpoint(description: string): Promise<GitCheckpoint> {
   }
 }
 async function commitChanges(message: string, files: string[]): Promise<GitCheckpoint> {
-
   try {
     const git = simpleGit();
     // Ensure we're in a git repository
@@ -112,8 +109,7 @@ async function commitChanges(message: string, files: string[]): Promise<GitCheck
       timestamp: Date.now(),
       description: message,
     };
-  } catch (error) {
-
+  } catch (_error) {
     // Fallback to mock implementation
     return {
       hash: 'b'.repeat(40), // Mock git hash
@@ -124,7 +120,6 @@ async function commitChanges(message: string, files: string[]): Promise<GitCheck
   }
 }
 async function rollbackToCheckpoint(checkpoint: GitCheckpoint): Promise<GitCheckpoint> {
-
   try {
     const git = simpleGit();
     // Ensure we're in a git repository
@@ -132,24 +127,23 @@ async function rollbackToCheckpoint(checkpoint: GitCheckpoint): Promise<GitCheck
     if (!isRepo) {
       throw new Error('Not a git repository');
     }
-// Reset to the checkpoint hash
-await git.reset(['--hard', checkpoint.hash]);
-// Verify we're at the correct commit
-const log = await git.log(['-1']);
-const currentHash = log.latest?.hash;
-if (currentHash !== checkpoint.hash) {
-  throw new Error(
-    `Rollback verification failed: expected ${checkpoint.hash}, got ${currentHash}`
-  );
-}
+    // Reset to the checkpoint hash
+    await git.reset(['--hard', checkpoint.hash]);
+    // Verify we're at the correct commit
+    const log = await git.log(['-1']);
+    const currentHash = log.latest?.hash;
+    if (currentHash !== checkpoint.hash) {
+      throw new Error(
+        `Rollback verification failed: expected ${checkpoint.hash}, got ${currentHash}`
+      );
+    }
     return {
       hash: currentHash || checkpoint.hash,
       branch: checkpoint.branch,
       timestamp: Date.now(),
       description: `Rolled back to: ${checkpoint.description}`,
     };
-  } catch (error) {
-
+  } catch (_error) {
     // Fallback - just return the target checkpoint
     return {
       ...checkpoint,

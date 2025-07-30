@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 /**
  * Language Detection System for Multi-Language Code Transformation
- * 
+ *
  * This module provides comprehensive language detection based on file extensions
  * and content analysis, with full Zod schema validation for type safety.
  */
@@ -21,17 +21,54 @@ export type LanguageMapping = z.infer<typeof LanguageMappingSchema>;
 // Comprehensive file extension to language mapping
 export const FILE_EXTENSION_MAP: Record<string, LanguageMapping> = {
   // Python
-  '.py': { extension: '.py', language: 'python', aliases: ['py', 'python3'], category: 'programming' },
+  '.py': {
+    extension: '.py',
+    language: 'python',
+    aliases: ['py', 'python3'],
+    category: 'programming',
+  },
   '.pyx': { extension: '.pyx', language: 'python', aliases: ['cython'], category: 'programming' },
-  '.pyi': { extension: '.pyi', language: 'python', aliases: ['python-stub'], category: 'programming' },
+  '.pyi': {
+    extension: '.pyi',
+    language: 'python',
+    aliases: ['python-stub'],
+    category: 'programming',
+  },
 
   // JavaScript/TypeScript
-  '.js': { extension: '.js', language: 'javascript', aliases: ['js', 'node'], category: 'programming' },
-  '.jsx': { extension: '.jsx', language: 'javascript', aliases: ['react'], framework: 'React', category: 'programming' },
+  '.js': {
+    extension: '.js',
+    language: 'javascript',
+    aliases: ['js', 'node'],
+    category: 'programming',
+  },
+  '.jsx': {
+    extension: '.jsx',
+    language: 'javascript',
+    aliases: ['react'],
+    framework: 'React',
+    category: 'programming',
+  },
   '.ts': { extension: '.ts', language: 'typescript', aliases: ['ts'], category: 'programming' },
-  '.tsx': { extension: '.tsx', language: 'typescript', aliases: ['react-ts'], framework: 'React', category: 'programming' },
-  '.mjs': { extension: '.mjs', language: 'javascript', aliases: ['module-js'], category: 'programming' },
-  '.cjs': { extension: '.cjs', language: 'javascript', aliases: ['commonjs'], category: 'programming' },
+  '.tsx': {
+    extension: '.tsx',
+    language: 'typescript',
+    aliases: ['react-ts'],
+    framework: 'React',
+    category: 'programming',
+  },
+  '.mjs': {
+    extension: '.mjs',
+    language: 'javascript',
+    aliases: ['module-js'],
+    category: 'programming',
+  },
+  '.cjs': {
+    extension: '.cjs',
+    language: 'javascript',
+    aliases: ['commonjs'],
+    category: 'programming',
+  },
 
   // C/C++
   '.c': { extension: '.c', language: 'c', aliases: ['c'], category: 'programming' },
@@ -45,14 +82,31 @@ export const FILE_EXTENSION_MAP: Record<string, LanguageMapping> = {
   '.h++': { extension: '.h++', language: 'cpp', aliases: ['c++-header'], category: 'programming' },
 
   // CUDA
-  '.cu': { extension: '.cu', language: 'cuda', aliases: ['cuda'], framework: 'CUDA', category: 'programming' },
-  '.cuh': { extension: '.cuh', language: 'cuda', aliases: ['cuda-header'], framework: 'CUDA', category: 'programming' },
+  '.cu': {
+    extension: '.cu',
+    language: 'cuda',
+    aliases: ['cuda'],
+    framework: 'CUDA',
+    category: 'programming',
+  },
+  '.cuh': {
+    extension: '.cuh',
+    language: 'cuda',
+    aliases: ['cuda-header'],
+    framework: 'CUDA',
+    category: 'programming',
+  },
 
   // Java
   '.java': { extension: '.java', language: 'java', aliases: ['java'], category: 'programming' },
 
   // C#
-  '.cs': { extension: '.cs', language: 'csharp', aliases: ['c#', 'dotnet'], category: 'programming' },
+  '.cs': {
+    extension: '.cs',
+    language: 'csharp',
+    aliases: ['c#', 'dotnet'],
+    category: 'programming',
+  },
 
   // Go
   '.go': { extension: '.go', language: 'go', aliases: ['golang'], category: 'programming' },
@@ -65,7 +119,12 @@ export const FILE_EXTENSION_MAP: Record<string, LanguageMapping> = {
 
   // Kotlin
   '.kt': { extension: '.kt', language: 'kotlin', aliases: ['kotlin'], category: 'programming' },
-  '.kts': { extension: '.kts', language: 'kotlin', aliases: ['kotlin-script'], category: 'programming' },
+  '.kts': {
+    extension: '.kts',
+    language: 'kotlin',
+    aliases: ['kotlin-script'],
+    category: 'programming',
+  },
 
   // Shell/Bash
   '.sh': { extension: '.sh', language: 'shell', aliases: ['bash', 'sh'], category: 'programming' },
@@ -74,7 +133,12 @@ export const FILE_EXTENSION_MAP: Record<string, LanguageMapping> = {
 
   // PowerShell
   '.ps1': { extension: '.ps1', language: 'powershell', aliases: ['pwsh'], category: 'programming' },
-  '.psm1': { extension: '.psm1', language: 'powershell', aliases: ['powershell-module'], category: 'programming' },
+  '.psm1': {
+    extension: '.psm1',
+    language: 'powershell',
+    aliases: ['powershell-module'],
+    category: 'programming',
+  },
 
   // Web Technologies
   '.html': { extension: '.html', language: 'html', aliases: ['html5'], category: 'markup' },
@@ -93,7 +157,12 @@ export const FILE_EXTENSION_MAP: Record<string, LanguageMapping> = {
 
   // Markdown
   '.md': { extension: '.md', language: 'markdown', aliases: ['markdown'], category: 'markup' },
-  '.markdown': { extension: '.markdown', language: 'markdown', aliases: ['md'], category: 'markup' },
+  '.markdown': {
+    extension: '.markdown',
+    language: 'markdown',
+    aliases: ['md'],
+    category: 'markup',
+  },
 
   // SQL
   '.sql': { extension: '.sql', language: 'sql', aliases: ['sql'], category: 'programming' },
@@ -130,7 +199,12 @@ export const FILE_EXTENSION_MAP: Record<string, LanguageMapping> = {
   // Erlang/Elixir
   '.erl': { extension: '.erl', language: 'erlang', aliases: ['erlang'], category: 'programming' },
   '.ex': { extension: '.ex', language: 'elixir', aliases: ['elixir'], category: 'programming' },
-  '.exs': { extension: '.exs', language: 'elixir', aliases: ['elixir-script'], category: 'programming' },
+  '.exs': {
+    extension: '.exs',
+    language: 'elixir',
+    aliases: ['elixir-script'],
+    category: 'programming',
+  },
 
   // Dart
   '.dart': { extension: '.dart', language: 'dart', aliases: ['dart'], category: 'programming' },
@@ -141,8 +215,18 @@ export const FILE_EXTENSION_MAP: Record<string, LanguageMapping> = {
 
   // Fortran
   '.f': { extension: '.f', language: 'fortran', aliases: ['fortran'], category: 'programming' },
-  '.f90': { extension: '.f90', language: 'fortran', aliases: ['fortran90'], category: 'programming' },
-  '.f95': { extension: '.f95', language: 'fortran', aliases: ['fortran95'], category: 'programming' },
+  '.f90': {
+    extension: '.f90',
+    language: 'fortran',
+    aliases: ['fortran90'],
+    category: 'programming',
+  },
+  '.f95': {
+    extension: '.f95',
+    language: 'fortran',
+    aliases: ['fortran95'],
+    category: 'programming',
+  },
 
   // COBOL
   '.cob': { extension: '.cob', language: 'cobol', aliases: ['cobol'], category: 'programming' },
@@ -185,13 +269,13 @@ export function detectLanguageFromFile(filePath: string): string {
  */
 export function detectLanguageFromFileDetailed(filePath: string): LanguageDetectionResult {
   const request = LanguageDetectionRequestSchema.parse({ filePath });
-  
+
   // Extract file extension
   const extension = getFileExtension(request.filePath);
-  
+
   // Look up in mapping
   const mapping = FILE_EXTENSION_MAP[extension];
-  
+
   if (mapping) {
     const result: LanguageDetectionResult = {
       language: mapping.language,
@@ -202,10 +286,10 @@ export function detectLanguageFromFileDetailed(filePath: string): LanguageDetect
       category: mapping.category,
       detectionMethod: 'extension',
     };
-    
+
     return LanguageDetectionResultSchema.parse(result);
   }
-  
+
   // Fallback for unknown extensions
   const fallbackResult: LanguageDetectionResult = {
     language: 'unknown',
@@ -215,7 +299,7 @@ export function detectLanguageFromFileDetailed(filePath: string): LanguageDetect
     category: 'programming',
     detectionMethod: 'heuristic',
   };
-  
+
   return LanguageDetectionResultSchema.parse(fallbackResult);
 }
 
@@ -235,7 +319,7 @@ export function getFileExtension(filePath: string): string {
  */
 export function getSupportedLanguages(): string[] {
   const languages = new Set<string>();
-  Object.values(FILE_EXTENSION_MAP).forEach(mapping => {
+  Object.values(FILE_EXTENSION_MAP).forEach((mapping) => {
     languages.add(mapping.language);
   });
   return Array.from(languages).sort();
@@ -288,8 +372,8 @@ export function getExtensionsForLanguage(language: string): string[] {
  */
 export function detectLanguagesFromFiles(filePaths: string[]): Map<string, string> {
   const languageMap = new Map<string, string>();
-  
-  filePaths.forEach(filePath => {
+
+  filePaths.forEach((filePath) => {
     try {
       const language = detectLanguageFromFile(filePath);
       languageMap.set(filePath, language);
@@ -298,7 +382,7 @@ export function detectLanguagesFromFiles(filePaths: string[]): Map<string, strin
       languageMap.set(filePath, 'unknown');
     }
   });
-  
+
   return languageMap;
 }
 
@@ -307,17 +391,17 @@ export function detectLanguagesFromFiles(filePaths: string[]): Map<string, strin
  */
 export function getLanguageDistribution(filePaths: string[]): Record<string, number> {
   const distribution: Record<string, number> = {};
-  
-  filePaths.forEach(filePath => {
+
+  filePaths.forEach((filePath) => {
     try {
       const language = detectLanguageFromFile(filePath);
       distribution[language] = (distribution[language] || 0) + 1;
     } catch (error) {
       console.warn(`Failed to detect language for ${filePath}:`, error);
-      distribution['unknown'] = (distribution['unknown'] || 0) + 1;
+      distribution.unknown = (distribution.unknown || 0) + 1;
     }
   });
-  
+
   return distribution;
 }
 
@@ -329,13 +413,13 @@ export function validateLanguageDetectionConfig(): boolean {
     // Validate all mappings
     Object.entries(FILE_EXTENSION_MAP).forEach(([extension, mapping]) => {
       LanguageMappingSchema.parse(mapping);
-      
+
       // Ensure extension matches
       if (mapping.extension !== extension) {
         throw new Error(`Extension mismatch: ${extension} !== ${mapping.extension}`);
       }
     });
-    
+
     return true;
   } catch (error) {
     console.error('Language detection configuration validation failed:', error);

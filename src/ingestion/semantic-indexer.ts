@@ -3,19 +3,19 @@ import { z } from 'zod';
 
 import { getDatabaseManager } from '../db/connection.js';
 import { MultiLanguageAnalyzer } from '../docs-generator/multi-language-analyzer.ts';
-import { ContentProcessor } from './content-processor.ts';
 import type {
   CodeEntity,
-  KnowledgePattern,
-  RepositoryAnalysis,
-  LanguageType,
   DomainType,
+  KnowledgePattern,
+  LanguageType,
+  RepositoryAnalysis,
 } from '../docs-generator/types.ts';
 import {
   validateCodeEntity,
   validateKnowledgePattern,
   validateRepositoryAnalysis,
 } from '../docs-generator/types.ts';
+import { ContentProcessor } from './content-processor.ts';
 
 // PostgreSQL connection configuration
 export const DatabaseConfigSchema = z.object({
@@ -62,22 +62,22 @@ export class SemanticIndexer {
     this.embeddingConfig = EmbeddingConfigSchema.parse(embeddingConfig);
     this.analyzer = new MultiLanguageAnalyzer();
   }
-/**
- * Initialize database connection
- */
-async initialize(): Promise<void> {
-  try {
-    this.dbClient = getDatabaseManager() as PgClient;
-    console.log('✅ Database connection established');
-  } catch (error) {
-    console.error('❌ Failed to connect to database:', error);
-    throw error;
+  /**
+   * Initialize database connection
+   */
+  async initialize(): Promise<void> {
+    try {
+      this.dbClient = getDatabaseManager() as PgClient;
+      console.log('✅ Database connection established');
+    } catch (error) {
+      console.error('❌ Failed to connect to database:', error);
+      throw error;
+    }
   }
-}
 
-/**
- * Close database connection
- */
+  /**
+   * Close database connection
+   */
 
   async close(): Promise<void> {
     // Connection is managed centrally, no need to close here
@@ -169,13 +169,7 @@ async initialize(): Promise<void> {
       entityTypes?: string[];
     } = {}
   ): Promise<Array<{ entity: CodeEntity; similarity: number }>> {
-    const {
-      limit = 10,
-      threshold = 0.7,
-      languages = [],
-      domains = [],
-      entityTypes = [],
-    } = options;
+    const { limit = 10, threshold = 0.7, languages = [], domains = [], entityTypes = [] } = options;
 
     try {
       // Generate embedding for query
@@ -244,12 +238,7 @@ async initialize(): Promise<void> {
       minConfidence?: number;
     } = {}
   ): Promise<KnowledgePattern[]> {
-    const {
-      limit = 20,
-      languages = [],
-      domains = [],
-      minConfidence = 0.5,
-    } = options;
+    const { limit = 20, languages = [], domains = [], minConfidence = 0.5 } = options;
 
     try {
       let sql = `
@@ -310,7 +299,7 @@ async initialize(): Promise<void> {
 
       const params: any[] = [];
       if (repositoryId) {
-        sql += ` AND repository_url = $1`;
+        sql += ' AND repository_url = $1';
         params.push(repositoryId);
       }
 
@@ -339,7 +328,7 @@ async initialize(): Promise<void> {
         if (!domainMap.has(entity.domain)) {
           domainMap.set(entity.domain, []);
         }
-        domainMap.get(entity.domain)!.push(entity);
+        domainMap.get(entity.domain)?.push(entity);
       }
     }
 
@@ -349,12 +338,12 @@ async initialize(): Promise<void> {
         name: `Pattern for ${domain}`,
         description: `Automatically extracted pattern for domain ${domain}`,
         category: 'domain',
-        pattern: `Entities: ${domainEntities.map(e => e.name).join(', ')}`,
+        pattern: `Entities: ${domainEntities.map((e) => e.name).join(', ')}`,
         language: domainEntities[0]?.language || 'unknown',
         domain: domain as DomainType,
         confidence: 0.8,
         frequency: domainEntities.length,
-        examples: domainEntities.slice(0, 3).map(e => ({
+        examples: domainEntities.slice(0, 3).map((e) => ({
           code: e.sourceCode.substring(0, 200),
           description: `${e.type} in ${e.filePath}`,
           filePath: e.filePath,
@@ -383,7 +372,10 @@ async initialize(): Promise<void> {
 
           if (stats.isDirectory() && !entry.startsWith('.') && entry !== 'node_modules') {
             await scanDirectory(fullPath);
-          } else if (stats.isFile() && /\.(ts|js|cpp|cxx|cc|c\+\+|c|h|hpp|cu|cuh|py)$/.test(entry)) {
+          } else if (
+            stats.isFile() &&
+            /\.(ts|js|cpp|cxx|cc|c\+\+|c|h|hpp|cu|cuh|py)$/.test(entry)
+          ) {
             files.push(fullPath);
           }
         }
@@ -428,7 +420,7 @@ async initialize(): Promise<void> {
     const batchSize = 100;
     for (let i = 0; i < entities.length; i += batchSize) {
       const batch = entities.slice(i, i + batchSize);
-      
+
       for (const entity of batch) {
         try {
           if (!this.dbClient) throw new Error('DB client not initialized');
@@ -455,7 +447,9 @@ async initialize(): Promise<void> {
         }
       }
 
-      console.log(`💾 Stored batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(entities.length / batchSize)}`);
+      console.log(
+        `💾 Stored batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(entities.length / batchSize)}`
+      );
     }
   }
 
@@ -467,18 +461,20 @@ async initialize(): Promise<void> {
     const batchSize = this.embeddingConfig.batchSize;
     for (let i = 0; i < entities.length; i += batchSize) {
       const batch = entities.slice(i, i + batchSize);
-      
+
       try {
         // Prepare text for embedding
-        const texts = batch.map(entity => this.prepareTextForEmbedding(entity));
-        
+        const texts = batch.map((entity) => this.prepareTextForEmbedding(entity));
+
         // Generate embeddings
         const embeddings = await this.generateTextEmbeddings(texts);
-        
+
         // Store embeddings
         await this.storeEmbeddings(batch, embeddings);
-        
-        console.log(`🧠 Generated embeddings for batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(entities.length / batchSize)}`);
+
+        console.log(
+          `🧠 Generated embeddings for batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(entities.length / batchSize)}`
+        );
       } catch (error) {
         console.warn(`Failed to generate embeddings for batch starting at ${i}:`, error);
       }
@@ -497,7 +493,6 @@ async initialize(): Promise<void> {
 
     return parts.filter(Boolean).join(' ').trim();
   }
-
 
   /**
    * Generate an embedding using OpenAI's API (or compatible service)
@@ -607,7 +602,7 @@ async initialize(): Promise<void> {
     totalEntities: number;
   }): Promise<RepositoryAnalysis> {
     const { randomUUID } = await import('node:crypto');
-    
+
     const analysis = validateRepositoryAnalysis({
       id: randomUUID(),
       repositoryPath: params.repositoryPath,
@@ -656,24 +651,26 @@ async initialize(): Promise<void> {
   }
 
   // Zod schema for DB code entity row
-  private static readonly CodeEntityRowSchema = z.object({
-    id: z.string().or(z.number()),
-    name: z.string(),
-    type: z.string(),
-    language: z.string(),
-    file_path: z.string(),
-    start_line: z.number().int().nullable().optional(),
-    end_line: z.number().int().nullable().optional(),
-    signature: z.string().nullable().optional(),
-    description: z.string().nullable().optional(),
-    parameters: z.string().nullable().optional(),
-    return_type: z.string().nullable().optional(),
-    complexity: z.string().nullable().optional(),
-    domain: z.string().nullable().optional(),
-    keywords: z.string().nullable().optional(),
-    source_code: z.string(),
-    metadata: z.string().nullable().optional(),
-  }).passthrough();
+  private static readonly CodeEntityRowSchema = z
+    .object({
+      id: z.string().or(z.number()),
+      name: z.string(),
+      type: z.string(),
+      language: z.string(),
+      file_path: z.string(),
+      start_line: z.number().int().nullable().optional(),
+      end_line: z.number().int().nullable().optional(),
+      signature: z.string().nullable().optional(),
+      description: z.string().nullable().optional(),
+      parameters: z.string().nullable().optional(),
+      return_type: z.string().nullable().optional(),
+      complexity: z.string().nullable().optional(),
+      domain: z.string().nullable().optional(),
+      keywords: z.string().nullable().optional(),
+      source_code: z.string(),
+      metadata: z.string().nullable().optional(),
+    })
+    .passthrough();
 
   private rowToCodeEntity(row: unknown): CodeEntity {
     const safe = SemanticIndexer.CodeEntityRowSchema.parse(row);
@@ -698,18 +695,20 @@ async initialize(): Promise<void> {
   }
 
   // Zod schema for DB knowledge pattern row
-  private static readonly KnowledgePatternRowSchema = z.object({
-    id: z.string(),
-    name: z.string(),
-    description: z.string().nullable().optional(),
-    category: z.string(),
-    language: z.string(),
-    pattern: z.string(),
-    examples: z.string(),
-    frequency: z.number().int(),
-    confidence: z.number(),
-    domain: z.string().nullable().optional(),
-  }).passthrough();
+  private static readonly KnowledgePatternRowSchema = z
+    .object({
+      id: z.string(),
+      name: z.string(),
+      description: z.string().nullable().optional(),
+      category: z.string(),
+      language: z.string(),
+      pattern: z.string(),
+      examples: z.string(),
+      frequency: z.number().int(),
+      confidence: z.number(),
+      domain: z.string().nullable().optional(),
+    })
+    .passthrough();
 
   private rowToKnowledgePattern(row: unknown): KnowledgePattern {
     const safe = SemanticIndexer.KnowledgePatternRowSchema.parse(row);
@@ -728,16 +727,18 @@ async initialize(): Promise<void> {
   }
 
   // Zod schema for DB stats row
-  private static readonly StatsRowSchema = z.object({
-    total_entities: z.string().optional(),
-    languages_count: z.string().optional(),
-    domains_count: z.string().optional(),
-    files_count: z.string().optional(),
-    language: z.string().optional(),
-    domain: z.string().optional(),
-    type: z.string().optional(),
-    count: z.string().optional(),
-  }).passthrough();
+  private static readonly StatsRowSchema = z
+    .object({
+      total_entities: z.string().optional(),
+      languages_count: z.string().optional(),
+      domains_count: z.string().optional(),
+      files_count: z.string().optional(),
+      language: z.string().optional(),
+      domain: z.string().optional(),
+      type: z.string().optional(),
+      count: z.string().optional(),
+    })
+    .passthrough();
 
   private processStatsResult(rows: unknown[]): any {
     // Process the ROLLUP result to create a hierarchical stats structure
@@ -753,20 +754,20 @@ async initialize(): Promise<void> {
       if (!safeRow.language && !safeRow.domain && !safeRow.type) {
         // Total row
         stats.total = {
-          totalEntities: parseInt(safeRow.total_entities || '0'),
-          languagesCount: parseInt(safeRow.languages_count || '0'),
-          domainsCount: parseInt(safeRow.domains_count || '0'),
-          filesCount: parseInt(safeRow.files_count || '0'),
+          totalEntities: Number.parseInt(safeRow.total_entities || '0'),
+          languagesCount: Number.parseInt(safeRow.languages_count || '0'),
+          domainsCount: Number.parseInt(safeRow.domains_count || '0'),
+          filesCount: Number.parseInt(safeRow.files_count || '0'),
         };
       } else if (safeRow.language && !safeRow.domain && !safeRow.type) {
         // Language totals
-        stats.byLanguage[safeRow.language] = parseInt(safeRow.count || '0');
+        stats.byLanguage[safeRow.language] = Number.parseInt(safeRow.count || '0');
       } else if (safeRow.domain && !safeRow.language && !safeRow.type) {
         // Domain totals
-        stats.byDomain[safeRow.domain] = parseInt(safeRow.count || '0');
+        stats.byDomain[safeRow.domain] = Number.parseInt(safeRow.count || '0');
       } else if (safeRow.type && !safeRow.language && !safeRow.domain) {
         // Type totals
-        stats.byType[safeRow.type] = parseInt(safeRow.count || '0');
+        stats.byType[safeRow.type] = Number.parseInt(safeRow.count || '0');
       }
     }
 
@@ -775,48 +776,46 @@ async initialize(): Promise<void> {
 }
 
 // Create and export the semantic indexer actor
-export const semanticIndexerActor = fromPromise(
-  async ({ input }: { input: unknown }) => {
-    // Validate actor input
-    const InputSchema = z.object({
-      operation: z.string(),
-      repositoryPath: z.string().optional(),
-      name: z.string().optional(),
-      query: z.string().optional(),
-      options: z.record(z.unknown()).optional(),
-    });
-    const parsedInput = InputSchema.parse(input);
-    // Embedding config can be customized here if needed
-    const embeddingConfig = {
-      model: 'text-embedding-3-small',
-      maxTokens: 8192,
-      batchSize: 100,
-    };
-    const indexer = new SemanticIndexer(embeddingConfig);
-    try {
-      switch (parsedInput.operation) {
-        case 'index':
-          if (!parsedInput.repositoryPath || !parsedInput.name) {
-            throw new Error('Repository path and name are required for indexing');
-          }
-          return await indexer.indexRepository(parsedInput.repositoryPath, parsedInput.name);
-        case 'search':
-          if (!parsedInput.query) {
-            throw new Error('Query is required for search');
-          }
-          return await indexer.searchSimilar(parsedInput.query, parsedInput.options || {});
-        case 'patterns':
-          if (!parsedInput.query) {
-            throw new Error('Query is required for pattern search');
-          }
-          return await indexer.findPatterns(parsedInput.query, parsedInput.options || {});
-        case 'stats':
-          return await indexer.getRepositoryStats();
-        default:
-          throw new Error(`Unknown operation: ${parsedInput.operation}`);
-      }
-    } finally {
-      await indexer.close();
+export const semanticIndexerActor = fromPromise(async ({ input }: { input: unknown }) => {
+  // Validate actor input
+  const InputSchema = z.object({
+    operation: z.string(),
+    repositoryPath: z.string().optional(),
+    name: z.string().optional(),
+    query: z.string().optional(),
+    options: z.record(z.unknown()).optional(),
+  });
+  const parsedInput = InputSchema.parse(input);
+  // Embedding config can be customized here if needed
+  const embeddingConfig = {
+    model: 'text-embedding-3-small',
+    maxTokens: 8192,
+    batchSize: 100,
+  };
+  const indexer = new SemanticIndexer(embeddingConfig);
+  try {
+    switch (parsedInput.operation) {
+      case 'index':
+        if (!parsedInput.repositoryPath || !parsedInput.name) {
+          throw new Error('Repository path and name are required for indexing');
+        }
+        return await indexer.indexRepository(parsedInput.repositoryPath, parsedInput.name);
+      case 'search':
+        if (!parsedInput.query) {
+          throw new Error('Query is required for search');
+        }
+        return await indexer.searchSimilar(parsedInput.query, parsedInput.options || {});
+      case 'patterns':
+        if (!parsedInput.query) {
+          throw new Error('Query is required for pattern search');
+        }
+        return await indexer.findPatterns(parsedInput.query, parsedInput.options || {});
+      case 'stats':
+        return await indexer.getRepositoryStats();
+      default:
+        throw new Error(`Unknown operation: ${parsedInput.operation}`);
     }
+  } finally {
+    await indexer.close();
   }
-);
+});

@@ -7,7 +7,6 @@ import { z } from 'zod';
  * Defines all endpoints, request/response schemas, and error handling.
  */
 
-
 // =============================================================================
 // SHARED SCHEMAS
 // =============================================================================
@@ -17,13 +16,13 @@ import { z } from 'zod';
  */
 export const QueryIntentSchema = z.enum([
   'technical_question',
-  'historical_analysis', 
+  'historical_analysis',
   'performance_investigation',
   'code_understanding',
   'architecture_exploration',
   'debugging_assistance',
   'optimization_advice',
-  'pattern_discovery'
+  'pattern_discovery',
 ]);
 
 export type QueryIntent = z.infer<typeof QueryIntentSchema>;
@@ -45,10 +44,12 @@ export const EvidenceItemSchema = z.object({
   relevance_score: z.number().min(0).max(1),
   explanation: z.string(),
   file_path: z.string().optional(),
-  line_range: z.object({
-    start: z.number(),
-    end: z.number(),
-  }).optional(),
+  line_range: z
+    .object({
+      start: z.number(),
+      end: z.number(),
+    })
+    .optional(),
   content_snippet: z.string().optional(),
 });
 
@@ -94,19 +95,23 @@ export type InvestigationThread = z.infer<typeof InvestigationThreadSchema>;
  */
 export const QueryRequestSchema = z.object({
   query: z.string().min(1).max(2000),
-  context: z.object({
-    repository_url: z.string().url().optional(),
-    file_paths: z.array(z.string()).optional(),
-    language_hint: z.string().optional(),
-    domain_hint: z.string().optional(),
-  }).optional(),
-  options: z.object({
-    max_results: z.number().min(1).max(100).default(20),
-    include_code_snippets: z.boolean().default(true),
-    enable_multi_turn: z.boolean().default(true),
-    complexity_preference: QueryComplexitySchema.default('moderate'),
-    search_depth: z.number().min(1).max(5).default(3),
-  }).optional(),
+  context: z
+    .object({
+      repository_url: z.string().url().optional(),
+      file_paths: z.array(z.string()).optional(),
+      language_hint: z.string().optional(),
+      domain_hint: z.string().optional(),
+    })
+    .optional(),
+  options: z
+    .object({
+      max_results: z.number().min(1).max(100).default(20),
+      include_code_snippets: z.boolean().default(true),
+      enable_multi_turn: z.boolean().default(true),
+      complexity_preference: QueryComplexitySchema.default('moderate'),
+      search_depth: z.number().min(1).max(5).default(3),
+    })
+    .optional(),
 });
 
 export type QueryRequest = z.infer<typeof QueryRequestSchema>;
@@ -119,24 +124,24 @@ export const QueryResponseSchema = z.object({
   session_id: z.string().uuid(),
   intent: QueryIntentSchema,
   complexity: QueryComplexitySchema,
-  
+
   // Primary results
   primary_answer: z.string(),
   evidence_chain: z.array(EvidenceItemSchema),
   confidence_score: z.number().min(0).max(1),
-  
+
   // Investigation threads for follow-up
   investigation_threads: z.array(InvestigationThreadSchema),
   suggested_questions: z.array(z.string()),
-  
+
   // Metadata
   execution_time_ms: z.number(),
   artifacts_searched: z.number(),
   relationships_traversed: z.number(),
-  
+
   // Session context for multi-turn
   session_context: z.record(z.unknown()),
-  
+
   created_at: z.date(),
 });
 
@@ -149,13 +154,15 @@ export const ContinueQueryRequestSchema = z.object({
   follow_up_query: z.string().min(1).max(2000),
   thread_id: z.string().uuid().optional(),
   focus_artifacts: z.array(z.string().uuid()).optional(),
-  investigation_direction: z.enum([
-    'deeper_analysis',
-    'broader_context', 
-    'related_patterns',
-    'historical_evolution',
-    'performance_impact'
-  ]).optional(),
+  investigation_direction: z
+    .enum([
+      'deeper_analysis',
+      'broader_context',
+      'related_patterns',
+      'historical_evolution',
+      'performance_impact',
+    ])
+    .optional(),
 });
 
 export type ContinueQueryRequest = z.infer<typeof ContinueQueryRequestSchema>;
@@ -185,16 +192,20 @@ export type SessionInfo = z.infer<typeof SessionInfoSchema>;
 export const SearchRequestSchema = z.object({
   query: z.string().min(1),
   search_type: z.enum(['semantic', 'keyword', 'hybrid']).default('hybrid'),
-  filters: z.object({
-    artifact_types: z.array(z.string()).optional(),
-    languages: z.array(z.string()).optional(),
-    repositories: z.array(z.string()).optional(),
-    date_range: z.object({
-      start: z.date(),
-      end: z.date(),
-    }).optional(),
-    min_quality_score: z.number().min(0).max(1).optional(),
-  }).optional(),
+  filters: z
+    .object({
+      artifact_types: z.array(z.string()).optional(),
+      languages: z.array(z.string()).optional(),
+      repositories: z.array(z.string()).optional(),
+      date_range: z
+        .object({
+          start: z.date(),
+          end: z.date(),
+        })
+        .optional(),
+      min_quality_score: z.number().min(0).max(1).optional(),
+    })
+    .optional(),
   limit: z.number().min(1).max(100).default(20),
   include_relationships: z.boolean().default(false),
 });
@@ -205,25 +216,31 @@ export type SearchRequest = z.infer<typeof SearchRequestSchema>;
  * Search response
  */
 export const SearchResponseSchema = z.object({
-  results: z.array(z.object({
-    artifact: z.object({
-      id: z.string().uuid(),
-      type: z.string(),
-      name: z.string(),
-      description: z.string().optional(),
-      file_path: z.string().optional(),
-      content_snippet: z.string().optional(),
-      metadata: z.record(z.unknown()),
-    }),
-    score: z.number().min(0).max(1),
-    match_type: z.enum(['semantic', 'keyword', 'exact', 'fuzzy']),
-    explanation: z.string().optional(),
-    relationships: z.array(z.object({
-      target_id: z.string().uuid(),
-      relation_type: z.string(),
-      confidence: z.number().min(0).max(1),
-    })).optional(),
-  })),
+  results: z.array(
+    z.object({
+      artifact: z.object({
+        id: z.string().uuid(),
+        type: z.string(),
+        name: z.string(),
+        description: z.string().optional(),
+        file_path: z.string().optional(),
+        content_snippet: z.string().optional(),
+        metadata: z.record(z.unknown()),
+      }),
+      score: z.number().min(0).max(1),
+      match_type: z.enum(['semantic', 'keyword', 'exact', 'fuzzy']),
+      explanation: z.string().optional(),
+      relationships: z
+        .array(
+          z.object({
+            target_id: z.string().uuid(),
+            relation_type: z.string(),
+            confidence: z.number().min(0).max(1),
+          })
+        )
+        .optional(),
+    })
+  ),
   total_count: z.number(),
   execution_time_ms: z.number(),
   search_metadata: z.record(z.unknown()),
@@ -249,15 +266,19 @@ export type GraphTraversalRequest = z.infer<typeof GraphTraversalRequestSchema>;
  * Graph traversal response
  */
 export const GraphTraversalResponseSchema = z.object({
-  paths: z.array(z.object({
-    artifacts: z.array(z.object({
-      artifact: z.record(z.unknown()),
-      depth: z.number(),
-      relationship: z.record(z.unknown()).optional(),
-    })),
-    total_confidence: z.number(),
-    path_length: z.number(),
-  })),
+  paths: z.array(
+    z.object({
+      artifacts: z.array(
+        z.object({
+          artifact: z.record(z.unknown()),
+          depth: z.number(),
+          relationship: z.record(z.unknown()).optional(),
+        })
+      ),
+      total_confidence: z.number(),
+      path_length: z.number(),
+    })
+  ),
   total_paths: z.number(),
   max_depth_reached: z.number(),
   execution_time_ms: z.number(),
@@ -284,11 +305,13 @@ export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
 export const HealthCheckResponseSchema = z.object({
   status: z.enum(['healthy', 'degraded', 'unhealthy']),
   timestamp: z.date(),
-  components: z.record(z.object({
-    status: z.enum(['up', 'down', 'degraded']),
-    latency_ms: z.number().optional(),
-    error: z.string().optional(),
-  })),
+  components: z.record(
+    z.object({
+      status: z.enum(['up', 'down', 'degraded']),
+      latency_ms: z.number().optional(),
+      error: z.string().optional(),
+    })
+  ),
   version: z.string(),
 });
 
@@ -361,9 +384,8 @@ export function safeParseSchema<T>(
   const result = schema.safeParse(data);
   if (result.success) {
     return { success: true, data: result.data };
-  } else {
-    return { success: false, error: result.error };
   }
+  return { success: false, error: result.error };
 }
 
 // =============================================================================
@@ -378,23 +400,23 @@ export const API_ENDPOINTS = {
   QUERY: '/api/query',
   CONTINUE_QUERY: '/api/query/:queryId/continue',
   GET_QUERY: '/api/query/:queryId',
-  
+
   // Session endpoints
   CREATE_SESSION: '/api/sessions',
   GET_SESSION: '/api/sessions/:sessionId',
   UPDATE_SESSION: '/api/sessions/:sessionId',
   LIST_SESSIONS: '/api/sessions',
-  
+
   // Search endpoints
   SEARCH: '/api/search',
   SIMILARITY_SEARCH: '/api/search/similarity',
-  
+
   // Graph endpoints
   TRAVERSE_GRAPH: '/api/graph/traverse',
-  
+
   // System endpoints
   HEALTH: '/api/health',
   METRICS: '/api/metrics',
 } as const;
 
-export type ApiEndpoint = typeof API_ENDPOINTS[keyof typeof API_ENDPOINTS];
+export type ApiEndpoint = (typeof API_ENDPOINTS)[keyof typeof API_ENDPOINTS];

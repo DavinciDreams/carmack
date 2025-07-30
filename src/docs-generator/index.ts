@@ -1,10 +1,7 @@
 import { DocumentationGenerator } from './generator.ts';
 
 import type { DocumentationResult } from './types.ts';
-import {
-  validateDocumentationRequest,
-  validateDocumentationResult,
-} from './types.ts';
+import { validateDocumentationRequest, validateDocumentationResult } from './types.ts';
 
 /**
  * Carmack Coder Documentation System
@@ -16,7 +13,6 @@ import {
 export * from './ast-analyzer.ts';
 export * from './generator.ts';
 export * from './types.ts';
-
 
 /**
  * Main documentation API
@@ -59,7 +55,12 @@ export class DocumentationSystem {
    * Generate architecture documentation
    */
   async generateArchitectureDocumentation(
-    options: { outputPath?: string; format?: 'markdown' | 'html' | 'json'; sourceFiles?: string[]; sourceDir?: string } = {}
+    options: {
+      outputPath?: string;
+      format?: 'markdown' | 'html' | 'json';
+      sourceFiles?: string[];
+      sourceDir?: string;
+    } = {}
   ): Promise<DocumentationResult> {
     const request = validateDocumentationRequest({
       type: 'architecture',
@@ -79,7 +80,12 @@ export class DocumentationSystem {
    * Generate pattern documentation
    */
   async generatePatternDocumentation(
-    options: { outputPath?: string; format?: 'markdown' | 'html' | 'json'; sourceFiles?: string[]; sourceDir?: string } = {}
+    options: {
+      outputPath?: string;
+      format?: 'markdown' | 'html' | 'json';
+      sourceFiles?: string[];
+      sourceDir?: string;
+    } = {}
   ): Promise<DocumentationResult> {
     const request = validateDocumentationRequest({
       type: 'patterns',
@@ -99,7 +105,12 @@ export class DocumentationSystem {
    * Generate usage documentation
    */
   async generateUsageDocumentation(
-    options: { outputPath?: string; format?: 'markdown' | 'html' | 'json'; sourceFiles?: string[]; sourceDir?: string } = {}
+    options: {
+      outputPath?: string;
+      format?: 'markdown' | 'html' | 'json';
+      sourceFiles?: string[];
+      sourceDir?: string;
+    } = {}
   ): Promise<DocumentationResult> {
     const request = validateDocumentationRequest({
       type: 'usage',

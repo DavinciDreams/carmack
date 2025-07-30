@@ -1,6 +1,5 @@
-import { VectorUtils } from './types.ts';
-
 import type { ClusterResult, PatternFeatureVector, Vector } from './types.ts';
+import { VectorUtils } from './types.ts';
 
 /**
  * Clustering Algorithms for Pattern Categorization
@@ -90,7 +89,7 @@ export class KMeansClusterer {
    */
   private initializeCentroidsKMeansPlusPlus(vectors: Vector[]): Vector[] {
     const centroids: Vector[] = [];
-    const dimensions = vectors[0]?.length ?? 0;
+    const _dimensions = vectors[0]?.length ?? 0;
 
     if (vectors.length === 0) {
       return [];
@@ -389,8 +388,8 @@ export class DBSCANClusterer {
         if (!clusterMap.has(label)) {
           clusterMap.set(label, { patterns: [], vectors: [] });
         }
-        clusterMap.get(label)!.patterns.push(patternId);
-        clusterMap.get(label)!.vectors.push(vector);
+        clusterMap.get(label)?.patterns.push(patternId);
+        clusterMap.get(label)?.vectors.push(vector);
       }
     }
 
@@ -422,7 +421,7 @@ export class DBSCANClusterer {
     }
 
     const distances = vectors.map((vector) => VectorUtils.euclideanDistance(vector, centroid));
-    const maxDistance = Math.max(...distances);
+    const _maxDistance = Math.max(...distances);
     const avgDistance = distances.reduce((sum, d) => sum + d, 0) / distances.length;
 
     // Cohesion based on how much smaller average distance is compared to eps
@@ -534,7 +533,6 @@ export class HierarchicalClusterer {
         return this.singleLinkage(cluster1.vectors, cluster2.vectors);
       case 'complete':
         return this.completeLinkage(cluster1.vectors, cluster2.vectors);
-      case 'average':
       default:
         return this.averageLinkage(cluster1.vectors, cluster2.vectors);
     }

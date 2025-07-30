@@ -1,28 +1,26 @@
-export * from './types.js';
 export * from './benchmarks/benchmark-engine.js';
 export * from './benchmarks/historical-scenarios.js';
+export * from './framework/test-orchestrator.js';
 export * from './metrics/engagement-tracker.js';
+export * from './reporting/test-reporter.js';
+export * from './types.js';
 export * from './validation/performance-validator.js';
 export * from './validation/quality-validator.js';
-export * from './reporting/test-reporter.js';
-export * from './framework/test-orchestrator.js';
 
-import { TestOrchestrator } from './framework/test-orchestrator.js';
 import { BenchmarkEngine } from './benchmarks/benchmark-engine.js';
+import type { CITestResult, TestSuiteResult } from './framework/test-orchestrator';
+import { TestOrchestrator } from './framework/test-orchestrator.js';
 import { EngagementTracker } from './metrics/engagement-tracker.js';
-import { PerformanceValidator } from './validation/performance-validator.js';
 import { TestReporter } from './reporting/test-reporter.js';
 import type { DashboardData } from './types';
-import type { TestSuiteResult, CITestResult } from './framework/test-orchestrator';
+import { PerformanceValidator } from './validation/performance-validator.js';
 /**
  * EPIC-TESTING-METRICS System - Main Entry Point
- * 
+ *
  * Comprehensive testing and validation system for the TensorRT-LLM knowledge graph.
  * Provides benchmark testing, user engagement metrics, performance validation,
  * quality assurance, and automated reporting.
  */
-
-
 
 /**
  * EPIC-TESTING-METRICS System Configuration
@@ -53,16 +51,16 @@ export class EpicTestingSystem {
 
   constructor(config: Partial<EpicTestingConfig> = {}) {
     this.config = {
-  enableBenchmarkTests: true,
-  enablePerformanceTests: true,
-  enableQualityTests: true,
-  enableEngagementTracking: true,
-  enableLoadTesting: true,
-  enableReporting: true,
-  outputDir: './test-reports',
-  formatTypes: ['html', 'json', 'markdown'],
-  alertingEnabled: true,
-  continuousIntegration: false,
+      enableBenchmarkTests: true,
+      enablePerformanceTests: true,
+      enableQualityTests: true,
+      enableEngagementTracking: true,
+      enableLoadTesting: true,
+      enableReporting: true,
+      outputDir: './test-reports',
+      formatTypes: ['html', 'json', 'markdown'],
+      alertingEnabled: true,
+      continuousIntegration: false,
       ...config,
     };
 
@@ -101,7 +99,7 @@ export class EpicTestingSystem {
 
     if (result.recommendations.length > 0) {
       console.log('\n💡 Recommendations:');
-      result.recommendations.forEach(rec => console.log(`   • ${rec}`));
+      result.recommendations.forEach((rec) => console.log(`   • ${rec}`));
     }
 
     return result;
@@ -112,7 +110,7 @@ export class EpicTestingSystem {
    */
   async runBenchmarkValidation(): Promise<any> {
     console.log('📊 Running Benchmark Validation...');
-    
+
     const config = {
       scenarios: [], // Run all scenarios (empty array means all)
       iterations: 1,
@@ -122,11 +120,15 @@ export class EpicTestingSystem {
 
     const result = await this.benchmarkEngine.runBenchmarkSuite(config);
 
-    console.log(`✅ Benchmark Validation Complete:`);
-    console.log(`   Speed Improvement: ${result.averageSpeedImprovement.toFixed(1)}% (Target: 75%)`);
+    console.log('✅ Benchmark Validation Complete:');
+    console.log(
+      `   Speed Improvement: ${result.averageSpeedImprovement.toFixed(1)}% (Target: 75%)`
+    );
     console.log(`   Response Time: ${result.averageResponseTime.toFixed(0)}ms (Target: <2000ms)`);
     console.log(`   Accuracy: ${(result.averageAccuracy * 100).toFixed(1)}% (Target: 85%)`);
-    console.log(`   Success Rate: ${(result.successfulRuns / result.totalScenarios * 100).toFixed(1)}%`);
+    console.log(
+      `   Success Rate: ${((result.successfulRuns / result.totalScenarios) * 100).toFixed(1)}%`
+    );
 
     return result;
   }
@@ -145,7 +147,7 @@ export class EpicTestingSystem {
 
     const results = await this.performanceValidator.runComprehensiveValidation(testQueries);
 
-    console.log(`✅ Performance Validation Complete:`);
+    console.log('✅ Performance Validation Complete:');
     results.forEach((result, index) => {
       console.log(`   Test ${index + 1}: ${result.passed ? 'PASSED' : 'FAILED'}`);
     });
@@ -179,12 +181,15 @@ export class EpicTestingSystem {
   /**
    * Run continuous integration tests
    */
-  async runCIValidation(buildInfo?: { commitHash?: string; branch?: string }): Promise<CITestResult> {
+  async runCIValidation(buildInfo?: {
+    commitHash?: string;
+    branch?: string;
+  }): Promise<CITestResult> {
     console.log('🔄 Running CI Validation...');
-    
+
     const result = await this.orchestrator.runCITests(buildInfo);
 
-    console.log(`✅ CI Validation Complete:`);
+    console.log('✅ CI Validation Complete:');
     console.log(`   Build: ${result.buildId}`);
     console.log(`   Result: ${result.overallResult.toUpperCase()}`);
     console.log(`   Quality Gate: ${result.qualityGate.passed ? 'PASSED' : 'FAILED'}`);
@@ -200,7 +205,9 @@ export class EpicTestingSystem {
 
     // Gather all required arguments for generateComprehensiveReport
     const suiteResult = await this.orchestrator.runComprehensiveTestSuite();
-    const benchmarkResults = suiteResult.categories.benchmark.details ? [suiteResult.categories.benchmark.details] : [];
+    const benchmarkResults = suiteResult.categories.benchmark.details
+      ? [suiteResult.categories.benchmark.details]
+      : [];
     const performanceResults = suiteResult.categories.performance.details || [];
     const qualityResults = suiteResult.categories.quality.details || {};
     const engagementResults = suiteResult.categories.engagement.details || {};
@@ -214,7 +221,7 @@ export class EpicTestingSystem {
       dashboardData
     );
     console.log(`✅ Report Generated: ${report.reportId}`);
-    console.log(`   Files: ${report.generatedFiles.map(f => f.path).join(', ')}`);
+    console.log(`   Files: ${report.generatedFiles.map((f) => f.path).join(', ')}`);
     if (report.errors.length > 0) {
       console.log(`   Errors: ${report.errors.join('; ')}`);
     }
@@ -237,7 +244,7 @@ export class EpicTestingSystem {
     const benchmarkResult = await this.runBenchmarkValidation();
 
     // Run performance validation
-  await this.runPerformanceValidation();
+    await this.runPerformanceValidation();
 
     // Calculate metrics
     const speedImprovement = {
@@ -279,11 +286,21 @@ export class EpicTestingSystem {
     };
 
     console.log('✅ Performance Targets Validation:');
-    console.log(`   Speed Improvement: ${speedImprovement.actual.toFixed(1)}% (Target: ${speedImprovement.target}%) - ${speedImprovement.passed ? 'PASSED' : 'FAILED'}`);
-    console.log(`   Response Time: ${responseTime.actual.toFixed(0)}ms (Target: <${responseTime.target}ms) - ${responseTime.passed ? 'PASSED' : 'FAILED'}`);
-    console.log(`   Accuracy: ${accuracy.actual.toFixed(1)}% (Target: ${accuracy.target}%) - ${accuracy.passed ? 'PASSED' : 'FAILED'}`);
-    console.log(`   Concurrent Users: ${concurrentUsers.actual} (Target: ${concurrentUsers.target}) - ${concurrentUsers.passed ? 'PASSED' : 'FAILED'}`);
-    console.log(`   System Uptime: ${systemUptime.actual}% (Target: ${systemUptime.target}%) - ${systemUptime.passed ? 'PASSED' : 'FAILED'}`);
+    console.log(
+      `   Speed Improvement: ${speedImprovement.actual.toFixed(1)}% (Target: ${speedImprovement.target}%) - ${speedImprovement.passed ? 'PASSED' : 'FAILED'}`
+    );
+    console.log(
+      `   Response Time: ${responseTime.actual.toFixed(0)}ms (Target: <${responseTime.target}ms) - ${responseTime.passed ? 'PASSED' : 'FAILED'}`
+    );
+    console.log(
+      `   Accuracy: ${accuracy.actual.toFixed(1)}% (Target: ${accuracy.target}%) - ${accuracy.passed ? 'PASSED' : 'FAILED'}`
+    );
+    console.log(
+      `   Concurrent Users: ${concurrentUsers.actual} (Target: ${concurrentUsers.target}) - ${concurrentUsers.passed ? 'PASSED' : 'FAILED'}`
+    );
+    console.log(
+      `   System Uptime: ${systemUptime.actual}% (Target: ${systemUptime.target}%) - ${systemUptime.passed ? 'PASSED' : 'FAILED'}`
+    );
 
     return targets;
   }
@@ -305,7 +322,9 @@ export class EpicTestingSystem {
 /**
  * Run the complete EPIC-TESTING-METRICS validation suite
  */
-export async function runEpicTestingValidation(config?: Partial<EpicTestingConfig>): Promise<TestSuiteResult> {
+export async function runEpicTestingValidation(
+  config?: Partial<EpicTestingConfig>
+): Promise<TestSuiteResult> {
   const system = new EpicTestingSystem(config);
   return system.runCompleteValidation();
 }
@@ -313,7 +332,9 @@ export async function runEpicTestingValidation(config?: Partial<EpicTestingConfi
 /**
  * Validate that the system meets all performance targets
  */
-export async function validateAllPerformanceTargets(config?: Partial<EpicTestingConfig>): Promise<any> {
+export async function validateAllPerformanceTargets(
+  config?: Partial<EpicTestingConfig>
+): Promise<any> {
   const system = new EpicTestingSystem(config);
   return system.validatePerformanceTargets();
 }
@@ -347,7 +368,7 @@ export async function validateBenchmarkTargets(): Promise<{
 }> {
   const system = new EpicTestingSystem();
   const result = await system.runBenchmarkValidation();
-  
+
   return {
     speedImprovementTarget: result.averageSpeedImprovement >= 75,
     responseTimeTarget: result.averageResponseTime <= 2000,
@@ -369,11 +390,11 @@ if (import.meta.main) {
     case 'validate':
       console.log('🚀 Running EPIC-TESTING-METRICS Validation...');
       runEpicTestingValidation()
-        .then(result => {
+        .then((result) => {
           console.log(`\n🎯 Validation ${result.passed ? 'PASSED' : 'FAILED'}`);
           process.exit(result.passed ? 0 : 1);
         })
-        .catch(error => {
+        .catch((error) => {
           console.error('❌ Validation failed:', error);
           process.exit(1);
         });
@@ -382,12 +403,12 @@ if (import.meta.main) {
     case 'benchmark':
       console.log('📊 Running Benchmark Validation...');
       validateBenchmarkTargets()
-        .then(result => {
+        .then((result) => {
           const allPassed = Object.values(result).every(Boolean);
           console.log(`\n🎯 Benchmark ${allPassed ? 'PASSED' : 'FAILED'}`);
           process.exit(allPassed ? 0 : 1);
         })
-        .catch(error => {
+        .catch((error) => {
           console.error('❌ Benchmark validation failed:', error);
           process.exit(1);
         });
@@ -396,22 +417,23 @@ if (import.meta.main) {
     case 'targets':
       console.log('🎯 Validating Performance Targets...');
       validateAllPerformanceTargets()
-        .then(targets => {
+        .then((targets) => {
           const allPassed = Object.values(targets).every((t: any) => t.passed);
           console.log(`\n🎯 Performance Targets ${allPassed ? 'PASSED' : 'FAILED'}`);
           process.exit(allPassed ? 0 : 1);
         })
-        .catch(error => {
+        .catch((error) => {
           console.error('❌ Performance target validation failed:', error);
           process.exit(1);
         });
       break;
 
-    case 'dashboard':
+    case 'dashboard': {
       console.log('📊 Generating Dashboard Data...');
       const dashboard = generateRealtimeDashboard();
       console.log(JSON.stringify(dashboard, null, 2));
       break;
+    }
 
     default:
       console.log(`

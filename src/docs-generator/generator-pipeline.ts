@@ -1,7 +1,8 @@
 // Pipeline for Zod-validated doc generation (for Carmack and other repos)
+
+import { writeFile } from 'fs/promises';
 import { DocumentationGenerator } from './generator';
 import { validateDocumentationRequest, validateDocumentationResult } from './types';
-import { writeFile } from 'fs/promises';
 
 export async function generateAndStoreDocs(rawRequest: unknown) {
   // 1. Validate input
@@ -18,7 +19,11 @@ export async function generateAndStoreDocs(rawRequest: unknown) {
   if (validatedResult.outputPath) {
     await writeFile(validatedResult.outputPath, validatedResult.content, 'utf8');
     // Optionally, write metadata as JSON
-    await writeFile(validatedResult.outputPath + '.meta.json', JSON.stringify(validatedResult.metadata, null, 2), 'utf8');
+    await writeFile(
+      validatedResult.outputPath + '.meta.json',
+      JSON.stringify(validatedResult.metadata, null, 2),
+      'utf8'
+    );
   }
   return validatedResult;
 }

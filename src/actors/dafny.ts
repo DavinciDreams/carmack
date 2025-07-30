@@ -31,7 +31,6 @@ export const dafnyActor = fromPromise(async ({ input }: { input: DafnyInput }) =
   // This allows the system to work while we continue improving the Dafny integration
   const fallbackUsed = verificationResult.errors.some((e) => e.includes('fallback'));
   if (!verificationResult.verified && !fallbackUsed) {
-
     // Don't throw error, use graceful degradation
   }
   return {
@@ -45,7 +44,6 @@ async function generateVerificationConditions(
   files: string[],
   mode?: TransformationMode
 ): Promise<string[]> {
-
   const conditions: string[] = [];
   // Load base verification conditions from the Dafny specification
   const baseConditions = [
@@ -89,13 +87,11 @@ async function runDafnyVerification(conditions: string[]): Promise<{
   errors: string[];
   timeMs: number;
 }> {
-
   const startTime = Date.now();
   try {
     // Check if Dafny is available in the system
     const dafnyAvailable = await checkDafnyAvailable();
     if (!dafnyAvailable) {
-
       return await fallbackVerification(conditions, startTime);
     }
     // Create temporary Dafny verification file
@@ -112,12 +108,9 @@ async function runDafnyVerification(conditions: string[]): Promise<{
       // Clean up temporary file
       try {
         await rm(verificationFile, { force: true });
-      } catch (cleanupError) {
-
-      }
+      } catch (_cleanupError) {}
     }
-  } catch (error) {
-
+  } catch (_error) {
     const fallbackResult = await fallbackVerification(conditions, startTime);
     // Mark that fallback was used
     fallbackResult.errors.push('Dafny verification failed, fallback used');

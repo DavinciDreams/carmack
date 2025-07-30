@@ -3,9 +3,8 @@ import { z } from 'zod';
 
 import { gitActor } from './actors/git.ts';
 import { type LearningResult, patternLearningActor } from './actors/pattern-learning.ts';
-import { AstPatternSchema, TransformationRequestSchema } from './types.ts';
-
 import type { AstPattern, TransformationRequest, TransformationResult } from './types.ts';
+import { AstPatternSchema, TransformationRequestSchema } from './types.ts';
 
 // Repository management types and schemas
 export const RepositoryConfigSchema = z.object({

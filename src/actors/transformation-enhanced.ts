@@ -41,8 +41,10 @@ interface EnhancedOrchestratorState {
     executionTime: number;
   };
 }
-import { mkdir, readFile, readdir } from 'node:fs/promises';
+
+import { mkdir, readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+
 // --- Load structured annotation data for LLM context ---
 async function loadAnnotations(annotationDir = './workspace/annotations') {
   try {
@@ -53,31 +55,32 @@ async function loadAnnotations(annotationDir = './workspace/annotations') {
         try {
           const content = await readFile(join(annotationDir, file), 'utf-8');
           annotations.push(JSON.parse(content));
-        } catch (err) {
+        } catch (_err) {
           // Ignore parse errors for now
         }
       }
     }
     return annotations;
-  } catch (err) {
+  } catch (_err) {
     return [];
   }
 }
+
+import type { SgNode, SgRoot } from '@ast-grep/napi';
 import { createActor, fromPromise } from 'xstate';
 import { z } from 'zod';
-import { astGrepTransformationActor } from './ast-grep-transformation.ts';
-import { feedbackLoopActor, ASTGrepPatternSchema } from './feedback-loop.ts';
-import { complexityActor } from './complexity.ts';
-// import { BUILTIN_CPP_PATTERNS, cppTransformationActor } from '../actors/cpp-transformation';
-import { templateEngineActor } from './template-engine.ts';
-import { validationActor } from '../utils/validation.ts';
 import type {
   AstGrepResult,
   ComplexityMetrics,
   TemplateEngineResult,
   ValidationActorResult,
 } from '../types.ts';
-import type { SgRoot, SgNode } from '@ast-grep/napi';
+import { validationActor } from '../utils/validation.ts';
+import { astGrepTransformationActor } from './ast-grep-transformation.ts';
+import { complexityActor } from './complexity.ts';
+import { ASTGrepPatternSchema, feedbackLoopActor } from './feedback-loop.ts';
+// import { BUILTIN_CPP_PATTERNS, cppTransformationActor } from '../actors/cpp-transformation';
+import { templateEngineActor } from './template-engine.ts';
 
 // ===== ENHANCED TRANSFORMATION ORCHESTRATOR =====
 
@@ -226,7 +229,7 @@ export const enhancedTransformationOrchestratorActor = fromPromise(
           message: string;
           severity: 'warning' | 'error' | 'critical';
           recoverable: boolean;
-        }> ,
+        }>,
         transformationsApplied: [] as Array<{
           type: 'template' | 'ast' | 'llm';
           patternsUsed: string[];
@@ -234,14 +237,18 @@ export const enhancedTransformationOrchestratorActor = fromPromise(
           success: boolean;
           confidence: number;
           metadata?: Record<string, unknown>;
-        }> ,
+        }>,
         filesModified: new Set<string>(),
         complexityBefore: 0,
         complexityAfter: 0,
       };
 
       // Pass annotationData to orchestration stages
-      const result = await executeEnhancedOrchestrationStages(validated, orchestratorState, annotationData);
+      const result = await executeEnhancedOrchestrationStages(
+        validated,
+        orchestratorState,
+        annotationData
+      );
 
       console.log(
         `✅ Enhanced Orchestrator completed: ${transformationId} in ${Date.now() - startTime}ms`
@@ -286,7 +293,6 @@ export const enhancedTransformationOrchestratorActor = fromPromise(
 /**
  * Execute all enhanced orchestration stages
  */
-
 
 // --- Main stage runner ---
 async function executeEnhancedOrchestrationStages(
@@ -354,14 +360,18 @@ async function executeEnhancedOrchestrationStages(
 /**
  * Stage 1: Pre-analysis - Analyze files and prepare for transformation
  */
-async function preAnalysisStage(request: EnhancedOrchestratorRequest, state: EnhancedOrchestratorState, annotationData?: any[]): Promise<void> {
+async function preAnalysisStage(
+  request: EnhancedOrchestratorRequest,
+  state: EnhancedOrchestratorState,
+  annotationData?: any[]
+): Promise<void> {
   console.log('🔍 Pre-analysis: Analyzing target files...');
 
   // Use annotationData to filter/flag files if available
-  if (annotationData && annotationData.length) {
+  if (annotationData?.length) {
     for (const filePath of request.targetFiles) {
-      const annotation = annotationData.find(a => a.filePath === filePath);
-      if (annotation && annotation.tags?.includes('do-not-edit')) {
+      const annotation = annotationData.find((a) => a.filePath === filePath);
+      if (annotation?.tags?.includes('do-not-edit')) {
         throw new Error(`File marked as do-not-edit in annotation: ${filePath}`);
       }
     }
@@ -375,7 +385,7 @@ async function preAnalysisStage(request: EnhancedOrchestratorRequest, state: Enh
 
     state.complexityBefore = complexityMetrics.cyclomaticComplexity;
     console.log(`📊 Initial complexity: ${state.complexityBefore}`);
-  } catch (error) {
+  } catch (_error) {
     console.warn('⚠️ Complexity analysis failed, using default values');
     state.complexityBefore = 5; // Default baseline
   }
@@ -384,7 +394,7 @@ async function preAnalysisStage(request: EnhancedOrchestratorRequest, state: Enh
   for (const filePath of request.targetFiles) {
     try {
       await readFile(filePath, 'utf-8');
-    } catch (error) {
+    } catch (_error) {
       throw new Error(`Cannot access file: ${filePath}`);
     }
   }
@@ -414,7 +424,7 @@ async function dependencyAnalysisStage(
         .map((imp) => imp as string);
 
       dependencyGraph[filePath] = relatedFiles;
-    } catch (error) {
+    } catch (_error) {
       console.warn(`⚠️ Failed to analyze dependencies for ${filePath}`);
       dependencyGraph[filePath] = [];
     }
@@ -462,7 +472,6 @@ async function transformationExecutionStage(
 ): Promise<void> {
   console.log('⚡ Transformation Execution: Applying transformations...');
 
-
   const { transformationPlan } = state;
   if (!transformationPlan) {
     throw new Error('Transformation plan is not defined');
@@ -471,7 +480,11 @@ async function transformationExecutionStage(
   for (const transformationType of transformationPlan.order) {
     try {
       console.log(`🔄 Executing ${transformationType} transformation...`);
-  const result = await executeEnhancedTransformation(transformationType, request, annotationData);
+      const result = await executeEnhancedTransformation(
+        transformationType,
+        request,
+        annotationData
+      );
 
       if (result.success) {
         state.transformationsApplied.push(result);
@@ -593,19 +606,21 @@ async function executeEnhancedTransformation(
       };
     }
 
-  case 'llm': {
+    case 'llm': {
       // Use the real enhanced LLM transformer with provider from env
       const { enhancedLLMTransformationActor } = await import('./llm-transformation-enhanced.ts');
 
       // --- Advanced Prompt Context & AST Annotation ---
       // For each file, extract AST annotation (structure, key nodes, complexity, etc.)
       // --- Types for AST annotation ---
-      type ASTAnnotation = {
-        nodeKinds: string[];
-        functionCount: number;
-        classCount: number;
-        codeSize: number;
-      } | { error: string; codeSize?: number };
+      type ASTAnnotation =
+        | {
+            nodeKinds: string[];
+            functionCount: number;
+            classCount: number;
+            codeSize: number;
+          }
+        | { error: string; codeSize?: number };
       const astAnnotations: Record<string, ASTAnnotation> = {};
       try {
         const { parse, Lang } = await import('@ast-grep/napi');
@@ -613,10 +628,11 @@ async function executeEnhancedTransformation(
           try {
             const content = await readFile(file, 'utf-8');
             // Infer language from extension (reuse logic from ast-grep-transformation)
-            let lang: string = 'typescript';
+            let lang = 'typescript';
             if (file.endsWith('.js') || file.endsWith('.jsx')) lang = 'javascript';
             else if (file.endsWith('.py')) lang = 'python';
-            else if (file.endsWith('.cpp') || file.endsWith('.cc') || file.endsWith('.cxx')) lang = 'cpp';
+            else if (file.endsWith('.cpp') || file.endsWith('.cc') || file.endsWith('.cxx'))
+              lang = 'cpp';
             else if (file.endsWith('.go')) lang = 'go';
             else if (file.endsWith('.rs')) lang = 'rust';
             else if (file.endsWith('.java')) lang = 'java';
@@ -632,18 +648,22 @@ async function executeEnhancedTransformation(
             let ast: SgRoot | null = null;
             try {
               ast = parse(Lang[lang as keyof typeof Lang] || lang, content) as SgRoot;
-            } catch (err) {
+            } catch (_err) {
               ast = null;
             }
             if (ast) {
               // Collect a simple AST summary: top-level node kinds, function/class count, etc.
               const root = ast.root();
               // Defensive: filter out undefined/null children and ensure kind() is string
-              const children = root.children().filter((n): n is SgNode => !!n && typeof n.kind === 'function');
-              const nodeKinds: string[] = children.map((n) => {
-                const k = n.kind();
-                return typeof k === 'string' ? k : '';
-              }).filter(Boolean);
+              const children = root
+                .children()
+                .filter((n): n is SgNode => !!n && typeof n.kind === 'function');
+              const nodeKinds: string[] = children
+                .map((n) => {
+                  const k = n.kind();
+                  return typeof k === 'string' ? k : '';
+                })
+                .filter(Boolean);
               const functionCount: number = children.filter((n) => {
                 const k = n.kind();
                 return typeof k === 'string' && k.includes('function');
@@ -661,11 +681,11 @@ async function executeEnhancedTransformation(
             } else {
               astAnnotations[file] = { error: 'AST parse failed', codeSize: content.length };
             }
-          } catch (err) {
+          } catch (_err) {
             astAnnotations[file] = { error: 'File read/parse failed' };
           }
         }
-      } catch (err) {
+      } catch (_err) {
         // AST-grep not available or failed
       }
 
@@ -688,26 +708,23 @@ async function executeEnhancedTransformation(
         dryRun: request.dryRun,
       };
 
-      const llmResult = await invokeActorWithTimeout<any>(
-        enhancedLLMTransformationActor,
-        {
-          files: request.targetFiles,
-          request: {
-            prompt: 'Improve code quality and apply best practices',
-            targetFiles: request.targetFiles,
-            transformationType: 'llm' as const,
-            maxComplexity: request.maxComplexity,
-            dryRun: request.dryRun,
-            advancedContext: advancedPromptContext,
-          },
-          // config and context will be picked up from env by the provider manager
-          context: {
-            projectType: request.context?.projectType || 'typescript',
-            priority: request.context?.priority || 'normal',
-            astAnnotations,
-          },
-        }
-      );
+      const llmResult = await invokeActorWithTimeout<any>(enhancedLLMTransformationActor, {
+        files: request.targetFiles,
+        request: {
+          prompt: 'Improve code quality and apply best practices',
+          targetFiles: request.targetFiles,
+          transformationType: 'llm' as const,
+          maxComplexity: request.maxComplexity,
+          dryRun: request.dryRun,
+          advancedContext: advancedPromptContext,
+        },
+        // config and context will be picked up from env by the provider manager
+        context: {
+          projectType: request.context?.projectType || 'typescript',
+          priority: request.context?.priority || 'normal',
+          astAnnotations,
+        },
+      });
 
       return {
         type: 'llm',
@@ -733,7 +750,7 @@ async function executeEnhancedTransformation(
  * Stage 5: Quality Validation - Validate transformation results
  */
 async function qualityValidationStage(
-  request: EnhancedOrchestratorRequest,
+  _request: EnhancedOrchestratorRequest,
   state: EnhancedOrchestratorState
 ): Promise<void> {
   console.log('🔍 Quality Validation: Validating transformation results...');
@@ -747,7 +764,6 @@ async function qualityValidationStage(
 
   // Run validation checks
   try {
-
     const validationResult = await invokeActorWithTimeout<ValidationActorResult>(validationActor, {
       type: 'quality',
       files: modifiedFiles,
@@ -785,7 +801,7 @@ async function qualityValidationStage(
     state.formatIssues = 0;
   }
 
-    // (Removed unreachable or erroneous code block that referenced undefined 'content')
+  // (Removed unreachable or erroneous code block that referenced undefined 'content')
 
   // Analyze final complexity
   try {
@@ -795,7 +811,7 @@ async function qualityValidationStage(
 
     state.complexityAfter = finalComplexity.cyclomaticComplexity;
     console.log(`📊 Final complexity: ${state.complexityAfter}`);
-  } catch (error) {
+  } catch (_error) {
     console.warn('⚠️ Final complexity analysis failed');
     state.complexityAfter = state.complexityBefore;
   }
@@ -841,15 +857,12 @@ async function monitoringCollectionStage(
   _request: EnhancedOrchestratorRequest,
   state: EnhancedOrchestratorState
 ): Promise<void> {
-  if (!state || !state.performanceMetrics && !state.startTime) {
+  if (!state || (!state.performanceMetrics && !state.startTime)) {
     // Defensive: state should always be present, but check for safety
     return;
   }
 
-  if (
-    typeof state !== 'object' ||
-    (state as any).context?.enableMonitoring === false
-  ) {
+  if (typeof state !== 'object' || (state as any).context?.enableMonitoring === false) {
     console.log('⏭️ Monitoring disabled, skipping collection');
     return;
   }
@@ -870,7 +883,7 @@ async function monitoringCollectionStage(
  * Build final enhanced orchestrator result
  */
 function buildEnhancedOrchestratorResult(
-  request: EnhancedOrchestratorRequest,
+  _request: EnhancedOrchestratorRequest,
   state: EnhancedOrchestratorState
 ): EnhancedTransformationOrchestratorResult {
   const qualityImprovement = calculateQualityImprovement(state);
@@ -952,7 +965,6 @@ function generateEnhancedRecommendations(state: EnhancedOrchestratorState): stri
 
   return recommendations;
 }
-
 
 export interface EnhancedTransformationResult {
   filesModified: string[];

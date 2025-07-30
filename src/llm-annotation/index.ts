@@ -1,16 +1,15 @@
-import { fromPromise } from 'xstate';
 import { readdir } from 'node:fs/promises';
 import { extname, join } from 'node:path';
+import { fromPromise } from 'xstate';
+import { z } from 'zod';
 import {
   generateLLMAnnotations,
   LLMAnnotationAnalyzer,
   llmAnnotationActor,
   validateAnnotationRequest,
 } from './analyzer.js';
-import type { AnnotationRequest, AnnotationResult, LLMAnnotation } from './types.js';
-import { CLIOptionsSchema, validateCLIOptions } from './types.js';
-import type { CLIOptions } from './types.js';
-import { z } from 'zod';
+import type { AnnotationRequest, AnnotationResult, CLIOptions, LLMAnnotation } from './types.js';
+import { validateCLIOptions } from './types.js';
 
 /**
  * Parse CLI arguments into CLIOptions
@@ -489,7 +488,9 @@ export async function findCodeFiles(
     }
     // Relaxed: if any pattern ends with the extension, include
     const matches = includePatterns.some((pattern) => {
-      const patternExt = pattern.startsWith('*.') ? pattern.slice(1) : pattern.slice(pattern.lastIndexOf('.'));
+      const patternExt = pattern.startsWith('*.')
+        ? pattern.slice(1)
+        : pattern.slice(pattern.lastIndexOf('.'));
       return ext === patternExt;
     });
     if (matches) {

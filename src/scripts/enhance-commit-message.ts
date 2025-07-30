@@ -77,7 +77,7 @@ async function analyzeStagedChanges(): Promise<CommitAnalysis> {
       riskAssessment: assessRisk(files),
       qualityMetrics: await calculateQualityMetrics(files),
     };
-  } catch (error) {
+  } catch (_error) {
     // Fallback for empty or error cases
     return {
       files: [],
@@ -355,11 +355,14 @@ async function calculateQualityMetrics(
 
   // Try to get actual TypeScript errors (non-blocking)
   try {
-    const unifiedOutput = execSync('bun run src/scripts/pre-commit-typescript.ts --dry-run --max-risk=high', {
-      encoding: 'utf-8',
-      stdio: 'pipe',
-      timeout: 10000, // 10 second timeout for analyzer
-    });
+    const unifiedOutput = execSync(
+      'bun run src/scripts/pre-commit-typescript.ts --dry-run --max-risk=high',
+      {
+        encoding: 'utf-8',
+        stdio: 'pipe',
+        timeout: 10000, // 10 second timeout for analyzer
+      }
+    );
     // Count error lines from UnifiedAnalyzer output
     typeErrors = (unifiedOutput.match(/type-error/g) || []).length;
   } catch (error: unknown) {
@@ -378,7 +381,7 @@ async function calculateQualityMetrics(
 
     const biomeResult = JSON.parse(biomeOutput);
     lintIssues = biomeResult.diagnostics?.length || 0;
-  } catch (error) {
+  } catch (_error) {
     // Biome check failed or no issues
     lintIssues = 0;
   }

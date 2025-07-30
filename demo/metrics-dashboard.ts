@@ -2,13 +2,12 @@
 
 /**
  * TensorRT Knowledge Graph - Performance Metrics Dashboard
- * 
+ *
  * Real-time monitoring and analytics for the TensorRT Oracle system
  */
 
-import { SemanticIndexer } from '../src/ingestion/semantic-indexer.ts';
-import { performance } from 'perf_hooks';
 import { z } from 'zod';
+import { SemanticIndexer } from '../src/ingestion/semantic-indexer.ts';
 
 interface SystemMetrics {
   database: {
@@ -113,50 +112,55 @@ class MetricsDashboard {
   }
 
   private async collectDatabaseMetrics(): Promise<SystemMetrics['database']> {
-      // Define a Zod schema for repository stats
-      const RepositoryStatsSchema = z.object({
-        total: z.object({
+    // Define a Zod schema for repository stats
+    const RepositoryStatsSchema = z.object({
+      total: z
+        .object({
           totalEntities: z.number(),
-        }).partial().default({}),
-      });
+        })
+        .partial()
+        .default({}),
+    });
 
-      const rawStats = await this.indexer.getRepositoryStats();
-      const stats = RepositoryStatsSchema.parse(rawStats);
+    const rawStats = await this.indexer.getRepositoryStats();
+    const stats = RepositoryStatsSchema.parse(rawStats);
 
-      // Simulate database performance metrics
-      const vectorSearchTime = Math.random() * 50 + 10; // 10-60ms
-      const textSearchTime = Math.random() * 20 + 5;    // 5-25ms
-      const indexEfficiency = 0.85 + Math.random() * 0.1; // 85-95%
+    // Simulate database performance metrics
+    const vectorSearchTime = Math.random() * 50 + 10; // 10-60ms
+    const textSearchTime = Math.random() * 20 + 5; // 5-25ms
+    const indexEfficiency = 0.85 + Math.random() * 0.1; // 85-95%
 
-      return {
-        totalEntities: stats.total?.totalEntities || 0,
-        totalEmbeddings: stats.total?.totalEntities || 0,
-        totalQueries: this.queryHistory.length,
-        averageQueryTime: this.calculateAverageQueryTime(),
-        connectionPoolStatus: {
-          active: Math.floor(Math.random() * 10) + 5,
-          idle: Math.floor(Math.random() * 15) + 10,
-          waiting: Math.floor(Math.random() * 3),
-        },
-        indexPerformance: {
-          vectorSearchTime,
-          textSearchTime,
-          indexEfficiency,
-        },
-      };
+    return {
+      totalEntities: stats.total?.totalEntities || 0,
+      totalEmbeddings: stats.total?.totalEntities || 0,
+      totalQueries: this.queryHistory.length,
+      averageQueryTime: this.calculateAverageQueryTime(),
+      connectionPoolStatus: {
+        active: Math.floor(Math.random() * 10) + 5,
+        idle: Math.floor(Math.random() * 15) + 10,
+        waiting: Math.floor(Math.random() * 3),
+      },
+      indexPerformance: {
+        vectorSearchTime,
+        textSearchTime,
+        indexEfficiency,
+      },
+    };
   }
 
   private async collectApplicationMetrics(): Promise<SystemMetrics['application']> {
     const memUsage = process.memoryUsage();
     const uptime = Date.now() - this.startTime;
 
-    const successfulQueries = this.queryHistory.filter(q => q.success).length;
-    const successRate = this.queryHistory.length > 0 ? successfulQueries / this.queryHistory.length : 0;
-    
-    const confidenceSum = this.queryHistory.reduce((sum, q) => sum + q.confidence, 0);
-    const averageConfidence = this.queryHistory.length > 0 ? confidenceSum / this.queryHistory.length : 0;
+    const successfulQueries = this.queryHistory.filter((q) => q.success).length;
+    const successRate =
+      this.queryHistory.length > 0 ? successfulQueries / this.queryHistory.length : 0;
 
-    const responseTimes = this.queryHistory.map(q => q.responseTime).sort((a, b) => a - b);
+    const confidenceSum = this.queryHistory.reduce((sum, q) => sum + q.confidence, 0);
+    const averageConfidence =
+      this.queryHistory.length > 0 ? confidenceSum / this.queryHistory.length : 0;
+
+    const responseTimes = this.queryHistory.map((q) => q.responseTime).sort((a, b) => a - b);
     const p95Index = Math.floor(responseTimes.length * 0.95);
     const p99Index = Math.floor(responseTimes.length * 0.99);
 
@@ -164,7 +168,7 @@ class MetricsDashboard {
     const intentDistribution: Record<string, number> = {};
     const domainDistribution: Record<string, number> = {};
 
-    this.queryHistory.forEach(query => {
+    this.queryHistory.forEach((query) => {
       intentDistribution[query.intent] = (intentDistribution[query.intent] || 0) + 1;
       if (query.domain) {
         domainDistribution[query.domain] = (domainDistribution[query.domain] || 0) + 1;
@@ -194,15 +198,16 @@ class MetricsDashboard {
   private async collectPerformanceMetrics(): Promise<SystemMetrics['performance']> {
     const now = Date.now();
     const oneMinuteAgo = now - 60000;
-    const recentQueries = this.queryHistory.filter(q => q.timestamp > oneMinuteAgo);
+    const recentQueries = this.queryHistory.filter((q) => q.timestamp > oneMinuteAgo);
 
     const queriesPerSecond = recentQueries.length / 60;
     const queriesPerMinute = recentQueries.length;
 
-    const responseTimes = this.queryHistory.map(q => q.responseTime).sort((a, b) => a - b);
-    const averageResponseTime = responseTimes.length > 0 
-      ? responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length 
-      : 0;
+    const responseTimes = this.queryHistory.map((q) => q.responseTime).sort((a, b) => a - b);
+    const averageResponseTime =
+      responseTimes.length > 0
+        ? responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length
+        : 0;
 
     const medianIndex = Math.floor(responseTimes.length / 2);
     const p95Index = Math.floor(responseTimes.length * 0.95);
@@ -210,13 +215,16 @@ class MetricsDashboard {
 
     // Calculate domain-specific accuracy
     const domainAccuracy: Record<string, number> = {};
-    const domainGroups = this.queryHistory.reduce((groups, query) => {
-      if (query.domain) {
-        if (!groups[query.domain]) groups[query.domain] = [];
-        groups[query.domain].push(query);
-      }
-      return groups;
-    }, {} as Record<string, typeof this.queryHistory>);
+    const domainGroups = this.queryHistory.reduce(
+      (groups, query) => {
+        if (query.domain) {
+          if (!groups[query.domain]) groups[query.domain] = [];
+          groups[query.domain].push(query);
+        }
+        return groups;
+      },
+      {} as Record<string, typeof this.queryHistory>
+    );
 
     Object.entries(domainGroups).forEach(([domain, queries]) => {
       const avgConfidence = queries.reduce((sum, q) => sum + q.confidence, 0) / queries.length;
@@ -236,9 +244,10 @@ class MetricsDashboard {
         p99ResponseTime: responseTimes[p99Index] || 0,
       },
       accuracy: {
-        overallConfidence: this.queryHistory.length > 0 
-          ? this.queryHistory.reduce((sum, q) => sum + q.confidence, 0) / this.queryHistory.length 
-          : 0,
+        overallConfidence:
+          this.queryHistory.length > 0
+            ? this.queryHistory.reduce((sum, q) => sum + q.confidence, 0) / this.queryHistory.length
+            : 0,
         domainSpecificAccuracy: domainAccuracy,
         userSatisfactionScore: 0.87, // Would be calculated from user feedback
       },
@@ -258,7 +267,13 @@ class MetricsDashboard {
     };
   }
 
-  recordQuery(responseTime: number, intent: string, domain: string | undefined, confidence: number, success: boolean): void {
+  recordQuery(
+    responseTime: number,
+    intent: string,
+    domain: string | undefined,
+    confidence: number,
+    success: boolean
+  ): void {
     this.queryHistory.push({
       timestamp: Date.now(),
       responseTime,
@@ -282,37 +297,45 @@ class MetricsDashboard {
 
   async displayDashboard(): Promise<void> {
     const metrics = await this.collectMetrics();
-    
+
     console.clear();
     console.log('📊 TensorRT Oracle - Real-Time Metrics Dashboard');
-    console.log('=' .repeat(80));
+    console.log('='.repeat(80));
     console.log(`Last Updated: ${new Date().toLocaleString()}`);
     console.log(`Uptime: ${this.formatUptime(metrics.application.uptime)}\n`);
 
     // Database Metrics
     console.log('🗄️  DATABASE METRICS');
-    console.log('-' .repeat(40));
+    console.log('-'.repeat(40));
     console.log(`Total Entities: ${metrics.database.totalEntities.toLocaleString()}`);
     console.log(`Total Embeddings: ${metrics.database.totalEmbeddings.toLocaleString()}`);
     console.log(`Total Queries: ${metrics.database.totalQueries.toLocaleString()}`);
     console.log(`Avg Query Time: ${Math.round(metrics.database.averageQueryTime)}ms`);
-    console.log(`Vector Search: ${Math.round(metrics.database.indexPerformance.vectorSearchTime)}ms`);
-    console.log(`Index Efficiency: ${Math.round(metrics.database.indexPerformance.indexEfficiency * 100)}%`);
-    console.log(`Connections: ${metrics.database.connectionPoolStatus.active} active, ${metrics.database.connectionPoolStatus.idle} idle\n`);
+    console.log(
+      `Vector Search: ${Math.round(metrics.database.indexPerformance.vectorSearchTime)}ms`
+    );
+    console.log(
+      `Index Efficiency: ${Math.round(metrics.database.indexPerformance.indexEfficiency * 100)}%`
+    );
+    console.log(
+      `Connections: ${metrics.database.connectionPoolStatus.active} active, ${metrics.database.connectionPoolStatus.idle} idle\n`
+    );
 
     // Performance Metrics
     console.log('⚡ PERFORMANCE METRICS');
-    console.log('-' .repeat(40));
+    console.log('-'.repeat(40));
     console.log(`Throughput: ${metrics.performance.throughput.queriesPerSecond.toFixed(1)} QPS`);
     console.log(`Avg Response: ${Math.round(metrics.performance.latency.averageResponseTime)}ms`);
     console.log(`P95 Response: ${Math.round(metrics.performance.latency.p95ResponseTime)}ms`);
     console.log(`P99 Response: ${Math.round(metrics.performance.latency.p99ResponseTime)}ms`);
     console.log(`Success Rate: ${Math.round(metrics.application.queryMetrics.successRate * 100)}%`);
-    console.log(`Avg Confidence: ${Math.round(metrics.performance.accuracy.overallConfidence * 100)}%\n`);
+    console.log(
+      `Avg Confidence: ${Math.round(metrics.performance.accuracy.overallConfidence * 100)}%\n`
+    );
 
     // System Metrics
     console.log('💻 SYSTEM METRICS');
-    console.log('-' .repeat(40));
+    console.log('-'.repeat(40));
     console.log(`CPU Usage: ${Math.round(metrics.system.cpuUsage)}%`);
     console.log(`Memory Usage: ${Math.round(metrics.system.memoryUsage)}%`);
     console.log(`Heap Used: ${this.formatBytes(metrics.application.memoryUsage.heapUsed)}`);
@@ -322,34 +345,38 @@ class MetricsDashboard {
 
     // Query Distribution
     console.log('📈 QUERY DISTRIBUTION');
-    console.log('-' .repeat(40));
+    console.log('-'.repeat(40));
     console.log('Intent Distribution:');
     Object.entries(metrics.application.intentDistribution)
-      .sort(([,a], [,b]) => b - a)
+      .sort(([, a], [, b]) => b - a)
       .slice(0, 5)
       .forEach(([intent, count]) => {
-        const percentage = Math.round((count / metrics.application.queryMetrics.totalProcessed) * 100);
+        const percentage = Math.round(
+          (count / metrics.application.queryMetrics.totalProcessed) * 100
+        );
         console.log(`  ${intent}: ${count} (${percentage}%)`);
       });
 
     if (Object.keys(metrics.application.domainDistribution).length > 0) {
       console.log('\nDomain Distribution:');
       Object.entries(metrics.application.domainDistribution)
-        .sort(([,a], [,b]) => b - a)
+        .sort(([, a], [, b]) => b - a)
         .slice(0, 5)
         .forEach(([domain, count]) => {
-          const percentage = Math.round((count / metrics.application.queryMetrics.totalProcessed) * 100);
+          const percentage = Math.round(
+            (count / metrics.application.queryMetrics.totalProcessed) * 100
+          );
           console.log(`  ${domain}: ${count} (${percentage}%)`);
         });
     }
 
-    console.log('\n' + '=' .repeat(80));
+    console.log(`\n${'='.repeat(80)}`);
     console.log('Press Ctrl+C to exit | Refreshes every 5 seconds');
   }
 
   async startRealTimeMonitoring(): Promise<void> {
     console.log('🚀 Starting real-time metrics monitoring...\n');
-    
+
     const updateInterval = setInterval(async () => {
       try {
         await this.displayDashboard();
@@ -371,50 +398,60 @@ class MetricsDashboard {
 
   async generatePerformanceReport(): Promise<void> {
     const metrics = await this.collectMetrics();
-    
+
     console.log('📊 TensorRT Oracle Performance Report');
-    console.log('=' .repeat(60));
+    console.log('='.repeat(60));
     console.log(`Generated: ${new Date().toISOString()}`);
     console.log(`Report Period: ${this.formatUptime(metrics.application.uptime)}\n`);
 
     console.log('🎯 KEY PERFORMANCE INDICATORS');
-    console.log('-' .repeat(40));
-    console.log(`✅ Query Success Rate: ${Math.round(metrics.application.queryMetrics.successRate * 100)}%`);
-    console.log(`⚡ Average Response Time: ${Math.round(metrics.performance.latency.averageResponseTime)}ms`);
-    console.log(`🎯 Average Confidence: ${Math.round(metrics.performance.accuracy.overallConfidence * 100)}%`);
+    console.log('-'.repeat(40));
+    console.log(
+      `✅ Query Success Rate: ${Math.round(metrics.application.queryMetrics.successRate * 100)}%`
+    );
+    console.log(
+      `⚡ Average Response Time: ${Math.round(metrics.performance.latency.averageResponseTime)}ms`
+    );
+    console.log(
+      `🎯 Average Confidence: ${Math.round(metrics.performance.accuracy.overallConfidence * 100)}%`
+    );
     console.log(`🚀 Peak Throughput: ${metrics.performance.throughput.peakQPS.toFixed(1)} QPS`);
-    console.log(`📊 Total Queries Processed: ${metrics.application.queryMetrics.totalProcessed.toLocaleString()}\n`);
+    console.log(
+      `📊 Total Queries Processed: ${metrics.application.queryMetrics.totalProcessed.toLocaleString()}\n`
+    );
 
     console.log('📈 PERFORMANCE TRENDS');
-    console.log('-' .repeat(40));
+    console.log('-'.repeat(40));
     console.log(`Database Entities: ${metrics.database.totalEntities.toLocaleString()}`);
-    console.log(`Vector Index Efficiency: ${Math.round(metrics.database.indexPerformance.indexEfficiency * 100)}%`);
+    console.log(
+      `Vector Index Efficiency: ${Math.round(metrics.database.indexPerformance.indexEfficiency * 100)}%`
+    );
     console.log(`Memory Utilization: ${Math.round(metrics.system.memoryUsage)}%`);
     console.log(`CPU Utilization: ${Math.round(metrics.system.cpuUsage)}%\n`);
 
     console.log('🔍 DOMAIN ACCURACY BREAKDOWN');
-    console.log('-' .repeat(40));
+    console.log('-'.repeat(40));
     Object.entries(metrics.performance.accuracy.domainSpecificAccuracy)
-      .sort(([,a], [,b]) => b - a)
+      .sort(([, a], [, b]) => b - a)
       .forEach(([domain, accuracy]) => {
         console.log(`${domain}: ${Math.round(accuracy * 100)}%`);
       });
 
     console.log('\n📋 RECOMMENDATIONS');
-    console.log('-' .repeat(40));
-    
+    console.log('-'.repeat(40));
+
     if (metrics.performance.latency.p99ResponseTime > 1000) {
       console.log('⚠️  P99 response time is high - consider optimizing vector indices');
     }
-    
+
     if (metrics.application.queryMetrics.successRate < 0.95) {
       console.log('⚠️  Query success rate below 95% - review error handling');
     }
-    
+
     if (metrics.performance.accuracy.overallConfidence < 0.8) {
       console.log('⚠️  Average confidence below 80% - consider retraining embeddings');
     }
-    
+
     if (metrics.system.memoryUsage > 80) {
       console.log('⚠️  High memory usage - consider scaling or optimization');
     }
@@ -438,7 +475,7 @@ class MetricsDashboard {
     const sizes = ['B', 'KB', 'MB', 'GB'];
     if (bytes === 0) return '0 B';
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return `${Math.round(bytes / Math.pow(1024, i) * 100) / 100} ${sizes[i]}`;
+    return `${Math.round((bytes / 1024 ** i) * 100) / 100} ${sizes[i]}`;
   }
 
   async close(): Promise<void> {
@@ -449,10 +486,10 @@ class MetricsDashboard {
 // CLI interface for metrics dashboard
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
-  
+
   const dbConfig = {
     host: process.env.POSTGRES_HOST || 'localhost',
-    port: parseInt(process.env.POSTGRES_PORT || '5432'),
+    port: Number.parseInt(process.env.POSTGRES_PORT || '5432'),
     database: process.env.POSTGRES_DB || 'tensorrt_oracle',
     user: process.env.POSTGRES_USER || 'postgres',
     password: process.env.POSTGRES_PASSWORD || 'your_secure_password',
@@ -476,7 +513,6 @@ async function main(): Promise<void> {
 
     // Default: real-time monitoring
     await dashboard.startRealTimeMonitoring();
-
   } catch (error) {
     console.error('❌ Metrics dashboard failed:', error);
     process.exit(1);

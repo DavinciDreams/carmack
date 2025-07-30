@@ -1,5 +1,5 @@
-import { parse, pattern as compilePattern, Lang, type SgNode, type SgRoot } from '@ast-grep/napi';
 import { readFile, writeFile } from 'node:fs/promises';
+import { pattern as compilePattern, Lang, parse, type SgNode, type SgRoot } from '@ast-grep/napi';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
 
@@ -193,13 +193,11 @@ export const astGrepTransformationActor = fromPromise(
   async ({ input }: { input: AstGrepTransformationRequest }) => {
     const validatedInput = AstGrepTransformationRequestSchema.parse(input);
 
-
-      `🌳 Starting AST-grep transformations on ${validatedInput.targetFiles.length} files with ${validatedInput.patterns.length} patterns`
+    `🌳 Starting AST-grep transformations on ${validatedInput.targetFiles.length} files with ${validatedInput.patterns.length} patterns`;
 
     const results = await applyAstGrepTransformations(validatedInput);
 
-
-      `✨ AST-grep engine completed: ${results.transformationsApplied} transformations across ${results.filesModified.length} files`
+    `✨ AST-grep engine completed: ${results.transformationsApplied} transformations across ${results.filesModified.length} files`;
 
     return results;
   }
@@ -242,13 +240,9 @@ async function applyAstGrepTransformations(request: AstGrepTransformationRequest
           totalTransformations += transformation.count;
         }
 
-
-          `🌳 AST-transformed ${filePath}: ${transformResult.transformations.length} patterns applied`
-        ;
+        `🌳 AST-transformed ${filePath}: ${transformResult.transformations.length} patterns applied`;
       }
-    } catch (error) {
-
-    }
+    } catch (_error) {}
   }
 
   return {
@@ -265,17 +259,17 @@ async function applyAstGrepTransformations(request: AstGrepTransformationRequest
 function prepareAstPatterns(patterns: AstGrepPattern[], maxComplexity: number): AstGrepPattern[] {
   return patterns
     .filter((p) => p.complexity <= maxComplexity)
-.sort((a, b) => {
-  // Sort by priority first, then by complexity
-  const aPriority = a.performance?.priority ?? 0;
-  const bPriority = b.performance?.priority ?? 0;
+    .sort((a, b) => {
+      // Sort by priority first, then by complexity
+      const aPriority = a.performance?.priority ?? 0;
+      const bPriority = b.performance?.priority ?? 0;
 
-  if (aPriority !== bPriority) {
-    return bPriority - aPriority; // Higher priority first
-  }
+      if (aPriority !== bPriority) {
+        return bPriority - aPriority; // Higher priority first
+      }
 
-  return a.complexity - b.complexity; // Lower complexity first
-});
+      return a.complexity - b.complexity; // Lower complexity first
+    });
 }
 
 /**
@@ -295,18 +289,17 @@ async function transformFileWithAstGrep(
   const transformations: Array<{ patternId: string; count: number }> = [];
   let totalModified = false;
 
-// Determine language for AST-grep
-// Use the first pattern's language or infer from file extension
-let lang: string | Lang = patterns[0]?.language || inferLanguageFromFile(filePath);
-if (Lang[lang as keyof typeof Lang]) {
-  lang = Lang[lang as keyof typeof Lang];
-}
-// Parse the source code into AST
-let root: SgRoot;
-try {
-  root = parse(lang, modifiedContent);
-} catch (error) {
-
+  // Determine language for AST-grep
+  // Use the first pattern's language or infer from file extension
+  let lang: string | Lang = patterns[0]?.language || inferLanguageFromFile(filePath);
+  if (Lang[lang as keyof typeof Lang]) {
+    lang = Lang[lang as keyof typeof Lang];
+  }
+  // Parse the source code into AST
+  let root: SgRoot;
+  try {
+    root = parse(lang, modifiedContent);
+  } catch (_error) {
     return { content, modified: false, transformations: [] };
   }
 
@@ -318,12 +311,11 @@ try {
     if (options.skipConflicts && pattern.performance?.conflicts) {
       const hasConflict = pattern.performance.conflicts.some((id) => appliedPatterns.has(id));
       if (hasConflict) {
-
         continue;
       }
     }
 
-  const patternResult = await applyAstGrepPattern(root, modifiedContent, pattern, lang, options);
+    const patternResult = await applyAstGrepPattern(root, modifiedContent, pattern, lang, options);
 
     if (patternResult.modified) {
       modifiedContent = patternResult.content;
@@ -335,13 +327,10 @@ try {
         count: patternResult.matchCount,
       });
 
-
-
       // Re-parse for subsequent patterns
       try {
         root = parse(lang, modifiedContent);
-      } catch (error) {
-
+      } catch (_error) {
         break; // Stop processing if we can't re-parse
       }
     }
@@ -365,19 +354,16 @@ async function applyAstGrepPattern(
   options: AstGrepTransformationRequest['options']
 ): Promise<{ content: string; modified: boolean; matchCount: number }> {
   try {
-  // Find all matches using AST-grep
-  const matches = findAstGrepMatches(root, pattern, lang);
+    // Find all matches using AST-grep
+    const matches = findAstGrepMatches(root, pattern, lang);
 
     if (matches.length === 0) {
       return { content, modified: false, matchCount: 0 };
     }
 
     // Limit matches if specified
-const maxMatches =
-  pattern.performance?.maxMatches ??
-  options.maxMatchesPerPattern ??
-  1000;
-const limitedMatches = matches.slice(0, maxMatches);
+    const maxMatches = pattern.performance?.maxMatches ?? options.maxMatchesPerPattern ?? 1000;
+    const limitedMatches = matches.slice(0, maxMatches);
 
     // Apply transformations in reverse order to maintain indices
     let modifiedContent = content;
@@ -404,8 +390,7 @@ const limitedMatches = matches.slice(0, maxMatches);
       modified: true,
       matchCount: limitedMatches.length,
     };
-  } catch (error) {
-
+  } catch (_error) {
     return { content, modified: false, matchCount: 0 };
   }
 }
@@ -413,14 +398,18 @@ const limitedMatches = matches.slice(0, maxMatches);
 /**
  * Find AST-grep matches using sophisticated pattern matching
  */
-function findAstGrepMatches(root: SgRoot, pattern: AstGrepPattern, lang: string | Lang): AstMatch[] {
+function findAstGrepMatches(
+  root: SgRoot,
+  pattern: AstGrepPattern,
+  lang: string | Lang
+): AstMatch[] {
   const matches: AstMatch[] = [];
 
   try {
-  // Build AST-grep query from pattern
-  const query = buildAstGrepQuery(pattern, lang);
-  // Find all nodes matching the pattern using the correct API
-  const nodes = root.root().findAll(query);
+    // Build AST-grep query from pattern
+    const query = buildAstGrepQuery(pattern, lang);
+    // Find all nodes matching the pattern using the correct API
+    const nodes = root.root().findAll(query);
 
     for (const node of nodes) {
       // Extract variables from the match
@@ -445,9 +434,7 @@ function findAstGrepMatches(root: SgRoot, pattern: AstGrepPattern, lang: string 
 
       matches.push(match);
     }
-  } catch (error) {
-
-  }
+  } catch (_error) {}
 
   return matches;
 }
@@ -480,7 +467,8 @@ function inferLanguageFromFile(filePath: string): string {
   if (filePath.endsWith('.ts') || filePath.endsWith('.tsx')) return 'typescript';
   if (filePath.endsWith('.js') || filePath.endsWith('.jsx')) return 'javascript';
   if (filePath.endsWith('.py')) return 'python';
-  if (filePath.endsWith('.cpp') || filePath.endsWith('.cc') || filePath.endsWith('.cxx')) return 'cpp';
+  if (filePath.endsWith('.cpp') || filePath.endsWith('.cc') || filePath.endsWith('.cxx'))
+    return 'cpp';
   if (filePath.endsWith('.go')) return 'go';
   if (filePath.endsWith('.rs')) return 'rust';
   if (filePath.endsWith('.java')) return 'java';
@@ -506,14 +494,8 @@ function extractVariables(node: SgNode, pattern: AstGrepPattern): Record<string,
     const patternText = pattern.pattern.rule.pattern || '';
     const nodeText = node.text();
 
-
-
-
-
-
     // Extract variable names from the pattern
     const variableNames = extractVariableNames(patternText);
-
 
     for (const varName of variableNames) {
       try {
@@ -524,43 +506,32 @@ function extractVariables(node: SgNode, pattern: AstGrepPattern): Record<string,
         if (matchResult && typeof matchResult.text === 'function') {
           const value = matchResult.text();
           variables[varName] = value;
-
         } else {
           // Fallback to manual extraction if getMatch fails
           const manualValue = extractVariableFromText(nodeText, patternText, varName);
           if (manualValue) {
             variables[varName] = manualValue;
-
           } else {
-
           }
         }
-      } catch (error) {
-
+      } catch (_error) {
         // Fallback to manual extraction on any error
         const manualValue = extractVariableFromText(nodeText, patternText, varName);
         if (manualValue) {
           variables[varName] = manualValue;
-
         }
       }
     }
 
     // If no variables were extracted, try pattern-based extraction as final fallback
     if (Object.keys(variables).length === 0) {
-
       const variableMatches = extractVariablesFromPattern(nodeText, patternText);
       Object.assign(variables, variableMatches);
       if (Object.keys(variableMatches).length > 0) {
-
-        `   ✅ Pattern-based extraction found: ${Object.keys(variableMatches).join(', ')}`
+        `   ✅ Pattern-based extraction found: ${Object.keys(variableMatches).join(', ')}`;
       }
     }
-
-
-  } catch (error) {
-
-  }
+  } catch (_error) {}
 
   return variables;
 }

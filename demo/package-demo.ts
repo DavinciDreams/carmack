@@ -2,13 +2,13 @@
 
 /**
  * TensorRT Knowledge Graph Platform - Demo Package Builder
- * 
+ *
  * Creates a complete, self-contained demo package for distribution
  */
 
-import { writeFile, mkdir, copyFile, readdir, stat } from 'fs/promises';
-import { join, dirname } from 'path';
-import { existsSync } from 'fs';
+import { existsSync } from 'node:fs';
+import { copyFile, mkdir, readdir, stat, writeFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
 
 interface DemoPackage {
   name: string;
@@ -35,13 +35,14 @@ class DemoPackager {
     this.packageInfo = {
       name: 'TensorRT Knowledge Graph Platform',
       version: '1.0.0',
-      description: 'Comprehensive demo showcasing semantic code analysis and natural language querying for TensorRT',
+      description:
+        'Comprehensive demo showcasing semantic code analysis and natural language querying for TensorRT',
       components: [
         'Interactive CLI Demo',
-        'Performance Metrics Dashboard', 
+        'Performance Metrics Dashboard',
         'Scenario-based Walkthroughs',
         'Real-time Analytics',
-        'PostgreSQL + pgvector Integration'
+        'PostgreSQL + pgvector Integration',
       ],
       documentation: [
         'Quick Start Guide (< 10 minutes)',
@@ -49,7 +50,7 @@ class DemoPackager {
         'API Documentation',
         'User Guides',
         'Troubleshooting Guide',
-        'Performance Optimization'
+        'Performance Optimization',
       ],
       examples: [
         'Software Engineer Workflow',
@@ -57,13 +58,13 @@ class DemoPackager {
         'Engineering Manager Workflow',
         'CUDA Optimization Investigation',
         'Precision Quantization Research',
-        'Plugin Development Workflow'
+        'Plugin Development Workflow',
       ],
       requirements: {
         runtime: 'Bun >= 1.0.0',
         memory: '8GB RAM (16GB recommended)',
         disk: '10GB available space',
-        dependencies: ['Docker', 'Git', 'PostgreSQL (via Docker)']
+        dependencies: ['Docker', 'Git', 'PostgreSQL (via Docker)'],
       },
       features: [
         '🔮 Natural Language Code Querying',
@@ -75,8 +76,8 @@ class DemoPackager {
         '🏗️ Production-ready Architecture',
         '⚡ Sub-second Query Response',
         '🎮 User-friendly CLI Interface',
-        '📚 Comprehensive Documentation'
-      ]
+        '📚 Comprehensive Documentation',
+      ],
     };
   }
 
@@ -88,22 +89,22 @@ class DemoPackager {
 
     // Copy core files
     await this.copyDemoFiles();
-    
+
     // Copy documentation
     await this.copyDocumentation();
-    
+
     // Copy examples and scenarios
     await this.copyExamples();
-    
+
     // Create package metadata
     await this.createPackageMetadata();
-    
+
     // Create setup scripts
     await this.createSetupScripts();
-    
+
     // Create README for the package
     await this.createPackageReadme();
-    
+
     // Create validation script
     await this.createValidationScript();
 
@@ -123,7 +124,7 @@ class DemoPackager {
 
   private async copyDemoFiles(): Promise<void> {
     console.log('📋 Copying demo files...');
-    
+
     const demoFiles = [
       'demo/tensorrt-demo.ts',
       'demo/metrics-dashboard.ts',
@@ -133,7 +134,7 @@ class DemoPackager {
       'src/docs/oracle-query-processor.ts',
       'package.json',
       'tsconfig.json',
-      '.env.example'
+      '.env.example',
     ];
 
     for (const file of demoFiles) {
@@ -146,20 +147,20 @@ class DemoPackager {
 
     // Copy SQL files
     await this.copyDirectory('sql', join(this.outputDir, 'sql'));
-    
+
     console.log('✅ Demo files copied');
   }
 
   private async copyDocumentation(): Promise<void> {
     console.log('📚 Copying documentation...');
-    
+
     const docFiles = [
       'docs/tensorrt-knowledge-graph/README.md',
       'docs/tensorrt-knowledge-graph/QUICK-START.md',
       'docs/TENSORRT-ORACLE-ARCHITECTURE.md',
       'docs/TENSORRT-IMPLEMENTATION-SPEC.md',
       'docs/TENSORRT-ORACLE-DEPLOYMENT-GUIDE.md',
-      'docs/TENSORRT-ORACLE-QUICKSTART.md'
+      'docs/TENSORRT-ORACLE-QUICKSTART.md',
     ];
 
     for (const file of docFiles) {
@@ -169,29 +170,29 @@ class DemoPackager {
         await copyFile(file, targetPath);
       }
     }
-    
+
     console.log('✅ Documentation copied');
   }
 
   private async copyExamples(): Promise<void> {
     console.log('📝 Copying examples...');
-    
+
     if (existsSync('examples')) {
       await this.copyDirectory('examples', join(this.outputDir, 'examples'));
     }
-    
+
     console.log('✅ Examples copied');
   }
 
   private async copyDirectory(src: string, dest: string): Promise<void> {
     await this.ensureDirectory(dest);
     const entries = await readdir(src);
-    
+
     for (const entry of entries) {
       const srcPath = join(src, entry);
       const destPath = join(dest, entry);
       const stats = await stat(srcPath);
-      
+
       if (stats.isDirectory()) {
         await this.copyDirectory(srcPath, destPath);
       } else {
@@ -202,7 +203,7 @@ class DemoPackager {
 
   private async createPackageMetadata(): Promise<void> {
     console.log('📋 Creating package metadata...');
-    
+
     const metadata = {
       ...this.packageInfo,
       createdAt: new Date().toISOString(),
@@ -212,35 +213,32 @@ class DemoPackager {
           'demo/metrics-dashboard.ts - Performance monitoring',
           'examples/tensorrt-scenarios.ts - Example scenarios',
           'oracle-cli.ts - Oracle query interface',
-          'simple-oracle-demo.ts - Simplified demo'
+          'simple-oracle-demo.ts - Simplified demo',
         ],
         documentation: [
           'docs/tensorrt-knowledge-graph/README.md - Main overview',
           'docs/tensorrt-knowledge-graph/QUICK-START.md - Quick start guide',
           'docs/TENSORRT-ORACLE-ARCHITECTURE.md - System architecture',
           'docs/TENSORRT-IMPLEMENTATION-SPEC.md - Implementation details',
-          'docs/TENSORRT-ORACLE-DEPLOYMENT-GUIDE.md - Deployment guide'
+          'docs/TENSORRT-ORACLE-DEPLOYMENT-GUIDE.md - Deployment guide',
         ],
         setupFiles: [
           'setup.sh - Automated setup script',
           'run-demo.sh - Demo launcher',
           'validate.sh - System validation',
-          'sql/ - Database schema and indices'
-        ]
-      }
+          'sql/ - Database schema and indices',
+        ],
+      },
     };
 
-    await writeFile(
-      join(this.outputDir, 'package-info.json'),
-      JSON.stringify(metadata, null, 2)
-    );
-    
+    await writeFile(join(this.outputDir, 'package-info.json'), JSON.stringify(metadata, null, 2));
+
     console.log('✅ Package metadata created');
   }
 
   private async createSetupScripts(): Promise<void> {
     console.log('🔧 Creating setup scripts...');
-    
+
     // Main setup script
     const setupScript = `#!/bin/bash
 
@@ -314,7 +312,7 @@ echo "📚 Documentation available in docs/ directory"
 `;
 
     await writeFile(join(this.outputDir, 'setup.sh'), setupScript);
-    
+
     // Demo runner script
     const runScript = `#!/bin/bash
 
@@ -351,13 +349,13 @@ esac
 `;
 
     await writeFile(join(this.outputDir, 'run-demo.sh'), runScript);
-    
+
     console.log('✅ Setup scripts created');
   }
 
   private async createValidationScript(): Promise<void> {
     console.log('🧪 Creating validation script...');
-    
+
     const validateScript = `#!/bin/bash
 
 # TensorRT Knowledge Graph Platform - Validation Script
@@ -416,13 +414,13 @@ echo "🚀 Run './run-demo.sh' to start the demonstration"
 `;
 
     await writeFile(join(this.outputDir, 'validate.sh'), validateScript);
-    
+
     console.log('✅ Validation script created');
   }
 
   private async createPackageReadme(): Promise<void> {
     console.log('📖 Creating package README...');
-    
+
     const readme = `# ${this.packageInfo.name}
 
 ${this.packageInfo.description}
@@ -436,13 +434,13 @@ ${this.packageInfo.description}
 ## 📦 Package Contents
 
 ### Demo Components
-${this.packageInfo.components.map(c => `- ${c}`).join('\n')}
+${this.packageInfo.components.map((c) => `- ${c}`).join('\n')}
 
 ### Documentation
-${this.packageInfo.documentation.map(d => `- ${d}`).join('\n')}
+${this.packageInfo.documentation.map((d) => `- ${d}`).join('\n')}
 
 ### Example Scenarios
-${this.packageInfo.examples.map(e => `- ${e}`).join('\n')}
+${this.packageInfo.examples.map((e) => `- ${e}`).join('\n')}
 
 ## 🛠️ Requirements
 
@@ -453,7 +451,7 @@ ${this.packageInfo.examples.map(e => `- ${e}`).join('\n')}
 
 ## ✨ Features
 
-${this.packageInfo.features.map(f => `${f}`).join('\n')}
+${this.packageInfo.features.map((f) => `${f}`).join('\n')}
 
 ## 📋 Setup Instructions
 
@@ -609,26 +607,26 @@ This demo showcases advanced capabilities in semantic code analysis, knowledge g
 `;
 
     await writeFile(join(this.outputDir, 'README.md'), readme);
-    
+
     console.log('✅ Package README created');
   }
 
   async generatePackageReport(): Promise<void> {
     console.log('\n📊 DEMO PACKAGE REPORT');
-    console.log('=' .repeat(60));
+    console.log('='.repeat(60));
     console.log(`Package: ${this.packageInfo.name}`);
     console.log(`Version: ${this.packageInfo.version}`);
     console.log(`Created: ${new Date().toLocaleDateString()}\n`);
 
     console.log('📦 PACKAGE CONTENTS:');
-    console.log(`- Demo Files: 5 interactive applications`);
-    console.log(`- Documentation: 6 comprehensive guides`);
-    console.log(`- Examples: 6 realistic scenarios`);
-    console.log(`- Setup Scripts: 3 automated scripts`);
-    console.log(`- SQL Schema: Complete database setup\n`);
+    console.log('- Demo Files: 5 interactive applications');
+    console.log('- Documentation: 6 comprehensive guides');
+    console.log('- Examples: 6 realistic scenarios');
+    console.log('- Setup Scripts: 3 automated scripts');
+    console.log('- SQL Schema: Complete database setup\n');
 
     console.log('✨ KEY FEATURES:');
-    this.packageInfo.features.forEach(feature => {
+    this.packageInfo.features.forEach((feature) => {
       console.log(`  ${feature}`);
     });
 
@@ -668,7 +666,6 @@ async function main(): Promise<void> {
 
     await packager.createPackage();
     await packager.generatePackageReport();
-
   } catch (error) {
     console.error('❌ Package creation failed:', error);
     process.exit(1);

@@ -2,8 +2,6 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
 
-
-
 /**
  * Enhanced Template Engine for Ultra-Fast Code Transformations
  *
@@ -169,42 +167,43 @@ export const templateEngineActor = fromPromise(
  /**
   * Apply template transformations with advanced pattern matching and language awareness
   */
- async function applyTemplateTransformations(request: TemplateTransformationRequest) {
-   const filesModified: string[] = [];
-   const appliedPatterns: Array<{ file: string; pattern: string; count: number }> = [];
-   let totalTransformations = 0;
- 
-   console.log('🔍 Applying language-aware pattern filtering for template engine...');
-   
-   // Convert TemplatePattern[] to AstPattern[] for compatibility with filtering system
-   // Language-agnostic: pass through language as-is
-   const astPatterns = request.patterns.map(templatePattern => ({
-     id: templatePattern.id,
-     language: templatePattern.language,
-     pattern: templatePattern.pattern.template,
-     replacement: templatePattern.replacement.template,
-     description: templatePattern.description,
-     complexity: templatePattern.complexity,
-     riskLevel: templatePattern.riskLevel,
-     mode: 'template' as const,
-   }));
- 
-   // Language-agnostic: filter patterns by maxComplexity and riskLevel
-   const activePatterns = astPatterns
-     .filter(p =>
-       p.complexity <= request.options.maxComplexity &&
-       ['low', 'medium', 'high'].includes(p.riskLevel)
-     )
-     .map(p => ({
-       id: p.id,
-       language: p.language,
-       pattern: { template: p.pattern, flags: 'g' },
-       replacement: { template: p.replacement },
-       description: p.description,
-       complexity: p.complexity,
-       riskLevel: p.riskLevel,
-       category: 'auto',
-     }));
+async function applyTemplateTransformations(request: TemplateTransformationRequest) {
+  const filesModified: string[] = [];
+  const appliedPatterns: Array<{ file: string; pattern: string; count: number }> = [];
+  let totalTransformations = 0;
+
+  console.log('🔍 Applying language-aware pattern filtering for template engine...');
+
+  // Convert TemplatePattern[] to AstPattern[] for compatibility with filtering system
+  // Language-agnostic: pass through language as-is
+  const astPatterns = request.patterns.map((templatePattern) => ({
+    id: templatePattern.id,
+    language: templatePattern.language,
+    pattern: templatePattern.pattern.template,
+    replacement: templatePattern.replacement.template,
+    description: templatePattern.description,
+    complexity: templatePattern.complexity,
+    riskLevel: templatePattern.riskLevel,
+    mode: 'template' as const,
+  }));
+
+  // Language-agnostic: filter patterns by maxComplexity and riskLevel
+  const activePatterns = astPatterns
+    .filter(
+      (p) =>
+        p.complexity <= request.options.maxComplexity &&
+        ['low', 'medium', 'high'].includes(p.riskLevel)
+    )
+    .map((p) => ({
+      id: p.id,
+      language: p.language,
+      pattern: { template: p.pattern, flags: 'g' },
+      replacement: { template: p.replacement },
+      description: p.description,
+      complexity: p.complexity,
+      riskLevel: p.riskLevel,
+      category: 'auto',
+    }));
   for (const filePath of request.targetFiles) {
     try {
       const content = await readFile(filePath, 'utf-8');

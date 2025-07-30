@@ -2,7 +2,7 @@
 
 /**
  * TensorRT Oracle Deployment Verification Script
- * 
+ *
  * This script verifies that all components of the Docker deployment are running correctly:
  * - PostgreSQL database with pgvector extension
  * - TensorRT Oracle application
@@ -24,17 +24,17 @@ const VERIFICATION_CONFIG = {
     'tensorrt-demo': { port: 8081, healthPath: '/health' },
     prometheus: { port: 9090, healthPath: '/-/healthy' },
     grafana: { port: 3000, healthPath: '/api/health' },
-    nginx: { port: 80, healthPath: '/nginx-health' }
+    nginx: { port: 80, healthPath: '/nginx-health' },
   },
   timeouts: {
     connection: 5000,
     response: 10000,
-    overall: 60000
+    overall: 60000,
   },
   retries: {
     maxAttempts: 3,
-    delay: 2000
-  }
+    delay: 2000,
+  },
 };
 
 // Verification result schema
@@ -43,7 +43,7 @@ const ServiceStatusSchema = z.object({
   status: z.enum(['healthy', 'unhealthy', 'unreachable']),
   responseTime: z.number(),
   details: z.record(z.unknown()).optional(),
-  error: z.string().optional()
+  error: z.string().optional(),
 });
 
 type ServiceStatus = z.infer<typeof ServiceStatusSchema>;
@@ -55,16 +55,16 @@ const DeploymentStatusSchema = z.object({
     healthy: z.number(),
     unhealthy: z.number(),
     unreachable: z.number(),
-    total: z.number()
+    total: z.number(),
   }),
   timestamp: z.string(),
-  duration: z.number()
+  duration: z.number(),
 });
 
 type DeploymentStatus = z.infer<typeof DeploymentStatusSchema>;
 
 class DeploymentVerifier {
-  private startTime: number = 0;
+  private startTime = 0;
 
   async verifyDeployment(): Promise<DeploymentStatus> {
     this.startTime = Date.now();
@@ -82,10 +82,10 @@ class DeploymentVerifier {
 
     // Calculate summary
     const summary = {
-      healthy: serviceResults.filter(s => s.status === 'healthy').length,
-      unhealthy: serviceResults.filter(s => s.status === 'unhealthy').length,
-      unreachable: serviceResults.filter(s => s.status === 'unreachable').length,
-      total: serviceResults.length
+      healthy: serviceResults.filter((s) => s.status === 'healthy').length,
+      unhealthy: serviceResults.filter((s) => s.status === 'unhealthy').length,
+      unreachable: serviceResults.filter((s) => s.status === 'unreachable').length,
+      total: serviceResults.length,
     };
 
     // Determine overall status
@@ -105,7 +105,7 @@ class DeploymentVerifier {
       services: serviceResults,
       summary,
       timestamp: new Date().toISOString(),
-      duration
+      duration,
     };
 
     this.printSummary(deploymentStatus);
@@ -113,7 +113,7 @@ class DeploymentVerifier {
   }
 
   private async checkService(
-    serviceName: string, 
+    serviceName: string,
     config: { port: number; healthPath: string | null }
   ): Promise<ServiceStatus> {
     const startTime = Date.now();
@@ -127,24 +127,23 @@ class DeploymentVerifier {
             service: serviceName,
             status: 'healthy',
             responseTime: Date.now() - startTime,
-            details: response
-          };
-        } else {
-          // TCP connection check
-          await this.tcpHealthCheck(serviceName, config.port);
-          return {
-            service: serviceName,
-            status: 'healthy',
-            responseTime: Date.now() - startTime
+            details: response,
           };
         }
+        // TCP connection check
+        await this.tcpHealthCheck(serviceName, config.port);
+        return {
+          service: serviceName,
+          status: 'healthy',
+          responseTime: Date.now() - startTime,
+        };
       } catch (error) {
         if (attempt === VERIFICATION_CONFIG.retries.maxAttempts) {
           return {
             service: serviceName,
             status: 'unreachable',
             responseTime: Date.now() - startTime,
-            error: error instanceof Error ? error.message : String(error)
+            error: error instanceof Error ? error.message : String(error),
           };
         }
         await this.sleep(VERIFICATION_CONFIG.retries.delay);
@@ -155,13 +154,17 @@ class DeploymentVerifier {
       service: serviceName,
       status: 'unreachable',
       responseTime: Date.now() - startTime,
-      error: 'Max retries exceeded'
+      error: 'Max retries exceeded',
     };
   }
 
-  private async httpHealthCheck(serviceName: string, port: number, healthPath: string): Promise<any> {
+  private async httpHealthCheck(
+    _serviceName: string,
+    port: number,
+    healthPath: string
+  ): Promise<any> {
     const url = `http://localhost:${port}${healthPath}`;
-    
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), VERIFICATION_CONFIG.timeouts.response);
 
@@ -169,7 +172,7 @@ class DeploymentVerifier {
       const response = await fetch(url, {
         signal: controller.signal,
         method: 'GET',
-        headers: { 'User-Agent': 'TensorRT-Oracle-Deployment-Verifier/1.0' }
+        headers: { 'User-Agent': 'TensorRT-Oracle-Deployment-Verifier/1.0' },
       });
 
       clearTimeout(timeoutId);
@@ -198,13 +201,13 @@ class DeploymentVerifier {
     }
   }
 
-  private async tcpHealthCheck(serviceName: string, port: number): Promise<void> {
+  private async tcpHealthCheck(_serviceName: string, port: number): Promise<void> {
     // For TCP-only services like PostgreSQL and Redis, we'll try to establish a connection
     const { createConnection } = await import('node:net');
-    
+
     return new Promise((resolve, reject) => {
       const socket = createConnection(port, 'localhost');
-      
+
       const timeoutId = setTimeout(() => {
         socket.destroy();
         reject(new Error(`Connection timeout after ${VERIFICATION_CONFIG.timeouts.connection}ms`));
@@ -227,7 +230,7 @@ class DeploymentVerifier {
   private logServiceStatus(status: ServiceStatus): void {
     const icon = status.status === 'healthy' ? '✅' : status.status === 'unhealthy' ? '⚠️' : '❌';
     const time = `${status.responseTime}ms`;
-    
+
     if (status.status === 'healthy') {
       console.log(`  ${icon} ${status.service} - ${status.status} (${time})`);
     } else {
@@ -239,33 +242,39 @@ class DeploymentVerifier {
   }
 
   private printSummary(deployment: DeploymentStatus): void {
-    console.log('\n' + '='.repeat(60));
+    console.log(`\n${'='.repeat(60)}`);
     console.log('📋 DEPLOYMENT VERIFICATION SUMMARY');
     console.log('='.repeat(60));
-    
-    const overallIcon = deployment.overall === 'healthy' ? '✅' : 
-                        deployment.overall === 'degraded' ? '⚠️' : '❌';
-    
+
+    const overallIcon =
+      deployment.overall === 'healthy' ? '✅' : deployment.overall === 'degraded' ? '⚠️' : '❌';
+
     console.log(`Overall Status: ${overallIcon} ${deployment.overall.toUpperCase()}`);
     console.log(`Verification Duration: ${Math.round(deployment.duration / 1000)}s`);
     console.log(`Timestamp: ${deployment.timestamp}`);
-    
+
     console.log('\n📊 Service Summary:');
     console.log(`  • Healthy: ${deployment.summary.healthy}/${deployment.summary.total}`);
     console.log(`  • Unhealthy: ${deployment.summary.unhealthy}/${deployment.summary.total}`);
     console.log(`  • Unreachable: ${deployment.summary.unreachable}/${deployment.summary.total}`);
-    
+
     if (deployment.overall !== 'healthy') {
       console.log('\n⚠️ Issues Detected:');
       deployment.services
-        .filter(s => s.status !== 'healthy')
-        .forEach(service => {
-          console.log(`  • ${service.service}: ${service.status} - ${service.error || 'Unknown error'}`);
+        .filter((s) => s.status !== 'healthy')
+        .forEach((service) => {
+          console.log(
+            `  • ${service.service}: ${service.status} - ${service.error || 'Unknown error'}`
+          );
         });
-      
+
       console.log('\n🔧 Troubleshooting:');
-      console.log('  1. Ensure Docker Compose is running: docker-compose -f docker-compose.tensorrt.yml ps');
-      console.log('  2. Check service logs: docker-compose -f docker-compose.tensorrt.yml logs <service-name>');
+      console.log(
+        '  1. Ensure Docker Compose is running: docker-compose -f docker-compose.tensorrt.yml ps'
+      );
+      console.log(
+        '  2. Check service logs: docker-compose -f docker-compose.tensorrt.yml logs <service-name>'
+      );
       console.log('  3. Verify network connectivity: docker network ls');
       console.log('  4. Check resource usage: docker stats');
     } else {
@@ -277,12 +286,12 @@ class DeploymentVerifier {
       console.log('  • Grafana: http://localhost:3000 (admin/admin)');
       console.log('  • Nginx (if configured): http://localhost:80');
     }
-    
-    console.log('\n' + '='.repeat(60));
+
+    console.log(`\n${'='.repeat(60)}`);
   }
 
   private async sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 
@@ -294,7 +303,7 @@ class DockerComposeManager {
     try {
       const { spawn } = await import('node:child_process');
       const { promisify } = await import('node:util');
-      
+
       return new Promise((resolve) => {
         const process = spawn('docker-compose', ['--version'], { stdio: 'pipe' });
         process.on('close', (code) => resolve(code === 0));
@@ -310,7 +319,7 @@ class DockerComposeManager {
       const { exec } = await import('node:child_process');
       const { promisify } = await import('node:util');
       const execAsync = promisify(exec);
-      
+
       const { stdout } = await execAsync(`docker-compose -f ${this.composeFile} ps --format json`);
       return JSON.parse(`[${stdout.trim().split('\n').join(',')}]`);
     } catch (error) {
@@ -324,14 +333,14 @@ class DockerComposeManager {
     const { exec } = await import('node:child_process');
     const { promisify } = await import('node:util');
     const execAsync = promisify(exec);
-    
+
     try {
       await execAsync(`docker-compose -f ${this.composeFile} up -d`);
       console.log('✅ Docker Compose services started');
-      
+
       // Wait for services to initialize
       console.log('⏳ Waiting 30 seconds for services to initialize...');
-      await new Promise(resolve => setTimeout(resolve, 30000));
+      await new Promise((resolve) => setTimeout(resolve, 30000));
     } catch (error) {
       throw new Error(`Failed to start services: ${error}`);
     }
@@ -348,9 +357,11 @@ async function main(): Promise<void> {
     // Check if Docker Compose is available
     console.log('🐳 Checking Docker Compose availability...');
     const hasDockerCompose = await dockerManager.checkDockerCompose();
-    
+
     if (!hasDockerCompose) {
-      console.error('❌ Docker Compose not found. Please install Docker Compose to run this verification.');
+      console.error(
+        '❌ Docker Compose not found. Please install Docker Compose to run this verification.'
+      );
       process.exit(1);
     }
     console.log('✅ Docker Compose is available');
@@ -365,7 +376,7 @@ async function main(): Promise<void> {
     const composeServices = await dockerManager.getServicesStatus();
     if (composeServices.length > 0) {
       console.log('📋 Docker Compose Services:');
-      composeServices.forEach(service => {
+      composeServices.forEach((service) => {
         const status = service.State === 'running' ? '✅' : '❌';
         console.log(`  ${status} ${service.Name} - ${service.State}`);
       });
@@ -385,7 +396,6 @@ async function main(): Promise<void> {
 
     // Exit with appropriate code
     process.exit(result.overall === 'failed' ? 1 : 0);
-
   } catch (error) {
     console.error('\n❌ Verification failed:', error);
     process.exit(1);

@@ -1,6 +1,6 @@
-import chokidar from 'chokidar';
 import { existsSync } from 'node:fs';
 import { parseArgs } from 'node:util';
+import chokidar from 'chokidar';
 import { z } from 'zod';
 
 import { DocumentationGenerator } from '../docs-generator/generator.ts';
@@ -9,7 +9,6 @@ import { DocumentationFormatSchema, DocumentationTypeSchema } from '../docs-gene
 /**
  * CLI interface for the Documentation Generator
  */
-
 
 // Zod schema for CLI options
 export const DocCLIOptionsSchema = z.object({

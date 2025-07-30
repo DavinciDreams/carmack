@@ -1,9 +1,8 @@
 import { readFile } from 'node:fs/promises';
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
-
-import { ComplexityMetricsSchema } from '../types.ts';
 import type { ComplexityMetrics } from '../types.ts';
+import { ComplexityMetricsSchema } from '../types.ts';
 
 // Complexity input schema
 const ComplexityInputSchema = z.union([
@@ -38,7 +37,6 @@ export const complexityActor = fromPromise(async ({ input }: { input: Complexity
   return metrics;
 });
 async function calculateComplexityMetrics(files: string[]): Promise<ComplexityMetrics> {
-
   let totalCyclomaticComplexity = 0;
   let totalCognitiveComplexity = 0;
   let totalLinesOfCode = 0;
@@ -55,8 +53,7 @@ async function calculateComplexityMetrics(files: string[]): Promise<ComplexityMe
       maxNestingDepth = Math.max(maxNestingDepth, fileMetrics.nestingDepth);
       totalFunctionCount += fileMetrics.functionCount;
       totalClassCount += fileMetrics.classCount;
-    } catch (error) {
-
+    } catch (_error) {
       // Continue with other files
     }
   }
@@ -157,7 +154,6 @@ async function compareWithBaseline(
   current: ComplexityMetrics,
   baseline: ComplexityMetrics
 ): Promise<ComplexityMetrics & { improvement: boolean; changes: string[] }> {
-
   const changes: string[] = [];
   let improvement = false;
   if (current.cyclomaticComplexity < baseline.cyclomaticComplexity) {

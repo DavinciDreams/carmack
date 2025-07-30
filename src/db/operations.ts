@@ -1,26 +1,25 @@
-
+import type { PoolClient } from 'pg';
 import { z } from 'zod';
 import { getDatabaseManager } from './connection.ts';
-import type { PoolClient } from 'pg';
+import type {
+  Artifact,
+  CreateArtifactInput,
+  CreateGraphEdgeInput,
+  DatabaseOperationResult,
+  GraphEdge,
+  GraphTraversalInput,
+  GraphTraversalResult,
+  QuerySession,
+  SearchFilters,
+  SearchResult,
+  SemanticSearchInput,
+  UpdateArtifactInput,
+} from './schema.ts';
 import {
   validateArtifact,
   validateGraphEdge,
-  validateSemanticSearch,
   validateGraphTraversal,
-} from './schema.ts';
-import type {
-  Artifact,
-  GraphEdge,
-  QuerySession,
-  CreateArtifactInput,
-  UpdateArtifactInput,
-  CreateGraphEdgeInput,
-  SearchFilters,
-  SemanticSearchInput,
-  GraphTraversalInput,
-  SearchResult,
-  GraphTraversalResult,
-  DatabaseOperationResult
+  validateSemanticSearch,
 } from './schema.ts';
 
 /**
@@ -58,8 +57,6 @@ export class ValidationError extends Error {
   }
 }
 
-
-
 export class ArtifactOperations {
   private db = getDatabaseManager();
 
@@ -68,11 +65,11 @@ export class ArtifactOperations {
    */
   async create(input: CreateArtifactInput): Promise<Artifact> {
     const startTime = Date.now();
-    
+
     try {
       // Validate input
       const validatedInput = validateArtifact({ ...input, id: crypto.randomUUID() });
-      
+
       const query = `
         INSERT INTO artifacts (
           id, type, name, description, content, file_path, line_start, line_end,
@@ -83,7 +80,7 @@ export class ArtifactOperations {
           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
         ) RETURNING *
       `;
-      
+
       const values = [
         validatedInput.id,
         validatedInput.type,
@@ -106,32 +103,23 @@ export class ArtifactOperations {
         validatedInput.performance_impact,
         validatedInput.quality_score,
       ];
-      
+
       const result = await this.db.query(query, values);
-      
+
       if (result.rows.length === 0) {
-        throw new DatabaseOperationError(
-          'Failed to create artifact',
-          'create',
-          'NO_ROWS_RETURNED'
-        );
+        throw new DatabaseOperationError('Failed to create artifact', 'create', 'NO_ROWS_RETURNED');
       }
-      
+
       return this.mapRowToArtifact(result.rows[0]);
     } catch (error) {
       if (error instanceof z.ZodError) {
         throw new ValidationError('Invalid artifact data', error);
       }
-      
-      throw new DatabaseOperationError(
-        'Failed to create artifact',
-        'create',
-        'UNKNOWN_ERROR',
-        { 
-          error: error instanceof Error ? error.message : String(error),
-          executionTime: Date.now() - startTime
-        }
-      );
+
+      throw new DatabaseOperationError('Failed to create artifact', 'create', 'UNKNOWN_ERROR', {
+        error: error instanceof Error ? error.message : String(error),
+        executionTime: Date.now() - startTime,
+      });
     }
   }
 
@@ -142,19 +130,17 @@ export class ArtifactOperations {
     try {
       const query = 'SELECT * FROM artifacts WHERE id = $1';
       const result = await this.db.query(query, [id]);
-      
+
       if (result.rows.length === 0) {
         return null;
       }
-      
+
       return this.mapRowToArtifact(result.rows[0]);
     } catch (error) {
-      throw new DatabaseOperationError(
-        'Failed to get artifact by ID',
-        'getById',
-        'QUERY_ERROR',
-        { id, error: error instanceof Error ? error.message : String(error) }
-      );
+      throw new DatabaseOperationError('Failed to get artifact by ID', 'getById', 'QUERY_ERROR', {
+        id,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -163,72 +149,58 @@ export class ArtifactOperations {
    */
   async update(id: string, input: UpdateArtifactInput): Promise<Artifact> {
     const startTime = Date.now();
-    
+
     try {
       // Build dynamic update query
       const updateFields: string[] = [];
       const values: any[] = [];
       let paramIndex = 1;
-      
+
       for (const [key, value] of Object.entries(input)) {
         if (value !== undefined) {
           updateFields.push(`${key} = $${paramIndex}`);
-          
+
           // Handle special cases for JSON fields
           if (key === 'metadata' || key === 'embedding') {
             values.push(JSON.stringify(value));
           } else {
             values.push(value);
           }
-          
+
           paramIndex++;
         }
       }
-      
+
       if (updateFields.length === 0) {
-        throw new DatabaseOperationError(
-          'No fields to update',
-          'update',
-          'NO_UPDATE_FIELDS'
-        );
+        throw new DatabaseOperationError('No fields to update', 'update', 'NO_UPDATE_FIELDS');
       }
-      
+
       // Add updated_at field
-      updateFields.push(`updated_at = NOW()`);
-      
+      updateFields.push('updated_at = NOW()');
+
       // Add ID parameter
       values.push(id);
-      
+
       const query = `
         UPDATE artifacts 
         SET ${updateFields.join(', ')}
         WHERE id = $${paramIndex}
         RETURNING *
       `;
-      
+
       const result = await this.db.query(query, values);
-      
+
       if (result.rows.length === 0) {
-        throw new DatabaseOperationError(
-          'Artifact not found',
-          'update',
-          'NOT_FOUND',
-          { id }
-        );
+        throw new DatabaseOperationError('Artifact not found', 'update', 'NOT_FOUND', { id });
       }
-      
+
       return this.mapRowToArtifact(result.rows[0]);
     } catch (error) {
-      throw new DatabaseOperationError(
-        'Failed to update artifact',
-        'update',
-        'UPDATE_ERROR',
-        { 
-          id,
-          error: error instanceof Error ? error.message : String(error),
-          executionTime: Date.now() - startTime
-        }
-      );
+      throw new DatabaseOperationError('Failed to update artifact', 'update', 'UPDATE_ERROR', {
+        id,
+        error: error instanceof Error ? error.message : String(error),
+        executionTime: Date.now() - startTime,
+      });
     }
   }
 
@@ -239,15 +211,13 @@ export class ArtifactOperations {
     try {
       const query = 'DELETE FROM artifacts WHERE id = $1';
       const result = await this.db.query(query, [id]);
-      
+
       return result.rowCount > 0;
     } catch (error) {
-      throw new DatabaseOperationError(
-        'Failed to delete artifact',
-        'delete',
-        'DELETE_ERROR',
-        { id, error: error instanceof Error ? error.message : String(error) }
-      );
+      throw new DatabaseOperationError('Failed to delete artifact', 'delete', 'DELETE_ERROR', {
+        id,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -257,24 +227,22 @@ export class ArtifactOperations {
   async search(filters: SearchFilters, limit = 50, offset = 0): Promise<Artifact[]> {
     try {
       const { whereClause, values } = this.buildWhereClause(filters);
-      
+
       const query = `
         SELECT * FROM artifacts
         ${whereClause}
         ORDER BY created_at DESC
         LIMIT $${values.length + 1} OFFSET $${values.length + 2}
       `;
-      
+
       const result = await this.db.query(query, [...values, limit, offset]);
-      
-      return result.rows.map(row => this.mapRowToArtifact(row));
+
+      return result.rows.map((row) => this.mapRowToArtifact(row));
     } catch (error) {
-      throw new DatabaseOperationError(
-        'Failed to search artifacts',
-        'search',
-        'SEARCH_ERROR',
-        { filters, error: error instanceof Error ? error.message : String(error) }
-      );
+      throw new DatabaseOperationError('Failed to search artifacts', 'search', 'SEARCH_ERROR', {
+        filters,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -283,10 +251,10 @@ export class ArtifactOperations {
    */
   async semanticSearch(input: SemanticSearchInput): Promise<SearchResult[]> {
     const startTime = Date.now();
-    
+
     try {
       const validatedInput = validateSemanticSearch(input);
-      
+
       if (!validatedInput.embedding) {
         throw new DatabaseOperationError(
           'Embedding is required for semantic search',
@@ -294,10 +262,10 @@ export class ArtifactOperations {
           'MISSING_EMBEDDING'
         );
       }
-      
+
       const { whereClause, values } = this.buildWhereClause(validatedInput.filters || {});
-      let paramIndex = values.length + 1;
-      
+      const paramIndex = values.length + 1;
+
       const query = `
         SELECT 
           a.*,
@@ -309,35 +277,35 @@ export class ArtifactOperations {
         ORDER BY a.embedding <=> $${paramIndex}::vector
         LIMIT $${paramIndex + 2}
       `;
-      
+
       const searchValues = [
         ...values,
         JSON.stringify(validatedInput.embedding),
         validatedInput.threshold,
         validatedInput.limit,
       ];
-      
+
       const result = await this.db.query(query, searchValues);
-      
-      return result.rows.map(row => ({
+
+      return result.rows.map((row) => ({
         artifact: this.mapRowToArtifact(row),
-        score: parseFloat(row.similarity_score),
+        score: Number.parseFloat(row.similarity_score),
         match_type: 'semantic' as const,
-        explanation: `Vector similarity: ${(parseFloat(row.similarity_score) * 100).toFixed(1)}%`,
+        explanation: `Vector similarity: ${(Number.parseFloat(row.similarity_score) * 100).toFixed(1)}%`,
       }));
     } catch (error) {
       if (error instanceof z.ZodError) {
         throw new ValidationError('Invalid semantic search input', error);
       }
-      
+
       throw new DatabaseOperationError(
         'Failed to perform semantic search',
         'semanticSearch',
         'SEMANTIC_SEARCH_ERROR',
-        { 
+        {
           input,
           error: error instanceof Error ? error.message : String(error),
-          executionTime: Date.now() - startTime
+          executionTime: Date.now() - startTime,
         }
       );
     }
@@ -347,12 +315,12 @@ export class ArtifactOperations {
    * Batch create artifacts
    */
   async batchCreate(artifacts: CreateArtifactInput[]): Promise<Artifact[]> {
-    const startTime = Date.now();
-    
+    const _startTime = Date.now();
+
     if (artifacts.length === 0) {
       return [];
     }
-    
+
     if (artifacts.length > 1000) {
       throw new DatabaseOperationError(
         'Batch size too large',
@@ -361,10 +329,10 @@ export class ArtifactOperations {
         { maxSize: 1000, actualSize: artifacts.length }
       );
     }
-    
+
     return this.db.transaction(async (client) => {
       const results: Artifact[] = [];
-      
+
       // Process in smaller batches to avoid parameter limits
       const batchSize = 100;
       for (let i = 0; i < artifacts.length; i += batchSize) {
@@ -372,7 +340,7 @@ export class ArtifactOperations {
         const batchResults = await this.batchCreateChunk(client, batch);
         results.push(...batchResults);
       }
-      
+
       return results;
     });
   }
@@ -380,21 +348,24 @@ export class ArtifactOperations {
   /**
    * Helper method to create a chunk of artifacts
    */
-  private async batchCreateChunk(client: PoolClient, artifacts: CreateArtifactInput[]): Promise<Artifact[]> {
+  private async batchCreateChunk(
+    client: PoolClient,
+    artifacts: CreateArtifactInput[]
+  ): Promise<Artifact[]> {
     const values: any[] = [];
     const valueStrings: string[] = [];
-    
+
     artifacts.forEach((artifact, index) => {
       const validated = validateArtifact({ ...artifact, id: crypto.randomUUID() });
       const baseIndex = index * 20;
-      
+
       valueStrings.push(`(
         $${baseIndex + 1}, $${baseIndex + 2}, $${baseIndex + 3}, $${baseIndex + 4}, $${baseIndex + 5},
         $${baseIndex + 6}, $${baseIndex + 7}, $${baseIndex + 8}, $${baseIndex + 9}, $${baseIndex + 10},
         $${baseIndex + 11}, $${baseIndex + 12}, $${baseIndex + 13}, $${baseIndex + 14}, $${baseIndex + 15},
         $${baseIndex + 16}, $${baseIndex + 17}, $${baseIndex + 18}, $${baseIndex + 19}, $${baseIndex + 20}
       )`);
-      
+
       values.push(
         validated.id,
         validated.type,
@@ -418,7 +389,7 @@ export class ArtifactOperations {
         validated.quality_score
       );
     });
-    
+
     const query = `
       INSERT INTO artifacts (
         id, type, name, description, content, file_path, line_start, line_end,
@@ -428,10 +399,10 @@ export class ArtifactOperations {
       ) VALUES ${valueStrings.join(', ')}
       RETURNING *
     `;
-    
+
     const result = await client.query(query, values);
-    
-    return result.rows.map(row => this.mapRowToArtifact(row));
+
+    return result.rows.map((row) => this.mapRowToArtifact(row));
   }
 
   /**
@@ -441,55 +412,55 @@ export class ArtifactOperations {
     const conditions: string[] = [];
     const values: any[] = [];
     let paramIndex = 1;
-    
+
     if (filters.types && filters.types.length > 0) {
       conditions.push(`type = ANY($${paramIndex})`);
       values.push(filters.types);
       paramIndex++;
     }
-    
+
     if (filters.languages && filters.languages.length > 0) {
       conditions.push(`language = ANY($${paramIndex})`);
       values.push(filters.languages);
       paramIndex++;
     }
-    
+
     if (filters.repositories && filters.repositories.length > 0) {
       conditions.push(`repository_url = ANY($${paramIndex})`);
       values.push(filters.repositories);
       paramIndex++;
     }
-    
+
     if (filters.authors && filters.authors.length > 0) {
       conditions.push(`author_email = ANY($${paramIndex})`);
       values.push(filters.authors);
       paramIndex++;
     }
-    
+
     if (filters.date_range) {
       conditions.push(`created_date BETWEEN $${paramIndex} AND $${paramIndex + 1}`);
       values.push(filters.date_range.start, filters.date_range.end);
       paramIndex += 2;
     }
-    
+
     if (filters.performance_impact && filters.performance_impact.length > 0) {
       conditions.push(`performance_impact = ANY($${paramIndex})`);
       values.push(filters.performance_impact);
       paramIndex++;
     }
-    
+
     if (filters.min_quality_score !== undefined) {
       conditions.push(`quality_score >= $${paramIndex}`);
       values.push(filters.min_quality_score);
       paramIndex++;
     }
-    
+
     if (filters.min_complexity_score !== undefined) {
       conditions.push(`complexity_score >= $${paramIndex}`);
       values.push(filters.min_complexity_score);
       paramIndex++;
     }
-    
+
     if (filters.has_embedding !== undefined) {
       if (filters.has_embedding) {
         conditions.push('embedding IS NOT NULL');
@@ -497,9 +468,9 @@ export class ArtifactOperations {
         conditions.push('embedding IS NULL');
       }
     }
-    
+
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-    
+
     return { whereClause, values };
   }
 
@@ -533,7 +504,7 @@ export class GraphEdgeOperations {
   async create(input: CreateGraphEdgeInput): Promise<GraphEdge> {
     try {
       const validated = validateGraphEdge({ ...input, id: crypto.randomUUID() });
-      
+
       const query = `
         INSERT INTO graph_edges (
           id, source_id, target_id, relation_type, confidence, weight,
@@ -541,7 +512,7 @@ export class GraphEdgeOperations {
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING *
       `;
-      
+
       const values = [
         validated.id,
         validated.source_id,
@@ -554,21 +525,18 @@ export class GraphEdgeOperations {
         validated.evidence,
         validated.evidence_type,
       ];
-      
+
       const result = await this.db.query(query, values);
-      
+
       return this.mapRowToGraphEdge(result.rows[0]);
     } catch (error) {
       if (error instanceof z.ZodError) {
         throw new ValidationError('Invalid graph edge data', error);
       }
-      
-      throw new DatabaseOperationError(
-        'Failed to create graph edge',
-        'create',
-        'CREATE_ERROR',
-        { error: error instanceof Error ? error.message : String(error) }
-      );
+
+      throw new DatabaseOperationError('Failed to create graph edge', 'create', 'CREATE_ERROR', {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -577,16 +545,17 @@ export class GraphEdgeOperations {
    */
   async traverse(input: GraphTraversalInput): Promise<GraphTraversalResult> {
     const startTime = Date.now();
-    
+
     try {
       const validated = validateGraphTraversal(input);
-      
-      const relationFilter = validated.relation_types && validated.relation_types.length > 0
-        ? `AND ge.relation_type = ANY($4)`
-        : '';
-      
+
+      const relationFilter =
+        validated.relation_types && validated.relation_types.length > 0
+          ? 'AND ge.relation_type = ANY($4)'
+          : '';
+
       const directionClause = this.buildDirectionClause(validated.direction);
-      
+
       const query = `
         WITH RECURSIVE graph_traversal AS (
           -- Base case: start artifact
@@ -622,42 +591,38 @@ export class GraphEdgeOperations {
         ORDER BY depth, artifact_id
         LIMIT $${validated.relation_types ? 5 : 4}
       `;
-      
-      const values = [
-        validated.start_artifact_id,
-        validated.max_depth,
-        validated.min_confidence,
-      ];
-      
+
+      const values = [validated.start_artifact_id, validated.max_depth, validated.min_confidence];
+
       if (validated.relation_types && validated.relation_types.length > 0) {
         values.push(validated.relation_types as any);
       }
-      
+
       values.push(validated.limit);
-      
+
       const result = await this.db.query(query, values);
-      
+
       // Group results by path
       const pathMap = new Map<string, any[]>();
       let maxDepth = 0;
-      
+
       for (const row of result.rows) {
         const pathKey = row.path.join('->');
         if (!pathMap.has(pathKey)) {
           pathMap.set(pathKey, []);
         }
-        pathMap.get(pathKey)!.push(row);
+        pathMap.get(pathKey)?.push(row);
         maxDepth = Math.max(maxDepth, row.depth);
       }
-      
-      const paths = Array.from(pathMap.values()).map(pathRows => ({
-        path: pathRows.map(row => ({
+
+      const paths = Array.from(pathMap.values()).map((pathRows) => ({
+        path: pathRows.map((row) => ({
           artifact: this.mapRowToArtifact(row),
           edge: row.edge_id ? this.mapRowToGraphEdge(row) : undefined,
           depth: row.depth,
         })),
       }));
-      
+
       return {
         path: paths.length > 0 ? paths[0]?.path || [] : [],
         total_paths: paths.length,
@@ -667,17 +632,12 @@ export class GraphEdgeOperations {
       if (error instanceof z.ZodError) {
         throw new ValidationError('Invalid graph traversal input', error);
       }
-      
-      throw new DatabaseOperationError(
-        'Failed to traverse graph',
-        'traverse',
-        'TRAVERSAL_ERROR',
-        { 
-          input,
-          error: error instanceof Error ? error.message : String(error),
-          executionTime: Date.now() - startTime
-        }
-      );
+
+      throw new DatabaseOperationError('Failed to traverse graph', 'traverse', 'TRAVERSAL_ERROR', {
+        input,
+        error: error instanceof Error ? error.message : String(error),
+        executionTime: Date.now() - startTime,
+      });
     }
   }
 
@@ -692,10 +652,10 @@ export class GraphEdgeOperations {
         ORDER BY confidence DESC, created_at DESC
         LIMIT $2
       `;
-      
+
       const result = await this.db.query(query, [sourceId, limit]);
-      
-      return result.rows.map(row => this.mapRowToGraphEdge(row));
+
+      return result.rows.map((row) => this.mapRowToGraphEdge(row));
     } catch (error) {
       throw new DatabaseOperationError(
         'Failed to get edges by source ID',
@@ -717,10 +677,10 @@ export class GraphEdgeOperations {
         ORDER BY confidence DESC, created_at DESC
         LIMIT $2
       `;
-      
+
       const result = await this.db.query(query, [targetId, limit]);
-      
-      return result.rows.map(row => this.mapRowToGraphEdge(row));
+
+      return result.rows.map((row) => this.mapRowToGraphEdge(row));
     } catch (error) {
       throw new DatabaseOperationError(
         'Failed to get edges by target ID',
@@ -820,18 +780,15 @@ export class QuerySessionOperations {
         VALUES ($1, $2, $3)
         RETURNING *
       `;
-      
+
       const values = [crypto.randomUUID(), sessionToken, userId];
       const result = await this.db.query(query, values);
-      
+
       return this.mapRowToQuerySession(result.rows[0]);
     } catch (error) {
-      throw new DatabaseOperationError(
-        'Failed to create query session',
-        'create',
-        'CREATE_ERROR',
-        { error: error instanceof Error ? error.message : String(error) }
-      );
+      throw new DatabaseOperationError('Failed to create query session', 'create', 'CREATE_ERROR', {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -842,11 +799,11 @@ export class QuerySessionOperations {
     try {
       const query = 'SELECT * FROM query_sessions WHERE session_token = $1';
       const result = await this.db.query(query, [sessionToken]);
-      
+
       if (result.rows.length === 0) {
         return null;
       }
-      
+
       return this.mapRowToQuerySession(result.rows[0]);
     } catch (error) {
       throw new DatabaseOperationError(
@@ -868,7 +825,7 @@ export class QuerySessionOperations {
         SET current_context = $1, last_activity_at = NOW()
         WHERE id = $2
       `;
-      
+
       await this.db.query(query, [JSON.stringify(context), sessionId]);
     } catch (error) {
       throw new DatabaseOperationError(

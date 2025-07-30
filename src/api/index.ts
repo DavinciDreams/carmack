@@ -1,7 +1,6 @@
-import { QueryProcessingPipeline } from './query-pipeline.ts';
-
 import type { QueryRequest, QueryResponse } from './contracts.ts';
 import { QueryRequestSchema, QueryResponseSchema } from './contracts.ts';
+import { QueryProcessingPipeline } from './query-pipeline.ts';
 
 /**
  * Main Entry Point for TensorRT-LLM Knowledge Graph Query Engine
@@ -15,26 +14,22 @@ import { QueryRequestSchema, QueryResponseSchema } from './contracts.ts';
 // CORE EXPORTS
 // =============================================================================
 
-// Main pipeline
-export { QueryProcessingPipeline } from './query-pipeline.ts';
-
-// Individual components
-export { QueryEngine, HybridSearchEngine, EmbeddingService } from './query-engine.ts';
-export { SessionManager } from './session-manager.ts';
-export { GraphWalker } from './graph-walker.ts';
 export { AIProcessor } from './ai-processor.ts';
-
-// Server components
-export { createServer, startServer, stopServer, setupGracefulShutdown } from './server.ts';
-export { QueryRouteHandlers, registerQueryRoutes } from './routes/query-routes.ts';
-
 // Type definitions and contracts
 export * from './contracts.ts';
+export { GraphWalker } from './graph-walker.ts';
+// Individual components
+export { EmbeddingService, HybridSearchEngine, QueryEngine } from './query-engine.ts';
+// Main pipeline
+export { QueryProcessingPipeline } from './query-pipeline.ts';
+export { QueryRouteHandlers, registerQueryRoutes } from './routes/query-routes.ts';
+// Server components
+export { createServer, setupGracefulShutdown, startServer, stopServer } from './server.ts';
+export { SessionManager } from './session-manager.ts';
 
 // =============================================================================
 // CONVENIENCE FUNCTIONS
 // =============================================================================
-
 
 /**
  * Simple query interface for direct usage
@@ -99,7 +94,8 @@ export { QueryRequestSchema, QueryResponseSchema };
 export const SYSTEM_INFO = {
   name: 'TensorRT-LLM Knowledge Graph Query Engine',
   version: '1.0.0',
-  description: 'Intelligent query processing system with hybrid retrieval, multi-turn investigations, and AI-powered synthesis',
+  description:
+    'Intelligent query processing system with hybrid retrieval, multi-turn investigations, and AI-powered synthesis',
   features: [
     'Hybrid search (BM25 + vector similarity)',
     'Graph traversal and relationship analysis',
@@ -187,21 +183,22 @@ export async function exampleUsage(): Promise<void> {
       max_execution_time_ms: 15000,
     });
 
-
-    const response3 = await pipeline.processQuery(QueryRequestSchema.parse({
-      query: 'Show me examples of CUDA kernel optimization techniques',
-      context: {
-        language_hint: 'cuda',
-        domain_hint: 'optimization',
-      },
-      options: {
-        max_results: 12,
-        include_code_snippets: true,
-        enable_multi_turn: true,
-        complexity_preference: 'expert',
-        search_depth: 4,
-      },
-    }));
+    const response3 = await pipeline.processQuery(
+      QueryRequestSchema.parse({
+        query: 'Show me examples of CUDA kernel optimization techniques',
+        context: {
+          language_hint: 'cuda',
+          domain_hint: 'optimization',
+        },
+        options: {
+          max_results: 12,
+          include_code_snippets: true,
+          enable_multi_turn: true,
+          complexity_preference: 'expert',
+          search_depth: 4,
+        },
+      })
+    );
     QueryResponseSchema.parse(response3);
 
     console.log(`Query ID: ${response3.query_id}`);
@@ -224,7 +221,7 @@ export async function exampleUsage(): Promise<void> {
  */
 export async function runCLI(): Promise<void> {
   const args = process.argv.slice(2);
-  
+
   if (args.length === 0) {
     console.log('Usage: bun run src/api/index.ts <query>');
     console.log('Example: bun run src/api/index.ts "How does TensorRT handle memory allocation?"');
@@ -279,15 +276,16 @@ export async function runCLI(): Promise<void> {
  */
 if (import.meta.main) {
   const command = process.argv[2];
-  
+
   switch (command) {
     case 'example':
       await exampleUsage();
       break;
-    case 'server':
+    case 'server': {
       const { startServer } = await import('./server.ts');
       await startServer();
       break;
+    }
     case 'info':
       console.log(JSON.stringify(SYSTEM_INFO, null, 2));
       break;

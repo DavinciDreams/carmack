@@ -3,12 +3,12 @@ import chokidar from 'chokidar';
 import { generateAndStoreDocs } from './generator-pipeline';
 
 export function watchRepoDocs({ repoPath, docConfig }: { repoPath: string; docConfig: any }) {
-  const watcher = chokidar.watch(repoPath + '/**/*.{ts,js,py,cpp,cu,c,h}', {
+  const watcher = chokidar.watch(`${repoPath}/**/*.{ts,js,py,cpp,cu,c,h}`, {
     ignoreInitial: true,
     ignored: /node_modules|\.git|dist|build|\.out/,
   });
 
-  watcher.on('all', async (event, path) => {
+  watcher.on('all', async (_event, path) => {
     try {
       await generateAndStoreDocs({ ...docConfig, sourceFiles: [path] });
       // Optionally, debounce or batch updates for performance

@@ -539,4 +539,4 @@ export const ConfigSchemas = {
   dockerCompose: DockerComposeSchema,
   prometheus: PrometheusConfigSchema,
   githubWorkflow: GitHubWorkflowSchema,
-} as const;
+} as const;

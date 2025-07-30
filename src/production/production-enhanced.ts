@@ -570,7 +570,6 @@ export class CarmackPipelineOrchestrator {
 
   // ===== HELPER METHODS =====
 
-
   private async discoverEligibleFiles(repoPath: string, args: EnhancedCLIArgs): Promise<string[]> {
     // Use existing file discovery logic from production.ts
     const { readdir, stat } = await import('node:fs/promises');

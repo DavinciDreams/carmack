@@ -2,7 +2,7 @@
 
 /**
  * TensorRT Knowledge Graph Platform - Comprehensive Interactive Demo with Telemetry
- * 
+ *
  * This demo showcases all four implemented epics with integrated telemetry:
  * 1. EPIC-SETUP-INFRASTRUCTURE: Database schema and connection management
  * 2. EPIC-INGESTION-PIPELINE: Repository ingestion and CST extraction
@@ -10,16 +10,16 @@
  * 4. EPIC-TESTING-METRICS: Performance metrics and validation results with telemetry
  */
 
+import { performance } from 'node:perf_hooks';
 import { OracleQueryProcessor } from '../src/docs/oracle-query-processor.js';
 import { SemanticIndexer } from '../src/ingestion/semantic-indexer.js';
 import { TensorRTTelemetry } from '../src/telemetry/tensorrt-telemetry.js';
-import { performance } from 'perf_hooks';
-import { z } from 'zod';
+
 // Demo configuration
 const DEMO_CONFIG = {
   database: {
     host: process.env.POSTGRES_HOST || 'localhost',
-    port: parseInt(process.env.POSTGRES_PORT || '5432'),
+    port: Number.parseInt(process.env.POSTGRES_PORT || '5432'),
     database: process.env.POSTGRES_DB || 'tensorrt_oracle',
     user: process.env.POSTGRES_USER || 'postgres',
     password: process.env.POSTGRES_PASSWORD || 'your_secure_password',
@@ -35,44 +35,44 @@ const DEMO_CONFIG = {
     verboseOutput: false,
     interactiveMode: true,
     enableTelemetry: true,
-  }
+  },
 };
 
 // Demo scenarios for different user personas
 const DEMO_SCENARIOS = {
   engineer: {
-    title: "🔧 Software Engineer Workflow",
-    description: "Investigating TensorRT implementation details and debugging issues",
+    title: '🔧 Software Engineer Workflow',
+    description: 'Investigating TensorRT implementation details and debugging issues',
     queries: [
-      "Find CUDA kernel implementations for convolution operations",
-      "Show me memory allocation patterns in TensorRT engines",
-      "How does TensorRT handle FP16 precision optimization?",
-      "Find examples of custom plugin implementations",
-      "What are common error handling patterns in the codebase?"
-    ]
+      'Find CUDA kernel implementations for convolution operations',
+      'Show me memory allocation patterns in TensorRT engines',
+      'How does TensorRT handle FP16 precision optimization?',
+      'Find examples of custom plugin implementations',
+      'What are common error handling patterns in the codebase?',
+    ],
   },
   researcher: {
-    title: "🔬 AI Researcher Workflow", 
-    description: "Understanding TensorRT architecture and optimization techniques",
+    title: '🔬 AI Researcher Workflow',
+    description: 'Understanding TensorRT architecture and optimization techniques',
     queries: [
       "Explain TensorRT's graph optimization strategies",
-      "Compare different quantization approaches in the codebase",
-      "Show me performance benchmarking implementations",
-      "How does TensorRT implement layer fusion?",
-      "What are the architectural patterns for inference engines?"
-    ]
+      'Compare different quantization approaches in the codebase',
+      'Show me performance benchmarking implementations',
+      'How does TensorRT implement layer fusion?',
+      'What are the architectural patterns for inference engines?',
+    ],
   },
   manager: {
-    title: "📊 Engineering Manager Workflow",
-    description: "Getting high-level insights and architectural understanding",
+    title: '📊 Engineering Manager Workflow',
+    description: 'Getting high-level insights and architectural understanding',
     queries: [
-      "What are the main components of TensorRT architecture?",
-      "Show me the most complex parts of the codebase",
-      "What are the key performance optimization areas?",
-      "How is error handling implemented across the system?",
-      "What are the main API patterns used in TensorRT?"
-    ]
-  }
+      'What are the main components of TensorRT architecture?',
+      'Show me the most complex parts of the codebase',
+      'What are the key performance optimization areas?',
+      'How is error handling implemented across the system?',
+      'What are the main API patterns used in TensorRT?',
+    ],
+  },
 };
 
 class TensorRTDemoWithTelemetry {
@@ -98,13 +98,13 @@ class TensorRTDemoWithTelemetry {
 
   async initialize(): Promise<void> {
     console.log('🔮 Initializing TensorRT Knowledge Graph Platform Demo with Telemetry...\n');
-    
+
     try {
       // Initialize telemetry system
       if (DEMO_CONFIG.demo.enableTelemetry) {
         await this.telemetry.initialize();
         console.log('✅ Telemetry system initialized');
-        
+
         // Track demo session start
         await this.telemetry.trackEvent({
           eventType: 'demo_session_start',
@@ -113,31 +113,31 @@ class TensorRTDemoWithTelemetry {
           metadata: {
             demoVersion: '2.0.0',
             features: ['infrastructure', 'ingestion', 'query_engine', 'metrics', 'telemetry'],
-            environment: process.env.NODE_ENV || 'development'
-          }
+            environment: process.env.NODE_ENV || 'development',
+          },
         });
       }
 
       // EPIC 1: Infrastructure Setup
       await this.demonstrateInfrastructure();
-      
+
       // EPIC 4: Testing & Metrics (Database validation)
       await this.validateDatabaseSetup();
-      
+
       console.log('✅ Demo initialization complete!\n');
     } catch (error) {
       console.error('❌ Demo initialization failed:', error);
-      
+
       // Track initialization failure
       if (DEMO_CONFIG.demo.enableTelemetry) {
         await this.telemetry.trackEvent({
           eventType: 'demo_initialization_failed',
           entityType: 'demo',
           entityId: this.sessionId,
-          metadata: { error: error instanceof Error ? error.message : String(error) }
+          metadata: { error: error instanceof Error ? error.message : String(error) },
         });
       }
-      
+
       throw error;
     }
   }
@@ -145,28 +145,33 @@ class TensorRTDemoWithTelemetry {
   async demonstrateInfrastructure(): Promise<void> {
     console.log('📋 EPIC 1: SETUP-INFRASTRUCTURE');
     console.log('='.repeat(50));
-    
+
     const startTime = performance.now();
-    
+
     try {
       await this.indexer.initialize();
       console.log('✅ PostgreSQL connection established');
       console.log('✅ pgvector extension verified');
       console.log('✅ TensorRT Oracle schema validated');
-      
+
       // Show database schema info
       const statsRaw = await this.indexer.getRepositoryStats();
 
       // Zod schema for repository stats validation
       const { z } = await import('zod');
-      const RepositoryStatsSchema = z.object({
-        total: z.object({
-          totalEntities: z.number().int().min(0),
-          languagesCount: z.number().int().min(0),
-          domainsCount: z.number().int().min(0),
-          filesCount: z.number().int().min(0),
-        }).strict().optional()
-      }).strict();
+      const RepositoryStatsSchema = z
+        .object({
+          total: z
+            .object({
+              totalEntities: z.number().int().min(0),
+              languagesCount: z.number().int().min(0),
+              domainsCount: z.number().int().min(0),
+              filesCount: z.number().int().min(0),
+            })
+            .strict()
+            .optional(),
+        })
+        .strict();
 
       let stats: z.infer<typeof RepositoryStatsSchema>;
       try {
@@ -185,12 +190,12 @@ class TensorRTDemoWithTelemetry {
       } else {
         console.log('  • Database ready for ingestion');
       }
-      
+
       await this.indexer.close();
-      
+
       const endTime = performance.now();
       const duration = endTime - startTime;
-      
+
       // Track infrastructure validation with telemetry
       if (DEMO_CONFIG.demo.enableTelemetry) {
         await this.telemetry.trackEvent({
@@ -200,25 +205,25 @@ class TensorRTDemoWithTelemetry {
           metadata: {
             duration: Math.round(duration),
             databaseStats: stats,
-            components: ['postgresql', 'pgvector', 'schema']
-          }
+            components: ['postgresql', 'pgvector', 'schema'],
+          },
         });
       }
-      
+
       console.log('✅ Infrastructure validation complete\n');
     } catch (error) {
       console.error('❌ Infrastructure setup failed:', error);
-      
+
       // Track infrastructure failure
       if (DEMO_CONFIG.demo.enableTelemetry) {
         await this.telemetry.trackEvent({
           eventType: 'infrastructure_validation_failed',
           entityType: 'system',
           entityId: 'infrastructure',
-          metadata: { error: error instanceof Error ? error.message : String(error) }
+          metadata: { error: error instanceof Error ? error.message : String(error) },
         });
       }
-      
+
       throw error;
     }
   }
@@ -226,26 +231,26 @@ class TensorRTDemoWithTelemetry {
   async validateDatabaseSetup(): Promise<void> {
     console.log('🧪 EPIC 4: TESTING-METRICS (Database Validation)');
     console.log('='.repeat(50));
-    
+
     const startTime = performance.now();
-    
+
     try {
       await this.indexer.initialize();
-      
+
       // Test vector operations
       console.log('🔍 Testing vector similarity operations...');
-      const testVector = Array.from({length: 512}, () => Math.random());
-      
+      const _testVector = Array.from({ length: 512 }, () => Math.random());
+
       // This would test actual vector operations if we had data
       console.log('✅ Vector operations functional');
       console.log('✅ Semantic search capabilities verified');
       console.log('✅ Performance indices operational');
-      
+
       await this.indexer.close();
-      
+
       const endTime = performance.now();
       const duration = endTime - startTime;
-      
+
       // Track database validation with telemetry
       if (DEMO_CONFIG.demo.enableTelemetry) {
         await this.telemetry.trackEvent({
@@ -255,25 +260,25 @@ class TensorRTDemoWithTelemetry {
           metadata: {
             duration: Math.round(duration),
             tests: ['vector_operations', 'semantic_search', 'indices'],
-            vectorDimensions: 512
-          }
+            vectorDimensions: 512,
+          },
         });
       }
-      
+
       console.log('✅ Database validation complete\n');
     } catch (error) {
       console.error('❌ Database validation failed:', error);
-      
+
       // Track database validation failure
       if (DEMO_CONFIG.demo.enableTelemetry) {
         await this.telemetry.trackEvent({
           eventType: 'database_validation_failed',
           entityType: 'database',
           entityId: 'vectordb',
-          metadata: { error: error instanceof Error ? error.message : String(error) }
+          metadata: { error: error instanceof Error ? error.message : String(error) },
         });
       }
-      
+
       throw error;
     }
   }
@@ -293,8 +298,8 @@ class TensorRTDemoWithTelemetry {
         metadata: {
           persona,
           queriesCount: scenario.queries.length,
-          title: scenario.title
-        }
+          title: scenario.title,
+        },
       });
     }
 
@@ -302,9 +307,9 @@ class TensorRTDemoWithTelemetry {
       const query = scenario.queries[i];
       console.log(`\n🔍 Query ${i + 1}: "${query}"`);
       console.log('-'.repeat(40));
-      
+
       await this.processQuery(query, persona);
-      
+
       // Pause between queries for readability
       if (i < scenario.queries.length - 1) {
         await this.pause(1000);
@@ -317,7 +322,7 @@ class TensorRTDemoWithTelemetry {
         eventType: 'persona_demo_complete',
         entityType: 'demo',
         entityId: `${this.sessionId}-${persona}`,
-        metadata: { persona, completedQueries: scenario.queries.length }
+        metadata: { persona, completedQueries: scenario.queries.length },
       });
     }
   }
@@ -328,7 +333,7 @@ class TensorRTDemoWithTelemetry {
 
     try {
       console.log('⏳ Processing query...');
-      
+
       // EPIC 3: Graph Query Engine
       const oracleQuery = await this.processor.processQuery(query);
       const response = await this.processor.generateResponse(oracleQuery);
@@ -350,8 +355,8 @@ class TensorRTDemoWithTelemetry {
           metadata: {
             persona: persona || 'interactive',
             responseLength: response.length,
-            hasResults: oracleQuery.results.length > 0
-          }
+            hasResults: oracleQuery.results.length > 0,
+          },
         });
       }
 
@@ -385,11 +390,10 @@ class TensorRTDemoWithTelemetry {
         console.log(`\n... (${lines.length - 10} more lines) ...`);
       }
       console.log('='.repeat(60));
-
     } catch (error) {
       const endTime = performance.now();
       const responseTime = endTime - startTime;
-      
+
       // Track failed query
       if (DEMO_CONFIG.demo.enableTelemetry) {
         await this.telemetry.trackQuery({
@@ -405,11 +409,11 @@ class TensorRTDemoWithTelemetry {
           errorMessage: error instanceof Error ? error.message : String(error),
           metadata: {
             persona: persona || 'interactive',
-            failurePoint: 'processing'
-          }
+            failurePoint: 'processing',
+          },
         });
       }
-      
+
       console.error('❌ Query failed:', error);
     }
   }
@@ -439,7 +443,7 @@ class TensorRTDemoWithTelemetry {
       console.log(`  Success Rate: ${Math.round(analytics.successRate * 100)}%`);
       console.log(`  Average Response Time: ${Math.round(analytics.averageResponseTime)}ms`);
       console.log(`  Median Response Time: ${Math.round(analytics.medianResponseTime)}ms`);
-      
+
       console.log('\n🎯 Top Intents:');
       analytics.topIntents.slice(0, 3).forEach((intent, i) => {
         console.log(`  ${i + 1}. ${intent.intent} (${intent.count} queries)`);
@@ -457,7 +461,6 @@ class TensorRTDemoWithTelemetry {
       console.log('  • Infrastructure validated');
       console.log('  • Database setup verified');
       console.log('  • Query processing active');
-
     } catch (error) {
       console.error('❌ Failed to retrieve advanced metrics:', error);
     }
@@ -466,7 +469,7 @@ class TensorRTDemoWithTelemetry {
   async showSystemArchitecture(): Promise<void> {
     console.log('\n🏗️ SYSTEM ARCHITECTURE OVERVIEW');
     console.log('='.repeat(50));
-    
+
     console.log(`
 ┌─────────────────────────────────────────────────────────────┐
 │                TensorRT Knowledge Graph Platform            │
@@ -495,7 +498,7 @@ class TensorRTDemoWithTelemetry {
                     │ • Monitoring    │    │ • Prometheus    │
                     └─────────────────┘    └─────────────────┘
 `);
-    
+
     console.log('\n🔧 Enhanced Technical Stack:');
     console.log('  • Runtime: Bun (TypeScript)');
     console.log('  • Database: PostgreSQL 16 + pgvector');
@@ -590,7 +593,6 @@ class TensorRTDemoWithTelemetry {
 
         // Process as a regular query
         await this.processQuery(input);
-
       } catch (error) {
         console.error('❌ Error:', error);
       }
@@ -603,7 +605,7 @@ class TensorRTDemoWithTelemetry {
     try {
       if (DEMO_CONFIG.demo.enableTelemetry) {
         const totalTime = Date.now() - this.startTime;
-        
+
         // Track demo session end
         await this.telemetry.trackEvent({
           eventType: 'demo_session_end',
@@ -611,8 +613,8 @@ class TensorRTDemoWithTelemetry {
           entityId: this.sessionId,
           metadata: {
             duration: totalTime,
-            sessionId: this.sessionId
-          }
+            sessionId: this.sessionId,
+          },
         });
 
         // Flush remaining telemetry data
@@ -625,7 +627,7 @@ class TensorRTDemoWithTelemetry {
   }
 
   private async pause(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 
@@ -673,7 +675,6 @@ async function main(): Promise<void> {
 
     // Default: interactive mode
     await demo.runInteractiveMode();
-
   } catch (error) {
     console.error('❌ Demo failed:', error);
     process.exit(1);

@@ -12,14 +12,11 @@ import { patternDiscoveryActor } from '../actors/pattern-discovery.ts';
 import { patternLearningActor } from '../actors/pattern-learning.ts';
 import { templateEngineActor } from '../actors/template-engine.ts';
 import { enhancedTransformationOrchestratorActor } from '../actors/transformation-enhanced.ts';
-import { validationActor } from '../utils/validation.ts';
-
 import type {
+  // Import all our transformation systems
+  // Import enhanced components
 
-// Import all our transformation systems
-// Import enhanced components
-
-// Import standardized result types
+  // Import standardized result types
   AstGrepResult,
   ComplexityMetrics,
   FeedbackLoopResult,
@@ -30,6 +27,7 @@ import type {
   TemplateEngineResult,
   ValidationActorResult,
 } from '../types.ts';
+import { validationActor } from '../utils/validation.ts';
 
 // Define pipeline state interface
 interface PipelineState {

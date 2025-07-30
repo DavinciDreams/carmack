@@ -146,7 +146,7 @@ export class PatternRecommendationEngine {
   private readonly cache = new Map<string, CacheEntry>();
 
   constructor(
-    config: Partial<RecommendationEngineConfig> = {},
+    config: Partial<RecommendationEngineConfig>,
     similarityDetector: PatternSimilarityDetector,
     rlManager: ReinforcementLearningManager,
     nlpAnalyzer: NLPAnalyzer,
@@ -325,7 +325,7 @@ export class PatternRecommendationEngine {
     };
 
     // Find similar patterns using similarity detection
-    for (const [patternId, pattern] of this.patternDatabase) {
+    for (const [_patternId, pattern] of this.patternDatabase) {
       const similarity = await this.similarityDetector.calculateSimilarity(contextVector, pattern);
 
       if (similarity.similarity >= this.config.similarity.similarityThreshold) {
@@ -519,11 +519,11 @@ export class PatternRecommendationEngine {
       score: number;
       effectiveness: EffectivenessScore;
     }>,
-    request: RecommendationRequest,
+    _request: RecommendationRequest,
     contextAnalysis: { complexity: number; domain: string[]; intent: string; embedding: number[] }
   ): PatternRecommendation[] {
     return scoredPatterns.map(({ pattern, score, effectiveness }) => {
-      const metadata = this.patternMetadata.get(pattern.patternId) || {};
+      const _metadata = this.patternMetadata.get(pattern.patternId) || {};
 
       return {
         patternId: pattern.patternId,
@@ -574,7 +574,7 @@ export class PatternRecommendationEngine {
    * Generate expected benefits
    */
   private generateExpectedBenefits(
-    pattern: PatternFeatureVector,
+    _pattern: PatternFeatureVector,
     effectiveness: EffectivenessScore
   ): string[] {
     const benefits: string[] = [];
@@ -817,7 +817,7 @@ export class PatternRecommendationEngine {
  * Create a pattern recommendation engine with default configuration
  */
 export function createPatternRecommendationEngine(
-  config: Partial<RecommendationEngineConfig> = {},
+  config: Partial<RecommendationEngineConfig>,
   similarityDetector: PatternSimilarityDetector,
   rlManager: ReinforcementLearningManager,
   nlpAnalyzer: NLPAnalyzer,

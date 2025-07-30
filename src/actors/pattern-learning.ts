@@ -13,11 +13,38 @@ import type { AstPattern, ComplexityMetrics } from '../types.js';
 
 // Canonical language enum (should match pattern-discovery)
 export const SupportedLanguageEnum = [
-  'typescript', 'javascript', 'python', 'cpp', 'c', 'java', 'go', 'rust', 'ruby', 'php', 'csharp', 'kotlin', 'swift', 'scala', 'haskell', 'elixir', 'shell', 'json', 'yaml', 'toml', 'lua', 'perl', 'r', 'dart',
-  'xml', 'ini', 'sql', 'docker', 'make',
+  'typescript',
+  'javascript',
+  'python',
+  'cpp',
+  'c',
+  'java',
+  'go',
+  'rust',
+  'ruby',
+  'php',
+  'csharp',
+  'kotlin',
+  'swift',
+  'scala',
+  'haskell',
+  'elixir',
+  'shell',
+  'json',
+  'yaml',
+  'toml',
+  'lua',
+  'perl',
+  'r',
+  'dart',
+  'xml',
+  'ini',
+  'sql',
+  'docker',
+  'make',
   'other',
 ] as const;
-export type SupportedLanguage = typeof SupportedLanguageEnum[number];
+export type SupportedLanguage = (typeof SupportedLanguageEnum)[number];
 
 // Extended pattern type for learning with confidence
 type LearnedPattern = Omit<AstPattern, 'language'> & {
@@ -244,13 +271,6 @@ export class PatternLearner {
     results: LearningResult;
   }> = [];
   private dataPath: string;
-
-  // ML Components
-  private clusterer: PatternClusterer;
-  private similarityDetector: PatternSimilarityDetector;
-  private statisticalAnalyzer: StatisticalAnalyzer;
-  private patternStatistics: PatternStatistics;
-  private reinforcementLearning: ReinforcementLearningManager;
   private nlpAnalyzer: ReturnType<typeof createNLPAnalyzer>;
 
   constructor(dataPath = './data') {
@@ -468,10 +488,13 @@ export class PatternLearner {
     // Analyze context for optimization opportunities
     if (context?.codebase) {
       // Ensure language is a string for analyzeCodebaseContext
-      const codebase = context.codebase ? {
-        ...context.codebase,
-        language: typeof context.codebase.language === 'string' ? context.codebase.language : 'other',
-      } : undefined;
+      const codebase = context.codebase
+        ? {
+            ...context.codebase,
+            language:
+              typeof context.codebase.language === 'string' ? context.codebase.language : 'other',
+          }
+        : undefined;
       const contextInsights = codebase ? this.analyzeCodebaseContext(codebase) : [];
       insights.push(...contextInsights);
     }
@@ -802,11 +825,12 @@ export class PatternLearner {
             mode: transformation.mode,
             confidence: this.calculatePatternConfidence(nlpAnalysis, fileContent),
           };
-// Normalize language to SupportedLanguage
-function normalizeLanguage(lang: string): SupportedLanguage {
-  if (SupportedLanguageEnum.includes(lang as SupportedLanguage)) return lang as SupportedLanguage;
-  return 'other';
-}
+          // Normalize language to SupportedLanguage
+          function normalizeLanguage(lang: string): SupportedLanguage {
+            if (SupportedLanguageEnum.includes(lang as SupportedLanguage))
+              return lang as SupportedLanguage;
+            return 'other';
+          }
 
           patterns.push(discoveredPattern);
         } catch (fileError) {
@@ -850,7 +874,7 @@ function normalizeLanguage(lang: string): SupportedLanguage {
   /**
    * Generate pattern from file content and NLP analysis
    */
-  private generatePatternFromAnalysis(fileContent: string, nlpAnalysis: NLPAnalysis): string {
+  private generatePatternFromAnalysis(_fileContent: string, nlpAnalysis: NLPAnalysis): string {
     const intent = nlpAnalysis.extractedFeatures.intent;
     const keywords = nlpAnalysis.extractedFeatures.keywords;
 
@@ -875,7 +899,7 @@ function normalizeLanguage(lang: string): SupportedLanguage {
   /**
    * Generate replacement from file content and NLP analysis
    */
-  private generateReplacementFromAnalysis(fileContent: string, nlpAnalysis: NLPAnalysis): string {
+  private generateReplacementFromAnalysis(_fileContent: string, nlpAnalysis: NLPAnalysis): string {
     const intent = nlpAnalysis.extractedFeatures.intent;
     const keywords = nlpAnalysis.extractedFeatures.keywords;
 

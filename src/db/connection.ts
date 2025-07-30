@@ -1,9 +1,7 @@
+import type { PoolClient, PoolConfig } from 'pg';
 import { Pool } from 'pg';
 import { z } from 'zod';
-
 import { getEnvironmentConfig } from '../config/environment.ts';
-
-import type { PoolClient, PoolConfig } from 'pg';
 
 /**
  * Database Connection Module for TensorRT-LLM Knowledge Graph
@@ -12,7 +10,6 @@ import type { PoolClient, PoolConfig } from 'pg';
  * retry logic, and health check utilities following Carmack's principles of
  * provable correctness and robust error handling.
  */
-
 
 // =============================================================================
 // DATABASE CONFIGURATION SCHEMAS
@@ -97,7 +94,7 @@ export class DatabaseConnectionManager {
    */
   private buildConfig(overrides?: Partial<DatabaseConfig>): DatabaseConfig {
     const env = getEnvironmentConfig();
-    
+
     // Parse connection URL if provided
     if (env.POSTGRES_URL && !overrides) {
       return this.parseConnectionUrl(env.POSTGRES_URL);
@@ -125,10 +122,10 @@ export class DatabaseConnectionManager {
   private parseConnectionUrl(url: string): DatabaseConfig {
     try {
       const parsed = new URL(url);
-      
+
       return DatabaseConfigSchema.parse({
         host: parsed.hostname,
-        port: parseInt(parsed.port) || 5432,
+        port: Number.parseInt(parsed.port) || 5432,
         user: parsed.username,
         password: parsed.password,
         database: parsed.pathname.slice(1), // Remove leading slash
@@ -170,33 +167,26 @@ export class DatabaseConnectionManager {
       this.pool = new Pool(poolConfig);
 
       // Set up error handling
-      this.pool.on('error', (error) => {
+      this.pool.on('error', (_error) => {});
 
-      });
+      this.pool.on('connect', () => {});
 
-      this.pool.on('connect', () => {
-
-      });
-
-      this.pool.on('remove', () => {
-
-      });
+      this.pool.on('remove', () => {});
 
       // Test initial connection
       await this.testConnection();
-      
+
       // Initialize pgvector extension
       await this.initializePgVector();
 
       this.isInitialized = true;
-
     } catch (error) {
       throw new DatabaseConnectionError(
         'Failed to initialize database connection pool',
         'INITIALIZATION_FAILED',
-        { 
+        {
           config: { ...this.config, password: '[REDACTED]' },
-          error: error instanceof Error ? error.message : String(error)
+          error: error instanceof Error ? error.message : String(error),
         }
       );
     }
@@ -207,10 +197,7 @@ export class DatabaseConnectionManager {
    */
   async testConnection(maxRetries = 3): Promise<void> {
     if (!this.pool) {
-      throw new DatabaseConnectionError(
-        'Database pool not initialized',
-        'POOL_NOT_INITIALIZED'
-      );
+      throw new DatabaseConnectionError('Database pool not initialized', 'POOL_NOT_INITIALIZED');
     }
 
     let lastError: Error | null = null;
@@ -218,11 +205,9 @@ export class DatabaseConnectionManager {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         const client = await this.pool.connect();
-        
+
         try {
-          const result = await client.query('SELECT NOW() as timestamp, version() as version');
-
-
+          const _result = await client.query('SELECT NOW() as timestamp, version() as version');
 
           return;
         } finally {
@@ -231,20 +216,19 @@ export class DatabaseConnectionManager {
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
 
-        
         if (attempt < maxRetries) {
-          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
+          const delay = Math.min(1000 * 2 ** (attempt - 1), 10000);
 
-          await new Promise(resolve => setTimeout(resolve, delay));
+          await new Promise((resolve) => setTimeout(resolve, delay));
         }
       }
     }
 
-throw new DatabaseConnectionError(
-  `Database connection test failed after ${maxRetries} attempts`,
-  'CONNECTION_TEST_FAILED',
-  lastError ? { message: lastError.message } : undefined
-);
+    throw new DatabaseConnectionError(
+      `Database connection test failed after ${maxRetries} attempts`,
+      'CONNECTION_TEST_FAILED',
+      lastError ? { message: lastError.message } : undefined
+    );
   }
 
   /**
@@ -252,30 +236,24 @@ throw new DatabaseConnectionError(
    */
   async initializePgVector(): Promise<void> {
     if (!this.pool) {
-      throw new DatabaseConnectionError(
-        'Database pool not initialized',
-        'POOL_NOT_INITIALIZED'
-      );
+      throw new DatabaseConnectionError('Database pool not initialized', 'POOL_NOT_INITIALIZED');
     }
 
     try {
       const client = await this.pool.connect();
-      
+
       try {
         // Create pgvector extension if it doesn't exist
         await client.query('CREATE EXTENSION IF NOT EXISTS vector');
 
-
         // Verify pgvector is working
         const result = await client.query("SELECT '[1,2,3]'::vector as test_vector");
         if (result.rows[0]?.test_vector) {
-
         }
       } finally {
         client.release();
       }
-    } catch (error) {
-
+    } catch (_error) {
       // Don't throw here as pgvector might not be available in all environments
     }
   }
@@ -285,10 +263,7 @@ throw new DatabaseConnectionError(
    */
   async getClient(): Promise<PoolClient> {
     if (!this.pool || !this.isInitialized) {
-      throw new DatabaseConnectionError(
-        'Database connection not initialized',
-        'NOT_INITIALIZED'
-      );
+      throw new DatabaseConnectionError('Database connection not initialized', 'NOT_INITIALIZED');
     }
 
     try {
@@ -307,7 +282,7 @@ throw new DatabaseConnectionError(
    */
   async query<T = any>(text: string, params?: any[]): Promise<{ rows: T[]; rowCount: number }> {
     const client = await this.getClient();
-    
+
     try {
       const result = await client.query(text, params);
       return {
@@ -322,11 +297,9 @@ throw new DatabaseConnectionError(
   /**
    * Execute a transaction with automatic rollback on error
    */
-  async transaction<T>(
-    callback: (client: PoolClient) => Promise<T>
-  ): Promise<T> {
+  async transaction<T>(callback: (client: PoolClient) => Promise<T>): Promise<T> {
     const client = await this.getClient();
-    
+
     try {
       await client.query('BEGIN');
       const result = await callback(client);
@@ -345,7 +318,7 @@ throw new DatabaseConnectionError(
    */
   async healthCheck(): Promise<HealthStatus> {
     const startTime = Date.now();
-    
+
     try {
       if (!this.pool || !this.isInitialized) {
         const status: HealthStatus = {
@@ -359,11 +332,11 @@ throw new DatabaseConnectionError(
       }
 
       const client = await this.pool.connect();
-      
+
       try {
         // Basic connectivity test
         const result = await client.query('SELECT NOW() as timestamp, version() as version');
-        
+
         // Test pgvector availability
         let pgvectorEnabled = false;
         try {
@@ -431,7 +404,6 @@ throw new DatabaseConnectionError(
       await this.pool.end();
       this.pool = null;
       this.isInitialized = false;
-
     }
   }
 }
@@ -471,7 +443,10 @@ export async function getClient(): Promise<PoolClient> {
 /**
  * Execute a query using the global pool
  */
-export async function query<T = any>(text: string, params?: any[]): Promise<{ rows: T[]; rowCount: number }> {
+export async function query<T = any>(
+  text: string,
+  params?: any[]
+): Promise<{ rows: T[]; rowCount: number }> {
   const manager = getDatabaseManager();
   return manager.query<T>(text, params);
 }
@@ -479,9 +454,7 @@ export async function query<T = any>(text: string, params?: any[]): Promise<{ ro
 /**
  * Execute a transaction using the global pool
  */
-export async function transaction<T>(
-  callback: (client: PoolClient) => Promise<T>
-): Promise<T> {
+export async function transaction<T>(callback: (client: PoolClient) => Promise<T>): Promise<T> {
   const manager = getDatabaseManager();
   return manager.transaction(callback);
 }

@@ -2,12 +2,14 @@
 // Commit Diff Schema
 // =====================
 export const CommitDiffSchema = z.object({
-  files: z.array(z.object({
-    file: z.string(),
-    changes: z.number().int().nonnegative().optional(),
-    insertions: z.number().int().nonnegative().optional(),
-    deletions: z.number().int().nonnegative().optional(),
-  })),
+  files: z.array(
+    z.object({
+      file: z.string(),
+      changes: z.number().int().nonnegative().optional(),
+      insertions: z.number().int().nonnegative().optional(),
+      deletions: z.number().int().nonnegative().optional(),
+    })
+  ),
   insertions: z.number().int().nonnegative().optional(),
   deletions: z.number().int().nonnegative().optional(),
   filesChanged: z.number().int().nonnegative().optional(),
@@ -102,13 +104,16 @@ export const LoadTestResultSchema = z.object({
 export type LoadTestResult = z.infer<typeof LoadTestResultSchema>;
 
 // Validation helpers
-export const validatePerformanceMetrics = (data: unknown): PerformanceMetrics => PerformanceMetricsSchema.parse(data);
-export const validateLoadTestConfig = (data: unknown): LoadTestConfig => LoadTestConfigSchema.parse(data);
-export const validateLoadTestResult = (data: unknown): LoadTestResult => LoadTestResultSchema.parse(data);
-import { z } from "zod";
+export const validatePerformanceMetrics = (data: unknown): PerformanceMetrics =>
+  PerformanceMetricsSchema.parse(data);
+export const validateLoadTestConfig = (data: unknown): LoadTestConfig =>
+  LoadTestConfigSchema.parse(data);
+export const validateLoadTestResult = (data: unknown): LoadTestResult =>
+  LoadTestResultSchema.parse(data);
+
+import { z } from 'zod';
 
 // Unified Zod Schemas for Carmack Coder Core Data Models
-
 
 // Repository/project metadata
 export const RepositoryMetadataSchema = z.object({
@@ -116,7 +121,7 @@ export const RepositoryMetadataSchema = z.object({
   url: z.string().url(),
   name: z.string(),
   owner: z.string(),
-  branch: z.string().default("main"),
+  branch: z.string().default('main'),
   languages: z.record(z.number()).optional(),
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),
@@ -152,7 +157,7 @@ export const VectorEmbeddingSchema = z.object({
   id: z.string().uuid(),
   fileId: z.string().uuid(),
   vector: z.array(z.number()),
-  model: z.string().default("sentence-transformers"),
+  model: z.string().default('sentence-transformers'),
   createdAt: z.date().optional(),
 });
 

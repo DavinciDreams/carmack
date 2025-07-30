@@ -1,7 +1,5 @@
-
-
-import { MultiLanguageAnalyzer } from './multi-language-analyzer';
 import { fromPromise } from 'xstate';
+import { MultiLanguageAnalyzer } from './multi-language-analyzer';
 
 // Unified, language-agnostic AST analyzer delegating to MultiLanguageAnalyzer
 export class ASTAnalyzer {
@@ -18,19 +16,18 @@ export class ASTAnalyzer {
     const entities = await this.extractEntities(filePath);
     const content = await this.readFile(filePath);
 
+    // Import types for explicit typing
+    // (No runtime import needed as types are imported below)
+    type FunctionDoc = import('./types').FunctionDoc;
+    type ClassDoc = import('./types').ClassDoc;
+    type ConstantDoc = { name: string; type: string; value?: string; description?: string };
+    type ImportDoc = { module: string; imports: string[]; isTypeOnly: boolean };
 
-  // Import types for explicit typing
-  // (No runtime import needed as types are imported below)
-  type FunctionDoc = import('./types').FunctionDoc;
-  type ClassDoc = import('./types').ClassDoc;
-  type ConstantDoc = { name: string; type: string; value?: string; description?: string };
-  type ImportDoc = { module: string; imports: string[]; isTypeOnly: boolean };
-
-  const functions: FunctionDoc[] = [];
-  const classes: ClassDoc[] = [];
-  const types: string[] = [];
-  const constants: ConstantDoc[] = [];
-  const imports: ImportDoc[] = [];
+    const functions: FunctionDoc[] = [];
+    const classes: ClassDoc[] = [];
+    const types: string[] = [];
+    const constants: ConstantDoc[] = [];
+    const imports: ImportDoc[] = [];
 
     for (const entity of entities) {
       switch (entity.type) {
@@ -62,7 +59,12 @@ export class ASTAnalyzer {
           classes.push({
             name: entity.name,
             description: entity.description,
-            type: entity.type === 'class' ? 'class' : entity.type === 'interface' ? 'interface' : 'type',
+            type:
+              entity.type === 'class'
+                ? 'class'
+                : entity.type === 'interface'
+                  ? 'interface'
+                  : 'type',
             properties: [],
             methods: [],
             extends: undefined,
@@ -102,7 +104,7 @@ export class ASTAnalyzer {
     }
 
     // Attempt to extract dependencies (basic: all import module names)
-    const dependencies = imports.map(i => i.module);
+    const dependencies = imports.map((i) => i.module);
 
     return {
       name: filePath.split(/[\\/]/).pop() || 'UnknownModule',
@@ -145,9 +147,10 @@ export const astAnalyzerActor = fromPromise(
         return await analyzer.extractEntities(input.filePath);
       case 'detect':
         return await analyzer.detectLanguage(input.filePath);
-      case 'classify':
+      case 'classify': {
         const content = await analyzer.readFile(input.filePath);
         return await analyzer.classifyDomain(content, input.filePath);
+      }
       default:
         throw new Error(`Unknown operation: ${input.operation}`);
     }

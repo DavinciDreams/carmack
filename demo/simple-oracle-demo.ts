@@ -5,12 +5,10 @@
  * Demonstrates the Oracle system with mock data
  */
 
-import { OracleQueryProcessor } from '../src/docs/oracle-query-processor.js';
-
 // Database configuration
-const dbConfig = {
+const _dbConfig = {
   host: process.env.POSTGRES_HOST || 'localhost',
-  port: parseInt(process.env.POSTGRES_PORT || '5432'),
+  port: Number.parseInt(process.env.POSTGRES_PORT || '5432'),
   database: process.env.POSTGRES_DB || 'tensorrt_oracle',
   user: process.env.POSTGRES_USER || 'postgres',
   password: process.env.POSTGRES_PASSWORD || 'your_secure_password',
@@ -27,7 +25,8 @@ const mockEntities = [
     filePath: '/tensorrt/kernels/convolution.cu',
     startLine: 15,
     endLine: 45,
-    signature: '__global__ void convolution_kernel(float* input, float* output, float* weights, int batch_size)',
+    signature:
+      '__global__ void convolution_kernel(float* input, float* output, float* weights, int batch_size)',
     description: 'CUDA kernel for performing convolution operations on GPU',
     domain: 'kernel_execution' as const,
     keywords: ['convolution', 'cuda', 'kernel', 'gpu', 'optimization'],
@@ -92,8 +91,12 @@ class SimplifiedOracleProcessor {
 
   classifyIntent(query: string): string {
     const lowerQuery = query.toLowerCase();
-    
-    if (/find.*function|search.*code|locate.*implementation|where.*defined|show.*example/.test(lowerQuery)) {
+
+    if (
+      /find.*function|search.*code|locate.*implementation|where.*defined|show.*example/.test(
+        lowerQuery
+      )
+    ) {
       return 'code_search';
     }
     if (/pattern|common.*approach|how.*typically|best.*practice|convention/.test(lowerQuery)) {
@@ -108,32 +111,52 @@ class SimplifiedOracleProcessor {
     if (/how.*use|api|interface|call|invoke|parameter/.test(lowerQuery)) {
       return 'api_usage';
     }
-    
+
     return 'general_question';
   }
 
   extractLanguageHint(query: string): string | undefined {
     const lowerQuery = query.toLowerCase();
-    
+
     if (lowerQuery.includes('cuda') || lowerQuery.includes('kernel')) return 'cuda';
     if (lowerQuery.includes('c++') || lowerQuery.includes('cpp')) return 'cpp';
     if (lowerQuery.includes('python')) return 'python';
-    
+
     return undefined;
   }
 
   extractDomainHint(query: string): string | undefined {
     const lowerQuery = query.toLowerCase();
-    
-    if (lowerQuery.includes('inference') || lowerQuery.includes('execute') || lowerQuery.includes('run')) return 'inference';
-    if (lowerQuery.includes('optimize') || lowerQuery.includes('performance') || lowerQuery.includes('fast')) return 'optimization';
-    if (lowerQuery.includes('kernel') || lowerQuery.includes('cuda') || lowerQuery.includes('gpu')) return 'kernel_execution';
-    if (lowerQuery.includes('memory') || lowerQuery.includes('buffer') || lowerQuery.includes('allocation')) return 'memory_management';
-    
+
+    if (
+      lowerQuery.includes('inference') ||
+      lowerQuery.includes('execute') ||
+      lowerQuery.includes('run')
+    )
+      return 'inference';
+    if (
+      lowerQuery.includes('optimize') ||
+      lowerQuery.includes('performance') ||
+      lowerQuery.includes('fast')
+    )
+      return 'optimization';
+    if (lowerQuery.includes('kernel') || lowerQuery.includes('cuda') || lowerQuery.includes('gpu'))
+      return 'kernel_execution';
+    if (
+      lowerQuery.includes('memory') ||
+      lowerQuery.includes('buffer') ||
+      lowerQuery.includes('allocation')
+    )
+      return 'memory_management';
+
     return undefined;
   }
 
-  searchEntities(query: string, language?: string, domain?: string): Array<{ entity: any; relevance: number; explanation: string }> {
+  searchEntities(
+    query: string,
+    language?: string,
+    domain?: string
+  ): Array<{ entity: any; relevance: number; explanation: string }> {
     const lowerQuery = query.toLowerCase();
     const results: Array<{ entity: any; relevance: number; explanation: string }> = [];
 
@@ -143,14 +166,14 @@ class SimplifiedOracleProcessor {
 
       // Language filter
       if (language && entity.language !== language) continue;
-      
+
       // Domain filter
       if (domain && entity.domain !== domain) continue;
 
       // Name matching
       if (entity.name.toLowerCase().includes(lowerQuery)) {
         relevance += 0.9;
-        explanation += `Name matches query. `;
+        explanation += 'Name matches query. ';
       }
 
       // Keyword matching
@@ -164,13 +187,13 @@ class SimplifiedOracleProcessor {
       // Description matching
       if (entity.description.toLowerCase().includes(lowerQuery)) {
         relevance += 0.5;
-        explanation += `Description matches query. `;
+        explanation += 'Description matches query. ';
       }
 
       // Source code matching
       if (entity.sourceCode.toLowerCase().includes(lowerQuery)) {
         relevance += 0.4;
-        explanation += `Source code contains relevant terms. `;
+        explanation += 'Source code contains relevant terms. ';
       }
 
       if (relevance > 0.2) {
@@ -190,7 +213,7 @@ class SimplifiedOracleProcessor {
     console.log('⏳ Analyzing...\n');
 
     const startTime = Date.now();
-    
+
     // Classify query
     const intent = this.classifyIntent(query);
     const language = this.extractLanguageHint(query);
@@ -198,7 +221,7 @@ class SimplifiedOracleProcessor {
 
     // Search for relevant entities
     const results = this.searchEntities(query, language, domain);
-    
+
     const processingTime = Date.now() - startTime;
 
     console.log('📋 Query Analysis:');
@@ -209,50 +232,56 @@ class SimplifiedOracleProcessor {
     console.log(`  Processing time: ${processingTime}ms\n`);
 
     console.log('💬 Oracle Response:');
-    console.log('=' .repeat(80));
-    
+    console.log('='.repeat(80));
+
     if (results.length === 0) {
       console.log("I couldn't find any relevant code entities for your query.");
-      console.log("\n**Suggestions:**");
-      console.log("- Try using more specific technical terms");
-      console.log("- Include language keywords (CUDA, C++, Python)");
-      console.log("- Mention specific TensorRT components (engine, builder, context)");
-      console.log("- Use domain-specific terms (inference, optimization, serialization)");
+      console.log('\n**Suggestions:**');
+      console.log('- Try using more specific technical terms');
+      console.log('- Include language keywords (CUDA, C++, Python)');
+      console.log('- Mention specific TensorRT components (engine, builder, context)');
+      console.log('- Use domain-specific terms (inference, optimization, serialization)');
     } else {
       console.log(`Found ${results.length} relevant results:\n`);
 
       for (let i = 0; i < results.length; i++) {
         const result = results[i];
         const entity = result.entity;
-        
-        console.log(`### ${i + 1}. ${entity.name} (${Math.round(result.relevance * 100)}% match)\n`);
-        console.log(`**Type:** ${entity.type} | **Language:** ${entity.language} | **Domain:** ${entity.domain}\n`);
-        
+
+        console.log(
+          `### ${i + 1}. ${entity.name} (${Math.round(result.relevance * 100)}% match)\n`
+        );
+        console.log(
+          `**Type:** ${entity.type} | **Language:** ${entity.language} | **Domain:** ${entity.domain}\n`
+        );
+
         if (entity.description) {
           console.log(`**Description:** ${entity.description}\n`);
         }
-        
+
         if (entity.signature) {
           console.log(`**Signature:** \`${entity.signature}\`\n`);
         }
-        
+
         console.log(`**Location:** ${entity.filePath}:${entity.startLine}\n`);
-        
+
         if (entity.sourceCode && entity.sourceCode.length < 300) {
           console.log(`**Code:**\n\`\`\`${entity.language}\n${entity.sourceCode}\n\`\`\`\n`);
         } else if (entity.sourceCode) {
-          console.log(`**Code Preview:**\n\`\`\`${entity.language}\n${entity.sourceCode.substring(0, 200)}...\n\`\`\`\n`);
+          console.log(
+            `**Code Preview:**\n\`\`\`${entity.language}\n${entity.sourceCode.substring(0, 200)}...\n\`\`\`\n`
+          );
         }
-        
+
         if (result.explanation) {
           console.log(`**Why this matches:** ${result.explanation}\n`);
         }
-        
+
         console.log('---\n');
       }
     }
-    
-    console.log('=' .repeat(80));
+
+    console.log('='.repeat(80));
   }
 
   async showHelp(): Promise<void> {
@@ -334,7 +363,6 @@ TIPS:
         }
 
         await this.processQuery(query);
-
       } catch (error) {
         console.error('❌ Error:', error);
       }

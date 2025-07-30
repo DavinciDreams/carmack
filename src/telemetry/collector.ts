@@ -1,20 +1,17 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { EventEmitter } from 'node:events';
 import { performance } from 'node:perf_hooks';
-
-import { getEnvironmentConfig } from "../config/environment.ts";
-import { TelemetryEventSchema } from "../types/unified-schemas.ts";
-import { TelemetryConfigSchema, TelemetryMetricSchema } from './types';
-import type { FileBasedTelemetryExporter } from '../telemetry/file-exporter.ts';
+import type { z } from 'zod';
+import { getEnvironmentConfig } from '../config/environment.ts';
 import { createFileExporter } from '../telemetry/file-exporter';
-
-import type { z } from "zod";
+import type { FileBasedTelemetryExporter } from '../telemetry/file-exporter.ts';
+import { TelemetryEventSchema } from '../types/unified-schemas.ts';
+import { TelemetryConfigSchema, TelemetryMetricSchema } from './types';
 import type {
-
-/**
- * Core telemetry collection system for Carmack Coder
- * Provides high-performance, low-overhead metrics collection with privacy compliance
- */
+  /**
+   * Core telemetry collection system for Carmack Coder
+   * Provides high-performance, low-overhead metrics collection with privacy compliance
+   */
 
   CacheEfficiencyMetric,
   ErrorRecoveryMetric,
@@ -27,7 +24,6 @@ import type {
   TelemetryMetric,
   TransformationMode,
 } from './types.js';
-
 
 /**
  * High-performance telemetry event buffer with automatic batching
@@ -209,7 +205,7 @@ export class TelemetryCollector extends EventEmitter {
       // For now, just emit as a generic event for batch flush
       this.emit('unifiedTelemetryEvent', event);
       // Optionally, buffer for batch processing (extend as needed)
-  // Accepts generic event for extensibility
+      // Accepts generic event for extensibility
       this.buffer.add(event as any);
     } catch (err) {
       // Do not throw, but log for diagnostics
@@ -247,17 +243,20 @@ export class TelemetryCollector extends EventEmitter {
    */
   private async initializeFileExporter(): Promise<void> {
     // Check if file export is enabled via environment variables
-    const enableFileExport = process.env.OTEL_METRICS_EXPORTER === 'file' || 
-                           process.env.OTEL_LOGS_EXPORTER === 'file' ||
-                           process.env.TELEMETRY_FILE_EXPORT === 'true';
+    const enableFileExport =
+      process.env.OTEL_METRICS_EXPORTER === 'file' ||
+      process.env.OTEL_LOGS_EXPORTER === 'file' ||
+      process.env.TELEMETRY_FILE_EXPORT === 'true';
 
     if (enableFileExport) {
       try {
         this.fileExporter = await createFileExporter({
           outputDir: process.env.TELEMETRY_OUTPUT_DIR || './telemetry',
           format: process.env.TELEMETRY_FILE_FORMAT === 'json' ? 'json' : 'jsonl',
-          maxFileSize: parseInt(process.env.TELEMETRY_FILE_MAX_SIZE || '10485760'), // 10MB default
-          rotationInterval: parseInt(process.env.TELEMETRY_FILE_ROTATION_INTERVAL || '86400000'), // 24h default
+          maxFileSize: Number.parseInt(process.env.TELEMETRY_FILE_MAX_SIZE || '10485760'), // 10MB default
+          rotationInterval: Number.parseInt(
+            process.env.TELEMETRY_FILE_ROTATION_INTERVAL || '86400000'
+          ), // 24h default
           includeTimestamp: process.env.TELEMETRY_INCLUDE_TIMESTAMP !== 'false',
         });
         console.log('[Telemetry] File exporter enabled');
@@ -724,14 +723,14 @@ export class TelemetryCollector extends EventEmitter {
     try {
       await this.buffer.flush();
       this.privacyManager.destroy();
-      
+
       // Clean up file exporter if present
       if (this.fileExporter) {
         // Optionally clean up old files based on retention policy
-        const retentionDays = parseInt(process.env.TELEMETRY_RETENTION_DAYS || '90');
+        const retentionDays = Number.parseInt(process.env.TELEMETRY_RETENTION_DAYS || '90');
         await this.fileExporter.cleanup(retentionDays);
       }
-      
+
       this.emit('shutdown');
     } catch (error) {
       console.error('Error during telemetry shutdown:', error);
@@ -741,7 +740,6 @@ export class TelemetryCollector extends EventEmitter {
 
 // Singleton instance for global access
 let globalCollector: TelemetryCollector | null = null;
-
 
 /**
  * Get or create global telemetry collector instance

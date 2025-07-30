@@ -1,10 +1,12 @@
 import { z } from 'zod';
-import { b } from "../../baml_client/index.ts";
+import { b } from '../../baml_client/index.ts';
 import { getEnvironmentConfig } from '../config/environment.ts';
 import { getTelemetryCollector } from '../telemetry/index.ts';
-import { FileMetadataSchema, VectorEmbeddingSchema, TelemetryEventSchema } from '../types/unified-schemas.ts';
-
-
+import {
+  type FileMetadataSchema,
+  TelemetryEventSchema,
+  VectorEmbeddingSchema,
+} from '../types/unified-schemas.ts';
 
 /**
  * Content Processor for Universal Knowledge Graph Ingestion
@@ -13,7 +15,6 @@ import { FileMetadataSchema, VectorEmbeddingSchema, TelemetryEventSchema } from 
  * and embedding generation via HuggingFace API. Follows Carmack's
  * principles of efficient processing and type safety.
  */
-
 
 // =============================================================================
 // SCHEMAS AND TYPES
@@ -167,7 +168,7 @@ export class ContentProcessor {
       // Step 2: Generate semantic annotation using BAML
       const annotation = await this.generateSemanticAnnotation(fileContent);
       // Step 3: Generate embeddings for chunks
-      const embeddingVectors = await this.generateEmbeddings(chunks.map(c => c.content));
+      const embeddingVectors = await this.generateEmbeddings(chunks.map((c) => c.content));
 
       // Step 4: Attach embeddings to chunks and build VectorEmbeddingSchema objects
       const vectorEmbeddings = embeddingVectors.map((vector) =>
@@ -196,7 +197,13 @@ export class ContentProcessor {
           originalSize: fileContent.content.length,
           chunkCount: chunks.length,
           language: fileContent.language,
-          astNodeCount: (astResult && typeof astResult === 'object' && 'totalNodes' in astResult && typeof (astResult as any).totalNodes === 'number') ? (astResult as any).totalNodes : 0,
+          astNodeCount:
+            astResult &&
+            typeof astResult === 'object' &&
+            'totalNodes' in astResult &&
+            typeof (astResult as any).totalNodes === 'number'
+              ? (astResult as any).totalNodes
+              : 0,
         },
       };
 
@@ -242,7 +249,7 @@ export class ContentProcessor {
       throw new ContentProcessingError(
         'Failed to process file content',
         'PROCESSING_FAILED',
-        fileContent.path ?? "",
+        fileContent.path ?? '',
         {
           error: error instanceof Error ? error.message : String(error),
         }
@@ -255,7 +262,7 @@ export class ContentProcessor {
    */
   async processFiles(
     fileContents: (z.infer<typeof FileMetadataSchema> & { content: string })[],
-  astResults?: Map<string, unknown>
+    astResults?: Map<string, unknown>
   ): Promise<ProcessingResult[]> {
     console.log(`🔄 Batch processing ${fileContents.length} files...`);
 
@@ -276,13 +283,15 @@ export class ContentProcessor {
       });
 
       const batchResults = await Promise.all(batchPromises);
-      results.push(...batchResults.filter(Boolean) as ProcessingResult[]);
+      results.push(...(batchResults.filter(Boolean) as ProcessingResult[]));
 
-      console.log(`📊 Processed batch ${Math.floor(i / this.config.batchSize) + 1}, total: ${results.length}`);
+      console.log(
+        `📊 Processed batch ${Math.floor(i / this.config.batchSize) + 1}, total: ${results.length}`
+      );
 
       // Small delay between batches to respect rate limits
       if (i + this.config.batchSize < fileContents.length) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
       }
     }
 
@@ -312,7 +321,9 @@ export class ContentProcessor {
   /**
    * Chunk content into manageable pieces
    */
-  private chunkContent(fileContent: z.infer<typeof FileMetadataSchema> & { content: string }): ContentChunk[] {
+  private chunkContent(
+    fileContent: z.infer<typeof FileMetadataSchema> & { content: string }
+  ): ContentChunk[] {
     const content = fileContent.content;
     const chunks: ContentChunk[] = [];
 
@@ -369,7 +380,9 @@ export class ContentProcessor {
   /**
    * Chunk code content by logical boundaries
    */
-  private chunkCodeContent(fileContent: z.infer<typeof FileMetadataSchema> & { content: string }): ContentChunk[] {
+  private chunkCodeContent(
+    fileContent: z.infer<typeof FileMetadataSchema> & { content: string }
+  ): ContentChunk[] {
     const content = fileContent.content;
     const lines = content.split('\n');
     const chunks: ContentChunk[] = [];
@@ -449,27 +462,27 @@ export class ContentProcessor {
    */
   private isLogicalBreakpoint(line: string): boolean {
     const trimmed = line.trim();
-    
+
     // Function/method definitions
     if (trimmed.match(/^(public|private|protected)?\s*(static)?\s*(async)?\s*\w+\s*\(/)) {
       return true;
     }
-    
+
     // Class definitions
     if (trimmed.match(/^(class|struct|interface|enum)\s+\w+/)) {
       return true;
     }
-    
+
     // Namespace definitions
     if (trimmed.match(/^namespace\s+\w+/)) {
       return true;
     }
-    
+
     // CUDA kernels
     if (trimmed.includes('__global__') || trimmed.includes('__device__')) {
       return true;
     }
-    
+
     return false;
   }
 
@@ -487,17 +500,12 @@ export class ContentProcessor {
       const annotation = await b.ExtractSemanticAnnotation(fileContent.content);
       return SemanticAnnotationSchema.parse(annotation);
     } catch (error) {
-      throw new BAMLError(
-        'Failed to generate semantic annotation',
-        'ANNOTATION_FAILED',
-        {
-          filePath: fileContent.path,
-          error: error instanceof Error ? error.message : String(error),
-        }
-      );
+      throw new BAMLError('Failed to generate semantic annotation', 'ANNOTATION_FAILED', {
+        filePath: fileContent.path,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
-
 
   // =============================================================================
   // EMBEDDING GENERATION
@@ -525,26 +533,22 @@ export class ContentProcessor {
 
         // Small delay between batches
         if (i + this.config.batchSize < texts.length) {
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise((resolve) => setTimeout(resolve, 500));
         }
       }
 
       // Validate each embedding with VectorEmbeddingSchema if needed
-      embeddings.forEach(vector => {
+      embeddings.forEach((vector) => {
         VectorEmbeddingSchema.shape.vector.parse(vector);
       });
 
       console.log(`✅ Generated ${embeddings.length} embeddings`);
       return embeddings;
     } catch (error) {
-      throw new EmbeddingError(
-        'Failed to generate embeddings',
-        this.config.embeddingModel,
-        {
-          textCount: texts.length,
-          error: error instanceof Error ? error.message : String(error),
-        }
-      );
+      throw new EmbeddingError('Failed to generate embeddings', this.config.embeddingModel, {
+        textCount: texts.length,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -556,7 +560,7 @@ export class ContentProcessor {
       return fetch(`https://api-inference.huggingface.co/models/${this.config.embeddingModel}`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.hfToken}`,
+          Authorization: `Bearer ${this.hfToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -593,7 +597,7 @@ export class ContentProcessor {
    */
   private extractKeywords(content: string): string[] {
     const keywords = new Set<string>();
-    
+
     // Technical keywords
     const technicalPatterns = [
       /\b(scheduler|schedule|batch|queue|thread|async|await)\b/gi,
@@ -603,14 +607,14 @@ export class ContentProcessor {
       /\b(optimize|performance|speed|latency|throughput)\b/gi,
       /\b(error|exception|handle|check|validate|assert)\b/gi,
     ];
-    
+
     for (const pattern of technicalPatterns) {
       const matches = content.match(pattern);
       if (matches) {
-        matches.forEach(match => keywords.add(match.toLowerCase()));
+        matches.forEach((match) => keywords.add(match.toLowerCase()));
       }
     }
-    
+
     return Array.from(keywords);
   }
 
@@ -633,20 +637,14 @@ export class ContentProcessor {
     if (content.includes('TEST(') || content.includes('EXPECT_')) {
       return 'test_code';
     }
-    
+
     return 'code_block';
   }
-
-
-
 
   /**
    * Retry request with exponential backoff
    */
-  private async retryRequest<T>(
-    request: () => Promise<T>,
-    attempt = 1
-  ): Promise<T> {
+  private async retryRequest<T>(request: () => Promise<T>, attempt = 1): Promise<T> {
     try {
       return await request();
     } catch (error: any) {
@@ -654,10 +652,10 @@ export class ContentProcessor {
         throw error;
       }
 
-      const delay = this.config.retryDelay * Math.pow(2, attempt - 1);
+      const delay = this.config.retryDelay * 2 ** (attempt - 1);
       console.log(`⚠️ Request failed (attempt ${attempt}), retrying in ${delay}ms...`);
-      
-      await new Promise(resolve => setTimeout(resolve, delay));
+
+      await new Promise((resolve) => setTimeout(resolve, delay));
       return this.retryRequest(request, attempt + 1);
     }
   }

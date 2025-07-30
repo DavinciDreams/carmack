@@ -1,11 +1,20 @@
 import { z } from 'zod';
 
-import { type AstPattern, AstPatternSchema, type TransformationMode, TransformationModeSchema } from '../types.js';
-import { detectLanguageFromFile, detectLanguagesFromFiles, getLanguageDistribution } from './language-detection.js';
+import {
+  type AstPattern,
+  AstPatternSchema,
+  type TransformationMode,
+  TransformationModeSchema,
+} from '../types.js';
+import {
+  detectLanguageFromFile,
+  detectLanguagesFromFiles,
+  getLanguageDistribution,
+} from './language-detection.js';
 
 /**
  * Pattern Filtering System with Language Awareness and Zod Validation
- * 
+ *
  * This module provides comprehensive pattern filtering based on language compatibility,
  * transformation mode, complexity, and risk level with full Zod schema validation.
  */
@@ -105,7 +114,7 @@ export function filterPatternsByLanguageAndMode(
     // Detect languages from target files
     const languageMap = detectLanguagesFromFiles(request.targetFiles);
     const targetLanguages = new Set(Array.from(languageMap.values()));
-    
+
     // Remove 'unknown' language if other languages are detected
     if (targetLanguages.size > 1 && targetLanguages.has('unknown')) {
       targetLanguages.delete('unknown');
@@ -113,13 +122,16 @@ export function filterPatternsByLanguageAndMode(
     }
 
     // Validate that we have at least one known language
-    if (targetLanguages.size === 0 || (targetLanguages.size === 1 && targetLanguages.has('unknown'))) {
+    if (
+      targetLanguages.size === 0 ||
+      (targetLanguages.size === 1 && targetLanguages.has('unknown'))
+    ) {
       warnings.push('No supported languages detected in target files');
       if (!request.enableFallback) {
         throw new EnhancedTransformationError({
           code: 'NO_SUPPORTED_LANGUAGES',
           message: 'No supported programming languages detected in target files',
-          context: { 
+          context: {
             targetFiles: request.targetFiles,
             detectedLanguages: Array.from(targetLanguages),
           },
@@ -128,18 +140,22 @@ export function filterPatternsByLanguageAndMode(
     }
 
     // Filter patterns based on multiple criteria
-    const filteredPatterns = request.patterns.filter(pattern => {
+    const filteredPatterns = request.patterns.filter((pattern) => {
       // 1. Mode compatibility check
-      const modeMatch = pattern.mode === request.mode || 
-                       (!pattern.mode && request.mode === 'template');
-      
+      const modeMatch =
+        pattern.mode === request.mode || (!pattern.mode && request.mode === 'template');
+
       if (!modeMatch) {
         return false;
       }
 
       // 2. Language compatibility check
       let languageMatch = true;
-      if (request.strictLanguageMatching && targetLanguages.size > 0 && !targetLanguages.has('unknown')) {
+      if (
+        request.strictLanguageMatching &&
+        targetLanguages.size > 0 &&
+        !targetLanguages.has('unknown')
+      ) {
         languageMatch = targetLanguages.has(pattern.language);
       }
 
@@ -171,11 +187,16 @@ export function filterPatternsByLanguageAndMode(
     // Check for potential issues
     if (filteredPatterns.length === 0) {
       warnings.push('No patterns match the specified criteria');
-      
+
       // Provide helpful suggestions
-      const availableLanguages = new Set(request.patterns.map(p => p.language));
-      const missingLanguages = Array.from(targetLanguages).filter(lang => !availableLanguages.has(lang as typeof availableLanguages extends Set<infer L> ? L : never));
-      
+      const availableLanguages = new Set(request.patterns.map((p) => p.language));
+      const missingLanguages = Array.from(targetLanguages).filter(
+        (lang) =>
+          !availableLanguages.has(
+            lang as typeof availableLanguages extends Set<infer L> ? L : never
+          )
+      );
+
       if (missingLanguages.length > 0) {
         warnings.push(`Missing patterns for languages: ${missingLanguages.join(', ')}`);
       }
@@ -204,7 +225,6 @@ export function filterPatternsByLanguageAndMode(
     };
 
     return PatternFilterResultSchema.parse(result);
-
   } catch (error) {
     if (error instanceof EnhancedTransformationError) {
       throw error;
@@ -241,8 +261,8 @@ export function filterPatternsByMode(
   patterns: AstPattern[],
   mode: TransformationMode
 ): AstPattern[] {
-  return patterns.filter(pattern => 
-    pattern.mode === mode || (!pattern.mode && mode === 'template')
+  return patterns.filter(
+    (pattern) => pattern.mode === mode || (!pattern.mode && mode === 'template')
   );
 }
 
@@ -253,7 +273,7 @@ export function filterPatternsByComplexity(
   patterns: AstPattern[],
   maxComplexity: number
 ): AstPattern[] {
-  return patterns.filter(pattern => pattern.complexity <= maxComplexity);
+  return patterns.filter((pattern) => pattern.complexity <= maxComplexity);
 }
 
 /**
@@ -263,7 +283,7 @@ export function filterPatternsByRisk(
   patterns: AstPattern[],
   allowedRiskLevels: ('low' | 'medium' | 'high')[]
 ): AstPattern[] {
-  return patterns.filter(pattern => allowedRiskLevels.includes(pattern.riskLevel));
+  return patterns.filter((pattern) => allowedRiskLevels.includes(pattern.riskLevel));
 }
 
 /**
@@ -278,16 +298,14 @@ export function validatePatternCompatibility(
   const incompatible: AstPattern[] = [];
 
   // Detect target languages
-  const targetLanguages = new Set(
-    targetFiles.map(file => detectLanguageFromFile(file))
-  );
+  const targetLanguages = new Set(targetFiles.map((file) => detectLanguageFromFile(file)));
 
   // Remove unknown if other languages exist
   if (targetLanguages.size > 1 && targetLanguages.has('unknown')) {
     targetLanguages.delete('unknown');
   }
 
-  patterns.forEach(pattern => {
+  patterns.forEach((pattern) => {
     if (targetLanguages.has(pattern.language) || targetLanguages.has('unknown')) {
       compatible.push(pattern);
     } else {
@@ -310,12 +328,12 @@ function getDistribution<T extends keyof AstPattern>(
   field: T
 ): Record<string, number> {
   const distribution: Record<string, number> = {};
-  
-  patterns.forEach(pattern => {
+
+  patterns.forEach((pattern) => {
     const value = String(pattern[field] || 'undefined');
     distribution[value] = (distribution[value] || 0) + 1;
   });
-  
+
   return distribution;
 }
 
@@ -340,22 +358,21 @@ export function generatePatternFilteringDiagnostic(
   recommendations: string[];
   potentialIssues: string[];
 } {
-  const detectedLanguages = Array.from(new Set(
-    targetFiles.map(file => detectLanguageFromFile(file))
-  ));
+  const detectedLanguages = Array.from(
+    new Set(targetFiles.map((file) => detectLanguageFromFile(file)))
+  );
 
-  const patternLanguages = Array.from(new Set(
-    patterns.map(pattern => pattern.language)
-  ));
+  const patternLanguages = Array.from(new Set(patterns.map((pattern) => pattern.language)));
 
   const compatibility = validatePatternCompatibility(patterns, targetFiles);
-  
+
   const recommendations: string[] = [];
   const potentialIssues: string[] = [];
 
   // Check for missing language support
-  const missingLanguages = detectedLanguages.filter(lang => 
-    lang !== 'unknown' && !patternLanguages.includes(lang as typeof patternLanguages[number])
+  const missingLanguages = detectedLanguages.filter(
+    (lang) =>
+      lang !== 'unknown' && !patternLanguages.includes(lang as (typeof patternLanguages)[number])
   );
 
   if (missingLanguages.length > 0) {
@@ -364,9 +381,7 @@ export function generatePatternFilteringDiagnostic(
   }
 
   // Check for unused patterns
-  const unusedLanguages = patternLanguages.filter(lang => 
-    !detectedLanguages.includes(lang)
-  );
+  const unusedLanguages = patternLanguages.filter((lang) => !detectedLanguages.includes(lang));
 
   if (unusedLanguages.length > 0) {
     recommendations.push(`Consider removing unused patterns for: ${unusedLanguages.join(', ')}`);
@@ -400,19 +415,19 @@ export function createPatternFilter(config: {
 }) {
   return (patterns: AstPattern[], targetFiles: string[]) => {
     const options: Partial<PatternFilterRequest> = {};
-    
+
     if (config.maxComplexity !== undefined) {
       options.maxComplexity = config.maxComplexity;
     }
-    
+
     if (config.allowedRiskLevels !== undefined) {
       options.allowedRiskLevels = config.allowedRiskLevels;
     }
-    
+
     if (config.strictLanguageMatching !== undefined) {
       options.strictLanguageMatching = config.strictLanguageMatching;
     }
-    
+
     return filterPatternsByLanguageAndMode(patterns, targetFiles, config.mode, options);
   };
 }
@@ -438,21 +453,21 @@ export const PRESET_FILTERS = {
     allowedRiskLevels: ['low'],
     strictLanguageMatching: true,
   }),
-  
+
   MODERATE_AST: createPatternFilter({
     mode: 'ast',
     maxComplexity: 6,
     allowedRiskLevels: ['low', 'medium'],
     strictLanguageMatching: true,
   }),
-  
+
   ADVANCED_LLM: createPatternFilter({
     mode: 'llm',
     maxComplexity: 10,
     allowedRiskLevels: ['low', 'medium', 'high'],
     strictLanguageMatching: true,
   }),
-  
+
   PERMISSIVE: createPatternFilter({
     mode: 'template',
     maxComplexity: 10,

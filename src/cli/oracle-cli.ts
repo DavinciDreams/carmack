@@ -11,7 +11,7 @@ import { SemanticIndexer } from '../ingestion/semantic-indexer.js';
 // Database configuration
 const dbConfig = {
   host: process.env.POSTGRES_HOST || 'localhost',
-  port: parseInt(process.env.POSTGRES_PORT || '5432'),
+  port: Number.parseInt(process.env.POSTGRES_PORT || '5432'),
   database: process.env.POSTGRES_DB || 'tensorrt_oracle',
   user: process.env.POSTGRES_USER || 'postgres',
   password: process.env.POSTGRES_PASSWORD || 'your_secure_password',
@@ -26,23 +26,23 @@ class OracleCLI {
     this.processor = new OracleQueryProcessor(dbConfig);
     this.indexer = new SemanticIndexer({
       model: process.env.SEMANTIC_INDEXER_MODEL || 'default-model',
-      maxTokens: parseInt(process.env.SEMANTIC_INDEXER_MAX_TOKENS || '2048'),
-      batchSize: parseInt(process.env.SEMANTIC_INDEXER_BATCH_SIZE || '16'),
+      maxTokens: Number.parseInt(process.env.SEMANTIC_INDEXER_MAX_TOKENS || '2048'),
+      batchSize: Number.parseInt(process.env.SEMANTIC_INDEXER_BATCH_SIZE || '16'),
       apiKey: process.env.SEMANTIC_INDEXER_API_KEY,
     });
   }
 
   async initialize(): Promise<void> {
     console.log('🔮 Initializing TensorRT Oracle...');
-    
+
     try {
       await this.indexer.initialize();
       console.log('✅ Connected to PostgreSQL database');
-      
+
       // Check if we have any data
       const stats = await this.indexer.getRepositoryStats();
       console.log('📊 Database status:', stats);
-      
+
       await this.indexer.close();
       console.log('✅ Oracle ready for queries!\n');
     } catch (error) {
@@ -69,10 +69,9 @@ class OracleCLI {
       console.log(`  Processing time: ${totalTime}ms\n`);
 
       console.log('💬 Oracle Response:');
-      console.log('=' .repeat(80));
+      console.log('='.repeat(80));
       console.log(response);
-      console.log('=' .repeat(80));
-
+      console.log('='.repeat(80));
     } catch (error) {
       console.error('❌ Query failed:', error);
     }
@@ -163,7 +162,6 @@ TIPS:
         }
 
         await this.processQuery(query);
-
       } catch (error) {
         console.error('❌ Error:', error);
       }
@@ -174,7 +172,7 @@ TIPS:
 
   async showStats(): Promise<void> {
     console.log('\n📊 Oracle Database Statistics:');
-    
+
     try {
       await this.indexer.initialize();
       const statsRaw = await this.indexer.getRepositoryStats();
@@ -201,14 +199,14 @@ TIPS:
         console.log(`  • Languages: ${stats.total.languagesCount}`);
         console.log(`  • Domains: ${stats.total.domainsCount}`);
         console.log(`  • Files: ${stats.total.filesCount}`);
-        
+
         if (stats.byLanguage) {
           console.log('\nBy Language:');
           for (const [lang, count] of Object.entries(stats.byLanguage)) {
             console.log(`  • ${lang}: ${count} entities`);
           }
         }
-        
+
         if (stats.byDomain) {
           console.log('\nBy Domain:');
           for (const [domain, count] of Object.entries(stats.byDomain)) {
@@ -219,7 +217,7 @@ TIPS:
         console.log('  • No indexed data found');
         console.log('  • Run the indexer first to populate the database');
       }
-      
+
       await this.indexer.close();
     } catch (error) {
       console.error('❌ Failed to get stats:', error);

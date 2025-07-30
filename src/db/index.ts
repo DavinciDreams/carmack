@@ -11,18 +11,18 @@
 // =============================================================================
 
 export {
-  DatabaseConnectionManager,
-  DatabaseConnectionError,
-  DatabaseHealthCheckError,
-  getDatabaseManager,
-  initializeDatabase,
-  getClient,
-  query,
-  transaction,
-  healthCheck,
   closeDatabase,
   type DatabaseConfig,
+  DatabaseConnectionError,
+  DatabaseConnectionManager,
+  DatabaseHealthCheckError,
+  getClient,
+  getDatabaseManager,
   type HealthStatus,
+  healthCheck,
+  initializeDatabase,
+  query,
+  transaction,
 } from './connection.ts';
 
 // =============================================================================
@@ -30,81 +30,77 @@ export {
 // =============================================================================
 
 export {
-  // Core schemas
-  ArtifactSchema,
-  GraphEdgeSchema,
-  QuerySessionSchema,
-  IntermediateSchema,
-  CommitSchema,
-  PRSchema,
-  CSTNodeSchema,
-  ArtifactKeywordSchema,
-  ArtifactDomainSchema,
-  QueryLogSchema,
-  SystemConfigSchema,
-  SchemaMigrationSchema,
-  
-  // Input/Output schemas
-  CreateArtifactSchema,
-  UpdateArtifactSchema,
-  CreateGraphEdgeSchema,
-  SearchFiltersSchema,
-  SemanticSearchSchema,
-  GraphTraversalSchema,
-  BatchCreateArtifactsSchema,
-  BatchCreateEdgesSchema,
-  SearchResultSchema,
-  GraphTraversalResultSchema,
-  DatabaseOperationResultSchema,
-  
-  // Enum schemas
-  ArtifactTypeSchema,
-  PerformanceImpactSchema,
-  RelationTypeSchema,
-  EvidenceTypeSchema,
-  SessionStatusSchema,
-  StepTypeSchema,
-  StepStatusSchema,
-  PRStateSchema,
-  RiskAssessmentSchema,
-  VisibilitySchema,
-  KeywordCategorySchema,
-  ExtractionMethodSchema,
-  QueryTypeSchema,
-  QueryIntentSchema,
-  
   // Type exports
   type Artifact,
-  type GraphEdge,
-  type QuerySession,
-  type Intermediate,
-  type Commit,
-  type PR,
-  type CSTNode,
-  type ArtifactKeyword,
   type ArtifactDomain,
-  type QueryLog,
-  type SystemConfig,
-  type SchemaMigration,
-  type CreateArtifactInput,
-  type UpdateArtifactInput,
-  type CreateGraphEdgeInput,
-  type SearchFilters,
-  type SemanticSearchInput,
-  type GraphTraversalInput,
+  ArtifactDomainSchema,
+  type ArtifactKeyword,
+  ArtifactKeywordSchema,
+  // Core schemas
+  ArtifactSchema,
+  // Enum schemas
+  ArtifactTypeSchema,
   type BatchCreateArtifactsInput,
+  BatchCreateArtifactsSchema,
   type BatchCreateEdgesInput,
-  type SearchResult,
-  type GraphTraversalResult,
+  BatchCreateEdgesSchema,
+  type Commit,
+  CommitSchema,
+  type CreateArtifactInput,
+  // Input/Output schemas
+  CreateArtifactSchema,
+  type CreateGraphEdgeInput,
+  CreateGraphEdgeSchema,
+  type CSTNode,
+  CSTNodeSchema,
   type DatabaseOperationResult,
-  
+  DatabaseOperationResultSchema,
+  EvidenceTypeSchema,
+  ExtractionMethodSchema,
+  type GraphEdge,
+  GraphEdgeSchema,
+  type GraphTraversalInput,
+  type GraphTraversalResult,
+  GraphTraversalResultSchema,
+  GraphTraversalSchema,
+  type Intermediate,
+  IntermediateSchema,
+  KeywordCategorySchema,
+  PerformanceImpactSchema,
+  type PR,
+  PRSchema,
+  PRStateSchema,
+  QueryIntentSchema,
+  type QueryLog,
+  QueryLogSchema,
+  type QuerySession,
+  QuerySessionSchema,
+  QueryTypeSchema,
+  RelationTypeSchema,
+  RiskAssessmentSchema,
+  type SchemaMigration,
+  SchemaMigrationSchema,
+  type SearchFilters,
+  SearchFiltersSchema,
+  type SearchResult,
+  SearchResultSchema,
+  type SemanticSearchInput,
+  SemanticSearchSchema,
+  SessionStatusSchema,
+  StepStatusSchema,
+  StepTypeSchema,
+  type SystemConfig,
+  SystemConfigSchema,
+  safeParseSchema,
+  type UpdateArtifactInput,
+  UpdateArtifactSchema,
+  VisibilitySchema,
   // Validation functions
   validateArtifact,
   validateGraphEdge,
+  validateGraphTraversal,
   validateSearchFilters,
   validateSemanticSearch,
-  validateGraphTraversal,
-  safeParseSchema,
 } from './schema.ts';
 
 // =============================================================================
@@ -112,13 +108,13 @@ export {
 // =============================================================================
 
 export {
-  DatabaseOperations,
   ArtifactOperations,
-  GraphEdgeOperations,
-  QuerySessionOperations,
   DatabaseOperationError,
-  ValidationError,
+  DatabaseOperations,
+  GraphEdgeOperations,
   getDatabaseOperations,
+  QuerySessionOperations,
+  ValidationError,
 } from './operations.ts';
 
 // =============================================================================
@@ -126,18 +122,18 @@ export {
 // =============================================================================
 
 export {
-  MigrationManager,
-  MigrationError,
-  MigrationValidationError,
   getMigrationManager,
-  runMigrations,
-  rollbackMigrations,
   type MigrationConfig,
-  type MigrationFile,
-  type MigrationResult,
   MigrationConfigSchema,
+  MigrationError,
+  type MigrationFile,
   MigrationFileSchema,
+  MigrationManager,
+  type MigrationResult,
   MigrationResultSchema,
+  MigrationValidationError,
+  rollbackMigrations,
+  runMigrations,
 } from './migrations.ts';
 
 // =============================================================================
@@ -145,17 +141,17 @@ export {
 // =============================================================================
 
 export {
-  DatabaseSeeder,
-  TestDataGenerator,
-  getDatabaseSeeder,
-  seedDatabase,
   clearTestData,
   createTestFixture,
-  validateDatabaseIntegrity,
+  DatabaseSeeder,
+  getDatabaseSeeder,
   type SeedingConfig,
-  type SeedingResult,
   SeedingConfigSchema,
+  type SeedingResult,
   SeedingResultSchema,
+  seedDatabase,
+  TestDataGenerator,
+  validateDatabaseIntegrity,
 } from './seeding.ts';
 
 // =============================================================================
@@ -279,12 +275,12 @@ export async function getDatabaseSystemStatus(): Promise<{
     // Get data counts
     const { getDatabaseManager } = await import('./connection.ts');
     const db = getDatabaseManager();
-    
+
     const artifactCount = await db.query('SELECT COUNT(*) as count FROM artifacts');
-    status.totalArtifacts = parseInt(artifactCount.rows[0]?.count || '0');
+    status.totalArtifacts = Number.parseInt(artifactCount.rows[0]?.count || '0');
 
     const edgeCount = await db.query('SELECT COUNT(*) as count FROM graph_edges');
-    status.totalEdges = parseInt(edgeCount.rows[0]?.count || '0');
+    status.totalEdges = Number.parseInt(edgeCount.rows[0]?.count || '0');
 
     return status;
   } catch (error) {
@@ -319,7 +315,7 @@ export async function performHealthCheck(): Promise<{
     checks.push({
       name: 'Database Connection',
       status: health.isHealthy ? 'pass' : 'fail',
-      message: health.isHealthy ? 'Connection healthy' : (health.error || 'Connection failed'),
+      message: health.isHealthy ? 'Connection healthy' : health.error || 'Connection failed',
       details: { latency: health.latency, version: health.version },
     });
   } catch (error) {
@@ -338,7 +334,9 @@ export async function performHealthCheck(): Promise<{
     checks.push({
       name: 'Schema Validation',
       status: validation.isValid ? 'pass' : 'fail',
-      message: validation.isValid ? 'Schema is valid' : `Schema validation failed: ${validation.errors.join(', ')}`,
+      message: validation.isValid
+        ? 'Schema is valid'
+        : `Schema validation failed: ${validation.errors.join(', ')}`,
       details: { errors: validation.errors },
     });
   } catch (error) {
@@ -356,7 +354,9 @@ export async function performHealthCheck(): Promise<{
     checks.push({
       name: 'Data Integrity',
       status: integrity.isValid ? 'pass' : 'warn',
-      message: integrity.isValid ? 'Data integrity is good' : `Data integrity issues: ${integrity.errors.join(', ')}`,
+      message: integrity.isValid
+        ? 'Data integrity is good'
+        : `Data integrity issues: ${integrity.errors.join(', ')}`,
       details: { errors: integrity.errors },
     });
   } catch (error) {
@@ -368,8 +368,8 @@ export async function performHealthCheck(): Promise<{
   }
 
   // Determine overall status
-  const failCount = checks.filter(c => c.status === 'fail').length;
-  const warnCount = checks.filter(c => c.status === 'warn').length;
+  const failCount = checks.filter((c) => c.status === 'fail').length;
+  const warnCount = checks.filter((c) => c.status === 'warn').length;
 
   let overall: 'healthy' | 'warning' | 'critical';
   if (failCount > 0) {

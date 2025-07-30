@@ -1,32 +1,36 @@
 import { fromPromise } from 'xstate';
 import { z } from 'zod';
+
 // Zod schema for dbConfig
-const DbConfigSchema = z.object({
-  host: z.string(),
-  port: z.number().int().min(1),
-  database: z.string(),
-  user: z.string(),
-  password: z.string(),
-  schema: z.string(),
-}).strict();
+const DbConfigSchema = z
+  .object({
+    host: z.string(),
+    port: z.number().int().min(1),
+    database: z.string(),
+    user: z.string(),
+    password: z.string(),
+    schema: z.string(),
+  })
+  .strict();
 
 // Zod schema for actor input
-const OracleQueryProcessorInputSchema = z.object({
-  operation: z.enum(['process', 'generate_response']),
-  query: z.string().optional(),
-  oracleQuery: z.unknown().optional(),
-}).strict();
-
-import { SemanticIndexer } from '../ingestion/semantic-indexer.ts';
+const OracleQueryProcessorInputSchema = z
+  .object({
+    operation: z.enum(['process', 'generate_response']),
+    query: z.string().optional(),
+    oracleQuery: z.unknown().optional(),
+  })
+  .strict();
 
 import type {
-  OracleQuery,
   CodeEntity,
+  DomainType,
   KnowledgePattern,
   LanguageType,
-  DomainType,
+  OracleQuery,
 } from '../docs-generator/types.ts';
 import { validateOracleQuery } from '../docs-generator/types.ts';
+import { SemanticIndexer } from '../ingestion/semantic-indexer.ts';
 
 // Query intent classification
 const INTENT_PATTERNS = {
@@ -60,37 +64,10 @@ const INTENT_PATTERNS = {
     /improve/i,
     /bottleneck/i,
   ],
-  api_usage: [
-    /how.*use/i,
-    /api/i,
-    /interface/i,
-    /call/i,
-    /invoke/i,
-    /parameter/i,
-  ],
-  debugging_help: [
-    /debug/i,
-    /error/i,
-    /problem/i,
-    /issue/i,
-    /fix/i,
-    /troubleshoot/i,
-  ],
-  performance_analysis: [
-    /benchmark/i,
-    /timing/i,
-    /memory/i,
-    /gpu/i,
-    /cuda/i,
-    /throughput/i,
-  ],
-  general_question: [
-    /what.*is/i,
-    /explain/i,
-    /describe/i,
-    /tell.*about/i,
-    /overview/i,
-  ],
+  api_usage: [/how.*use/i, /api/i, /interface/i, /call/i, /invoke/i, /parameter/i],
+  debugging_help: [/debug/i, /error/i, /problem/i, /issue/i, /fix/i, /troubleshoot/i],
+  performance_analysis: [/benchmark/i, /timing/i, /memory/i, /gpu/i, /cuda/i, /throughput/i],
+  general_question: [/what.*is/i, /explain/i, /describe/i, /tell.*about/i, /overview/i],
 };
 
 // Domain-specific keywords for TensorRT
@@ -139,13 +116,13 @@ export class OracleQueryProcessor {
    */
   async processQuery(query: string): Promise<OracleQuery> {
     const startTime = Date.now();
-    
+
     try {
       await this.indexer.initialize();
 
       // Classify query intent
       const intent = this.classifyIntent(query);
-      
+
       // Extract language and domain hints
       const language = this.extractLanguageHint(query);
       const domain = this.extractDomainHint(query);
@@ -193,7 +170,6 @@ export class OracleQueryProcessor {
         responseTime,
         createdAt: new Date().toISOString(),
       });
-
     } finally {
       await this.indexer.close();
     }
@@ -210,30 +186,31 @@ export class OracleQueryProcessor {
       response += `**Query:** ${oracleQuery.query}\n\n`;
 
       if (oracleQuery.results.length === 0) {
-        response += "I couldn't find any relevant code entities for your query. Try rephrasing or using different keywords.\n\n";
+        response +=
+          "I couldn't find any relevant code entities for your query. Try rephrasing or using different keywords.\n\n";
         response += this.generateSuggestions();
         return response;
       }
 
       // Get detailed information about the top results
       const topResults = oracleQuery.results.slice(0, 5);
-      const entities = await this.getEntitiesByIds(topResults.map(r => r.entityId));
+      const entities = await this.getEntitiesByIds(topResults.map((r) => r.entityId));
 
       response += `Found ${oracleQuery.results.length} relevant results:\n\n`;
 
       for (let i = 0; i < topResults.length; i++) {
         const result = topResults[i];
         if (!result) continue;
-        
-        const entity = entities.find(e => e.id === result.entityId);
-        
+
+        const entity = entities.find((e) => e.id === result.entityId);
+
         if (entity) {
           response += `### ${i + 1}. ${entity.name} (${Math.round(result.relevanceScore * 100)}% match)\n\n`;
           response += `**Type:** ${entity.type} | **Language:** ${entity.language}`;
           if (entity.domain) {
             response += ` | **Domain:** ${entity.domain}`;
           }
-          response += `\n\n`;
+          response += '\n\n';
 
           if (entity.description) {
             response += `**Description:** ${entity.description}\n\n`;
@@ -260,9 +237,13 @@ export class OracleQueryProcessor {
       }
 
       // Add related patterns if available
-      const patterns = await this.findRelatedPatterns(oracleQuery.query, oracleQuery.language, oracleQuery.domain);
+      const patterns = await this.findRelatedPatterns(
+        oracleQuery.query,
+        oracleQuery.language,
+        oracleQuery.domain
+      );
       if (patterns.length > 0) {
-        response += `## Related Patterns\n\n`;
+        response += '## Related Patterns\n\n';
         for (const pattern of patterns.slice(0, 3)) {
           response += `### ${pattern.name}\n\n`;
           response += `${pattern.description}\n\n`;
@@ -275,7 +256,6 @@ export class OracleQueryProcessor {
       response += `\n*Query processed in ${oracleQuery.responseTime}ms*`;
 
       return response;
-
     } finally {
       await this.indexer.close();
     }
@@ -354,8 +334,8 @@ export class OracleQueryProcessor {
     if (domain) searchOptions.domains = [domain];
 
     const results = await this.indexer.searchSimilar(query, searchOptions);
-    
-    return results.map(result => ({
+
+    return results.map((result) => ({
       entityId: result.entity.id,
       relevanceScore: result.similarity,
       explanation: `Code entity matches your search criteria with ${Math.round(result.similarity * 100)}% similarity`,
@@ -371,7 +351,7 @@ export class OracleQueryProcessor {
     const patternOptions: any = { limit: 5 };
     if (language) patternOptions.languages = [language];
     if (domain) patternOptions.domains = [domain];
-    
+
     const patterns = await this.indexer.findPatterns(query, patternOptions);
 
     // Then find entities that exemplify these patterns
@@ -382,7 +362,7 @@ export class OracleQueryProcessor {
       const searchOptions: any = { limit: 3, threshold: 0.7 };
       if (language) searchOptions.languages = [language];
       if (domain) searchOptions.domains = [domain];
-      
+
       const patternResults = await this.indexer.searchSimilar(pattern.pattern, searchOptions);
 
       for (const result of patternResults) {
@@ -395,10 +375,12 @@ export class OracleQueryProcessor {
     }
 
     // Sort by relevance score and remove duplicates
-    const uniqueResults = new Map<string, typeof results[0]>();
+    const uniqueResults = new Map<string, (typeof results)[0]>();
     for (const result of results) {
-      if (!uniqueResults.has(result.entityId) || 
-          uniqueResults.get(result.entityId)!.relevanceScore < result.relevanceScore) {
+      if (
+        !uniqueResults.has(result.entityId) ||
+        uniqueResults.get(result.entityId)!.relevanceScore < result.relevanceScore
+      ) {
         uniqueResults.set(result.entityId, result);
       }
     }
@@ -424,11 +406,11 @@ export class OracleQueryProcessor {
     if (domain) searchOptions.domains = [domain];
 
     const results = await this.indexer.searchSimilar(query, searchOptions);
-    
-    return results.map(result => ({
+
+    return results.map((result) => ({
       entityId: result.entity.id,
       relevanceScore: result.similarity,
-      explanation: `Architectural component relevant to your question about system structure`,
+      explanation: 'Architectural component relevant to your question about system structure',
     }));
   }
 
@@ -439,7 +421,7 @@ export class OracleQueryProcessor {
   ): Promise<Array<{ entityId: string; relevanceScore: number; explanation?: string }>> {
     // Look for optimization-related entities
     const optimizationQuery = `${query} optimization performance efficient fast`;
-    
+
     const searchOptions: any = {
       limit: 10,
       threshold: 0.6,
@@ -449,11 +431,11 @@ export class OracleQueryProcessor {
     if (language) searchOptions.languages = [language];
 
     const results = await this.indexer.searchSimilar(optimizationQuery, searchOptions);
-    
-    return results.map(result => ({
+
+    return results.map((result) => ({
       entityId: result.entity.id,
       relevanceScore: result.similarity,
-      explanation: `Contains optimization techniques or performance-related code`,
+      explanation: 'Contains optimization techniques or performance-related code',
     }));
   }
 
@@ -473,11 +455,11 @@ export class OracleQueryProcessor {
     if (domain) searchOptions.domains = [domain];
 
     const results = await this.indexer.searchSimilar(query, searchOptions);
-    
-    return results.map(result => ({
+
+    return results.map((result) => ({
       entityId: result.entity.id,
       relevanceScore: result.similarity,
-      explanation: `API component that matches your usage question`,
+      explanation: 'API component that matches your usage question',
     }));
   }
 
@@ -488,7 +470,7 @@ export class OracleQueryProcessor {
   ): Promise<Array<{ entityId: string; relevanceScore: number; explanation?: string }>> {
     // Look for error handling, validation, and debugging-related code
     const debugQuery = `${query} error debug validate check assert`;
-    
+
     const searchOptions: any = {
       limit: 10,
       threshold: 0.5,
@@ -498,11 +480,11 @@ export class OracleQueryProcessor {
     if (domain) searchOptions.domains = [domain];
 
     const results = await this.indexer.searchSimilar(debugQuery, searchOptions);
-    
-    return results.map(result => ({
+
+    return results.map((result) => ({
       entityId: result.entity.id,
       relevanceScore: result.similarity,
-      explanation: `May contain debugging information or error handling relevant to your issue`,
+      explanation: 'May contain debugging information or error handling relevant to your issue',
     }));
   }
 
@@ -521,11 +503,11 @@ export class OracleQueryProcessor {
     if (language) searchOptions.languages = [language];
 
     const results = await this.indexer.searchSimilar(query, searchOptions);
-    
-    return results.map(result => ({
+
+    return results.map((result) => ({
       entityId: result.entity.id,
       relevanceScore: result.similarity,
-      explanation: `Performance-critical code relevant to your analysis`,
+      explanation: 'Performance-critical code relevant to your analysis',
     }));
   }
 
@@ -543,23 +525,23 @@ export class OracleQueryProcessor {
     if (domain) searchOptions.domains = [domain];
 
     const results = await this.indexer.searchSimilar(query, searchOptions);
-    
-    return results.map(result => ({
+
+    return results.map((result) => ({
       entityId: result.entity.id,
       relevanceScore: result.similarity,
-      explanation: `Relevant code entity found through semantic search`,
+      explanation: 'Relevant code entity found through semantic search',
     }));
   }
 
   private async getEntitiesByIds(entityIds: string[]): Promise<CodeEntity[]> {
-  if (entityIds.length === 0) return [];
+    if (entityIds.length === 0) return [];
 
-  const placeholders = entityIds.map((_, i) => `$${i + 1}`).join(',');
-  const sql = `SELECT * FROM artifacts WHERE id IN (${placeholders})`;
-  const dbClient = this.indexer['dbClient'];
-  if (!dbClient) return [];
-  const result = await dbClient.query(sql, entityIds);
-  return result.rows.map((row: any) => this.indexer['rowToArtifact'](row));
+    const placeholders = entityIds.map((_, i) => `$${i + 1}`).join(',');
+    const sql = `SELECT * FROM artifacts WHERE id IN (${placeholders})`;
+    const dbClient = this.indexer['dbClient'];
+    if (!dbClient) return [];
+    const result = await dbClient.query(sql, entityIds);
+    return result.rows.map((row: any) => this.indexer['rowToArtifact'](row));
   }
 
   private async findRelatedPatterns(
@@ -570,7 +552,7 @@ export class OracleQueryProcessor {
     const options: any = { limit: 3, minConfidence: 0.3 };
     if (language) options.languages = [language];
     if (domain) options.domains = [domain];
-    
+
     return await this.indexer.findPatterns(query, options);
   }
 
@@ -603,55 +585,54 @@ export class OracleQueryProcessor {
     return languageMap[language] || 'text';
   }
 
-    private generateSuggestions(): string {
-      let suggestions = "**Suggestions:**\n\n";
-      suggestions += "- Try using more specific technical terms\n";
-      suggestions += "- Include language keywords (e.g., Python, C++, Java, Go, Rust)\n";
-      suggestions += "- Mention specific components (API, function, class, module, config, test)\n";
-      suggestions += "- Use domain-specific terms (database, network, concurrency, performance, security)\n\n";
-      suggestions += "**Example queries:**\n";
-      suggestions += "- \"Find Python function for reading a CSV file\"\n";
-      suggestions += "- \"Show me C++ class for HTTP server implementation\"\n";
-      suggestions += "- \"How to optimize Go routine performance?\"\n";
-      suggestions += "- \"Java API usage for database connection\"\n";
-      suggestions += "- \"Rust trait for error handling patterns\"\n";
-      return suggestions;
-    }
+  private generateSuggestions(): string {
+    let suggestions = '**Suggestions:**\n\n';
+    suggestions += '- Try using more specific technical terms\n';
+    suggestions += '- Include language keywords (e.g., Python, C++, Java, Go, Rust)\n';
+    suggestions += '- Mention specific components (API, function, class, module, config, test)\n';
+    suggestions +=
+      '- Use domain-specific terms (database, network, concurrency, performance, security)\n\n';
+    suggestions += '**Example queries:**\n';
+    suggestions += '- "Find Python function for reading a CSV file"\n';
+    suggestions += '- "Show me C++ class for HTTP server implementation"\n';
+    suggestions += '- "How to optimize Go routine performance?"\n';
+    suggestions += '- "Java API usage for database connection"\n';
+    suggestions += '- "Rust trait for error handling patterns"\n';
+    return suggestions;
+  }
 }
 
 // Create and export the oracle query processor actor
-export const oracleQueryProcessorActor = fromPromise(
-  async ({ input }: { input: unknown }) => {
-    // Validate input with Zod
-    const validatedInput = OracleQueryProcessorInputSchema.parse(input);
+export const oracleQueryProcessorActor = fromPromise(async ({ input }: { input: unknown }) => {
+  // Validate input with Zod
+  const validatedInput = OracleQueryProcessorInputSchema.parse(input);
 
-    // Validate and coerce dbConfig
-    const dbConfig = DbConfigSchema.parse({
-      host: process.env.POSTGRES_HOST || 'localhost',
-      port: Number(process.env.POSTGRES_PORT || '5432'),
-      database: process.env.POSTGRES_DB || 'tensorrt_oracle',
-      user: process.env.POSTGRES_USER || 'postgres',
-      password: process.env.POSTGRES_PASSWORD || 'your_secure_password',
-      schema: process.env.POSTGRES_SCHEMA || 'tensorrt_oracle',
-    });
+  // Validate and coerce dbConfig
+  const dbConfig = DbConfigSchema.parse({
+    host: process.env.POSTGRES_HOST || 'localhost',
+    port: Number(process.env.POSTGRES_PORT || '5432'),
+    database: process.env.POSTGRES_DB || 'tensorrt_oracle',
+    user: process.env.POSTGRES_USER || 'postgres',
+    password: process.env.POSTGRES_PASSWORD || 'your_secure_password',
+    schema: process.env.POSTGRES_SCHEMA || 'tensorrt_oracle',
+  });
 
-    const processor = new OracleQueryProcessor(dbConfig);
+  const processor = new OracleQueryProcessor(dbConfig);
 
-    switch (validatedInput.operation) {
-      case 'process':
-        if (!validatedInput.query) {
-          throw new Error('Query is required for processing');
-        }
-        return await processor.processQuery(validatedInput.query);
-      
-      case 'generate_response':
-        if (!validatedInput.oracleQuery) {
-          throw new Error('Oracle query is required for response generation');
-        }
-        return await processor.generateResponse(validatedInput.oracleQuery as OracleQuery);
-      
-      default:
-        throw new Error(`Unknown operation: ${validatedInput.operation}`);
-    }
+  switch (validatedInput.operation) {
+    case 'process':
+      if (!validatedInput.query) {
+        throw new Error('Query is required for processing');
+      }
+      return await processor.processQuery(validatedInput.query);
+
+    case 'generate_response':
+      if (!validatedInput.oracleQuery) {
+        throw new Error('Oracle query is required for response generation');
+      }
+      return await processor.generateResponse(validatedInput.oracleQuery as OracleQuery);
+
+    default:
+      throw new Error(`Unknown operation: ${validatedInput.operation}`);
   }
-);
+});

@@ -9,7 +9,7 @@
 
 import { z } from 'zod';
 import { getEnvironmentConfig } from '../config/environment.ts';
-import { getDatabaseManager, initializeDatabase, healthCheck } from '../db/connection.ts';
+import { getDatabaseManager, healthCheck, initializeDatabase } from '../db/connection.ts';
 
 // =============================================================================
 // SETUP VALIDATION SCHEMAS
@@ -43,12 +43,12 @@ type InfrastructureStatus = z.infer<typeof InfrastructureStatusSchema>;
  */
 async function validateEnvironment(): Promise<SetupResult> {
   const startTime = Date.now();
-  
+
   try {
     console.log('🔍 Validating environment configuration...');
-    
+
     const env = getEnvironmentConfig();
-    
+
     // Check required environment variables
     const requiredVars = [
       'NODE_ENV',
@@ -57,12 +57,12 @@ async function validateEnvironment(): Promise<SetupResult> {
       'POSTGRES_USER',
       'POSTGRES_DATABASE',
     ];
-    
-    const missingVars = requiredVars.filter(varName => {
+
+    const missingVars = requiredVars.filter((varName) => {
       const value = (env as any)[varName];
       return value === undefined || value === null || value === '';
     });
-    
+
     if (missingVars.length > 0) {
       return {
         step: 'environment_validation',
@@ -71,12 +71,12 @@ async function validateEnvironment(): Promise<SetupResult> {
         duration_ms: Date.now() - startTime,
       };
     }
-    
+
     // Validate database configuration
     if (!env.POSTGRES_URL && !env.POSTGRES_PASSWORD) {
       console.warn('⚠️ No database password configured - using environment defaults');
     }
-    
+
     return {
       step: 'environment_validation',
       success: true,
@@ -105,16 +105,16 @@ async function validateEnvironment(): Promise<SetupResult> {
  */
 async function validateDatabase(): Promise<SetupResult> {
   const startTime = Date.now();
-  
+
   try {
     console.log('🗄️ Validating database connection...');
-    
+
     // Initialize database connection
     await initializeDatabase();
-    
+
     // Perform health check
     const health = await healthCheck();
-    
+
     if (!health.isHealthy) {
       return {
         step: 'database_validation',
@@ -124,13 +124,13 @@ async function validateDatabase(): Promise<SetupResult> {
         duration_ms: Date.now() - startTime,
       };
     }
-    
+
     // Test basic operations
     const dbManager = getDatabaseManager();
-    
+
     // Test basic query
     const versionResult = await dbManager.query('SELECT version() as version, NOW() as timestamp');
-    
+
     // Test pgvector functionality
     let pgvectorWorking = false;
     try {
@@ -139,7 +139,7 @@ async function validateDatabase(): Promise<SetupResult> {
     } catch (error) {
       console.warn('⚠️ pgvector extension not available:', error);
     }
-    
+
     // Test table existence
     const tablesResult = await dbManager.query(`
       SELECT table_name 
@@ -148,7 +148,7 @@ async function validateDatabase(): Promise<SetupResult> {
       AND table_type = 'BASE TABLE'
       ORDER BY table_name
     `);
-    
+
     const expectedTables = [
       'knowledge_nodes',
       'knowledge_relationships',
@@ -159,10 +159,10 @@ async function validateDatabase(): Promise<SetupResult> {
       'system_config',
       'schema_migrations',
     ];
-    
+
     const existingTables = tablesResult.rows.map((row: any) => row.table_name);
-    const missingTables = expectedTables.filter(table => !existingTables.includes(table));
-    
+    const missingTables = expectedTables.filter((table) => !existingTables.includes(table));
+
     if (missingTables.length > 0) {
       return {
         step: 'database_validation',
@@ -175,7 +175,7 @@ async function validateDatabase(): Promise<SetupResult> {
         duration_ms: Date.now() - startTime,
       };
     }
-    
+
     return {
       step: 'database_validation',
       success: true,
@@ -205,14 +205,14 @@ async function validateDatabase(): Promise<SetupResult> {
  */
 async function validateTypeScript(): Promise<SetupResult> {
   const startTime = Date.now();
-  
+
   try {
     console.log('📝 Validating TypeScript configuration...');
-    
+
     // Check if tsconfig.json exists and is valid
     const tsconfigPath = './tsconfig.json';
     const tsconfigFile = Bun.file(tsconfigPath);
-    
+
     if (!(await tsconfigFile.exists())) {
       return {
         step: 'typescript_validation',
@@ -221,9 +221,9 @@ async function validateTypeScript(): Promise<SetupResult> {
         duration_ms: Date.now() - startTime,
       };
     }
-    
+
     const tsconfigContent = await tsconfigFile.json();
-    
+
     // Validate key TypeScript settings
     const compilerOptions = tsconfigContent.compilerOptions || {};
     const requiredSettings = {
@@ -231,14 +231,14 @@ async function validateTypeScript(): Promise<SetupResult> {
       module: 'ESNext',
       strict: true,
     };
-    
+
     const issues: string[] = [];
     for (const [key, expectedValue] of Object.entries(requiredSettings)) {
       if (compilerOptions[key] !== expectedValue) {
         issues.push(`${key}: expected ${expectedValue}, got ${compilerOptions[key]}`);
       }
     }
-    
+
     if (issues.length > 0) {
       return {
         step: 'typescript_validation',
@@ -247,13 +247,16 @@ async function validateTypeScript(): Promise<SetupResult> {
         duration_ms: Date.now() - startTime,
       };
     }
-    
+
     // Test TypeScript compilation
     // Use UnifiedAnalyzer for type checking
-    const proc = Bun.spawn(['bun', 'run', 'src/scripts/pre-commit-typescript.ts', '--dry-run', '--max-risk=high'], {
-      stdout: 'pipe',
-      stderr: 'pipe',
-    });
+    const proc = Bun.spawn(
+      ['bun', 'run', 'src/scripts/pre-commit-typescript.ts', '--dry-run', '--max-risk=high'],
+      {
+        stdout: 'pipe',
+        stderr: 'pipe',
+      }
+    );
     const result = await proc.exited;
     const stdout = await new Response(proc.stdout).text();
     if (result !== 0 || stdout.includes('❌')) {
@@ -292,10 +295,10 @@ async function validateTypeScript(): Promise<SetupResult> {
  */
 async function validateDependencies(): Promise<SetupResult> {
   const startTime = Date.now();
-  
+
   try {
     console.log('📦 Validating dependencies...');
-    
+
     // Check package.json
     const packageFile = Bun.file('./package.json');
     if (!(await packageFile.exists())) {
@@ -306,21 +309,15 @@ async function validateDependencies(): Promise<SetupResult> {
         duration_ms: Date.now() - startTime,
       };
     }
-    
+
     const packageContent = await packageFile.json();
-    
+
     // Check required dependencies
-    const requiredDeps = [
-      'zod',
-      'pg',
-      'fastify',
-      '@octokit/rest',
-      '@trigger.dev/sdk',
-    ];
-    
+    const requiredDeps = ['zod', 'pg', 'fastify', '@octokit/rest', '@trigger.dev/sdk'];
+
     const dependencies = { ...packageContent.dependencies, ...packageContent.devDependencies };
-    const missingDeps = requiredDeps.filter(dep => !dependencies[dep]);
-    
+    const missingDeps = requiredDeps.filter((dep) => !dependencies[dep]);
+
     if (missingDeps.length > 0) {
       return {
         step: 'dependencies_validation',
@@ -329,7 +326,7 @@ async function validateDependencies(): Promise<SetupResult> {
         duration_ms: Date.now() - startTime,
       };
     }
-    
+
     // Test that key modules can be imported
     try {
       await import('zod');
@@ -343,7 +340,7 @@ async function validateDependencies(): Promise<SetupResult> {
         duration_ms: Date.now() - startTime,
       };
     }
-    
+
     return {
       step: 'dependencies_validation',
       success: true,
@@ -371,10 +368,10 @@ async function validateDependencies(): Promise<SetupResult> {
  */
 async function validateProjectStructure(): Promise<SetupResult> {
   const startTime = Date.now();
-  
+
   try {
     console.log('📁 Validating project structure...');
-    
+
     const requiredDirectories = [
       'src',
       'src/config',
@@ -385,7 +382,7 @@ async function validateProjectStructure(): Promise<SetupResult> {
       'src/agents',
       'sql',
     ];
-    
+
     const requiredFiles = [
       'src/config/environment.ts',
       'src/db/connection.ts',
@@ -395,10 +392,10 @@ async function validateProjectStructure(): Promise<SetupResult> {
       '.env.example',
       'docker-compose.yml',
     ];
-    
+
     const missingDirectories: string[] = [];
     const missingFiles: string[] = [];
-    
+
     // Check directories
     for (const dir of requiredDirectories) {
       try {
@@ -406,7 +403,7 @@ async function validateProjectStructure(): Promise<SetupResult> {
         if (!stat) {
           // Try alternative check
           try {
-            const files = await Array.fromAsync(new Bun.Glob('*').scan({ cwd: dir }));
+            const _files = await Array.fromAsync(new Bun.Glob('*').scan({ cwd: dir }));
             // Directory exists if we can scan it
           } catch {
             missingDirectories.push(dir);
@@ -416,7 +413,7 @@ async function validateProjectStructure(): Promise<SetupResult> {
         missingDirectories.push(dir);
       }
     }
-    
+
     // Check files
     for (const file of requiredFiles) {
       const fileHandle = Bun.file(file);
@@ -424,7 +421,7 @@ async function validateProjectStructure(): Promise<SetupResult> {
         missingFiles.push(file);
       }
     }
-    
+
     if (missingDirectories.length > 0 || missingFiles.length > 0) {
       return {
         step: 'project_structure_validation',
@@ -437,7 +434,7 @@ async function validateProjectStructure(): Promise<SetupResult> {
         duration_ms: Date.now() - startTime,
       };
     }
-    
+
     return {
       step: 'project_structure_validation',
       success: true,
@@ -467,11 +464,11 @@ async function validateProjectStructure(): Promise<SetupResult> {
  */
 async function setupInfrastructure(): Promise<InfrastructureStatus> {
   const startTime = Date.now();
-  
+
   console.log('🚀 Starting TensorRT-LLM Knowledge Graph Infrastructure Setup...\n');
-  
+
   const steps: SetupResult[] = [];
-  
+
   // Run validation steps
   const validationSteps = [
     validateEnvironment,
@@ -480,54 +477,54 @@ async function setupInfrastructure(): Promise<InfrastructureStatus> {
     validateTypeScript,
     validateDatabase,
   ];
-  
+
   for (const step of validationSteps) {
     const result = await step();
     steps.push(result);
-    
+
     if (result.success) {
       console.log(`✅ ${result.step}: ${result.message}`);
       if (result.details) {
-        console.log(`   Details:`, result.details);
+        console.log('   Details:', result.details);
       }
     } else {
       console.error(`❌ ${result.step}: ${result.message}`);
       if (result.details) {
-        console.error(`   Details:`, result.details);
+        console.error('   Details:', result.details);
       }
     }
     console.log(`   Duration: ${result.duration_ms}ms\n`);
   }
-  
+
   // Determine overall status
-  const failedSteps = steps.filter(step => !step.success);
-  const overallStatus = failedSteps.length === 0 ? 'healthy' : 
-                       failedSteps.length <= 2 ? 'degraded' : 'failed';
-  
+  const failedSteps = steps.filter((step) => !step.success);
+  const overallStatus =
+    failedSteps.length === 0 ? 'healthy' : failedSteps.length <= 2 ? 'degraded' : 'failed';
+
   const totalDuration = Date.now() - startTime;
-  
+
   const status: InfrastructureStatus = {
     overall_status: overallStatus,
     steps,
     total_duration_ms: totalDuration,
     timestamp: new Date(),
   };
-  
+
   // Print summary
   console.log('📊 Infrastructure Setup Summary:');
   console.log(`   Overall Status: ${overallStatus.toUpperCase()}`);
   console.log(`   Total Steps: ${steps.length}`);
-  console.log(`   Successful: ${steps.filter(s => s.success).length}`);
+  console.log(`   Successful: ${steps.filter((s) => s.success).length}`);
   console.log(`   Failed: ${failedSteps.length}`);
   console.log(`   Total Duration: ${totalDuration}ms`);
-  
+
   if (failedSteps.length > 0) {
     console.log('\n❌ Failed Steps:');
-    failedSteps.forEach(step => {
+    failedSteps.forEach((step) => {
       console.log(`   - ${step.step}: ${step.message}`);
     });
   }
-  
+
   if (overallStatus === 'healthy') {
     console.log('\n🎉 Infrastructure setup completed successfully!');
     console.log('   The TensorRT-LLM Knowledge Graph system is ready for use.');
@@ -535,7 +532,7 @@ async function setupInfrastructure(): Promise<InfrastructureStatus> {
     console.log('\n⚠️ Infrastructure setup completed with issues.');
     console.log('   Please address the failed steps before proceeding.');
   }
-  
+
   return status;
 }
 
@@ -546,7 +543,7 @@ async function setupInfrastructure(): Promise<InfrastructureStatus> {
 if (import.meta.main) {
   try {
     const status = await setupInfrastructure();
-    
+
     // Exit with appropriate code
     const exitCode = status.overall_status === 'failed' ? 1 : 0;
     process.exit(exitCode);

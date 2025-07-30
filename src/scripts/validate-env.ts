@@ -9,11 +9,7 @@
 
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import {
-  getEnvironmentConfig,
-  getLLMConfig,
-  validateLLMConfig,
-} from '../config/environment.js';
+import { getEnvironmentConfig, getLLMConfig, validateLLMConfig } from '../config/environment.js';
 
 interface ValidationResult {
   category: string;

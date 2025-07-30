@@ -1,14 +1,12 @@
 import { EpicTestingSystem } from '../index.js';
 
-
 /**
  * Complete EPIC-TESTING-METRICS System Validation Example
- * 
+ *
  * This example demonstrates how to use the complete testing system
  * to validate all performance targets and acceptance criteria for
  * the TensorRT-LLM knowledge graph platform.
  */
-
 
 /**
  * Main validation example
@@ -51,12 +49,12 @@ async function runCompleteValidationExample(): Promise<void> {
     console.log(`   Overall Score: ${validationResult.overallScore}/100`);
     console.log(`   Result: ${validationResult.passed ? 'PASSED ✅' : 'FAILED ❌'}`);
     console.log(`   Total Tests: ${validationResult.totalTests}`);
-    
+
     // 3. Validate specific performance targets
     console.log('3️⃣ Validating Specific Performance Targets...');
     const performanceTargets = await testingSystem.validatePerformanceTargets();
 
-  console.log('');
+    console.log('');
     console.log('');
 
     // 5. Start engagement tracking
@@ -64,18 +62,21 @@ async function runCompleteValidationExample(): Promise<void> {
     testingSystem.startEngagementTracking();
 
     // Simulate some user activity
-  await simulateUserActivity();
+    await simulateUserActivity();
 
     const engagementMetrics = testingSystem.getCurrentEngagementMetrics();
     console.log('👥 Current Engagement Metrics:');
     console.log(`   Active Sessions: ${engagementMetrics.activeSessions}`);
     console.log(`   Total Queries Today: ${engagementMetrics.totalQueriesToday}`);
-    console.log(`   Average Session Duration: ${Math.round(engagementMetrics.averageSessionDuration / 1000)}s`);
-    console.log(`   Voluntary Usage Rate: ${(engagementMetrics.voluntaryUsageRate * 100).toFixed(1)}%`);
+    console.log(
+      `   Average Session Duration: ${Math.round(engagementMetrics.averageSessionDuration / 1000)}s`
+    );
+    console.log(
+      `   Voluntary Usage Rate: ${(engagementMetrics.voluntaryUsageRate * 100).toFixed(1)}%`
+    );
     console.log('');
 
-
-const dashboard = testingSystem.generateDashboard();
+    const dashboard = testingSystem.generateDashboard();
     console.log('📊 Real-time Dashboard Data:');
     console.log(`   Active Users: ${dashboard.realTimeMetrics.activeUsers}`);
     console.log(`   Queries/Minute: ${dashboard.realTimeMetrics.queriesPerMinute}`);
@@ -90,22 +91,22 @@ const dashboard = testingSystem.generateDashboard();
 
     console.log('📄 Report Generated:');
     console.log(`   Report ID: ${report.reportId}`);
-    console.log(`   Generated Files: ${report.generatedFiles.map(f => f.path).join(', ')}`);
+    console.log(`   Generated Files: ${report.generatedFiles.map((f) => f.path).join(', ')}`);
     console.log(`   Generation Time: ${report.generationTime}ms`);
     if (report.errors.length > 0) {
       console.log(`   Errors: ${report.errors.join('; ')}`);
     }
     if (report.warnings.length > 0) {
       console.log(`   Warnings: ${report.warnings.join('; ')}`);
-        // 6. Generate real-time dashboard
-        const dashboard = testingSystem.generateDashboard();
-        console.log('📊 Real-time Dashboard Data:');
-        console.log(`   Active Users: ${dashboard.realTimeMetrics.activeUsers}`);
-        console.log(`   Queries/Minute: ${dashboard.realTimeMetrics.queriesPerMinute}`);
-        console.log(`   Average Response Time: ${dashboard.realTimeMetrics.averageResponseTime}ms`);
-        console.log(`   Success Rate: ${(dashboard.realTimeMetrics.successRate * 100).toFixed(1)}%`);
-        console.log(`   System Health: ${dashboard.realTimeMetrics.systemHealth.toUpperCase()}`);
-        console.log('');
+      // 6. Generate real-time dashboard
+      const dashboard = testingSystem.generateDashboard();
+      console.log('📊 Real-time Dashboard Data:');
+      console.log(`   Active Users: ${dashboard.realTimeMetrics.activeUsers}`);
+      console.log(`   Queries/Minute: ${dashboard.realTimeMetrics.queriesPerMinute}`);
+      console.log(`   Average Response Time: ${dashboard.realTimeMetrics.averageResponseTime}ms`);
+      console.log(`   Success Rate: ${(dashboard.realTimeMetrics.successRate * 100).toFixed(1)}%`);
+      console.log(`   System Health: ${dashboard.realTimeMetrics.systemHealth.toUpperCase()}`);
+      console.log('');
     }
     console.log('');
 
@@ -113,17 +114,31 @@ const dashboard = testingSystem.generateDashboard();
     console.log('8️⃣ Final Validation Summary');
     console.log('============================');
 
-    const allTargetsPassed = Object.values(performanceTargets).every((target: any) => target.passed);
+    const allTargetsPassed = Object.values(performanceTargets).every(
+      (target: any) => target.passed
+    );
     const overallSuccess = validationResult.passed && allTargetsPassed;
 
-    console.log(`🎯 EPIC-TESTING-METRICS Validation: ${overallSuccess ? 'PASSED ✅' : 'FAILED ❌'}`);
+    console.log(
+      `🎯 EPIC-TESTING-METRICS Validation: ${overallSuccess ? 'PASSED ✅' : 'FAILED ❌'}`
+    );
     console.log('');
     console.log('📋 Target Achievement Summary:');
-    console.log(`   ✓ Speed Improvement (75%): ${performanceTargets.speedImprovement.passed ? 'ACHIEVED' : 'NOT ACHIEVED'}`);
-    console.log(`   ✓ Response Time (<2000ms): ${performanceTargets.responseTime.passed ? 'ACHIEVED' : 'NOT ACHIEVED'}`);
-    console.log(`   ✓ Accuracy (85%): ${performanceTargets.accuracy.passed ? 'ACHIEVED' : 'NOT ACHIEVED'}`);
-    console.log(`   ✓ Concurrent Users (100+): ${performanceTargets.concurrentUsers.passed ? 'ACHIEVED' : 'NOT ACHIEVED'}`);
-    console.log(`   ✓ System Uptime (99.5%): ${performanceTargets.systemUptime.passed ? 'ACHIEVED' : 'NOT ACHIEVED'}`);
+    console.log(
+      `   ✓ Speed Improvement (75%): ${performanceTargets.speedImprovement.passed ? 'ACHIEVED' : 'NOT ACHIEVED'}`
+    );
+    console.log(
+      `   ✓ Response Time (<2000ms): ${performanceTargets.responseTime.passed ? 'ACHIEVED' : 'NOT ACHIEVED'}`
+    );
+    console.log(
+      `   ✓ Accuracy (85%): ${performanceTargets.accuracy.passed ? 'ACHIEVED' : 'NOT ACHIEVED'}`
+    );
+    console.log(
+      `   ✓ Concurrent Users (100+): ${performanceTargets.concurrentUsers.passed ? 'ACHIEVED' : 'NOT ACHIEVED'}`
+    );
+    console.log(
+      `   ✓ System Uptime (99.5%): ${performanceTargets.systemUptime.passed ? 'ACHIEVED' : 'NOT ACHIEVED'}`
+    );
     console.log('');
 
     if (overallSuccess) {
@@ -134,7 +149,6 @@ const dashboard = testingSystem.generateDashboard();
       console.log('⚠️  Some EPIC requirements need attention.');
       console.log('   Review the recommendations above for improvements.');
     }
-
   } catch (error) {
     console.error('❌ Validation example failed:', error);
     throw error;
@@ -151,7 +165,7 @@ const dashboard = testingSystem.generateDashboard();
  */
 async function simulateUserActivity(): Promise<void> {
   console.log('   Simulating user activity...');
-  await new Promise(resolve => setTimeout(resolve, 2000));
+  await new Promise((resolve) => setTimeout(resolve, 2000));
   console.log('   ✅ User activity simulation complete');
 }
 
@@ -181,15 +195,17 @@ async function runCIIntegrationExample(): Promise<void> {
     console.log(`   Commit: ${ciResult.commitHash}`);
     console.log(`   Branch: ${ciResult.branch}`);
     console.log(`   Overall Result: ${ciResult.overallResult.toUpperCase()}`);
-  console.log(`   Duration: ${Math.round(ciResult.testResults.duration / 1000)}s`);
-  console.log(`   Total Tests: ${ciResult.testResults.totalTests}`);
+    console.log(`   Duration: ${Math.round(ciResult.testResults.duration / 1000)}s`);
+    console.log(`   Total Tests: ${ciResult.testResults.totalTests}`);
     console.log(`   Quality Gate: ${ciResult.qualityGate.passed ? 'PASSED ✅' : 'FAILED ❌'}`);
     console.log('');
 
     const reqs = ciResult.qualityGate.requirements;
     console.log('📊 Quality Gate Requirements:');
     Object.entries(reqs).forEach(([name, val]) => {
-      console.log(`   ${name}: ${val.actual} (Target: ${val.target}) - ${val.passed ? 'PASSED' : 'FAILED'}`);
+      console.log(
+        `   ${name}: ${val.actual} (Target: ${val.target}) - ${val.passed ? 'PASSED' : 'FAILED'}`
+      );
     });
 
     // Exit with appropriate code for CI/CD
@@ -200,7 +216,6 @@ async function runCIIntegrationExample(): Promise<void> {
       console.log('✅ CI validation passed');
       process.exitCode = 0;
     }
-
   } catch (error) {
     console.error('❌ CI integration example failed:', error);
     process.exitCode = 1;
@@ -242,13 +257,21 @@ async function runPerformanceMonitoringExample(): Promise<void> {
     const dashboard = testingSystem.generateDashboard();
 
     console.log('📈 Performance Trends:');
-    console.log(`   Response Time Trend: ${dashboard.performanceMetrics.responseTime.trend.slice(-5).join(', ')}ms`);
-    console.log(`   Throughput Trend: ${dashboard.performanceMetrics.throughput.trend.slice(-5).join(', ')} req/s`);
-    console.log(`   Error Rate Trend: ${dashboard.performanceMetrics.errorRate.trend.slice(-5).map(r => (r * 100).toFixed(1)).join(', ')}%`);
+    console.log(
+      `   Response Time Trend: ${dashboard.performanceMetrics.responseTime.trend.slice(-5).join(', ')}ms`
+    );
+    console.log(
+      `   Throughput Trend: ${dashboard.performanceMetrics.throughput.trend.slice(-5).join(', ')} req/s`
+    );
+    console.log(
+      `   Error Rate Trend: ${dashboard.performanceMetrics.errorRate.trend
+        .slice(-5)
+        .map((r) => (r * 100).toFixed(1))
+        .join(', ')}%`
+    );
     console.log('');
 
     console.log('✅ Performance monitoring example complete');
-
   } catch (error) {
     console.error('❌ Performance monitoring example failed:', error);
   } finally {
@@ -295,14 +318,10 @@ Run examples:
 
 // Run if called directly
 if (import.meta.main) {
-  main().catch(error => {
+  main().catch((error) => {
     console.error('Example execution failed:', error);
     process.exit(1);
   });
 }
 
-export {
-  runCompleteValidationExample,
-  runCIIntegrationExample,
-  runPerformanceMonitoringExample,
-};
+export { runCompleteValidationExample, runCIIntegrationExample, runPerformanceMonitoringExample };

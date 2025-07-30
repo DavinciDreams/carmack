@@ -7,7 +7,6 @@ import { z } from 'zod';
  * following Carmack's principles of type safety and formal correctness.
  */
 
-
 // =============================================================================
 // CORE KNOWLEDGE GRAPH TYPES
 // =============================================================================
@@ -157,14 +156,18 @@ export type QueryType = z.infer<typeof QueryTypeSchema>;
 export const SearchQuerySchema = z.object({
   query: z.string(),
   type: QueryTypeSchema,
-  filters: z.object({
-    node_types: z.array(NodeTypeSchema).optional(),
-    file_patterns: z.array(z.string()).optional(),
-    date_range: z.object({
-      start: z.date(),
-      end: z.date(),
-    }).optional(),
-  }).optional(),
+  filters: z
+    .object({
+      node_types: z.array(NodeTypeSchema).optional(),
+      file_patterns: z.array(z.string()).optional(),
+      date_range: z
+        .object({
+          start: z.date(),
+          end: z.date(),
+        })
+        .optional(),
+    })
+    .optional(),
   limit: z.number().min(1).max(1000).default(50),
   offset: z.number().min(0).default(0),
   include_embeddings: z.boolean().default(false),
@@ -289,11 +292,13 @@ export type Pagination = z.infer<typeof PaginationSchema>;
 export const HealthCheckSchema = z.object({
   status: z.enum(['healthy', 'degraded', 'unhealthy']),
   timestamp: z.date().default(() => new Date()),
-  services: z.record(z.object({
-    status: z.enum(['up', 'down', 'degraded']),
-    latency_ms: z.number().optional(),
-    error: z.string().optional(),
-  })),
+  services: z.record(
+    z.object({
+      status: z.enum(['up', 'down', 'degraded']),
+      latency_ms: z.number().optional(),
+      error: z.string().optional(),
+    })
+  ),
   version: z.string(),
 });
 

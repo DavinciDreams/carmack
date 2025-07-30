@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import { task } from '@trigger.dev/sdk/v3';
+import { z } from 'zod';
 
 export const EmbeddingGenerationJobInputSchema = z.object({
   repositoryUrl: z.string().url(),
@@ -15,7 +15,9 @@ export const EmbeddingGenerationJobResultSchema = z.object({
 });
 export type EmbeddingGenerationJobResult = z.infer<typeof EmbeddingGenerationJobResultSchema>;
 
-export async function runEmbeddingGenerationJob(payload: EmbeddingGenerationJobInput): Promise<EmbeddingGenerationJobResult> {
+export async function runEmbeddingGenerationJob(
+  payload: EmbeddingGenerationJobInput
+): Promise<EmbeddingGenerationJobResult> {
   const input = EmbeddingGenerationJobInputSchema.parse(payload);
   try {
     const embedding = Array.from({ length: 128 }, () => Math.random());

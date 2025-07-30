@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { StatisticalAnalyzer } from './statistics.js';
-import type { EffectivenessMetrics, PatternFeatureVector, SimilarityResult } from './types.js';
 
 /**
  * Pattern Effectiveness Scoring System

@@ -26,5 +26,5 @@ const fileMap = {
   "semantic_annotation.baml": "// Data model for semantic annotation\r\nclass SemanticAnnotation {\r\n  summary string\r\n  purpose string\r\n  complexity string\r\n  domain string[]\r\n  keywords string[]\r\n  dependencies string[]\r\n  performance_impact string\r\n  maintainability float\r\n  testability float\r\n  technical_debt float\r\n}\r\n\r\n// Function to extract semantic annotation from code or text\r\nfunction ExtractSemanticAnnotation(content: string) -> SemanticAnnotation {\r\n  client \"openai/gpt-4o\"\r\n  prompt #\"\r\nAnalyze the following code or text and provide a semantic annotation as a JSON object with the following fields:\r\n- summary\r\n- purpose\r\n- complexity (low, medium, high)\r\n- domain (array of strings)\r\n- keywords (array)\r\n- dependencies (array)\r\n- performance_impact (critical, high, normal, low)\r\n- maintainability (0-1)\r\n- testability (0-1)\r\n- technical_debt (0-1)\r\n\r\nContent:\r\n{content}\r\n\"#\r\n}",
 }
 export const getBamlFiles = () => {
-    return fileMap;
-}
+  return fileMap;
+};

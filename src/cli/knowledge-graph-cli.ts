@@ -6,7 +6,7 @@
  * with progress tracking, configuration options, and comprehensive logging.
  */
 
-import { parseArgs } from 'util';
+import { parseArgs } from 'node:util';
 import { z } from 'zod';
 
 import { getEnvironmentConfig } from '../config/environment.ts';
@@ -98,14 +98,14 @@ class IngestionCLI {
       return;
     }
 
-  console.log('🚀 Starting Knowledge Graph Ingestion...');
-    
+    console.log('🚀 Starting Knowledge Graph Ingestion...');
+
     // Initialize database
     await initializeDatabase();
-    
+
     // Create orchestrator with progress tracking
     const orchestrator = createIngestionOrchestrator({
-  repositoryUrl: this.args.repositoryUrl || 'https://github.com/NVIDIA/TensorRT-LLM',
+      repositoryUrl: this.args.repositoryUrl || 'https://github.com/NVIDIA/TensorRT-LLM',
       localPath: this.args.localPath,
       branch: this.args.branch,
       maxCommits: this.args.maxCommits,
@@ -128,17 +128,19 @@ class IngestionCLI {
           console.log(`📊 ${progressText}`);
           lastProgress = progressText;
         }
-        
+
         if (progress.estimatedCompletion) {
           const eta = new Date(progress.estimatedCompletion).toLocaleTimeString();
           console.log(`⏱️  ETA: ${eta}`);
         }
       } else {
         // JSON output
-        console.log(JSON.stringify({
-          type: 'progress',
-          data: progress,
-        }));
+        console.log(
+          JSON.stringify({
+            type: 'progress',
+            data: progress,
+          })
+        );
       }
     });
 
@@ -149,10 +151,16 @@ class IngestionCLI {
 
     // Output results
     if (this.args.outputFormat === 'json') {
-      console.log(JSON.stringify({
-        type: 'result',
-        data: result,
-      }, null, 2));
+      console.log(
+        JSON.stringify(
+          {
+            type: 'result',
+            data: result,
+          },
+          null,
+          2
+        )
+      );
     } else {
       this.printIngestionResults(result, totalTime);
     }
@@ -166,10 +174,10 @@ class IngestionCLI {
    * Run tests
    */
   private async runTests(): Promise<void> {
-  console.log('🧪 Running Ingestion Pipeline Tests...');
-    
+    console.log('🧪 Running Ingestion Pipeline Tests...');
+
     const testConfig = {
-      testMode: this.args.verbose ? 'full' as const : 'integration' as const,
+      testMode: this.args.verbose ? ('full' as const) : ('integration' as const),
       verbose: this.args.verbose,
       enableCleanup: true,
     };
@@ -191,23 +199,26 @@ class IngestionCLI {
    * Show system status
    */
   private async showStatus(): Promise<void> {
-  console.log('📊 Knowledge Graph System Status');
+    console.log('📊 Knowledge Graph System Status');
     console.log('='.repeat(50));
 
     try {
       // Check database connection
       await initializeDatabase();
       console.log('✅ Database: Connected');
-      
+
       // Check environment variables
       const env = getEnvironmentConfig();
       console.log(`✅ Environment: ${env.NODE_ENV}`);
-      console.log(`${env.GITHUB_TOKEN ? '✅' : '⚠️'} GitHub Token: ${env.GITHUB_TOKEN ? 'Configured' : 'Missing'}`);
-      console.log(`${env.HF_TOKEN ? '✅' : '⚠️'} HuggingFace Token: ${env.HF_TOKEN ? 'Configured' : 'Missing'}`);
-      
+      console.log(
+        `${env.GITHUB_TOKEN ? '✅' : '⚠️'} GitHub Token: ${env.GITHUB_TOKEN ? 'Configured' : 'Missing'}`
+      );
+      console.log(
+        `${env.HF_TOKEN ? '✅' : '⚠️'} HuggingFace Token: ${env.HF_TOKEN ? 'Configured' : 'Missing'}`
+      );
+
       // Check workspace
       console.log(`📁 Workspace: ${this.args.localPath}`);
-      
     } catch (error) {
       console.error('❌ System check failed:', error);
       process.exit(1);
@@ -291,7 +302,7 @@ ENVIRONMENT VARIABLES:
    * Print CLI banner
    */
   private printBanner(): void {
-  console.log(`
+    console.log(`
 ╔══════════════════════════════════════════════════════════════╗
 ║                Universal Knowledge Graph                     ║
 ║                    Ingestion Pipeline                        ║
@@ -304,7 +315,9 @@ ENVIRONMENT VARIABLES:
    */
   private printConfiguration(): void {
     console.log('\n📋 Configuration:');
-  console.log(`   Repository: ${this.args.repositoryUrl || 'https://github.com/NVIDIA/TensorRT-LLM'}`);
+    console.log(
+      `   Repository: ${this.args.repositoryUrl || 'https://github.com/NVIDIA/TensorRT-LLM'}`
+    );
     console.log(`   Local Path: ${this.args.localPath}`);
     console.log(`   Branch: ${this.args.branch}`);
     console.log(`   Max Commits: ${this.args.maxCommits}`);
@@ -320,45 +333,45 @@ ENVIRONMENT VARIABLES:
    * Print ingestion results
    */
   private printIngestionResults(result: any, totalTime: number): void {
-    console.log('\n' + '='.repeat(60));
+    console.log(`\n${'='.repeat(60)}`);
     console.log('📊 Ingestion Results');
     console.log('='.repeat(60));
-    
+
     if (result.success) {
       console.log('✅ Status: SUCCESS');
     } else {
       console.log('❌ Status: FAILED');
     }
-    
+
     console.log(`⏱️  Total Time: ${totalTime}ms`);
     console.log(`📁 Repository: ${result.summary.repositoryPath}`);
     console.log(`🌿 Branch: ${result.summary.branch}`);
-    
+
     if (result.summary.lastCommit) {
       console.log(`📝 Last Commit: ${result.summary.lastCommit.substring(0, 8)}`);
     }
-    
+
     console.log('\n📈 Statistics:');
     console.log(`   Commits: ${result.summary.totalCommits}`);
     console.log(`   PRs: ${result.summary.totalPRs}`);
     console.log(`   Files: ${result.summary.totalFiles}`);
     console.log(`   Artifacts: ${result.summary.totalArtifacts}`);
     console.log(`   Relationships: ${result.summary.totalRelationships}`);
-    
+
     if (result.warnings.length > 0) {
       console.log('\n⚠️ Warnings:');
       result.warnings.forEach((warning: string) => {
         console.log(`   • ${warning}`);
       });
     }
-    
+
     if (result.errors.length > 0) {
       console.log('\n❌ Errors:');
       result.errors.forEach((error: string) => {
         console.log(`   • ${error}`);
       });
     }
-    
+
     console.log('='.repeat(60));
   }
 
@@ -367,16 +380,18 @@ ENVIRONMENT VARIABLES:
    */
   private handleError(error: unknown): void {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    
+
     if (this.args.outputFormat === 'json') {
-      console.error(JSON.stringify({
-        type: 'error',
-        message: errorMessage,
-        stack: error instanceof Error ? error.stack : undefined,
-      }));
+      console.error(
+        JSON.stringify({
+          type: 'error',
+          message: errorMessage,
+          stack: error instanceof Error ? error.stack : undefined,
+        })
+      );
     } else {
       console.error(`❌ Error: ${errorMessage}`);
-      
+
       if (this.args.verbose && error instanceof Error && error.stack) {
         console.error('\nStack trace:');
         console.error(error.stack);
@@ -398,7 +413,7 @@ function parseCommandLineArgs(): CLIArgs {
     options: {
       'repository-url': { type: 'string' },
       'local-path': { type: 'string', default: './workspace/tensorrt-llm' },
-      'branch': { type: 'string', default: 'main' },
+      branch: { type: 'string', default: 'main' },
       'max-commits': { type: 'string', default: '1000' },
       'max-prs': { type: 'string', default: '500' },
       'max-files': { type: 'string', default: '1000' },
@@ -406,13 +421,13 @@ function parseCommandLineArgs(): CLIArgs {
       'no-ast': { type: 'boolean', default: false },
       'no-embeddings': { type: 'boolean', default: false },
       'no-github-data': { type: 'boolean', default: false },
-      'parallel': { type: 'boolean', default: false },
+      parallel: { type: 'boolean', default: false },
       'max-concurrency': { type: 'string', default: '3' },
-      'verbose': { type: 'boolean', default: false },
+      verbose: { type: 'boolean', default: false },
       'dry-run': { type: 'boolean', default: false },
       'output-format': { type: 'string', default: 'text' },
       'log-level': { type: 'string', default: 'info' },
-      'help': { type: 'boolean', default: false },
+      help: { type: 'boolean', default: false },
     },
     allowPositionals: true,
   });
@@ -423,17 +438,17 @@ function parseCommandLineArgs(): CLIArgs {
     command,
     repositoryUrl: values['repository-url'],
     localPath: values['local-path'],
-    branch: values['branch'],
-    maxCommits: parseInt(values['max-commits'] || '1000'),
-    maxPRs: parseInt(values['max-prs'] || '500'),
-    maxFiles: parseInt(values['max-files'] || '1000'),
-    batchSize: parseInt(values['batch-size'] || '10'),
+    branch: values.branch,
+    maxCommits: Number.parseInt(values['max-commits'] || '1000'),
+    maxPRs: Number.parseInt(values['max-prs'] || '500'),
+    maxFiles: Number.parseInt(values['max-files'] || '1000'),
+    batchSize: Number.parseInt(values['batch-size'] || '10'),
     enableAST: !values['no-ast'],
     enableEmbeddings: !values['no-embeddings'],
     enableGitHubData: !values['no-github-data'],
-    parallelProcessing: values['parallel'],
-    maxConcurrency: parseInt(values['max-concurrency'] || '3'),
-    verbose: values['verbose'],
+    parallelProcessing: values.parallel,
+    maxConcurrency: Number.parseInt(values['max-concurrency'] || '3'),
+    verbose: values.verbose,
     dryRun: values['dry-run'],
     outputFormat: values['output-format'],
     logLevel: values['log-level'],

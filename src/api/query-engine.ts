@@ -1,20 +1,13 @@
-
 import { getDatabaseOperations } from '../db/operations.ts';
-
+import type { Artifact, SearchFilters, SearchResult, SemanticSearchInput } from '../db/schema.ts';
 import {
-  validateQueryRequest,
+  type EvidenceItem,
+  type QueryComplexity,
+  type QueryIntent,
   type QueryRequest,
   type QueryResponse,
-  type QueryIntent,
-  type QueryComplexity,
-  type EvidenceItem,
+  validateQueryRequest,
 } from './contracts.ts';
-import type {
-  Artifact,
-  SearchResult,
-  SearchFilters,
-  SemanticSearchInput,
-} from '../db/schema.ts';
 
 /**
  * Core Query Engine for TensorRT-LLM Knowledge Graph
@@ -23,8 +16,6 @@ import type {
  * vector similarity search, query optimization, and result ranking.
  * Follows Carmack's principles of performance optimization and correctness.
  */
-
-
 
 // =============================================================================
 // QUERY ENGINE ERRORS
@@ -100,15 +91,7 @@ const INTENT_PATTERNS = {
     /system\s+design/i,
     /structure/i,
   ],
-  debugging_assistance: [
-    /debug/i,
-    /error/i,
-    /bug/i,
-    /issue/i,
-    /problem/i,
-    /fix/i,
-    /troubleshoot/i,
-  ],
+  debugging_assistance: [/debug/i, /error/i, /bug/i, /issue/i, /problem/i, /fix/i, /troubleshoot/i],
   optimization_advice: [
     /optimize/i,
     /improve\s+performance/i,
@@ -154,21 +137,21 @@ export class EmbeddingService {
       // Mock embedding generation - 384 dimensions
       // In production, this would call an actual embedding model
       const embedding = new Array(384).fill(0).map(() => Math.random() * 2 - 1);
-      
+
       // Add some deterministic component based on text content
       const textHash = this.simpleHash(text);
       for (let i = 0; i < 384; i++) {
         embedding[i]! += Math.sin(textHash + i) * 0.1;
       }
-      
+
       // Normalize
       const magnitude = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0));
-      return embedding.map(val => val / magnitude);
+      return embedding.map((val) => val / magnitude);
     } catch (error) {
-      throw new EmbeddingError(
-        'Failed to generate embedding',
-        { text: text.substring(0, 100), error: error instanceof Error ? error.message : String(error) }
-      );
+      throw new EmbeddingError('Failed to generate embedding', {
+        text: text.substring(0, 100),
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -179,7 +162,7 @@ export class EmbeddingService {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return hash;
@@ -200,15 +183,18 @@ export class HybridSearchEngine {
   /**
    * Perform hybrid search combining keyword and semantic search
    */
-  async search(query: string, options: {
-    filters?: SearchFilters;
-    limit?: number;
-    semantic_weight?: number;
-    keyword_weight?: number;
-    threshold?: number;
-  } = {}): Promise<SearchResult[]> {
+  async search(
+    query: string,
+    options: {
+      filters?: SearchFilters;
+      limit?: number;
+      semantic_weight?: number;
+      keyword_weight?: number;
+      threshold?: number;
+    } = {}
+  ): Promise<SearchResult[]> {
     const startTime = Date.now();
-    
+
     try {
       const {
         filters = {},
@@ -244,21 +230,17 @@ export class HybridSearchEngine {
 
       // Apply final threshold and limit
       const filteredResults = combinedResults
-        .filter(result => result.score >= threshold)
+        .filter((result) => result.score >= threshold)
         .slice(0, limit);
 
       return filteredResults;
     } catch (error) {
-      throw new QueryEngineError(
-        'Hybrid search failed',
-        'HYBRID_SEARCH_ERROR',
-        {
-          query,
-          options,
-          error: error instanceof Error ? error.message : String(error),
-          executionTime: Date.now() - startTime,
-        }
-      );
+      throw new QueryEngineError('Hybrid search failed', 'HYBRID_SEARCH_ERROR', {
+        query,
+        options,
+        error: error instanceof Error ? error.message : String(error),
+        executionTime: Date.now() - startTime,
+      });
     }
   }
 
@@ -299,7 +281,7 @@ export class HybridSearchEngine {
     try {
       // Use PostgreSQL full-text search
       const { whereClause, values } = this.buildKeywordSearchQuery(options.filters || {});
-      
+
       const searchQuery = `
         SELECT 
           a.*,
@@ -317,13 +299,13 @@ export class HybridSearchEngine {
 
       const result = await this.db.query(searchQuery, [query, ...values, options.limit || 50]);
 
-      return result.rows.map(row => ({
+      return result.rows.map((row) => ({
         artifact: this.mapRowToArtifact(row),
-        score: parseFloat(row.keyword_score) || 0,
+        score: Number.parseFloat(row.keyword_score) || 0,
         match_type: 'keyword' as const,
-        explanation: `Keyword match score: ${(parseFloat(row.keyword_score) * 100).toFixed(1)}%`,
+        explanation: `Keyword match score: ${(Number.parseFloat(row.keyword_score) * 100).toFixed(1)}%`,
       }));
-    } catch (error) {
+    } catch (_error) {
       // Fallback to simple ILIKE search if full-text search fails
       return await this.performSimpleKeywordSearch(query, options);
     }
@@ -340,23 +322,33 @@ export class HybridSearchEngine {
     }
   ): Promise<SearchResult[]> {
     const { whereClause, values } = this.buildKeywordSearchQuery(options.filters || {});
-    const keywords = query.toLowerCase().split(/\s+/).filter(k => k.length > 2);
-    
+    const keywords = query
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((k) => k.length > 2);
+
     if (keywords.length === 0) {
       return [];
     }
 
-    const likeConditions = keywords.map((_, i) => 
-      `(LOWER(a.name) LIKE $${values.length + i + 2} OR LOWER(a.description) LIKE $${values.length + i + 2} OR LOWER(a.content) LIKE $${values.length + i + 2})`
-    ).join(' AND ');
+    const likeConditions = keywords
+      .map(
+        (_, i) =>
+          `(LOWER(a.name) LIKE $${values.length + i + 2} OR LOWER(a.description) LIKE $${values.length + i + 2} OR LOWER(a.content) LIKE $${values.length + i + 2})`
+      )
+      .join(' AND ');
 
     const searchQuery = `
       SELECT a.*, 
-        (${keywords.map((_, i) => `
+        (${keywords
+          .map(
+            (_, i) => `
           CASE WHEN LOWER(a.name) LIKE $${values.length + i + 2} THEN 3 ELSE 0 END +
           CASE WHEN LOWER(a.description) LIKE $${values.length + i + 2} THEN 2 ELSE 0 END +
           CASE WHEN LOWER(a.content) LIKE $${values.length + i + 2} THEN 1 ELSE 0 END
-        `).join(' + ')}) as keyword_score
+        `
+          )
+          .join(' + ')}) as keyword_score
       FROM artifacts a
       ${whereClause}
       ${whereClause ? 'AND' : 'WHERE'} (${likeConditions})
@@ -364,14 +356,18 @@ export class HybridSearchEngine {
       LIMIT $${values.length + keywords.length + 2}
     `;
 
-    const likeValues = keywords.map(k => `%${k}%`);
-    const result = await this.db.query(searchQuery, [...values, ...likeValues, options.limit || 50]);
+    const likeValues = keywords.map((k) => `%${k}%`);
+    const result = await this.db.query(searchQuery, [
+      ...values,
+      ...likeValues,
+      options.limit || 50,
+    ]);
 
-    return result.rows.map(row => ({
+    return result.rows.map((row) => ({
       artifact: this.mapRowToArtifact(row),
-      score: Math.min(parseFloat(row.keyword_score) / (keywords.length * 3), 1),
+      score: Math.min(Number.parseFloat(row.keyword_score) / (keywords.length * 3), 1),
       match_type: 'fuzzy' as const,
-      explanation: `Fuzzy keyword match`,
+      explanation: 'Fuzzy keyword match',
     }));
   }
 
@@ -436,9 +432,9 @@ export class HybridSearchEngine {
       const existing = resultMap.get(result.artifact.id);
       if (existing) {
         // Combine scores
-        existing.score = existing.score + (result.score * keywordWeight);
+        existing.score = existing.score + result.score * keywordWeight;
         existing.match_type = 'hybrid' as any;
-        existing.explanation = `Hybrid match: semantic + keyword`;
+        existing.explanation = 'Hybrid match: semantic + keyword';
       } else {
         resultMap.set(result.artifact.id, {
           ...result,
@@ -448,8 +444,7 @@ export class HybridSearchEngine {
     }
 
     // Sort by combined score
-    return Array.from(resultMap.values())
-      .sort((a, b) => b.score - a.score);
+    return Array.from(resultMap.values()).sort((a, b) => b.score - a.score);
   }
 
   /**
@@ -481,40 +476,46 @@ export class QueryEngine {
   /**
    * Process a query request and return intelligent results
    */
-  async processQuery(request: QueryRequest): Promise<Omit<QueryResponse, 'query_id' | 'session_id'>> {
+  async processQuery(
+    request: QueryRequest
+  ): Promise<Omit<QueryResponse, 'query_id' | 'session_id'>> {
     const startTime = Date.now();
-    
+
     try {
       const validatedRequest = validateQueryRequest(request);
-      
+
       // Classify query intent and complexity
       const intent = this.classifyIntent(validatedRequest.query);
       const complexity = this.assessComplexity(validatedRequest.query);
-      
-// Perform hybrid search
-const searchOptions: Parameters<typeof this.hybridSearch.search>[1] = {
-  filters: this.buildSearchFilters(validatedRequest.context),
-  semantic_weight: this.getSemanticWeight(intent),
-  keyword_weight: this.getKeywordWeight(intent),
-  threshold: this.getThreshold(complexity),
-};
-if (validatedRequest.options?.max_results !== undefined) {
-  searchOptions.limit = validatedRequest.options.max_results;
-}
-const searchResults = await this.hybridSearch.search(validatedRequest.query, searchOptions);
 
-// Convert search results to evidence items
-const evidenceChain = this.buildEvidenceChain(
-  searchResults,
-  validatedRequest.options?.include_code_snippets
-);
+      // Perform hybrid search
+      const searchOptions: Parameters<typeof this.hybridSearch.search>[1] = {
+        filters: this.buildSearchFilters(validatedRequest.context),
+        semantic_weight: this.getSemanticWeight(intent),
+        keyword_weight: this.getKeywordWeight(intent),
+        threshold: this.getThreshold(complexity),
+      };
+      if (validatedRequest.options?.max_results !== undefined) {
+        searchOptions.limit = validatedRequest.options.max_results;
+      }
+      const searchResults = await this.hybridSearch.search(validatedRequest.query, searchOptions);
 
-// Generate primary answer
-const primaryAnswer = this.generatePrimaryAnswer(validatedRequest.query, intent, evidenceChain);
+      // Convert search results to evidence items
+      const evidenceChain = this.buildEvidenceChain(
+        searchResults,
+        validatedRequest.options?.include_code_snippets
+      );
 
-// Calculate confidence score
-const confidenceScore = this.calculateConfidenceScore(evidenceChain, searchResults.length);
-      
+      // Generate primary answer
+      const primaryAnswer = this.generatePrimaryAnswer(
+        validatedRequest.query,
+        intent,
+        evidenceChain
+      );
+
+      // Calculate confidence score
+      const confidenceScore = this.calculateConfidenceScore(evidenceChain, searchResults.length);
+
       // Generate investigation threads and suggestions
       const investigationThreads = this.generateInvestigationThreads(intent, evidenceChain);
       const suggestedQuestions = this.generateSuggestedQuestions(intent, evidenceChain);
@@ -536,15 +537,11 @@ const confidenceScore = this.calculateConfidenceScore(evidenceChain, searchResul
         created_at: new Date(),
       };
     } catch (error) {
-      throw new QueryEngineError(
-        'Query processing failed',
-        'QUERY_PROCESSING_ERROR',
-        {
-          request,
-          error: error instanceof Error ? error.message : String(error),
-          executionTime: Date.now() - startTime,
-        }
-      );
+      throw new QueryEngineError('Query processing failed', 'QUERY_PROCESSING_ERROR', {
+        request,
+        error: error instanceof Error ? error.message : String(error),
+        executionTime: Date.now() - startTime,
+      });
     }
   }
 
@@ -570,18 +567,21 @@ const confidenceScore = this.calculateConfidenceScore(evidenceChain, searchResul
    */
   private assessComplexity(query: string): QueryComplexity {
     const words = query.split(/\s+/).length;
-    const hasSpecificTerms = /\b(implementation|architecture|optimization|performance)\b/i.test(query);
+    const hasSpecificTerms = /\b(implementation|architecture|optimization|performance)\b/i.test(
+      query
+    );
     const hasMultipleConcepts = (query.match(/\band\b|\bor\b|\bbut\b/gi) || []).length > 0;
 
     if (words > 20 || (hasSpecificTerms && hasMultipleConcepts)) {
       return 'expert';
-    } else if (words > 10 || hasSpecificTerms) {
-      return 'complex';
-    } else if (words > 5) {
-      return 'moderate';
-    } else {
-      return 'simple';
     }
+    if (words > 10 || hasSpecificTerms) {
+      return 'complex';
+    }
+    if (words > 5) {
+      return 'moderate';
+    }
+    return 'simple';
   }
 
   /**
@@ -645,36 +645,44 @@ const confidenceScore = this.calculateConfidenceScore(evidenceChain, searchResul
     searchResults: SearchResult[],
     includeCodeSnippets?: boolean
   ): EvidenceItem[] {
-    return searchResults.slice(0, 10).map(result => ({
+    return searchResults.slice(0, 10).map((result) => ({
       artifact_id: result.artifact.id,
       artifact_name: result.artifact.name,
       artifact_type: result.artifact.type,
       relevance_score: result.score,
       explanation: result.explanation || `${result.match_type} match`,
       file_path: result.artifact.file_path,
-      line_range: result.artifact.line_start && result.artifact.line_end ? {
-        start: result.artifact.line_start,
-        end: result.artifact.line_end,
-      } : undefined,
-      content_snippet: includeCodeSnippets ? 
-        (result.artifact.content?.substring(0, 500) || result.artifact.description?.substring(0, 200)) : 
-        undefined,
+      line_range:
+        result.artifact.line_start && result.artifact.line_end
+          ? {
+              start: result.artifact.line_start,
+              end: result.artifact.line_end,
+            }
+          : undefined,
+      content_snippet: includeCodeSnippets
+        ? result.artifact.content?.substring(0, 500) ||
+          result.artifact.description?.substring(0, 200)
+        : undefined,
     }));
   }
 
   /**
    * Generate primary answer based on evidence
    */
-  private generatePrimaryAnswer(query: string, intent: QueryIntent, evidence: EvidenceItem[]): string {
+  private generatePrimaryAnswer(
+    query: string,
+    intent: QueryIntent,
+    evidence: EvidenceItem[]
+  ): string {
     if (evidence.length === 0) {
       return `I couldn't find specific information about "${query}". Try rephrasing your question or using different keywords.`;
     }
 
     const topEvidence = evidence.slice(0, 3);
     const intentPrefix = this.getIntentPrefix(intent);
-    
+
     let answer = `${intentPrefix} Based on the analysis of ${evidence.length} relevant artifacts:\n\n`;
-    
+
     topEvidence.forEach((item, index) => {
       answer += `${index + 1}. **${item.artifact_name}** (${item.artifact_type})\n`;
       answer += `   - Relevance: ${(item.relevance_score * 100).toFixed(1)}%\n`;
@@ -696,16 +704,16 @@ const confidenceScore = this.calculateConfidenceScore(evidenceChain, searchResul
    */
   private getIntentPrefix(intent: QueryIntent): string {
     const prefixes = {
-      technical_question: 'Here\'s what I found about your technical question:',
-      historical_analysis: 'Here\'s the historical analysis:',
-      performance_investigation: 'Here\'s the performance analysis:',
-      code_understanding: 'Here\'s the code analysis:',
-      architecture_exploration: 'Here\'s the architectural information:',
-      debugging_assistance: 'Here\'s what might help with debugging:',
-      optimization_advice: 'Here\'s optimization guidance:',
+      technical_question: "Here's what I found about your technical question:",
+      historical_analysis: "Here's the historical analysis:",
+      performance_investigation: "Here's the performance analysis:",
+      code_understanding: "Here's the code analysis:",
+      architecture_exploration: "Here's the architectural information:",
+      debugging_assistance: "Here's what might help with debugging:",
+      optimization_advice: "Here's optimization guidance:",
       pattern_discovery: 'Here are the patterns I found:',
     };
-    return prefixes[intent] || 'Here\'s what I found:';
+    return prefixes[intent] || "Here's what I found:";
   }
 
   /**
@@ -714,7 +722,8 @@ const confidenceScore = this.calculateConfidenceScore(evidenceChain, searchResul
   private calculateConfidenceScore(evidence: EvidenceItem[], totalResults: number): number {
     if (evidence.length === 0) return 0;
 
-    const avgRelevance = evidence.reduce((sum, item) => sum + item.relevance_score, 0) / evidence.length;
+    const avgRelevance =
+      evidence.reduce((sum, item) => sum + item.relevance_score, 0) / evidence.length;
     const coverageBonus = Math.min(evidence.length / 5, 1) * 0.2;
     const resultsBonus = Math.min(totalResults / 10, 1) * 0.1;
 
@@ -759,7 +768,7 @@ const confidenceScore = this.calculateConfidenceScore(evidenceChain, searchResul
 
     if (evidence.length > 0) {
       const topArtifact = evidence[0];
-      
+
       if (topArtifact) {
         switch (intent) {
           case 'technical_question':
@@ -799,11 +808,14 @@ const confidenceScore = this.calculateConfidenceScore(evidenceChain, searchResul
   /**
    * Build session context for multi-turn conversations
    */
-  private buildSessionContext(request: QueryRequest, results: SearchResult[]): Record<string, unknown> {
+  private buildSessionContext(
+    request: QueryRequest,
+    results: SearchResult[]
+  ): Record<string, unknown> {
     return {
       last_query: request.query,
       last_intent: this.classifyIntent(request.query),
-      relevant_artifacts: results.slice(0, 5).map(r => r.artifact.id),
+      relevant_artifacts: results.slice(0, 5).map((r) => r.artifact.id),
       context_hints: request.context,
       search_options: request.options,
     };

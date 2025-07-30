@@ -285,11 +285,13 @@ async function analyzeCodeFiles(
   }
   return patterns;
 }
+
 /**
  * Extract patterns from code content using AST analysis
  */
 // Language-agnostic pattern extraction using AST-grep
 import { parse as astGrepParse } from '@ast-grep/napi';
+
 // Use the type returned by astGrepParse for AST root node
 type AstGrepRoot = ReturnType<typeof astGrepParse>;
 
@@ -320,7 +322,31 @@ async function extractPatternsFromCode(
 function inferLanguageFromFile(filePath: string, fallback: string): string {
   const ext = filePath.split('.').pop()?.toLowerCase();
   const extMap: Record<string, string> = {
-    ts: 'typescript', js: 'javascript', py: 'python', cpp: 'cpp', c: 'c', java: 'java', go: 'go', rs: 'rust', rb: 'ruby', php: 'php', cs: 'csharp', kt: 'kotlin', swift: 'swift', scala: 'scala', hs: 'haskell', ex: 'elixir', sh: 'shell', json: 'json', yaml: 'yaml', yml: 'yaml', toml: 'toml', lua: 'lua', pl: 'perl', r: 'r', dart: 'dart',
+    ts: 'typescript',
+    js: 'javascript',
+    py: 'python',
+    cpp: 'cpp',
+    c: 'c',
+    java: 'java',
+    go: 'go',
+    rs: 'rust',
+    rb: 'ruby',
+    php: 'php',
+    cs: 'csharp',
+    kt: 'kotlin',
+    swift: 'swift',
+    scala: 'scala',
+    hs: 'haskell',
+    ex: 'elixir',
+    sh: 'shell',
+    json: 'json',
+    yaml: 'yaml',
+    yml: 'yaml',
+    toml: 'toml',
+    lua: 'lua',
+    pl: 'perl',
+    r: 'r',
+    dart: 'dart',
   };
   return extMap[ext ?? ''] || fallback;
 }
@@ -334,7 +360,7 @@ type PatternDetector = (
   language: string
 ) => Promise<DiscoveredPattern[]>;
 
-function getPatternDetectorsForLanguage(language: string): PatternDetector[] {
+function getPatternDetectorsForLanguage(_language: string): PatternDetector[] {
   // For now, use generic detectors for all languages; can be extended per language
   return [
     genericVarDeclarationPattern,
@@ -345,10 +371,16 @@ function getPatternDetectorsForLanguage(language: string): PatternDetector[] {
 }
 
 // Example: Language-agnostic variable declaration detector
-const genericVarDeclarationPattern: PatternDetector = async (ast, _content, source, config, language) => {
+const genericVarDeclarationPattern: PatternDetector = async (
+  ast,
+  _content,
+  source,
+  config,
+  language
+) => {
   const patterns: DiscoveredPattern[] = [];
   // AST-grep query for variable declarations (language-agnostic)
-  const varNodes = ast.root().findAll("variable_declaration");
+  const varNodes = ast.root().findAll('variable_declaration');
   if (varNodes.length >= config.minOccurrences) {
     patterns.push({
       id: `var-decl-${language}-${Date.now()}`,
@@ -397,7 +429,7 @@ const genericVarDeclarationPattern: PatternDetector = async (ast, _content, sour
 // Example: Language-agnostic function pattern detector
 const genericFunctionPattern: PatternDetector = async (ast, _content, source, config, language) => {
   const patterns: DiscoveredPattern[] = [];
-  const funcNodes = ast.root().findAll("function_declaration");
+  const funcNodes = ast.root().findAll('function_declaration');
   if (funcNodes.length >= config.minOccurrences) {
     patterns.push({
       id: `func-decl-${language}-${Date.now()}`,
@@ -446,7 +478,7 @@ const genericFunctionPattern: PatternDetector = async (ast, _content, source, co
 // Example: Language-agnostic import pattern detector
 const genericImportPattern: PatternDetector = async (ast, _content, source, config, language) => {
   const patterns: DiscoveredPattern[] = [];
-  const importNodes = ast.root().findAll("import_declaration");
+  const importNodes = ast.root().findAll('import_declaration');
   if (importNodes.length >= config.minOccurrences) {
     patterns.push({
       id: `import-decl-${language}-${Date.now()}`,
@@ -494,7 +526,7 @@ const genericImportPattern: PatternDetector = async (ast, _content, source, conf
 /**
  * Detect variable declaration patterns (var → const/let)
  */
-function detectVarDeclarationPatterns(
+function _detectVarDeclarationPatterns(
   _sourceFile: unknown,
   content: string,
   source: string,
@@ -568,7 +600,7 @@ function convertFunctionToArrow(functionStr: string): string {
 /**
  * Detect function patterns (function → arrow function)
  */
-function detectFunctionPatterns(
+function _detectFunctionPatterns(
   _sourceFile: unknown,
   content: string,
   source: string,
@@ -634,7 +666,7 @@ function detectFunctionPatterns(
 /**
  * Detect object patterns (property shorthand, destructuring)
  */
-function detectObjectPatterns(
+function _detectObjectPatterns(
   _sourceFile: unknown,
   content: string,
   source: string,
@@ -692,7 +724,7 @@ function detectObjectPatterns(
 /**
  * Detect array patterns (indexOf → includes)
  */
-function detectArrayPatterns(
+function _detectArrayPatterns(
   _sourceFile: unknown,
   content: string,
   source: string,
@@ -750,7 +782,7 @@ function detectArrayPatterns(
 /**
  * Detect Promise patterns (then/catch → async/await)
  */
-function detectPromisePatterns(
+function _detectPromisePatterns(
   _sourceFile: unknown,
   content: string,
   source: string,
@@ -808,7 +840,7 @@ function detectPromisePatterns(
 /**
  * Detect import patterns
  */
-function detectImportPatterns(
+function _detectImportPatterns(
   _sourceFile: unknown,
   content: string,
   source: string,
@@ -869,7 +901,7 @@ function detectImportPatterns(
 /**
  * Detect class patterns
  */
-function detectClassPatterns(
+function _detectClassPatterns(
   _sourceFile: unknown,
   content: string,
   source: string,

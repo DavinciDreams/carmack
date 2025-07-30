@@ -6,7 +6,6 @@
 // Core telemetry system
 export { getTelemetryCollector, initializeTelemetry, TelemetryCollector } from './collector.js';
 
-
 // Integration helpers
 export {
   CacheMonitor,

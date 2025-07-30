@@ -1,5 +1,5 @@
 import { fromPromise } from 'xstate';
-import type { CodeEntity, EntityType, DomainType } from './types.ts';
+import type { CodeEntity, DomainType, EntityType } from './types.ts';
 
 // Extend LanguageType to include all supported languages
 export type LanguageType =
@@ -16,13 +16,13 @@ export type LanguageType =
   | 'yaml'
   | 'markdown'
   | 'unknown';
-import {
-  validateCodeEntity,
-  LanguageTypeSchema,
-  EntityTypeSchema,
-  DomainTypeSchema,
-} from './types.ts';
 
+import {
+  DomainTypeSchema,
+  EntityTypeSchema,
+  LanguageTypeSchema,
+  validateCodeEntity,
+} from './types.ts';
 
 // Extensible multi-language AST-grep patterns for general codebase analysis
 const LANGUAGE_PATTERNS_MAP: Record<LanguageType, Record<string, string>> = {
@@ -80,7 +80,16 @@ const LANGUAGE_PATTERNS_MAP: Record<LanguageType, Record<string, string>> = {
 // Language detection patterns
 const LANGUAGE_PATTERNS: Record<LanguageType, RegExp[]> = {
   cuda: [/\.cu$/, /\.cuh$/, /__global__/, /__device__/, /__host__/, /threadIdx/, /blockIdx/],
-  cpp: [/\.cpp$/, /\.cxx$/, /\.cc$/, /\.hpp$/, /\.h$/, /template\s*</, /namespace\s+\w+/, /class\s+\w+/],
+  cpp: [
+    /\.cpp$/,
+    /\.cxx$/,
+    /\.cc$/,
+    /\.hpp$/,
+    /\.h$/,
+    /template\s*</,
+    /namespace\s+\w+/,
+    /class\s+\w+/,
+  ],
   c: [/\.c$/, /\.h$/, /^#include/, /struct\s+\w+/, /typedef\s+/],
   python: [/\.py$/, /\.pyx$/, /def\s+\w+/, /class\s+\w+/, /import\s+\w+/, /from\s+\w+\s+import/],
   typescript: [/\.ts$/, /\.tsx$/, /interface\s+\w+/, /type\s+\w+/, /export\s+/],
@@ -94,13 +103,26 @@ const LANGUAGE_PATTERNS: Record<LanguageType, RegExp[]> = {
   unknown: [],
 };
 
-
 // General domain classification keywords (can be extended per project)
 const DOMAIN_KEYWORDS: Record<DomainType, string[]> = {
   core: ['core', 'main', 'entry', 'init', 'start'],
   data: [
-    'input', 'output', 'read', 'write', 'file', 'stream', 'print', 'log',
-    'db', 'database', 'query', 'sql', 'mongo', 'postgres', 'table', 'row'
+    'input',
+    'output',
+    'read',
+    'write',
+    'file',
+    'stream',
+    'print',
+    'log',
+    'db',
+    'database',
+    'query',
+    'sql',
+    'mongo',
+    'postgres',
+    'table',
+    'row',
   ],
   network: ['http', 'request', 'response', 'socket', 'server', 'client', 'api'],
   testing: ['test', 'assert', 'expect', 'mock', 'suite', 'case'],
@@ -139,7 +161,7 @@ export class MultiLanguageAnalyzer {
     try {
       // Import AST-grep language parsers
       const astGrep = await import('@ast-grep/napi');
-      
+
       this.astGrepInstances.set('javascript', astGrep.js);
       this.astGrepInstances.set('typescript', astGrep.js);
       // Use js parser for all languages as fallback since specific language parsers may not be available
@@ -191,7 +213,7 @@ export class MultiLanguageAnalyzer {
 
     for (const [domain, keywords] of Object.entries(DOMAIN_KEYWORDS)) {
       let score = 0;
-      
+
       // Check keywords in content
       for (const keyword of keywords) {
         const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
@@ -235,7 +257,7 @@ export class MultiLanguageAnalyzer {
     }
 
     // Zod-validate all entities before returning
-    return entities.map(e => validateCodeEntity(e));
+    return entities.map((e) => validateCodeEntity(e));
   }
 
   /**
@@ -261,27 +283,30 @@ export class MultiLanguageAnalyzer {
           for (const match of matches) {
             const name = match.getMatch('NAME')?.text();
             if (name) {
-              entities.push(await this.createEntity({
-                name,
-                type: entityType as EntityType,
-                language,
-                filePath,
-                startLine: match.range().start.line,
-                endLine: match.range().end.line,
-                sourceCode: match.text(),
-                domain,
-                signature: this.extractSignature(match.text()),
-                description: this.findPrecedingComment(content, match.range().start.line, language) ?? '',
-              }));
+              entities.push(
+                await this.createEntity({
+                  name,
+                  type: entityType as EntityType,
+                  language,
+                  filePath,
+                  startLine: match.range().start.line,
+                  endLine: match.range().end.line,
+                  sourceCode: match.text(),
+                  domain,
+                  signature: this.extractSignature(match.text()),
+                  description:
+                    this.findPrecedingComment(content, match.range().start.line, language) ?? '',
+                })
+              );
             }
           }
         }
       } catch (error) {
         console.warn(`${language} AST parsing failed, falling back to regex:`, error);
-        entities.push(...await this.extractGenericEntities(content, filePath, domain, language));
+        entities.push(...(await this.extractGenericEntities(content, filePath, domain, language)));
       }
     } else {
-      entities.push(...await this.extractGenericEntities(content, filePath, domain, language));
+      entities.push(...(await this.extractGenericEntities(content, filePath, domain, language)));
     }
     return entities;
   }
@@ -298,7 +323,6 @@ export class MultiLanguageAnalyzer {
       return '';
     }
   }
-
 
   /**
    * Extract entities using generic patterns when specific language support is not available
@@ -319,18 +343,20 @@ export class MultiLanguageAnalyzer {
     while ((match = functionPattern.exec(content)) !== null) {
       const name = match[1];
       const lineNumber = content.substring(0, match.index).split('\n').length;
-      
+
       if (name) {
-        entities.push(await this.createEntity({
-          name,
-          type: 'function',
-          language,
-          filePath,
-          startLine: lineNumber,
-          endLine: lineNumber,
-          sourceCode: lines[lineNumber - 1] || '',
-          domain,
-        }));
+        entities.push(
+          await this.createEntity({
+            name,
+            type: 'function',
+            language,
+            filePath,
+            startLine: lineNumber,
+            endLine: lineNumber,
+            sourceCode: lines[lineNumber - 1] || '',
+            domain,
+          })
+        );
       }
     }
 
@@ -338,9 +364,6 @@ export class MultiLanguageAnalyzer {
   }
 
   // Regex fallback methods for when AST-grep is not available
-
-
-
 
   // Helper methods
   private async createEntity(params: {
@@ -378,11 +401,11 @@ export class MultiLanguageAnalyzer {
     // Extract the first line or function signature
     const lines = code.split('\n');
     const firstLine = lines[0]?.trim();
-    
+
     if (firstLine && firstLine.length < 200) {
       return firstLine;
     }
-    
+
     return code.substring(0, 200) + (code.length > 200 ? '...' : '');
   }
 
@@ -447,20 +470,62 @@ export class MultiLanguageAnalyzer {
   private extractKeywords(code: string): string[] {
     const keywords = new Set<string>();
     const words = code.toLowerCase().match(/\b\w+\b/g) || [];
-    
+
     for (const word of words) {
-      if (word.length > 2 && !['the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'had', 'her', 'was', 'one', 'our', 'out', 'day', 'get', 'has', 'him', 'his', 'how', 'its', 'may', 'new', 'now', 'old', 'see', 'two', 'who', 'boy', 'did', 'man', 'men', 'put', 'say', 'she', 'too', 'use'].includes(word)) {
+      if (
+        word.length > 2 &&
+        ![
+          'the',
+          'and',
+          'for',
+          'are',
+          'but',
+          'not',
+          'you',
+          'all',
+          'can',
+          'had',
+          'her',
+          'was',
+          'one',
+          'our',
+          'out',
+          'day',
+          'get',
+          'has',
+          'him',
+          'his',
+          'how',
+          'its',
+          'may',
+          'new',
+          'now',
+          'old',
+          'see',
+          'two',
+          'who',
+          'boy',
+          'did',
+          'man',
+          'men',
+          'put',
+          'say',
+          'she',
+          'too',
+          'use',
+        ].includes(word)
+      ) {
         keywords.add(word);
       }
     }
-    
+
     return Array.from(keywords).slice(0, 20); // Limit to 20 keywords
   }
 
   private calculateComplexity(code: string): number {
     // Simple complexity calculation based on code patterns
     let complexity = 1; // Base complexity
-    
+
     // Count control flow statements
     const controlFlow = ['if', 'else', 'for', 'while', 'switch', 'case', 'try', 'catch'];
     for (const keyword of controlFlow) {
@@ -470,11 +535,11 @@ export class MultiLanguageAnalyzer {
         complexity += matches.length;
       }
     }
-    
+
     // Count nested blocks (rough estimate)
     const openBraces = (code.match(/\{/g) || []).length;
     complexity += Math.floor(openBraces / 2);
-    
+
     return Math.min(complexity, 20); // Cap at 20
   }
 }
@@ -487,12 +552,14 @@ export const multiLanguageAnalyzerActor = fromPromise(
     switch (input.operation) {
       case 'extract':
         return await analyzer.extractEntities(input.filePath);
-      case 'detect':
+      case 'detect': {
         const content = await analyzer.readFile(input.filePath);
         return analyzer.detectLanguage(input.filePath, content);
-      case 'classify':
+      }
+      case 'classify': {
         const fileContent = await analyzer.readFile(input.filePath);
         return analyzer.classifyDomain(fileContent, input.filePath);
+      }
       default:
         throw new Error(`Unknown operation: ${input.operation}`);
     }

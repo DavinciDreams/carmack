@@ -1,20 +1,19 @@
-
 // import { z } from 'zod';
 import { AIProcessor } from './ai-processor.ts';
+import {
+  type ContinueQueryRequest,
+  type EvidenceItem,
+  type InvestigationThread,
+  type QueryComplexity,
+  type QueryIntent,
+  type QueryRequest,
+  type QueryResponse,
+  validateContinueQueryRequest,
+  validateQueryRequest,
+} from './contracts.ts';
 import { GraphWalker } from './graph-walker.ts';
 import { QueryEngine } from './query-engine.ts';
 import { SessionManager } from './session-manager.ts';
-import {
-  validateQueryRequest,
-  validateContinueQueryRequest,
-  type QueryRequest,
-  type QueryResponse,
-  type ContinueQueryRequest,
-  type QueryIntent,
-  type QueryComplexity,
-  type EvidenceItem,
-  type InvestigationThread,
-} from './contracts.ts';
 
 // =============================================================================
 // PIPELINE ERRORS
@@ -45,22 +44,22 @@ export interface PipelineConfig {
   semantic_weight: number;
   keyword_weight: number;
   search_threshold: number;
-  
+
   // Graph traversal configuration
   graph_traversal_enabled: boolean;
   max_traversal_depth: number;
   min_relationship_confidence: number;
-  
+
   // AI processing configuration
   ai_processing_enabled: boolean;
   fact_extraction_enabled: boolean;
   hypothesis_generation_enabled: boolean;
-  
+
   // Performance configuration
   max_execution_time_ms: number;
   enable_caching: boolean;
   cache_ttl_ms: number;
-  
+
   // Quality configuration
   min_confidence_threshold: number;
   max_evidence_items: number;
@@ -75,19 +74,19 @@ const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   semantic_weight: 0.7,
   keyword_weight: 0.3,
   search_threshold: 0.3,
-  
+
   graph_traversal_enabled: true,
   max_traversal_depth: 3,
   min_relationship_confidence: 0.5,
-  
+
   ai_processing_enabled: true,
   fact_extraction_enabled: true,
   hypothesis_generation_enabled: true,
-  
+
   max_execution_time_ms: 30000, // 30 seconds
   enable_caching: true,
   cache_ttl_ms: 300000, // 5 minutes
-  
+
   min_confidence_threshold: 0.2,
   max_evidence_items: 20,
   max_investigation_threads: 5,
@@ -105,24 +104,24 @@ interface PipelineContext {
   session_id: string;
   start_time: number;
   stage: string;
-  
+
   // Input data
   query: string;
   intent: QueryIntent;
   complexity: QueryComplexity;
-  
+
   // Intermediate results
   search_results: EvidenceItem[];
   graph_paths: any[];
   ai_facts: any;
   ai_hypotheses: any;
   ai_synthesis: any;
-  
+
   // Final results
   evidence_chain: EvidenceItem[];
   investigation_threads: InvestigationThread[];
   confidence_score: number;
-  
+
   // Metadata
   execution_times: Record<string, number>;
   artifacts_processed: number;
@@ -150,10 +149,7 @@ export class QueryProcessingPipeline {
   /**
    * Process initial query through complete pipeline
    */
-  async processQuery(
-    request: QueryRequest,
-    sessionToken?: string
-  ): Promise<QueryResponse> {
+  async processQuery(request: QueryRequest, sessionToken?: string): Promise<QueryResponse> {
     const context: PipelineContext = {
       request_id: crypto.randomUUID(),
       session_id: '',
@@ -192,7 +188,7 @@ export class QueryProcessingPipeline {
         if (this.config.ai_processing_enabled) {
           const intentResult = await this.aiProcessor.classifyIntent(context.query);
           context.intent = intentResult.intent;
-          
+
           const complexityResult = await this.aiProcessor.assessComplexity(
             context.query,
             context.intent
@@ -277,10 +273,14 @@ export class QueryProcessingPipeline {
         session_id: context.session_id,
         intent: context.intent,
         complexity: context.complexity,
-        primary_answer: context.ai_synthesis?.primary_answer || this.generateFallbackAnswer(context),
+        primary_answer:
+          context.ai_synthesis?.primary_answer || this.generateFallbackAnswer(context),
         evidence_chain: context.evidence_chain,
         confidence_score: context.confidence_score,
-        investigation_threads: context.investigation_threads.slice(0, this.config.max_investigation_threads),
+        investigation_threads: context.investigation_threads.slice(
+          0,
+          this.config.max_investigation_threads
+        ),
         suggested_questions: context.ai_synthesis?.follow_up_suggestions || [],
         execution_time_ms: Date.now() - context.start_time,
         artifacts_searched: context.artifacts_processed,
@@ -408,7 +408,7 @@ export class QueryProcessingPipeline {
     if (sessionToken) {
       try {
         return await this.sessionManager.getSession(sessionToken);
-      } catch (error) {
+      } catch (_error) {
         // Create new session if existing one is invalid
         return await this.sessionManager.createSession({
           investigation_goal: `Query: ${request.query}`,
@@ -434,16 +434,16 @@ export class QueryProcessingPipeline {
           direction: 'both',
           limit: 10,
         });
-      } catch (error) {
+      } catch (_error) {
         // Continue with other traversals if one fails
         return { paths: [], total_paths: 0, max_depth_reached: 0, execution_time_ms: 0 };
       }
     });
 
     const results = await Promise.all(traversalPromises);
-    
+
     return {
-      paths: results.flatMap(r => r.paths),
+      paths: results.flatMap((r) => r.paths),
       total_paths: results.reduce((sum, r) => sum + r.total_paths, 0),
     };
   }
@@ -467,12 +467,12 @@ export class QueryProcessingPipeline {
     }
 
     // Enhance with AI insights
-    if (context.ai_facts && context.ai_facts.facts) {
-      evidence = evidence.map(item => {
+    if (context.ai_facts?.facts) {
+      evidence = evidence.map((item) => {
         const relatedFacts = context.ai_facts.facts.filter(
           (fact: any) => fact.source_artifact_id === item.artifact_id
         );
-        
+
         if (relatedFacts.length > 0) {
           return {
             ...item,
@@ -480,7 +480,7 @@ export class QueryProcessingPipeline {
             relevance_score: Math.min(item.relevance_score * 1.1, 1.0),
           };
         }
-        
+
         return item;
       });
     }
@@ -500,9 +500,9 @@ export class QueryProcessingPipeline {
 
     // Evidence quality factor
     if (context.evidence_chain.length > 0) {
-      const avgEvidenceScore = context.evidence_chain.reduce(
-        (sum, item) => sum + item.relevance_score, 0
-      ) / context.evidence_chain.length;
+      const avgEvidenceScore =
+        context.evidence_chain.reduce((sum, item) => sum + item.relevance_score, 0) /
+        context.evidence_chain.length;
       confidence += avgEvidenceScore * 0.4;
       factors += 0.4;
     }
@@ -566,7 +566,7 @@ export class QueryProcessingPipeline {
 
     const topEvidence = context.evidence_chain.slice(0, 3);
     let answer = `Based on my analysis of ${context.evidence_chain.length} relevant artifacts:\n\n`;
-    
+
     topEvidence.forEach((item, index) => {
       answer += `${index + 1}. **${item.artifact_name}** (${item.artifact_type})\n`;
       answer += `   - Relevance: ${(item.relevance_score * 100).toFixed(1)}%\n`;

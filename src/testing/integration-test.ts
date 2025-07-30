@@ -1,14 +1,12 @@
-import { EpicTestingSystem } from './index.js';
-
 import type { TestSuiteResult } from './framework/test-orchestrator.js';
+import { EpicTestingSystem } from './index.js';
 
 /**
  * Integration Test for EPIC-TESTING-METRICS System
- * 
+ *
  * Comprehensive integration test that validates the complete system
  * works together and meets all EPIC requirements.
  */
-
 
 /**
  * Integration test configuration
@@ -81,7 +79,7 @@ export class EpicTestingIntegrationTest {
       // 1. Test system initialization
       console.log('\n1️⃣ Testing System Initialization...');
       testResults.systemInitialization = await this.testSystemInitialization();
-      
+
       if (!testResults.systemInitialization) {
         errors.push('System initialization failed');
         throw new Error('System initialization failed');
@@ -91,7 +89,7 @@ export class EpicTestingIntegrationTest {
       if (this.config.runFullValidation) {
         console.log('\n2️⃣ Testing Full Validation Suite...');
         testResults.fullValidation = await this.testFullValidation();
-        
+
         if (!testResults.fullValidation.passed) {
           errors.push('Full validation suite failed');
           recommendations.push('Review validation suite results for specific failures');
@@ -102,8 +100,10 @@ export class EpicTestingIntegrationTest {
       if (this.config.validatePerformanceTargets) {
         console.log('\n3️⃣ Testing Performance Target Validation...');
         testResults.performanceTargets = await this.testPerformanceTargets();
-        
-        const allTargetsPassed = Object.values(testResults.performanceTargets).every((target: any) => target.passed);
+
+        const allTargetsPassed = Object.values(testResults.performanceTargets).every(
+          (target: any) => target.passed
+        );
         if (!allTargetsPassed) {
           errors.push('Some performance targets not met');
           recommendations.push('Optimize system performance to meet all targets');
@@ -114,7 +114,7 @@ export class EpicTestingIntegrationTest {
       if (this.config.testEngagementTracking) {
         console.log('\n4️⃣ Testing Engagement Tracking...');
         testResults.engagementTracking = await this.testEngagementTracking();
-        
+
         if (!testResults.engagementTracking) {
           errors.push('Engagement tracking failed');
           recommendations.push('Check engagement tracking implementation');
@@ -125,7 +125,7 @@ export class EpicTestingIntegrationTest {
       if (this.config.generateReports) {
         console.log('\n5️⃣ Testing Report Generation...');
         testResults.reportGeneration = await this.testReportGeneration();
-        
+
         if (!testResults.reportGeneration) {
           errors.push('Report generation failed');
           recommendations.push('Check report generation system');
@@ -136,7 +136,7 @@ export class EpicTestingIntegrationTest {
       if (this.config.testCIIntegration) {
         console.log('\n6️⃣ Testing CI Integration...');
         testResults.ciIntegration = await this.testCIIntegration();
-        
+
         if (!testResults.ciIntegration) {
           errors.push('CI integration failed');
           recommendations.push('Check CI integration configuration');
@@ -164,12 +164,13 @@ export class EpicTestingIntegrationTest {
       this.printFinalResults(result);
 
       return result;
-
     } catch (error) {
       const endTime = new Date();
       const duration = endTime.getTime() - startTime.getTime();
 
-      errors.push(`Integration test failed: ${error instanceof Error ? error.message : String(error)}`);
+      errors.push(
+        `Integration test failed: ${error instanceof Error ? error.message : String(error)}`
+      );
 
       const result: IntegrationTestResult = {
         testId,
@@ -184,7 +185,6 @@ export class EpicTestingIntegrationTest {
 
       this.printFinalResults(result);
       throw error;
-
     } finally {
       // Cleanup
       if (this.testingSystem) {
@@ -227,8 +227,8 @@ export class EpicTestingIntegrationTest {
 
     try {
       const result = await this.testingSystem.runCompleteValidation();
-      
-      console.log(`   ✅ Full validation completed`);
+
+      console.log('   ✅ Full validation completed');
       console.log(`      Overall Score: ${result.overallScore}/100`);
       console.log(`      Result: ${result.passed ? 'PASSED' : 'FAILED'}`);
       console.log(`      Tests: ${result.passedTests}/${result.totalTests} passed`);
@@ -250,12 +250,20 @@ export class EpicTestingIntegrationTest {
 
     try {
       const targets = await this.testingSystem.validatePerformanceTargets();
-      
+
       console.log('   📊 Performance Target Results:');
-      console.log(`      Speed Improvement: ${targets.speedImprovement.actual.toFixed(1)}% (${targets.speedImprovement.passed ? 'PASSED' : 'FAILED'})`);
-      console.log(`      Response Time: ${targets.responseTime.actual.toFixed(0)}ms (${targets.responseTime.passed ? 'PASSED' : 'FAILED'})`);
-      console.log(`      Accuracy: ${targets.accuracy.actual.toFixed(1)}% (${targets.accuracy.passed ? 'PASSED' : 'FAILED'})`);
-      console.log(`      Concurrent Users: ${targets.concurrentUsers.actual} (${targets.concurrentUsers.passed ? 'PASSED' : 'FAILED'})`);
+      console.log(
+        `      Speed Improvement: ${targets.speedImprovement.actual.toFixed(1)}% (${targets.speedImprovement.passed ? 'PASSED' : 'FAILED'})`
+      );
+      console.log(
+        `      Response Time: ${targets.responseTime.actual.toFixed(0)}ms (${targets.responseTime.passed ? 'PASSED' : 'FAILED'})`
+      );
+      console.log(
+        `      Accuracy: ${targets.accuracy.actual.toFixed(1)}% (${targets.accuracy.passed ? 'PASSED' : 'FAILED'})`
+      );
+      console.log(
+        `      Concurrent Users: ${targets.concurrentUsers.actual} (${targets.concurrentUsers.passed ? 'PASSED' : 'FAILED'})`
+      );
 
       return targets;
     } catch (error) {
@@ -277,7 +285,7 @@ export class EpicTestingIntegrationTest {
       this.testingSystem.startEngagementTracking();
 
       // Wait a moment for initialization
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Get current metrics
       const metrics = this.testingSystem.getCurrentEngagementMetrics();
@@ -303,7 +311,7 @@ export class EpicTestingIntegrationTest {
 
     try {
       const report = await this.testingSystem.generateReport();
-      
+
       console.log('   ✅ Report generation working');
       console.log(`      Report ID: ${report.reportId}`);
       for (const file of report.generatedFiles) {
@@ -358,13 +366,19 @@ export class EpicTestingIntegrationTest {
     }
 
     // Full validation must pass if enabled
-    if (this.config.runFullValidation && testResults.fullValidation && !testResults.fullValidation.passed) {
+    if (
+      this.config.runFullValidation &&
+      testResults.fullValidation &&
+      !testResults.fullValidation.passed
+    ) {
       return false;
     }
 
     // Performance targets must pass if enabled
     if (this.config.validatePerformanceTargets && testResults.performanceTargets) {
-      const allTargetsPassed = Object.values(testResults.performanceTargets).every((target: any) => target.passed);
+      const allTargetsPassed = Object.values(testResults.performanceTargets).every(
+        (target: any) => target.passed
+      );
       if (!allTargetsPassed) {
         return false;
       }
@@ -386,42 +400,54 @@ export class EpicTestingIntegrationTest {
 
     if (result.errors.length > 0) {
       console.log('❌ Errors:');
-      result.errors.forEach(error => console.log(`   • ${error}`));
+      result.errors.forEach((error) => console.log(`   • ${error}`));
       console.log('');
     }
 
     if (result.recommendations.length > 0) {
       console.log('💡 Recommendations:');
-      result.recommendations.forEach(rec => console.log(`   • ${rec}`));
+      result.recommendations.forEach((rec) => console.log(`   • ${rec}`));
       console.log('');
     }
 
     console.log('📋 Test Component Results:');
-    console.log(`   System Initialization: ${result.testResults.systemInitialization ? 'PASSED ✅' : 'FAILED ❌'}`);
-    
+    console.log(
+      `   System Initialization: ${result.testResults.systemInitialization ? 'PASSED ✅' : 'FAILED ❌'}`
+    );
+
     if (result.testResults.fullValidation) {
-      console.log(`   Full Validation: ${result.testResults.fullValidation.passed ? 'PASSED ✅' : 'FAILED ❌'}`);
+      console.log(
+        `   Full Validation: ${result.testResults.fullValidation.passed ? 'PASSED ✅' : 'FAILED ❌'}`
+      );
     }
-    
+
     if (result.testResults.performanceTargets) {
-      const allPassed = Object.values(result.testResults.performanceTargets).every((target: any) => target.passed);
+      const allPassed = Object.values(result.testResults.performanceTargets).every(
+        (target: any) => target.passed
+      );
       console.log(`   Performance Targets: ${allPassed ? 'PASSED ✅' : 'FAILED ❌'}`);
     }
-    
+
     if (result.testResults.engagementTracking !== undefined) {
-      console.log(`   Engagement Tracking: ${result.testResults.engagementTracking ? 'PASSED ✅' : 'FAILED ❌'}`);
+      console.log(
+        `   Engagement Tracking: ${result.testResults.engagementTracking ? 'PASSED ✅' : 'FAILED ❌'}`
+      );
     }
-    
+
     if (result.testResults.reportGeneration !== undefined) {
-      console.log(`   Report Generation: ${result.testResults.reportGeneration ? 'PASSED ✅' : 'FAILED ❌'}`);
+      console.log(
+        `   Report Generation: ${result.testResults.reportGeneration ? 'PASSED ✅' : 'FAILED ❌'}`
+      );
     }
-    
+
     if (result.testResults.ciIntegration !== undefined) {
-      console.log(`   CI Integration: ${result.testResults.ciIntegration ? 'PASSED ✅' : 'FAILED ❌'}`);
+      console.log(
+        `   CI Integration: ${result.testResults.ciIntegration ? 'PASSED ✅' : 'FAILED ❌'}`
+      );
     }
 
     console.log('');
-    
+
     if (result.overallPassed) {
       console.log('🎉 EPIC-TESTING-METRICS Integration Test PASSED!');
       console.log('   All system components are working correctly.');
@@ -435,7 +461,9 @@ export class EpicTestingIntegrationTest {
 /**
  * Convenience function to run integration test
  */
-export async function runIntegrationTest(config?: Partial<IntegrationTestConfig>): Promise<IntegrationTestResult> {
+export async function runIntegrationTest(
+  config?: Partial<IntegrationTestConfig>
+): Promise<IntegrationTestResult> {
   const test = new EpicTestingIntegrationTest(config);
   return test.runIntegrationTest();
 }
@@ -471,10 +499,10 @@ if (import.meta.main) {
     case 'full':
       console.log('Running full integration test...');
       runIntegrationTest()
-        .then(result => {
+        .then((result) => {
           process.exit(result.overallPassed ? 0 : 1);
         })
-        .catch(error => {
+        .catch((error) => {
           console.error('Integration test failed:', error);
           process.exit(1);
         });
@@ -483,10 +511,10 @@ if (import.meta.main) {
     case 'quick':
       console.log('Running quick integration test...');
       runQuickIntegrationTest()
-        .then(passed => {
+        .then((passed) => {
           process.exit(passed ? 0 : 1);
         })
-        .catch(error => {
+        .catch((error) => {
           console.error('Quick integration test failed:', error);
           process.exit(1);
         });

@@ -1,6 +1,6 @@
 /**
  * Historical TensorRT-LLM Bug Scenarios for Benchmark Testing
- * 
+ *
  * Contains 10+ real-world TensorRT-LLM issues and scenarios for testing
  * the knowledge graph system's ability to provide faster investigation
  * compared to manual methods.
@@ -15,11 +15,13 @@ export const HISTORICAL_BUG_SCENARIOS: HistoricalBugScenario[] = [
   {
     id: 'scheduler-preemption-001',
     title: 'Scheduler Preemption Performance Degradation',
-    description: 'Investigation into scheduler preemption causing 40% performance drop in multi-request scenarios',
+    description:
+      'Investigation into scheduler preemption causing 40% performance drop in multi-request scenarios',
     category: 'scheduler',
     severity: 'critical',
     originalIssueUrl: 'https://github.com/NVIDIA/TensorRT-LLM/issues/scheduler-preemption',
-    testQuery: 'How does TensorRT-LLM scheduler handle preemption and what causes performance degradation in multi-request scenarios?',
+    testQuery:
+      'How does TensorRT-LLM scheduler handle preemption and what causes performance degradation in multi-request scenarios?',
     expectedResponseTime: 1800, // 1.8 seconds
     expectedAccuracy: 0.85,
     manualInvestigationTime: 7200000, // 2 hours in milliseconds
@@ -28,10 +30,12 @@ export const HISTORICAL_BUG_SCENARIOS: HistoricalBugScenario[] = [
   {
     id: 'memory-allocation-002',
     title: 'Memory Allocation Strategy Inefficiency',
-    description: 'Memory fragmentation issues leading to OOM errors in long-running inference sessions',
+    description:
+      'Memory fragmentation issues leading to OOM errors in long-running inference sessions',
     category: 'memory',
     severity: 'high',
-    testQuery: 'What are the memory allocation strategies in TensorRT-LLM and how can memory fragmentation be prevented?',
+    testQuery:
+      'What are the memory allocation strategies in TensorRT-LLM and how can memory fragmentation be prevented?',
     expectedResponseTime: 1500,
     expectedAccuracy: 0.88,
     manualInvestigationTime: 5400000, // 1.5 hours
@@ -40,10 +44,12 @@ export const HISTORICAL_BUG_SCENARIOS: HistoricalBugScenario[] = [
   {
     id: 'cuda-kernel-optimization-003',
     title: 'CUDA Kernel Performance Regression',
-    description: 'Specific CUDA kernels showing 25% performance regression after optimization changes',
+    description:
+      'Specific CUDA kernels showing 25% performance regression after optimization changes',
     category: 'cuda_kernel',
     severity: 'high',
-    testQuery: 'Which CUDA kernels in TensorRT-LLM have been optimized recently and what performance changes occurred?',
+    testQuery:
+      'Which CUDA kernels in TensorRT-LLM have been optimized recently and what performance changes occurred?',
     expectedResponseTime: 1600,
     expectedAccuracy: 0.82,
     manualInvestigationTime: 6300000, // 1.75 hours
@@ -55,7 +61,8 @@ export const HISTORICAL_BUG_SCENARIOS: HistoricalBugScenario[] = [
     description: 'Memory leak in attention computation causing gradual memory increase over time',
     category: 'memory',
     severity: 'critical',
-    testQuery: 'How does the attention mechanism in TensorRT-LLM manage memory and what could cause memory leaks?',
+    testQuery:
+      'How does the attention mechanism in TensorRT-LLM manage memory and what could cause memory leaks?',
     expectedResponseTime: 1700,
     expectedAccuracy: 0.86,
     manualInvestigationTime: 8100000, // 2.25 hours
@@ -64,10 +71,12 @@ export const HISTORICAL_BUG_SCENARIOS: HistoricalBugScenario[] = [
   {
     id: 'batch-processing-005',
     title: 'Dynamic Batching Inefficiency',
-    description: 'Dynamic batching algorithm not optimally grouping requests leading to underutilized GPU',
+    description:
+      'Dynamic batching algorithm not optimally grouping requests leading to underutilized GPU',
     category: 'scheduler',
     severity: 'medium',
-    testQuery: 'How does dynamic batching work in TensorRT-LLM and what factors affect batching efficiency?',
+    testQuery:
+      'How does dynamic batching work in TensorRT-LLM and what factors affect batching efficiency?',
     expectedResponseTime: 1400,
     expectedAccuracy: 0.84,
     manualInvestigationTime: 4500000, // 1.25 hours
@@ -76,10 +85,12 @@ export const HISTORICAL_BUG_SCENARIOS: HistoricalBugScenario[] = [
   {
     id: 'quantization-accuracy-006',
     title: 'INT8 Quantization Accuracy Loss',
-    description: 'Unexpected accuracy degradation when using INT8 quantization on specific model architectures',
+    description:
+      'Unexpected accuracy degradation when using INT8 quantization on specific model architectures',
     category: 'performance',
     severity: 'high',
-    testQuery: 'What are the quantization methods in TensorRT-LLM and how does INT8 quantization affect model accuracy?',
+    testQuery:
+      'What are the quantization methods in TensorRT-LLM and how does INT8 quantization affect model accuracy?',
     expectedResponseTime: 1550,
     expectedAccuracy: 0.87,
     manualInvestigationTime: 5700000, // 1.58 hours
@@ -91,7 +102,8 @@ export const HISTORICAL_BUG_SCENARIOS: HistoricalBugScenario[] = [
     description: 'Inter-GPU communication becoming bottleneck in pipeline parallel inference',
     category: 'architecture',
     severity: 'high',
-    testQuery: 'How is pipeline parallelism implemented in TensorRT-LLM and what causes communication bottlenecks?',
+    testQuery:
+      'How is pipeline parallelism implemented in TensorRT-LLM and what causes communication bottlenecks?',
     expectedResponseTime: 1650,
     expectedAccuracy: 0.83,
     manualInvestigationTime: 6900000, // 1.92 hours
@@ -100,10 +112,12 @@ export const HISTORICAL_BUG_SCENARIOS: HistoricalBugScenario[] = [
   {
     id: 'kv-cache-management-008',
     title: 'KV Cache Management Inefficiency',
-    description: 'Key-Value cache not being efficiently managed leading to memory waste and slower inference',
+    description:
+      'Key-Value cache not being efficiently managed leading to memory waste and slower inference',
     category: 'memory',
     severity: 'medium',
-    testQuery: 'How does TensorRT-LLM manage KV cache and what optimizations are available for cache efficiency?',
+    testQuery:
+      'How does TensorRT-LLM manage KV cache and what optimizations are available for cache efficiency?',
     expectedResponseTime: 1450,
     expectedAccuracy: 0.85,
     manualInvestigationTime: 4800000, // 1.33 hours
@@ -112,10 +126,12 @@ export const HISTORICAL_BUG_SCENARIOS: HistoricalBugScenario[] = [
   {
     id: 'tensor-parallelism-009',
     title: 'Tensor Parallelism Load Imbalance',
-    description: 'Uneven workload distribution across GPUs in tensor parallel setup causing performance issues',
+    description:
+      'Uneven workload distribution across GPUs in tensor parallel setup causing performance issues',
     category: 'architecture',
     severity: 'medium',
-    testQuery: 'What is tensor parallelism in TensorRT-LLM and how can load balancing issues be diagnosed and fixed?',
+    testQuery:
+      'What is tensor parallelism in TensorRT-LLM and how can load balancing issues be diagnosed and fixed?',
     expectedResponseTime: 1500,
     expectedAccuracy: 0.81,
     manualInvestigationTime: 5100000, // 1.42 hours
@@ -124,10 +140,12 @@ export const HISTORICAL_BUG_SCENARIOS: HistoricalBugScenario[] = [
   {
     id: 'mixed-precision-010',
     title: 'Mixed Precision Training Instability',
-    description: 'Training instability when using mixed precision with specific optimizer configurations',
+    description:
+      'Training instability when using mixed precision with specific optimizer configurations',
     category: 'performance',
     severity: 'high',
-    testQuery: 'How does mixed precision training work in TensorRT-LLM and what causes training instability?',
+    testQuery:
+      'How does mixed precision training work in TensorRT-LLM and what causes training instability?',
     expectedResponseTime: 1600,
     expectedAccuracy: 0.86,
     manualInvestigationTime: 6600000, // 1.83 hours
@@ -136,10 +154,12 @@ export const HISTORICAL_BUG_SCENARIOS: HistoricalBugScenario[] = [
   {
     id: 'multi-gpu-scaling-011',
     title: 'Multi-GPU Scaling Efficiency Drop',
-    description: 'Scaling efficiency drops significantly beyond 4 GPUs due to communication overhead',
+    description:
+      'Scaling efficiency drops significantly beyond 4 GPUs due to communication overhead',
     category: 'architecture',
     severity: 'high',
-    testQuery: 'How does TensorRT-LLM scale across multiple GPUs and what limits scaling efficiency?',
+    testQuery:
+      'How does TensorRT-LLM scale across multiple GPUs and what limits scaling efficiency?',
     expectedResponseTime: 1750,
     expectedAccuracy: 0.84,
     manualInvestigationTime: 7500000, // 2.08 hours
@@ -151,7 +171,8 @@ export const HISTORICAL_BUG_SCENARIOS: HistoricalBugScenario[] = [
     description: 'High first token latency impacting user experience in interactive applications',
     category: 'performance',
     severity: 'medium',
-    testQuery: 'What factors contribute to first token latency in TensorRT-LLM and how can it be optimized?',
+    testQuery:
+      'What factors contribute to first token latency in TensorRT-LLM and how can it be optimized?',
     expectedResponseTime: 1350,
     expectedAccuracy: 0.88,
     manualInvestigationTime: 4200000, // 1.17 hours
@@ -168,7 +189,8 @@ export const TENSORRT_TEST_SCENARIOS: TensorRTTestScenario[] = [
     name: 'Scheduler Performance Deep Dive',
     category: 'scheduler_performance',
     description: 'Comprehensive analysis of scheduler behavior under various load conditions',
-    testQuery: 'Analyze the TensorRT-LLM scheduler implementation, including preemption strategies, request queuing, and performance optimization techniques. What are the key bottlenecks and how have they evolved?',
+    testQuery:
+      'Analyze the TensorRT-LLM scheduler implementation, including preemption strategies, request queuing, and performance optimization techniques. What are the key bottlenecks and how have they evolved?',
     expectedInsights: [
       'Scheduler architecture and components',
       'Preemption mechanisms and trade-offs',
@@ -197,8 +219,10 @@ export const TENSORRT_TEST_SCENARIOS: TensorRTTestScenario[] = [
     id: 'memory-management-002',
     name: 'Memory Management Strategy Analysis',
     category: 'memory_management',
-    description: 'In-depth investigation of memory allocation, deallocation, and optimization strategies',
-    testQuery: 'Explain the memory management strategies in TensorRT-LLM, including allocation patterns, garbage collection, memory pooling, and optimization techniques for different model sizes and batch configurations.',
+    description:
+      'In-depth investigation of memory allocation, deallocation, and optimization strategies',
+    testQuery:
+      'Explain the memory management strategies in TensorRT-LLM, including allocation patterns, garbage collection, memory pooling, and optimization techniques for different model sizes and batch configurations.',
     expectedInsights: [
       'Memory allocation strategies',
       'Pool management techniques',
@@ -228,7 +252,8 @@ export const TENSORRT_TEST_SCENARIOS: TensorRTTestScenario[] = [
     name: 'CUDA Kernel Evolution Analysis',
     category: 'cuda_kernels',
     description: 'Historical analysis of CUDA kernel implementations and optimizations',
-    testQuery: 'Trace the evolution of key CUDA kernels in TensorRT-LLM, including attention kernels, matrix multiplication, and custom operators. What optimizations have been made and what performance improvements were achieved?',
+    testQuery:
+      'Trace the evolution of key CUDA kernels in TensorRT-LLM, including attention kernels, matrix multiplication, and custom operators. What optimizations have been made and what performance improvements were achieved?',
     expectedInsights: [
       'Kernel implementation history',
       'Optimization techniques applied',
@@ -258,7 +283,8 @@ export const TENSORRT_TEST_SCENARIOS: TensorRTTestScenario[] = [
     name: 'Performance Regression Investigation',
     category: 'performance_regression',
     description: 'Systematic investigation of performance regressions and their root causes',
-    testQuery: 'Identify and analyze performance regressions in TensorRT-LLM over the past year. What were the root causes, how were they detected, and what fixes were implemented?',
+    testQuery:
+      'Identify and analyze performance regressions in TensorRT-LLM over the past year. What were the root causes, how were they detected, and what fixes were implemented?',
     expectedInsights: [
       'Regression detection methods',
       'Root cause analysis techniques',
@@ -288,7 +314,8 @@ export const TENSORRT_TEST_SCENARIOS: TensorRTTestScenario[] = [
     name: 'Architecture Design Decisions',
     category: 'architecture',
     description: 'Analysis of key architectural decisions and their implications',
-    testQuery: 'Analyze the key architectural decisions in TensorRT-LLM design, including parallelization strategies, memory hierarchy, and compute optimization. What trade-offs were made and why?',
+    testQuery:
+      'Analyze the key architectural decisions in TensorRT-LLM design, including parallelization strategies, memory hierarchy, and compute optimization. What trade-offs were made and why?',
     expectedInsights: [
       'Architectural design principles',
       'Parallelization strategies',
@@ -319,42 +346,50 @@ export const TENSORRT_TEST_SCENARIOS: TensorRTTestScenario[] = [
  * Get scenario by ID
  */
 export function getHistoricalScenario(id: string): HistoricalBugScenario | undefined {
-  return HISTORICAL_BUG_SCENARIOS.find(scenario => scenario.id === id);
+  return HISTORICAL_BUG_SCENARIOS.find((scenario) => scenario.id === id);
 }
 
 /**
  * Get scenarios by category
  */
-export function getScenariosByCategory(category: HistoricalBugScenario['category']): HistoricalBugScenario[] {
-  return HISTORICAL_BUG_SCENARIOS.filter(scenario => scenario.category === category);
+export function getScenariosByCategory(
+  category: HistoricalBugScenario['category']
+): HistoricalBugScenario[] {
+  return HISTORICAL_BUG_SCENARIOS.filter((scenario) => scenario.category === category);
 }
 
 /**
  * Get scenarios by severity
  */
-export function getScenariosBySeverity(severity: HistoricalBugScenario['severity']): HistoricalBugScenario[] {
-  return HISTORICAL_BUG_SCENARIOS.filter(scenario => scenario.severity === severity);
+export function getScenariosBySeverity(
+  severity: HistoricalBugScenario['severity']
+): HistoricalBugScenario[] {
+  return HISTORICAL_BUG_SCENARIOS.filter((scenario) => scenario.severity === severity);
 }
 
 /**
  * Get TensorRT test scenario by ID
  */
 export function getTensorRTScenario(id: string): TensorRTTestScenario | undefined {
-  return TENSORRT_TEST_SCENARIOS.find(scenario => scenario.id === id);
+  return TENSORRT_TEST_SCENARIOS.find((scenario) => scenario.id === id);
 }
 
 /**
  * Get TensorRT scenarios by category
  */
-export function getTensorRTScenariosByCategory(category: TensorRTTestScenario['category']): TensorRTTestScenario[] {
-  return TENSORRT_TEST_SCENARIOS.filter(scenario => scenario.category === category);
+export function getTensorRTScenariosByCategory(
+  category: TensorRTTestScenario['category']
+): TensorRTTestScenario[] {
+  return TENSORRT_TEST_SCENARIOS.filter((scenario) => scenario.category === category);
 }
 
 /**
  * Get TensorRT scenarios by complexity
  */
-export function getTensorRTScenariosByComplexity(complexity: TensorRTTestScenario['complexityLevel']): TensorRTTestScenario[] {
-  return TENSORRT_TEST_SCENARIOS.filter(scenario => scenario.complexityLevel === complexity);
+export function getTensorRTScenariosByComplexity(
+  complexity: TensorRTTestScenario['complexityLevel']
+): TensorRTTestScenario[] {
+  return TENSORRT_TEST_SCENARIOS.filter((scenario) => scenario.complexityLevel === complexity);
 }
 
 /**

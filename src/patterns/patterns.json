@@ -762,7 +762,11 @@
       "cpp-modern-cast",
       "cuda-error-checking"
     ],
-    "logging": ["console-log-to-console-error", "remove-console-log", "tensorrt-logger-integration"],
+    "logging": [
+      "console-log-to-console-error",
+      "remove-console-log",
+      "tensorrt-logger-integration"
+    ],
     "syntax-fixes": [
       "fix-double-semicolons",
       "fix-malformed-object-literal",
@@ -828,18 +832,18 @@
     ]
   },
   "metadata": {
-  "created": "2025-07-22",
-  "author": "Carmack Coder",
-  "license": "MIT",
-  "lastUpdated": "2025-07-23",
-  "totalPatterns": 58,
-  "templatePatterns": 11,
-  "astPatterns": 25,
-  "llmPatterns": 22,
-  "templateEngineVersion": "4.0.0",
-  "astGrepVersion": "0.38.6",
-  "enhancedLLMVersion": "2.0.0",
-  "languages": ["typescript", "javascript", "cpp", "cuda", "python"],
+    "created": "2025-07-22",
+    "author": "Carmack Coder",
+    "license": "MIT",
+    "lastUpdated": "2025-07-23",
+    "totalPatterns": 58,
+    "templatePatterns": 11,
+    "astPatterns": 25,
+    "llmPatterns": 22,
+    "templateEngineVersion": "4.0.0",
+    "astGrepVersion": "0.38.6",
+    "enhancedLLMVersion": "2.0.0",
+    "languages": ["typescript", "javascript", "cpp", "cuda", "python"],
     "categories": [
       "template",
       "ast",

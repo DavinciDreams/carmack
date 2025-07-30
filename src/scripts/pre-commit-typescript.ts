@@ -44,7 +44,7 @@ async function getStagedTypeScriptFiles(): Promise<string[]> {
       .filter((file) => !file.includes('.d.ts'));
 
     return files;
-  } catch (error) {
+  } catch (_error) {
     console.warn('⚠️ Could not get staged files, checking all TypeScript files');
     return [];
   }
@@ -56,7 +56,7 @@ async function getStagedTypeScriptFiles(): Promise<string[]> {
 async function getAllTypeScriptFiles(): Promise<string[]> {
   // Always use the Node.js directory traversal for cross-platform compatibility
   const files = await findTypeScriptFiles('.');
-  console.log(`[DEBUG] TypeScript files found:`, files);
+  console.log('[DEBUG] TypeScript files found:', files);
   return files;
 }
 
@@ -107,7 +107,7 @@ async function loadConfig(): Promise<PreCommitConfig> {
       const userConfig = JSON.parse(configContent);
       return { ...defaultConfig, ...userConfig };
     }
-  } catch (error) {
+  } catch (_error) {
     console.warn('⚠️ Could not load config, using defaults');
   }
 
@@ -212,7 +212,7 @@ async function main(): Promise<void> {
         enableFixes: config.autoFix,
         checkNullability: true,
         checkComponents: true,
-        reportFormat: "json",
+        reportFormat: 'json',
         maxIssues: 100,
       },
     });
@@ -238,11 +238,16 @@ async function main(): Promise<void> {
       result.stats.issuesFound,
       0,
       [],
-      result.issues.filter(i => i.severity === "warning").map(i => i.message)
+      result.issues.filter((i) => i.severity === 'warning').map((i) => i.message)
     );
 
     // Stage fixed files if not dry run and autoFix enabled
-    if (config.autoFix && !config.dryRun && result.filesModified && result.filesModified.length > 0) {
+    if (
+      config.autoFix &&
+      !config.dryRun &&
+      result.filesModified &&
+      result.filesModified.length > 0
+    ) {
       await stageFixedFiles(result.filesModified);
     }
 

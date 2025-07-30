@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-
 // Documentation generation types and schemas (language-agnostic)
 export const DocumentationTypeSchema = z.enum([
   'api',
@@ -12,7 +11,6 @@ export const DocumentationTypeSchema = z.enum([
   'module',
   'general',
 ]);
-
 
 // Language types (language-agnostic, extensible)
 export const LanguageTypeSchema = z.enum([
@@ -34,7 +32,6 @@ export const LanguageTypeSchema = z.enum([
   'sql',
   'unknown',
 ]);
-
 
 // Entity types for semantic indexing (language-agnostic)
 export const EntityTypeSchema = z.enum([
@@ -62,7 +59,6 @@ export const EntityTypeSchema = z.enum([
   'host_function',
   'unknown',
 ]);
-
 
 // Domain classification (language-agnostic, extensible)
 export const DomainTypeSchema = z.enum([
@@ -234,10 +230,10 @@ export const DocumentationRequestSchema = z.object({
   outputPath: z.string().optional(),
   includePrivate: z.boolean().default(false),
   includeTests: z.boolean().default(false),
-    includeExamples: z.boolean().default(true),
-    sourceFiles: z.array(z.string()).optional(), // If not provided, scan all files
-    sourceDir: z.string().optional(),
-    templatePath: z.string().optional(),
+  includeExamples: z.boolean().default(true),
+  sourceFiles: z.array(z.string()).optional(), // If not provided, scan all files
+  sourceDir: z.string().optional(),
+  templatePath: z.string().optional(),
   options: z.record(z.any()).optional(),
 });
 
@@ -295,11 +291,15 @@ export const CodeEntitySchema = z.object({
   endLine: z.number(),
   signature: z.string().optional(),
   description: z.string().optional(),
-  parameters: z.array(z.object({
-    name: z.string(),
-    type: z.string(),
-    description: z.string().optional(),
-  })).optional(),
+  parameters: z
+    .array(
+      z.object({
+        name: z.string(),
+        type: z.string(),
+        description: z.string().optional(),
+      })
+    )
+    .optional(),
   returnType: z.string().optional(),
   complexity: z.number().optional(),
   domain: DomainTypeSchema.optional(),
@@ -309,10 +309,7 @@ export const CodeEntitySchema = z.object({
 });
 
 // Canonical union for artifact/code entity traversal
-export const ArtifactOrCodeEntitySchema = z.union([
-  ArtifactSchema,
-  CodeEntitySchema,
-]);
+export const ArtifactOrCodeEntitySchema = z.union([ArtifactSchema, CodeEntitySchema]);
 
 export const SemanticEmbeddingSchema = z.object({
   entityId: z.string().uuid(),
@@ -328,11 +325,13 @@ export const KnowledgePatternSchema = z.object({
   category: z.string(),
   language: LanguageTypeSchema,
   pattern: z.string(),
-  examples: z.array(z.object({
-    code: z.string(),
-    description: z.string(),
-    filePath: z.string().optional(),
-  })),
+  examples: z.array(
+    z.object({
+      code: z.string(),
+      description: z.string(),
+      filePath: z.string().optional(),
+    })
+  ),
   frequency: z.number().default(0),
   confidence: z.number().min(0).max(1),
   domain: DomainTypeSchema.optional(),
@@ -353,11 +352,13 @@ export const OracleQuerySchema = z.object({
   ]),
   language: LanguageTypeSchema.optional(),
   domain: DomainTypeSchema.optional(),
-  results: z.array(z.object({
-    entityId: z.string().uuid(),
-    relevanceScore: z.number().min(0).max(1),
-    explanation: z.string().optional(),
-  })),
+  results: z.array(
+    z.object({
+      entityId: z.string().uuid(),
+      relevanceScore: z.number().min(0).max(1),
+      explanation: z.string().optional(),
+    })
+  ),
   responseTime: z.number(),
   createdAt: z.string().datetime(),
 });
@@ -376,7 +377,6 @@ export const RepositoryAnalysisSchema = z.object({
   metadata: z.record(z.any()).optional(),
 });
 
-
 // Enhanced documentation request (language-agnostic)
 export const EnhancedDocumentationRequestSchema = DocumentationRequestSchema.extend({
   repositoryPath: z.string().optional(),
@@ -389,7 +389,6 @@ export const EnhancedDocumentationRequestSchema = DocumentationRequestSchema.ext
   analysisDepth: z.enum(['shallow', 'medium', 'deep']).default('medium'),
 });
 
-
 // Type exports (language-agnostic)
 export type LanguageType = z.infer<typeof LanguageTypeSchema>;
 export type EntityType = z.infer<typeof EntityTypeSchema>;
@@ -400,7 +399,6 @@ export type KnowledgePattern = z.infer<typeof KnowledgePatternSchema>;
 export type OracleQuery = z.infer<typeof OracleQuerySchema>;
 export type RepositoryAnalysis = z.infer<typeof RepositoryAnalysisSchema>;
 export type EnhancedDocumentationRequest = z.infer<typeof EnhancedDocumentationRequestSchema>;
-
 
 // Validation helpers (language-agnostic)
 export const validateCodeEntity = (data: unknown): CodeEntity => {
@@ -423,6 +421,8 @@ export const validateRepositoryAnalysis = (data: unknown): RepositoryAnalysis =>
   return RepositoryAnalysisSchema.parse(data);
 };
 
-export const validateEnhancedDocumentationRequest = (data: unknown): EnhancedDocumentationRequest => {
+export const validateEnhancedDocumentationRequest = (
+  data: unknown
+): EnhancedDocumentationRequest => {
   return EnhancedDocumentationRequestSchema.parse(data);
 };

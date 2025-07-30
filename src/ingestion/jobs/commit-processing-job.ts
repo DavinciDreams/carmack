@@ -1,6 +1,6 @@
-import { z } from 'zod';
 import { task } from '@trigger.dev/sdk/v3';
 import simpleGit from 'simple-git';
+import { z } from 'zod';
 
 export const CommitProcessingJobInputSchema = z.object({
   repositoryUrl: z.string().url(),
@@ -18,12 +18,17 @@ export const CommitProcessingJobResultSchema = z.object({
 });
 export type CommitProcessingJobResult = z.infer<typeof CommitProcessingJobResultSchema>;
 
-export async function runCommitProcessingJob(payload: CommitProcessingJobInput): Promise<CommitProcessingJobResult> {
+export async function runCommitProcessingJob(
+  payload: CommitProcessingJobInput
+): Promise<CommitProcessingJobResult> {
   const input = CommitProcessingJobInputSchema.parse(payload);
   try {
     const tmp = require('os').tmpdir();
     const path = require('path');
-    const repoDir = path.join(tmp, `commit-process-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    const repoDir = path.join(
+      tmp,
+      `commit-process-${Date.now()}-${Math.random().toString(36).slice(2)}`
+    );
     const git = simpleGit();
     await git.clone(input.repositoryUrl, repoDir, ['--depth=1']);
     await git.cwd(repoDir);

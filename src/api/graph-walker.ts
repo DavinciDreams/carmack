@@ -1,16 +1,17 @@
+import { z } from 'zod';
 import { getDatabaseOperations } from '../db/operations.ts';
 import type { Artifact, GraphEdge } from '../db/schema.ts';
-
-import { z } from 'zod';
 import { ArtifactSchema, GraphEdgeSchema } from '../db/schema.ts';
 
 export const GraphPathSchema = z.object({
-  artifacts: z.array(z.object({
-    artifact: ArtifactSchema,
-    depth: z.number(),
-    relationship: GraphEdgeSchema.optional(),
-    confidence: z.number(),
-  })),
+  artifacts: z.array(
+    z.object({
+      artifact: ArtifactSchema,
+      depth: z.number(),
+      relationship: GraphEdgeSchema.optional(),
+      confidence: z.number(),
+    })
+  ),
   total_confidence: z.number(),
   path_length: z.number(),
   path_ids: z.array(z.string()),
@@ -28,24 +29,23 @@ export const TraversalOptionsSchema = z.object({
 });
 
 export const GraphTraversalResponseSchema = z.object({
-  paths: z.array(z.object({
-    artifacts: z.array(z.object({
-      artifact: ArtifactSchema,
-      depth: z.number(),
-      relationship: GraphEdgeSchema.optional(),
-    })),
-    total_confidence: z.number(),
-    path_length: z.number(),
-  })),
+  paths: z.array(
+    z.object({
+      artifacts: z.array(
+        z.object({
+          artifact: ArtifactSchema,
+          depth: z.number(),
+          relationship: GraphEdgeSchema.optional(),
+        })
+      ),
+      total_confidence: z.number(),
+      path_length: z.number(),
+    })
+  ),
   total_paths: z.number(),
   max_depth_reached: z.number(),
   execution_time_ms: z.number(),
 });
-
-
-
-
-
 
 /**
  * Graph Walker for Knowledge Graph Traversal
@@ -54,8 +54,6 @@ export const GraphTraversalResponseSchema = z.object({
  * and evidence chain construction for the TensorRT-LLM Knowledge Graph.
  * Follows Carmack's principles of algorithmic correctness and performance.
  */
-
-
 
 // =============================================================================
 // GRAPH WALKER ERRORS
@@ -84,11 +82,9 @@ export type GraphTraversalResponse = z.infer<typeof GraphTraversalResponseSchema
  * Graph path representation
  */
 
-
 /**
  * Traversal options
  */
-
 
 /**
  * Traversal state for tracking progress
@@ -120,14 +116,16 @@ export class GraphWalker {
     const startTime = Date.now();
     try {
       // Validate input
-      const validatedRequest = z.object({
-        start_artifact_id: z.string().uuid(),
-        relation_types: z.array(z.string()).optional(),
-        max_depth: z.number().int().positive().max(10).default(3),
-        min_confidence: z.number().min(0).max(1).default(0.5),
-        direction: z.enum(['outgoing', 'incoming', 'both']).default('outgoing'),
-        limit: z.number().int().positive().max(1000).default(100),
-      }).parse(request);
+      const validatedRequest = z
+        .object({
+          start_artifact_id: z.string().uuid(),
+          relation_types: z.array(z.string()).optional(),
+          max_depth: z.number().int().positive().max(10).default(3),
+          min_confidence: z.number().min(0).max(1).default(0.5),
+          direction: z.enum(['outgoing', 'incoming', 'both']).default('outgoing'),
+          limit: z.number().int().positive().max(1000).default(100),
+        })
+        .parse(request);
 
       // Build traversal options
       const options: TraversalOptions = TraversalOptionsSchema.parse({
@@ -149,8 +147,8 @@ export class GraphWalker {
 
       // Build response
       const response: GraphTraversalResponse = {
-        paths: traversalResult.paths.map(path => ({
-          artifacts: path.artifacts.map(item => ({
+        paths: traversalResult.paths.map((path) => ({
+          artifacts: path.artifacts.map((item) => ({
             artifact: item.artifact,
             depth: item.depth,
             relationship: item.relationship,
@@ -159,24 +157,21 @@ export class GraphWalker {
           path_length: path.path_length,
         })),
         total_paths: traversalResult.paths.length,
-        max_depth_reached: Math.max(...traversalResult.paths.map(p => 
-          Math.max(...p.artifacts.map(a => a.depth))
-        ), 0),
+        max_depth_reached: Math.max(
+          ...traversalResult.paths.map((p) => Math.max(...p.artifacts.map((a) => a.depth))),
+          0
+        ),
         execution_time_ms: Date.now() - startTime,
       };
 
       // Validate output
       return GraphTraversalResponseSchema.parse(response);
     } catch (error) {
-      throw new GraphWalkerError(
-        'Graph traversal failed',
-        'TRAVERSAL_ERROR',
-        {
-          request,
-          error: error instanceof Error ? error.message : String(error),
-          executionTime: Date.now() - startTime,
-        }
-      );
+      throw new GraphWalkerError('Graph traversal failed', 'TRAVERSAL_ERROR', {
+        request,
+        error: error instanceof Error ? error.message : String(error),
+        executionTime: Date.now() - startTime,
+      });
     }
   }
 
@@ -192,31 +187,27 @@ export class GraphWalker {
       max_paths?: number;
     } = {}
   ): Promise<GraphPath[]> {
-    const {
-      max_depth = 5,
-      relation_types,
-      max_paths = 10,
-    } = options;
+    const { max_depth = 5, relation_types, max_paths = 10 } = options;
 
     try {
       // Use bidirectional BFS for efficiency
       const forwardPaths = await this.performBFS(sourceId, {
         max_depth: Math.ceil(max_depth / 2),
         direction: 'outgoing',
-  ...(relation_types ? { relation_types } : {}),
+        ...(relation_types ? { relation_types } : {}),
         target_id: targetId,
       });
 
       const backwardPaths = await this.performBFS(targetId, {
         max_depth: Math.ceil(max_depth / 2),
         direction: 'incoming',
-  ...(relation_types ? { relation_types } : {}),
+        ...(relation_types ? { relation_types } : {}),
         target_id: sourceId,
       });
 
       // Find intersections and build complete paths
       const completePaths = this.findPathIntersections(forwardPaths, backwardPaths);
-      
+
       // Sort by path length and confidence
       return completePaths
         .sort((a, b) => {
@@ -227,16 +218,12 @@ export class GraphWalker {
         })
         .slice(0, max_paths);
     } catch (error) {
-      throw new GraphWalkerError(
-        'Shortest path finding failed',
-        'SHORTEST_PATH_ERROR',
-        {
-          sourceId,
-          targetId,
-          options,
-          error: error instanceof Error ? error.message : String(error),
-        }
-      );
+      throw new GraphWalkerError('Shortest path finding failed', 'SHORTEST_PATH_ERROR', {
+        sourceId,
+        targetId,
+        options,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -266,15 +253,11 @@ export class GraphWalker {
 
       return components;
     } catch (error) {
-      throw new GraphWalkerError(
-        'SCC finding failed',
-        'SCC_ERROR',
-        {
-          artifactIds,
-          options,
-          error: error instanceof Error ? error.message : String(error),
-        }
-      );
+      throw new GraphWalkerError('SCC finding failed', 'SCC_ERROR', {
+        artifactIds,
+        options,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -300,15 +283,11 @@ export class GraphWalker {
           );
       }
     } catch (error) {
-      throw new GraphWalkerError(
-        'Centrality calculation failed',
-        'CENTRALITY_ERROR',
-        {
-          artifactIds,
-          centralityType,
-          error: error instanceof Error ? error.message : String(error),
-        }
-      );
+      throw new GraphWalkerError('Centrality calculation failed', 'CENTRALITY_ERROR', {
+        artifactIds,
+        centralityType,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -353,7 +332,7 @@ export class GraphWalker {
 
     // Sort paths by confidence and limit results
     state.paths.sort((a, b) => b.total_confidence - a.total_confidence);
-    
+
     return {
       paths: state.paths.slice(0, options.limit),
     };
@@ -390,7 +369,7 @@ export class GraphWalker {
 
     // Check for cycles if enabled
     if (options.avoid_cycles) {
-      const pathIds = newPath.map(item => item.artifact.id);
+      const pathIds = newPath.map((item) => item.artifact.id);
       if (new Set(pathIds).size !== pathIds.length) {
         return; // Cycle detected, skip this path
       }
@@ -411,7 +390,7 @@ export class GraphWalker {
         artifacts: newPath,
         total_confidence: pathConfidence,
         path_length: newPath.length,
-        path_ids: newPath.map(item => item.artifact.id),
+        path_ids: newPath.map((item) => item.artifact.id),
       };
       state.paths.push(graphPath);
     }
@@ -423,9 +402,9 @@ export class GraphWalker {
       }
 
       // Get target artifact
-      const targetId = options.direction === 'incoming' ? 
-        relationship.source_id : relationship.target_id;
-      
+      const targetId =
+        options.direction === 'incoming' ? relationship.source_id : relationship.target_id;
+
       const targetArtifact = await this.db.artifacts.getById(targetId);
       if (!targetArtifact) {
         continue;
@@ -433,10 +412,8 @@ export class GraphWalker {
 
       // Calculate new confidence with decay and relevance boost
       const relevanceBoost = options.relevance_boost[targetArtifact.type] || 1.0;
-      const newConfidence = pathConfidence * 
-        relationship.confidence * 
-        options.confidence_decay * 
-        relevanceBoost;
+      const newConfidence =
+        pathConfidence * relationship.confidence * options.confidence_decay * relevanceBoost;
 
       if (newConfidence < options.min_confidence) {
         continue;
@@ -485,9 +462,7 @@ export class GraphWalker {
 
     // Filter by relation types if specified
     if (relationTypes && relationTypes.length > 0) {
-      relationships = relationships.filter(rel => 
-        relationTypes.includes(rel.relation_type)
-      );
+      relationships = relationships.filter((rel) => relationTypes.includes(rel.relation_type));
     }
 
     // Sort by confidence
@@ -508,7 +483,7 @@ export class GraphWalker {
   ): Promise<Map<string, GraphPath>> {
     const paths = new Map<string, GraphPath>();
     const queue: Array<{ artifactId: string; path: GraphPath; depth: number }> = [];
-    
+
     // Initialize with start artifact
     const startArtifact = await this.db.artifacts.getById(startId);
     if (!startArtifact) {
@@ -516,11 +491,13 @@ export class GraphWalker {
     }
 
     const initialPath: GraphPath = {
-      artifacts: [{
-        artifact: startArtifact,
-        depth: 0,
-        confidence: 1.0,
-      }],
+      artifacts: [
+        {
+          artifact: startArtifact,
+          depth: 0,
+          confidence: 1.0,
+        },
+      ],
       total_confidence: 1.0,
       path_length: 1,
       path_ids: [startId],
@@ -531,7 +508,7 @@ export class GraphWalker {
 
     while (queue.length > 0) {
       const current = queue.shift()!;
-      
+
       if (current.depth >= options.max_depth) {
         continue;
       }
@@ -548,8 +525,8 @@ export class GraphWalker {
       );
 
       for (const relationship of relationships) {
-        const targetId = options.direction === 'outgoing' ? 
-          relationship.target_id : relationship.source_id;
+        const targetId =
+          options.direction === 'outgoing' ? relationship.target_id : relationship.source_id;
 
         // Skip if already visited with a better path
         if (paths.has(targetId)) {
@@ -573,7 +550,7 @@ export class GraphWalker {
               depth: current.depth + 1,
               relationship,
               confidence: relationship.confidence,
-            }
+            },
           ],
           total_confidence: current.path.total_confidence * relationship.confidence,
           path_length: current.path.path_length + 1,
@@ -600,19 +577,16 @@ export class GraphWalker {
     for (const [nodeId, forwardPath] of forwardPaths) {
       if (backwardPaths.has(nodeId)) {
         const backwardPath = backwardPaths.get(nodeId)!;
-        
+
         // Combine paths
         const combinedPath: GraphPath = {
           artifacts: [
             ...forwardPath.artifacts,
-            ...backwardPath.artifacts.slice(1).reverse() // Skip duplicate node and reverse
+            ...backwardPath.artifacts.slice(1).reverse(), // Skip duplicate node and reverse
           ],
           total_confidence: forwardPath.total_confidence * backwardPath.total_confidence,
           path_length: forwardPath.path_length + backwardPath.path_length - 1,
-          path_ids: [
-            ...forwardPath.path_ids,
-            ...backwardPath.path_ids.slice(1).reverse()
-          ],
+          path_ids: [...forwardPath.path_ids, ...backwardPath.path_ids.slice(1).reverse()],
         };
 
         completePaths.push(combinedPath);
@@ -638,7 +612,7 @@ export class GraphWalker {
 
     while (stack.length > 0) {
       const currentId = stack.pop()!;
-      
+
       if (visited.has(currentId)) {
         continue;
       }
@@ -648,15 +622,15 @@ export class GraphWalker {
 
       // Get all connected artifacts
       const relationships = await this.getRelationships(currentId, 'both', options.relation_types);
-      
+
       for (const relationship of relationships) {
         if (options.min_confidence && relationship.confidence < options.min_confidence) {
           continue;
         }
 
-        const connectedId = relationship.source_id === currentId ? 
-          relationship.target_id : relationship.source_id;
-        
+        const connectedId =
+          relationship.source_id === currentId ? relationship.target_id : relationship.source_id;
+
         if (!visited.has(connectedId)) {
           stack.push(connectedId);
         }
@@ -692,10 +666,12 @@ export class GraphWalker {
   /**
    * Calculate betweenness centrality (simplified)
    */
-  private async calculateBetweennessCentrality(artifactIds: string[]): Promise<Record<string, number>> {
+  private async calculateBetweennessCentrality(
+    artifactIds: string[]
+  ): Promise<Record<string, number>> {
     // Simplified implementation - in production would use proper betweenness algorithm
     const centrality: Record<string, number> = {};
-    
+
     for (const artifactId of artifactIds) {
       centrality[artifactId] = 0;
     }
@@ -706,10 +682,12 @@ export class GraphWalker {
   /**
    * Calculate closeness centrality (simplified)
    */
-  private async calculateClosenessCentrality(artifactIds: string[]): Promise<Record<string, number>> {
+  private async calculateClosenessCentrality(
+    artifactIds: string[]
+  ): Promise<Record<string, number>> {
     // Simplified implementation - in production would calculate shortest paths to all nodes
     const centrality: Record<string, number> = {};
-    
+
     for (const artifactId of artifactIds) {
       centrality[artifactId] = 0;
     }
@@ -722,18 +700,16 @@ export class GraphWalker {
    */
   private buildRelevanceBoost(): Record<string, number> {
     return {
-      'function': 1.2,
-      'class': 1.1,
-      'module': 1.0,
-      'file': 0.9,
-      'commit': 0.8,
-      'issue': 0.7,
-      'pr': 0.7,
-      'documentation': 0.6,
-      'config': 0.5,
-      'test': 0.4,
+      function: 1.2,
+      class: 1.1,
+      module: 1.0,
+      file: 0.9,
+      commit: 0.8,
+      issue: 0.7,
+      pr: 0.7,
+      documentation: 0.6,
+      config: 0.5,
+      test: 0.4,
     };
   }
-
-
 }

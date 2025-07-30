@@ -4,11 +4,10 @@ import { performance } from 'node:perf_hooks';
 import { getTelemetryCollector } from './collector.js';
 
 import type {
-
-/**
- * Telemetry integration for Carmack Coder transformation system
- * Provides comprehensive observability without impacting transformation performance
- */
+  /**
+   * Telemetry integration for Carmack Coder transformation system
+   * Provides comprehensive observability without impacting transformation performance
+   */
   PipelineStages,
   QualityMetrics,
   TransformationMode,

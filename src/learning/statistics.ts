@@ -1,4 +1,4 @@
-import type { EffectivenessMetrics, PatternFeatureVector, Vector } from './types.ts';
+import type { EffectivenessMetrics, PatternFeatureVector } from './types.ts';
 
 /**
  * Statistical Analysis Tools for Pattern Metrics

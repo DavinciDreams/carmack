@@ -1,6 +1,6 @@
-import { z } from 'zod';
 import { task } from '@trigger.dev/sdk/v3';
 import simpleGit from 'simple-git';
+import { z } from 'zod';
 
 export const PRExtractionJobInputSchema = z.object({
   repositoryUrl: z.string().url(),
@@ -20,12 +20,17 @@ export const PRExtractionJobResultSchema = z.object({
 });
 export type PRExtractionJobResult = z.infer<typeof PRExtractionJobResultSchema>;
 
-export async function runPRExtractionJob(payload: PRExtractionJobInput): Promise<PRExtractionJobResult> {
+export async function runPRExtractionJob(
+  payload: PRExtractionJobInput
+): Promise<PRExtractionJobResult> {
   const input = PRExtractionJobInputSchema.parse(payload);
   try {
-    const tmp = require('os').tmpdir();
-    const path = require('path');
-    const repoDir = path.join(tmp, `pr-extract-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    const tmp = require('node:os').tmpdir();
+    const path = require('node:path');
+    const repoDir = path.join(
+      tmp,
+      `pr-extract-${Date.now()}-${Math.random().toString(36).slice(2)}`
+    );
     const git = simpleGit();
     await git.clone(input.repositoryUrl, repoDir, ['--depth=1']);
     // Here, we return a stub result

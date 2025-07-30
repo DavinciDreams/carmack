@@ -3,8 +3,7 @@ import { join } from 'path';
 import { z } from 'zod';
 
 import { getDatabaseManager } from './connection.ts';
-import { type SchemaMigration } from './schema.ts';
-
+import type { SchemaMigration } from './schema.ts';
 
 /**
  * Database Migration Management for TensorRT-LLM Knowledge Graph
@@ -13,7 +12,6 @@ import { type SchemaMigration } from './schema.ts';
  * and rollback capabilities. Follows Carmack's principles of provable correctness
  * and safe database operations.
  */
-
 
 // =============================================================================
 // MIGRATION CONFIGURATION
@@ -125,17 +123,14 @@ export class MigrationManager {
         ORDER BY applied_at DESC 
         LIMIT 1
       `;
-      
+
       const result = await this.db.query(query);
-      
+
       return result.rows.length > 0 ? result.rows[0].version : null;
     } catch (error) {
-      throw new MigrationError(
-        'Failed to get current version',
-        'unknown',
-        'VERSION_CHECK_FAILED',
-        { error: error instanceof Error ? error.message : String(error) }
-      );
+      throw new MigrationError('Failed to get current version', 'unknown', 'VERSION_CHECK_FAILED', {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -148,10 +143,10 @@ export class MigrationManager {
         SELECT * FROM schema_migrations 
         ORDER BY applied_at ASC
       `;
-      
+
       const result = await this.db.query(query);
-      
-      return result.rows.map(row => ({
+
+      return result.rows.map((row) => ({
         ...row,
         applied_at: new Date(row.applied_at),
       }));
@@ -172,29 +167,22 @@ export class MigrationManager {
     try {
       const { readdir } = await import('fs/promises');
       const files = await readdir(this.config.migrationsPath);
-      
-      const migrationFiles = files
-        .filter(file => file.endsWith('.sql'))
-        .sort(); // Ensure consistent ordering
-      
+
+      const migrationFiles = files.filter((file) => file.endsWith('.sql')).sort(); // Ensure consistent ordering
+
       const migrations: MigrationFile[] = [];
-      
+
       for (const filename of migrationFiles) {
         const migration = await this.parseMigrationFile(filename);
         migrations.push(migration);
       }
-      
+
       return migrations;
     } catch (error) {
-      throw new MigrationError(
-        'Failed to discover migrations',
-        'unknown',
-        'DISCOVERY_FAILED',
-        { 
-          migrationsPath: this.config.migrationsPath,
-          error: error instanceof Error ? error.message : String(error)
-        }
-      );
+      throw new MigrationError('Failed to discover migrations', 'unknown', 'DISCOVERY_FAILED', {
+        migrationsPath: this.config.migrationsPath,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -207,10 +195,10 @@ export class MigrationManager {
         this.discoverMigrations(),
         this.getAppliedMigrations(),
       ]);
-      
-      const appliedVersions = new Set(applied.map(m => m.version));
-      
-      return available.filter(migration => !appliedVersions.has(migration.version));
+
+      const appliedVersions = new Set(applied.map((m) => m.version));
+
+      return available.filter((migration) => !appliedVersions.has(migration.version));
     } catch (error) {
       throw new MigrationError(
         'Failed to get pending migrations',
@@ -226,18 +214,18 @@ export class MigrationManager {
    */
   async applyMigration(migration: MigrationFile): Promise<MigrationResult> {
     const startTime = Date.now();
-    
+
     try {
       console.log(`🔄 Applying migration ${migration.version}: ${migration.description}`);
-      
+
       // Validate migration before applying
       await this.validateMigration(migration);
-      
+
       // Apply migration in transaction
       await this.db.transaction(async (client) => {
         // Execute migration SQL
         await client.query(migration.sql);
-        
+
         // Record migration in schema_migrations table
         await client.query(
           `INSERT INTO schema_migrations (version, description, rollback_sql) 
@@ -245,11 +233,11 @@ export class MigrationManager {
           [migration.version, migration.description, migration.rollbackSql]
         );
       });
-      
+
       const executionTime = Date.now() - startTime;
-      
+
       console.log(`✅ Migration ${migration.version} applied successfully (${executionTime}ms)`);
-      
+
       return {
         version: migration.version,
         success: true,
@@ -259,9 +247,9 @@ export class MigrationManager {
     } catch (error) {
       const executionTime = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : String(error);
-      
+
       console.error(`❌ Migration ${migration.version} failed: ${errorMessage}`);
-      
+
       return {
         version: migration.version,
         success: false,
@@ -278,20 +266,20 @@ export class MigrationManager {
   async migrate(): Promise<MigrationResult[]> {
     try {
       const pendingMigrations = await this.getPendingMigrations();
-      
+
       if (pendingMigrations.length === 0) {
         console.log('✅ No pending migrations');
         return [];
       }
-      
+
       console.log(`🔄 Applying ${pendingMigrations.length} pending migrations`);
-      
+
       const results: MigrationResult[] = [];
-      
+
       for (const migration of pendingMigrations) {
         const result = await this.applyMigration(migration);
         results.push(result);
-        
+
         // Stop on first failure
         if (!result.success) {
           throw new MigrationError(
@@ -302,21 +290,18 @@ export class MigrationManager {
           );
         }
       }
-      
-      console.log(`✅ All migrations applied successfully`);
-      
+
+      console.log('✅ All migrations applied successfully');
+
       return results;
     } catch (error) {
       if (error instanceof MigrationError) {
         throw error;
       }
-      
-      throw new MigrationError(
-        'Failed to apply migrations',
-        'unknown',
-        'MIGRATION_BATCH_FAILED',
-        { error: error instanceof Error ? error.message : String(error) }
-      );
+
+      throw new MigrationError('Failed to apply migrations', 'unknown', 'MIGRATION_BATCH_FAILED', {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -327,33 +312,31 @@ export class MigrationManager {
     try {
       const appliedMigrations = await this.getAppliedMigrations();
       const currentVersion = await this.getCurrentVersion();
-      
+
       if (!currentVersion) {
-        throw new MigrationError(
-          'No migrations to rollback',
-          targetVersion,
-          'NO_MIGRATIONS'
-        );
+        throw new MigrationError('No migrations to rollback', targetVersion, 'NO_MIGRATIONS');
       }
-      
+
       // Find migrations to rollback (in reverse order)
       const migrationsToRollback = appliedMigrations
-        .filter(m => m.version > targetVersion)
+        .filter((m) => m.version > targetVersion)
         .reverse();
-      
+
       if (migrationsToRollback.length === 0) {
         console.log(`✅ Already at version ${targetVersion}`);
         return [];
       }
-      
-      console.log(`🔄 Rolling back ${migrationsToRollback.length} migrations to version ${targetVersion}`);
-      
+
+      console.log(
+        `🔄 Rolling back ${migrationsToRollback.length} migrations to version ${targetVersion}`
+      );
+
       const results: MigrationResult[] = [];
-      
+
       for (const migration of migrationsToRollback) {
         const result = await this.rollbackMigration(migration);
         results.push(result);
-        
+
         // Stop on first failure
         if (!result.success) {
           throw new MigrationError(
@@ -364,15 +347,15 @@ export class MigrationManager {
           );
         }
       }
-      
+
       console.log(`✅ Rollback to version ${targetVersion} completed successfully`);
-      
+
       return results;
     } catch (error) {
       if (error instanceof MigrationError) {
         throw error;
       }
-      
+
       throw new MigrationError(
         'Failed to rollback migrations',
         targetVersion,
@@ -387,34 +370,29 @@ export class MigrationManager {
    */
   private async rollbackMigration(migration: SchemaMigration): Promise<MigrationResult> {
     const startTime = Date.now();
-    
+
     try {
       console.log(`🔄 Rolling back migration ${migration.version}`);
-      
+
       if (!migration.rollback_sql) {
-        throw new MigrationError(
-          'No rollback SQL available',
-          migration.version,
-          'NO_ROLLBACK_SQL'
-        );
+        throw new MigrationError('No rollback SQL available', migration.version, 'NO_ROLLBACK_SQL');
       }
-      
+
       // Apply rollback in transaction
       await this.db.transaction(async (client) => {
         // Execute rollback SQL
         await client.query(migration.rollback_sql!);
-        
+
         // Remove migration record
-        await client.query(
-          'DELETE FROM schema_migrations WHERE version = $1',
-          [migration.version]
-        );
+        await client.query('DELETE FROM schema_migrations WHERE version = $1', [migration.version]);
       });
-      
+
       const executionTime = Date.now() - startTime;
-      
-      console.log(`✅ Migration ${migration.version} rolled back successfully (${executionTime}ms)`);
-      
+
+      console.log(
+        `✅ Migration ${migration.version} rolled back successfully (${executionTime}ms)`
+      );
+
       return {
         version: migration.version,
         success: true,
@@ -424,9 +402,9 @@ export class MigrationManager {
     } catch (error) {
       const executionTime = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : String(error);
-      
+
       console.error(`❌ Rollback of ${migration.version} failed: ${errorMessage}`);
-      
+
       return {
         version: migration.version,
         success: false,
@@ -443,41 +421,50 @@ export class MigrationManager {
   async validateSchema(): Promise<{ isValid: boolean; errors: string[] }> {
     try {
       const errors: string[] = [];
-      
+
       // Check required tables exist
       const requiredTables = [
-        'artifacts', 'graph_edges', 'query_sessions', 'intermediates',
-        'commits', 'prs', 'cst_nodes', 'artifact_keywords', 'artifact_domains',
-        'query_logs', 'system_config', 'schema_migrations'
+        'artifacts',
+        'graph_edges',
+        'query_sessions',
+        'intermediates',
+        'commits',
+        'prs',
+        'cst_nodes',
+        'artifact_keywords',
+        'artifact_domains',
+        'query_logs',
+        'system_config',
+        'schema_migrations',
       ];
-      
+
       for (const table of requiredTables) {
         const exists = await this.tableExists(table);
         if (!exists) {
           errors.push(`Required table '${table}' does not exist`);
         }
       }
-      
+
       // Check pgvector extension
       const pgvectorExists = await this.extensionExists('vector');
       if (!pgvectorExists) {
         errors.push('pgvector extension is not installed');
       }
-      
+
       // Check critical indexes
       const criticalIndexes = [
         'idx_artifacts_embedding_hnsw',
         'idx_graph_edges_source_id',
         'idx_graph_edges_target_id',
       ];
-      
+
       for (const index of criticalIndexes) {
         const exists = await this.indexExists(index);
         if (!exists) {
           errors.push(`Critical index '${index}' does not exist`);
         }
       }
-      
+
       return {
         isValid: errors.length === 0,
         errors,
@@ -485,7 +472,9 @@ export class MigrationManager {
     } catch (error) {
       return {
         isValid: false,
-        errors: [`Schema validation failed: ${error instanceof Error ? error.message : String(error)}`],
+        errors: [
+          `Schema validation failed: ${error instanceof Error ? error.message : String(error)}`,
+        ],
       };
     }
   }
@@ -497,24 +486,21 @@ export class MigrationManager {
     try {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const name = backupName || `backup-${timestamp}`;
-      
+
       // This would typically use pg_dump or similar
       // For now, we'll create a logical backup by exporting data
       console.log(`🔄 Creating backup: ${name}`);
-      
+
       // Implementation would depend on deployment environment
       // Could use pg_dump, cloud provider backup APIs, etc.
-      
+
       console.log(`✅ Backup created: ${name}`);
-      
+
       return name;
     } catch (error) {
-      throw new MigrationError(
-        'Failed to create backup',
-        'backup',
-        'BACKUP_FAILED',
-        { error: error instanceof Error ? error.message : String(error) }
-      );
+      throw new MigrationError('Failed to create backup', 'backup', 'BACKUP_FAILED', {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -525,26 +511,26 @@ export class MigrationManager {
     try {
       const filePath = join(this.config.migrationsPath, filename);
       const content = await readFile(filePath, 'utf-8');
-      
+
       // Extract version from filename (e.g., "001_initial_schema.sql" -> "001")
       const versionMatch = filename.match(/^(\d+)_/);
       if (!versionMatch || !versionMatch[1]) {
         throw new Error(`Invalid migration filename format: ${filename}`);
       }
-      
+
       const version = versionMatch[1];
-      
+
       // Extract description from filename
       const description = filename
         .replace(/^\d+_/, '')
         .replace(/\.sql$/, '')
         .replace(/_/g, ' ')
-        .replace(/\b\w/g, l => l.toUpperCase());
-      
+        .replace(/\b\w/g, (l) => l.toUpperCase());
+
       // Look for rollback SQL in comments
       const rollbackMatch = content.match(/-- ROLLBACK:\s*\n([\s\S]*?)(?=\n--|$)/);
       const rollbackSql = rollbackMatch?.[1]?.trim();
-      
+
       return {
         version,
         filename,
@@ -553,12 +539,9 @@ export class MigrationManager {
         rollbackSql,
       };
     } catch (error) {
-      throw new MigrationError(
-        'Failed to parse migration file',
-        filename,
-        'PARSE_FAILED',
-        { error: error instanceof Error ? error.message : String(error) }
-      );
+      throw new MigrationError('Failed to parse migration file', filename, 'PARSE_FAILED', {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -567,7 +550,7 @@ export class MigrationManager {
    */
   private async validateMigration(migration: MigrationFile): Promise<void> {
     const errors: string[] = [];
-    
+
     // Check for dangerous operations
     const dangerousPatterns = [
       /DROP\s+TABLE/i,
@@ -575,26 +558,22 @@ export class MigrationManager {
       /TRUNCATE/i,
       /DELETE\s+FROM.*WHERE\s+1\s*=\s*1/i,
     ];
-    
+
     for (const pattern of dangerousPatterns) {
       if (pattern.test(migration.sql)) {
         errors.push(`Potentially dangerous operation detected: ${pattern.source}`);
       }
     }
-    
+
     // Check for required patterns in schema migrations
     if (migration.version.startsWith('001') || migration.version.startsWith('002')) {
       if (!migration.sql.includes('CREATE EXTENSION IF NOT EXISTS vector')) {
         errors.push('Schema migration should include pgvector extension');
       }
     }
-    
+
     if (errors.length > 0) {
-      throw new MigrationValidationError(
-        'Migration validation failed',
-        migration.version,
-        errors
-      );
+      throw new MigrationValidationError('Migration validation failed', migration.version, errors);
     }
   }
 
@@ -610,7 +589,7 @@ export class MigrationManager {
         rollback_sql TEXT
       )
     `;
-    
+
     await this.db.query(query);
   }
 
@@ -625,7 +604,7 @@ export class MigrationManager {
         AND table_name = $1
       )
     `;
-    
+
     const result = await this.db.query(query, [tableName]);
     return result.rows[0]?.exists || false;
   }
@@ -640,7 +619,7 @@ export class MigrationManager {
         WHERE extname = $1
       )
     `;
-    
+
     const result = await this.db.query(query, [extensionName]);
     return result.rows[0]?.exists || false;
   }
@@ -656,7 +635,7 @@ export class MigrationManager {
         AND indexname = $1
       )
     `;
-    
+
     const result = await this.db.query(query, [indexName]);
     return result.rows[0]?.exists || false;
   }

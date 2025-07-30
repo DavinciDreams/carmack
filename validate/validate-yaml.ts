@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 
 import { glob } from 'glob';
-import { YAML } from '../src/utils/yaml-handler';
 import { z } from 'zod';
+import { YAML } from '../src/utils/yaml-handler';
 
 async function validateYamlFiles() {
   console.log('🔍 Scanning for YAML files...');

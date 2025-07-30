@@ -170,96 +170,98 @@ export function isValidFilePath(path: string): boolean {
  /**
   * Sanitize a string for safe logging
   */
- export function sanitizeForLog(input: string, maxLength = 200): string {
-   // Remove potentially sensitive patterns and truncate
-   return (
-     input
-       .replace(/[^\x20-\x7E]/g, '?') // Replace non-printable characters
-       .slice(0, maxLength) + (input.length > maxLength ? '...' : '')
-   );
- }
- 
- /**
-  * Load enhanced patterns and convert them to standard format
-  */
- export async function loadEnhancedPatterns(filePath: string): Promise<AstPattern[]> {
-   try {
-     const content = await readFile(filePath, 'utf-8');
-     const data = JSON.parse(content);
-     
-     // Convert enhanced patterns to standard format
-     const patterns: AstPattern[] = [];
-     
-     if (data.patterns && Array.isArray(data.patterns)) {
-       for (const enhanced of data.patterns) {
-         // Extract pattern string
-         let pattern: string;
-         if (typeof enhanced.pattern === 'string') {
-           pattern = enhanced.pattern;
-         } else if (enhanced.pattern?.template) {
-           pattern = enhanced.pattern.template;
-         } else {
-           continue; // Skip invalid patterns
-         }
- 
-         // Extract replacement string
-         let replacement: string;
-         if (typeof enhanced.replacement === 'string') {
-           replacement = enhanced.replacement;
-         } else if (enhanced.replacement?.template) {
-           replacement = enhanced.replacement.template;
-         } else {
-           continue; // Skip invalid patterns
-         }
- 
-         patterns.push({
-           id: enhanced.id,
-           language: enhanced.language,
-           pattern,
-           replacement,
-           description: enhanced.description,
-           complexity: enhanced.complexity,
-           riskLevel: enhanced.riskLevel,
-           mode: 'template', // Enhanced patterns are template-based
-         });
-       }
-     }
-     
-     console.log(`Loaded ${patterns.length} enhanced patterns from ${filePath}`);
-     return patterns;
-   } catch (error) {
-     console.error(`Failed to load enhanced patterns from ${filePath}:`, error);
-     return [];
-   }
- }
- 
- /**
-  * Load patterns from multiple sources and merge them
-  */
- export async function loadAllPatterns(
-   mainPatternsPath: string,
-   enhancedPatternsPath?: string
- ): Promise<AstPattern[]> {
-   const mainPatterns = await loadPatterns(mainPatternsPath);
-   
-   if (!enhancedPatternsPath) {
-     return mainPatterns;
-   }
- 
-   const enhancedPatterns = await loadEnhancedPatterns(enhancedPatternsPath);
-   
-   // Merge patterns, avoiding duplicates by ID
-   const allPatterns = [...mainPatterns];
-   const existingIds = new Set(mainPatterns.map(p => p.id));
-   
-   for (const pattern of enhancedPatterns) {
-     if (!existingIds.has(pattern.id)) {
-       allPatterns.push(pattern);
-       existingIds.add(pattern.id);
-     }
-   }
-   
-   console.log(`Merged ${mainPatterns.length} main patterns with ${enhancedPatterns.length} enhanced patterns (${allPatterns.length} total)`);
-   
-   return allPatterns;
- }
+export function sanitizeForLog(input: string, maxLength = 200): string {
+  // Remove potentially sensitive patterns and truncate
+  return (
+    input
+      .replace(/[^\x20-\x7E]/g, '?') // Replace non-printable characters
+      .slice(0, maxLength) + (input.length > maxLength ? '...' : '')
+  );
+}
+
+/**
+ * Load enhanced patterns and convert them to standard format
+ */
+export async function loadEnhancedPatterns(filePath: string): Promise<AstPattern[]> {
+  try {
+    const content = await readFile(filePath, 'utf-8');
+    const data = JSON.parse(content);
+
+    // Convert enhanced patterns to standard format
+    const patterns: AstPattern[] = [];
+
+    if (data.patterns && Array.isArray(data.patterns)) {
+      for (const enhanced of data.patterns) {
+        // Extract pattern string
+        let pattern: string;
+        if (typeof enhanced.pattern === 'string') {
+          pattern = enhanced.pattern;
+        } else if (enhanced.pattern?.template) {
+          pattern = enhanced.pattern.template;
+        } else {
+          continue; // Skip invalid patterns
+        }
+
+        // Extract replacement string
+        let replacement: string;
+        if (typeof enhanced.replacement === 'string') {
+          replacement = enhanced.replacement;
+        } else if (enhanced.replacement?.template) {
+          replacement = enhanced.replacement.template;
+        } else {
+          continue; // Skip invalid patterns
+        }
+
+        patterns.push({
+          id: enhanced.id,
+          language: enhanced.language,
+          pattern,
+          replacement,
+          description: enhanced.description,
+          complexity: enhanced.complexity,
+          riskLevel: enhanced.riskLevel,
+          mode: 'template', // Enhanced patterns are template-based
+        });
+      }
+    }
+
+    console.log(`Loaded ${patterns.length} enhanced patterns from ${filePath}`);
+    return patterns;
+  } catch (error) {
+    console.error(`Failed to load enhanced patterns from ${filePath}:`, error);
+    return [];
+  }
+}
+
+/**
+ * Load patterns from multiple sources and merge them
+ */
+export async function loadAllPatterns(
+  mainPatternsPath: string,
+  enhancedPatternsPath?: string
+): Promise<AstPattern[]> {
+  const mainPatterns = await loadPatterns(mainPatternsPath);
+
+  if (!enhancedPatternsPath) {
+    return mainPatterns;
+  }
+
+  const enhancedPatterns = await loadEnhancedPatterns(enhancedPatternsPath);
+
+  // Merge patterns, avoiding duplicates by ID
+  const allPatterns = [...mainPatterns];
+  const existingIds = new Set(mainPatterns.map((p) => p.id));
+
+  for (const pattern of enhancedPatterns) {
+    if (!existingIds.has(pattern.id)) {
+      allPatterns.push(pattern);
+      existingIds.add(pattern.id);
+    }
+  }
+
+  console.log(
+    `Merged ${mainPatterns.length} main patterns with ${enhancedPatterns.length} enhanced patterns (${allPatterns.length} total)`
+  );
+
+  return allPatterns;
+}

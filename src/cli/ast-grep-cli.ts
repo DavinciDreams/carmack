@@ -1,6 +1,6 @@
 // src/utils/ast-grep-cli.ts
-import { $ } from "bun";
-import { z } from "zod";
+import { $ } from 'bun';
+import { z } from 'zod';
 
 /**
  * Zod schema for validating ast-grep JSON output.
@@ -24,11 +24,11 @@ export type AstGrepResult = z.infer<typeof AstGrepResultSchema>;
 export class AstGrepCliError extends Error {
   constructor(
     message: string,
-    public readonly code: string = "AST_GREP_CLI_ERROR",
+    public readonly code: string = 'AST_GREP_CLI_ERROR',
     public readonly context?: Record<string, unknown>
   ) {
     super(message);
-    this.name = "AstGrepCliError";
+    this.name = 'AstGrepCliError';
   }
 }
 
@@ -40,20 +40,18 @@ export class AstGrepCliError extends Error {
  */
 export async function runAstGrep(args: string[]): Promise<AstGrepResult> {
   // Use 'run' for --pattern, otherwise fallback to 'scan'
-  const usePattern = args.includes("--pattern") || args.some(arg => arg.startsWith("--pattern="));
+  const usePattern = args.includes('--pattern') || args.some((arg) => arg.startsWith('--pattern='));
   // Wrap pattern argument in single quotes for PowerShell compatibility
   const quotedArgs = usePattern
-    ? args.map((arg, i) =>
-        arg === "--pattern" && args[i + 1]
+    ? args.flatMap((arg, i) =>
+        arg === '--pattern' && args[i + 1]
           ? [arg, `'${args[i + 1]}'`]
-          : arg.startsWith("--pattern=")
-          ? `--pattern='${arg.slice("--pattern=".length)}'`
-          : arg
-      ).flat()
+          : arg.startsWith('--pattern=')
+            ? `--pattern='${arg.slice('--pattern='.length)}'`
+            : arg
+      )
     : args;
-  const cliArgs = usePattern
-    ? ["run", ...quotedArgs, "--json"]
-    : ["scan", ...args, "--json"];
+  const cliArgs = usePattern ? ['run', ...quotedArgs, '--json'] : ['scan', ...args, '--json'];
   let stdout: string;
   let stderr: string;
   let exitCode: number;
@@ -62,38 +60,36 @@ export async function runAstGrep(args: string[]): Promise<AstGrepResult> {
     const proc = $`ast-grep ${cliArgs}`;
     const result = await proc.text();
     stdout = result;
-    stderr = ""; // Bun's $ does not separate stderr, so errors will throw
+    stderr = ''; // Bun's $ does not separate stderr, so errors will throw
     exitCode = 0;
   } catch (err: any) {
-    stdout = err.stdout ?? "";
-    stderr = err.stderr ?? err.message ?? "Unknown error";
+    stdout = err.stdout ?? '';
+    stderr = err.stderr ?? err.message ?? 'Unknown error';
     exitCode = err.exitCode ?? 1;
-    throw new AstGrepCliError(
-      `ast-grep failed: ${stderr}`,
-      "AST_GREP_CLI_ERROR",
-      { args: cliArgs, stdout, stderr, exitCode }
-    );
+    throw new AstGrepCliError(`ast-grep failed: ${stderr}`, 'AST_GREP_CLI_ERROR', {
+      args: cliArgs,
+      stdout,
+      stderr,
+      exitCode,
+    });
   }
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(stdout);
-  } catch (e) {
-    throw new AstGrepCliError(
-      "Failed to parse ast-grep JSON output",
-      "AST_GREP_JSON_PARSE_ERROR",
-      { stdout }
-    );
+  } catch (_e) {
+    throw new AstGrepCliError('Failed to parse ast-grep JSON output', 'AST_GREP_JSON_PARSE_ERROR', {
+      stdout,
+    });
   }
 
   try {
     return AstGrepResultSchema.parse(parsed);
   } catch (e) {
-    throw new AstGrepCliError(
-      "ast-grep output validation failed",
-      "AST_GREP_SCHEMA_ERROR",
-      { parsed, error: e }
-    );
+    throw new AstGrepCliError('ast-grep output validation failed', 'AST_GREP_SCHEMA_ERROR', {
+      parsed,
+      error: e,
+    });
   }
 }
 

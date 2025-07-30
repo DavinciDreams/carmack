@@ -2,10 +2,7 @@ import { fromPromise } from 'xstate';
 import { z } from 'zod';
 
 import { ASTAnalyzer } from '../docs-generator/ast-analyzer.ts';
-import { validateDocumentationRequest, validateDocumentationResult } from './types.ts';
-
 import type {
-
   ArchitectureDoc,
   ClassDoc,
   DocumentationRequest,
@@ -14,6 +11,7 @@ import type {
   ModuleDoc,
   PatternDoc,
 } from './types.ts';
+import { validateDocumentationRequest, validateDocumentationResult } from './types.ts';
 
 // JSON Pattern structure interfaces
 interface JsonPatternTestCase {
@@ -115,13 +113,17 @@ export class DocumentationGenerator {
 
     try {
       // Discover source files if not provided
-      const sourceFiles = validatedRequest.sourceFiles || (await this.discoverSourceFiles(validatedRequest.sourceDir || './src'));
+      const sourceFiles =
+        validatedRequest.sourceFiles ||
+        (await this.discoverSourceFiles(validatedRequest.sourceDir || './src'));
 
       // Compute relative paths from sourceDir if provided
       let relativeSourceFiles = sourceFiles;
       if (validatedRequest.sourceDir) {
         const { relative } = await import('node:path');
-        relativeSourceFiles = sourceFiles.map(f => relative(validatedRequest.sourceDir ?? './src', f));
+        relativeSourceFiles = sourceFiles.map((f) =>
+          relative(validatedRequest.sourceDir ?? './src', f)
+        );
       }
 
       // Generate documentation based on type
@@ -142,7 +144,10 @@ export class DocumentationGenerator {
           content = await this.generateAPIDocumentation(relativeSourceFiles, validatedRequest);
           break;
         case 'architecture':
-          content = await this.generateArchitectureDocumentation(relativeSourceFiles, validatedRequest);
+          content = await this.generateArchitectureDocumentation(
+            relativeSourceFiles,
+            validatedRequest
+          );
           break;
         case 'patterns':
           content = await this.generatePatternDocumentation(validatedRequest);
@@ -151,7 +156,10 @@ export class DocumentationGenerator {
           content = await this.generateUsageDocumentation(relativeSourceFiles, validatedRequest);
           break;
         case 'changelog':
-          content = await this.generateChangelogDocumentation(relativeSourceFiles, validatedRequest);
+          content = await this.generateChangelogDocumentation(
+            relativeSourceFiles,
+            validatedRequest
+          );
           break;
         default:
           throw new Error(`Unsupported documentation type: ${validatedRequest.type}`);
@@ -490,15 +498,15 @@ export class DocumentationGenerator {
   /**
    * Discover source files in the project
    */
-  async discoverSourceFiles(sourceDir: string = './workspace/repository'): Promise<string[]> {
+  async discoverSourceFiles(sourceDir = './workspace/repository'): Promise<string[]> {
     const { readdir, stat } = await import('node:fs/promises');
     const { join } = await import('node:path');
 
     const files: string[] = [];
 
-  // Always use the provided sourceDir, never default to ./src unless undefined
-  if (!sourceDir) sourceDir = './src';
-  async function scanDirectory(dir: string): Promise<void> {
+    // Always use the provided sourceDir, never default to ./src unless undefined
+    if (!sourceDir) sourceDir = './src';
+    async function scanDirectory(dir: string): Promise<void> {
       try {
         const entries = await readdir(dir);
 
@@ -508,7 +516,10 @@ export class DocumentationGenerator {
 
           if (stats.isDirectory() && !entry.startsWith('.') && entry !== 'node_modules') {
             await scanDirectory(fullPath);
-          } else if (stats.isFile() && /\.(ts|js|cpp|cxx|cc|c\+\+|c|h|hpp|cu|cuh|py)$/.test(entry)) {
+          } else if (
+            stats.isFile() &&
+            /\.(ts|js|cpp|cxx|cc|c\+\+|c|h|hpp|cu|cuh|py)$/.test(entry)
+          ) {
             files.push(fullPath);
           }
         }
@@ -517,10 +528,14 @@ export class DocumentationGenerator {
       }
     }
 
-  console.log(`[discoverSourceFiles] Scanning directory: ${sourceDir}`);
-  await scanDirectory(sourceDir);
-  console.log(`[discoverSourceFiles] Files found:`, files.slice(0, 10), `... total: ${files.length}`);
-  return files;
+    console.log(`[discoverSourceFiles] Scanning directory: ${sourceDir}`);
+    await scanDirectory(sourceDir);
+    console.log(
+      '[discoverSourceFiles] Files found:',
+      files.slice(0, 10),
+      `... total: ${files.length}`
+    );
+    return files;
   }
 
   /**
@@ -1375,7 +1390,6 @@ export class DocumentationGenerator {
 </html>`;
 
     return html;
-
   }
 
   /**
@@ -1531,7 +1545,7 @@ export class DocumentationGenerator {
       if (!groupedExamples.has(key)) {
         groupedExamples.set(key, []);
       }
-      groupedExamples.get(key)!.push(example);
+      groupedExamples.get(key)?.push(example);
     }
 
     markdown += '## Table of Contents\n\n';
@@ -1598,7 +1612,7 @@ export class DocumentationGenerator {
         if (!groupedExamples.has(key)) {
           groupedExamples.set(key, []);
         }
-        groupedExamples.get(key)!.push(example);
+        groupedExamples.get(key)?.push(example);
       }
 
       for (const [functionName, functionExamples] of groupedExamples) {
@@ -1691,16 +1705,16 @@ export class DocumentationGenerator {
                 description: message,
                 timestamp,
               });
-            } catch (error) {
+            } catch (_error) {
               // Skip if we can't get commit details
             }
           }
-        } catch (error) {
+        } catch (_error) {
           // File might not be in Git or no recent changes
           console.warn(`No Git history found for ${filePath}`);
         }
       }
-    } catch (error) {
+    } catch (_error) {
       console.warn('Git not available, using file modification times');
 
       // Fallback: use file modification times
@@ -1715,7 +1729,7 @@ export class DocumentationGenerator {
             description: 'File modified',
             timestamp: stats.mtime.toISOString(),
           });
-        } catch (error) {
+        } catch (_error) {
           // Skip files that can't be accessed
         }
       }
@@ -1747,7 +1761,7 @@ export class DocumentationGenerator {
         if (!changesByDate.has(date)) {
           changesByDate.set(date, []);
         }
-        changesByDate.get(date)!.push(change);
+        changesByDate.get(date)?.push(change);
       }
     }
 
@@ -1826,7 +1840,7 @@ export class DocumentationGenerator {
           if (!changesByDate.has(date)) {
             changesByDate.set(date, []);
           }
-          changesByDate.get(date)!.push(change);
+          changesByDate.get(date)?.push(change);
         }
       }
 
@@ -1970,7 +1984,6 @@ export class DocumentationGenerator {
 
     return examples.slice(0, 5); // Limit to first 5 examples per file
   }
-
 }
 
 // Create and export the documentation generator actor

@@ -7,9 +7,9 @@
  * error handling and efficient processing.
  */
 
-export * from './repository-clone-job.ts';
-export * from './commit-processing-job.ts';
-export * from './pr-extraction-job.ts';
 export * from './ast-analysis-job.ts';
+export * from './commit-processing-job.ts';
 export * from './embedding-generation-job.ts';
 export * from './ingestion-orchestrator-job.ts';
+export * from './pr-extraction-job.ts';
+export * from './repository-clone-job.ts';
