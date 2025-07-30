@@ -240,11 +240,11 @@ export class DatabaseConnectionManager {
       }
     }
 
-    throw new DatabaseConnectionError(
-      `Database connection test failed after ${maxRetries} attempts`,
-      'CONNECTION_TEST_FAILED',
-lastError?.message
-    );
+throw new DatabaseConnectionError(
+  `Database connection test failed after ${maxRetries} attempts`,
+  'CONNECTION_TEST_FAILED',
+  lastError ? { message: lastError.message } : undefined
+);
   }
 
   /**
