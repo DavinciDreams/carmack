@@ -1,0 +1,1369 @@
+{
+  "stats": {
+    "filesAnalyzed": 924,
+    "totalLines": 580700,
+    "issuesFound": 100,
+    "startTime": 7021.9235,
+    "endTime": 21557.6129
+  },
+  "issues": [
+    {
+      "type": "type-error",
+      "severity": "error",
+      "file": "C:/Users/lmwat/carmack/src/api/ai-processor.ts",
+      "line": 16,
+      "column": 3,
+      "message": "'Hypothesis' is declared but never used."
+    },
+    {
+      "type": "type-error",
+      "severity": "error",
+      "file": "C:/Users/lmwat/carmack/src/api/ai-processor.ts",
+      "line": 311,
+      "column": 5,
+      "message": "'facts' is declared but its value is never read."
+    },
+    {
+      "type": "type-error",
+      "severity": "error",
+      "file": "C:/Users/lmwat/carmack/src/api/ai-processor.ts",
+      "line": 335,
+      "column": 11,
+      "message": "'enhanceEvidence' is declared but its value is never read."
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/config/environment.ts",
+      "line": 292,
+      "column": 7,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/config/environment.ts",
+      "line": 294,
+      "column": 9,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/config/environment.ts",
+      "line": 299,
+      "column": 5,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/config/environment.ts",
+      "line": 396,
+      "column": 9,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "null-access",
+      "severity": "error",
+      "file": "C:/Users/lmwat/carmack/src/db/connection.ts",
+      "line": 246,
+      "column": 20,
+      "message": "Property access 'message' on possibly null/undefined value",
+      "fix": {
+        "description": "Add optional chaining",
+        "code": "lastError?.message"
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/db/connection.ts",
+      "line": 174,
+      "column": 9,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/db/connection.ts",
+      "line": 178,
+      "column": 9,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/db/connection.ts",
+      "line": 182,
+      "column": 9,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/db/connection.ts",
+      "line": 192,
+      "column": 7,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/db/connection.ts",
+      "line": 224,
+      "column": 11,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/db/connection.ts",
+      "line": 225,
+      "column": 11,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/db/connection.ts",
+      "line": 226,
+      "column": 11,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/db/connection.ts",
+      "line": 233,
+      "column": 9,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/db/connection.ts",
+      "line": 237,
+      "column": 11,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/db/connection.ts",
+      "line": 267,
+      "column": 9,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/db/connection.ts",
+      "line": 272,
+      "column": 11,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/db/connection.ts",
+      "line": 278,
+      "column": 7,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/db/connection.ts",
+      "line": 434,
+      "column": 7,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "type-error",
+      "severity": "error",
+      "file": "C:/Users/lmwat/carmack/src/db/operations.ts",
+      "line": 352,
+      "column": 11,
+      "message": "'startTime' is declared but its value is never read."
+    },
+    {
+      "type": "type-error",
+      "severity": "error",
+      "file": "C:/Users/lmwat/carmack/src/api/graph-walker.ts",
+      "line": 741,
+      "column": 11,
+      "message": "'artifactToRecord' is declared but its value is never read."
+    },
+    {
+      "type": "type-error",
+      "severity": "error",
+      "file": "C:/Users/lmwat/carmack/src/api/graph-walker.ts",
+      "line": 769,
+      "column": 11,
+      "message": "'edgeToRecord' is declared but its value is never read."
+    },
+    {
+      "type": "null-access",
+      "severity": "error",
+      "file": "C:/Users/lmwat/carmack/src/api/query-engine.ts",
+      "line": 512,
+      "column": 16,
+      "message": "Property access 'max_results' on possibly null/undefined value",
+      "fix": {
+        "description": "Add optional chaining",
+        "code": "validatedRequest.options?.max_results"
+      }
+    },
+    {
+      "type": "null-access",
+      "severity": "error",
+      "file": "C:/Users/lmwat/carmack/src/api/query-engine.ts",
+      "line": 519,
+      "column": 68,
+      "message": "Property access 'include_code_snippets' on possibly null/undefined value",
+      "fix": {
+        "description": "Add optional chaining",
+        "code": "validatedRequest.options?.include_code_snippets"
+      }
+    },
+    {
+      "type": "type-error",
+      "severity": "error",
+      "file": "C:/Users/lmwat/carmack/src/api/query-engine.ts",
+      "line": 131,
+      "column": 7,
+      "message": "'DOMAIN_KEYWORDS' is declared but its value is never read."
+    },
+    {
+      "type": "type-error",
+      "severity": "error",
+      "file": "C:/Users/lmwat/carmack/src/api/query-engine.ts",
+      "line": 395,
+      "column": 35,
+      "message": "'query' is declared but its value is never read."
+    },
+    {
+      "type": "type-error",
+      "severity": "error",
+      "file": "C:/Users/lmwat/carmack/src/api/query-engine.ts",
+      "line": 494,
+      "column": 11,
+      "message": "'embeddingService' is declared but its value is never read."
+    },
+    {
+      "type": "type-error",
+      "severity": "error",
+      "file": "C:/Users/lmwat/carmack/src/api/query-engine.ts",
+      "line": 580,
+      "column": 43,
+      "message": "'intent' is declared but its value is never read."
+    },
+    {
+      "type": "type-error",
+      "severity": "error",
+      "file": "C:/Users/lmwat/carmack/src/api/session-manager.ts",
+      "line": 8,
+      "column": 3,
+      "message": "'SessionInfoSchema' is declared but its value is never read."
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/analysis.ts",
+      "line": 98,
+      "column": 9,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/analysis.ts",
+      "line": 110,
+      "column": 5,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "null-access",
+      "severity": "error",
+      "file": "C:/Users/lmwat/carmack/src/actors/ast-grep-transformation.ts",
+      "line": 272,
+      "column": 25,
+      "message": "Property access 'priority' on possibly null/undefined value",
+      "fix": {
+        "description": "Add optional chaining",
+        "code": "a.performance?.priority"
+      }
+    },
+    {
+      "type": "null-access",
+      "severity": "error",
+      "file": "C:/Users/lmwat/carmack/src/actors/ast-grep-transformation.ts",
+      "line": 273,
+      "column": 25,
+      "message": "Property access 'priority' on possibly null/undefined value",
+      "fix": {
+        "description": "Add optional chaining",
+        "code": "b.performance?.priority"
+      }
+    },
+    {
+      "type": "null-access",
+      "severity": "error",
+      "file": "C:/Users/lmwat/carmack/src/actors/ast-grep-transformation.ts",
+      "line": 302,
+      "column": 29,
+      "message": "Property access 'language' on possibly null/undefined value",
+      "fix": {
+        "description": "Add optional chaining",
+        "code": "patterns[0]?.language"
+      }
+    },
+    {
+      "type": "null-access",
+      "severity": "error",
+      "file": "C:/Users/lmwat/carmack/src/actors/ast-grep-transformation.ts",
+      "line": 378,
+      "column": 24,
+      "message": "Property access 'maxMatches' on possibly null/undefined value",
+      "fix": {
+        "description": "Add optional chaining",
+        "code": "pattern.performance?.maxMatches"
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/ast-grep-transformation.ts",
+      "line": 196,
+      "column": 5,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/ast-grep-transformation.ts",
+      "line": 202,
+      "column": 5,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/ast-grep-transformation.ts",
+      "line": 247,
+      "column": 9,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/ast-grep-transformation.ts",
+      "line": 252,
+      "column": 7,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/ast-grep-transformation.ts",
+      "line": 311,
+      "column": 5,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/ast-grep-transformation.ts",
+      "line": 323,
+      "column": 9,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/ast-grep-transformation.ts",
+      "line": 340,
+      "column": 7,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/ast-grep-transformation.ts",
+      "line": 346,
+      "column": 9,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/ast-grep-transformation.ts",
+      "line": 407,
+      "column": 5,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/ast-grep-transformation.ts",
+      "line": 448,
+      "column": 5,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/ast-grep-transformation.ts",
+      "line": 508,
+      "column": 5,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/ast-grep-transformation.ts",
+      "line": 509,
+      "column": 5,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/ast-grep-transformation.ts",
+      "line": 510,
+      "column": 5,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/ast-grep-transformation.ts",
+      "line": 511,
+      "column": 5,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/ast-grep-transformation.ts",
+      "line": 515,
+      "column": 5,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/ast-grep-transformation.ts",
+      "line": 526,
+      "column": 11,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/ast-grep-transformation.ts",
+      "line": 532,
+      "column": 13,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/ast-grep-transformation.ts",
+      "line": 534,
+      "column": 13,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/ast-grep-transformation.ts",
+      "line": 538,
+      "column": 9,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/ast-grep-transformation.ts",
+      "line": 543,
+      "column": 11,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/ast-grep-transformation.ts",
+      "line": 550,
+      "column": 7,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/ast-grep-transformation.ts",
+      "line": 554,
+      "column": 9,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/ast-grep-transformation.ts",
+      "line": 560,
+      "column": 5,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/ast-grep-transformation.ts",
+      "line": 562,
+      "column": 5,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/complexity.ts",
+      "line": 33,
+      "column": 3,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/complexity.ts",
+      "line": 41,
+      "column": 3,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/complexity.ts",
+      "line": 59,
+      "column": 7,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/complexity.ts",
+      "line": 160,
+      "column": 3,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/dafny.ts",
+      "line": 25,
+      "column": 3,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/dafny.ts",
+      "line": 34,
+      "column": 5,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/dafny.ts",
+      "line": 48,
+      "column": 3,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/dafny.ts",
+      "line": 92,
+      "column": 3,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/dafny.ts",
+      "line": 98,
+      "column": 7,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/dafny.ts",
+      "line": 116,
+      "column": 9,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/dafny.ts",
+      "line": 120,
+      "column": 5,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/dafny.ts",
+      "line": 203,
+      "column": 3,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "null-access",
+      "severity": "error",
+      "file": "C:/Users/lmwat/carmack/src/actors/feedback-loop.ts",
+      "line": 377,
+      "column": 5,
+      "message": "Property access 'push' on possibly null/undefined value",
+      "fix": {
+        "description": "Add optional chaining",
+        "code": "groups[item.patternId]?.push"
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/feedback-loop.ts",
+      "line": 155,
+      "column": 3,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/feedback-loop.ts",
+      "line": 163,
+      "column": 3,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/feedback-loop.ts",
+      "line": 299,
+      "column": 7,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "type-error",
+      "severity": "error",
+      "file": "C:/Users/lmwat/carmack/src/actors/feedback-loop.ts",
+      "line": 175,
+      "column": 3,
+      "message": "'options' is declared but its value is never read."
+    },
+    {
+      "type": "null-access",
+      "severity": "error",
+      "file": "C:/Users/lmwat/carmack/src/actors/git.ts",
+      "line": 139,
+      "column": 25,
+      "message": "Property access 'hash' on possibly null/undefined value",
+      "fix": {
+        "description": "Add optional chaining",
+        "code": "log.latest?.hash"
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/git.ts",
+      "line": 34,
+      "column": 3,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/git.ts",
+      "line": 47,
+      "column": 3,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/git.ts",
+      "line": 79,
+      "column": 5,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/git.ts",
+      "line": 90,
+      "column": 3,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/git.ts",
+      "line": 116,
+      "column": 5,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/git.ts",
+      "line": 127,
+      "column": 3,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/actors/git.ts",
+      "line": 152,
+      "column": 5,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "null-access",
+      "severity": "error",
+      "file": "C:/Users/lmwat/carmack/src/providers/llm-providers.ts",
+      "line": 150,
+      "column": 12,
+      "message": "Property access 'totalCost' on possibly null/undefined value",
+      "fix": {
+        "description": "Add optional chaining",
+        "code": "this.state.get(key)?.totalCost"
+      }
+    },
+    {
+      "type": "null-access",
+      "severity": "error",
+      "file": "C:/Users/lmwat/carmack/src/providers/llm-providers.ts",
+      "line": 219,
+      "column": 24,
+      "message": "Property access 'maxRetries' on possibly null/undefined value",
+      "fix": {
+        "description": "Add optional chaining",
+        "code": "validatedRequest.options?.maxRetries"
+      }
+    },
+    {
+      "type": "null-access",
+      "severity": "error",
+      "file": "C:/Users/lmwat/carmack/src/providers/llm-providers.ts",
+      "line": 248,
+      "column": 17,
+      "message": "Property access 'jsonMode' on possibly null/undefined value",
+      "fix": {
+        "description": "Add optional chaining",
+        "code": "validatedRequest.options?.jsonMode"
+      }
+    },
+    {
+      "type": "null-access",
+      "severity": "error",
+      "file": "C:/Users/lmwat/carmack/src/providers/llm-providers.ts",
+      "line": 328,
+      "column": 24,
+      "message": "Property access 'maxRetries' on possibly null/undefined value",
+      "fix": {
+        "description": "Add optional chaining",
+        "code": "validatedRequest.options?.maxRetries"
+      }
+    },
+    {
+      "type": "null-access",
+      "severity": "error",
+      "file": "C:/Users/lmwat/carmack/src/providers/llm-providers.ts",
+      "line": 426,
+      "column": 24,
+      "message": "Property access 'maxRetries' on possibly null/undefined value",
+      "fix": {
+        "description": "Add optional chaining",
+        "code": "validatedRequest.options?.maxRetries"
+      }
+    },
+    {
+      "type": "null-access",
+      "severity": "error",
+      "file": "C:/Users/lmwat/carmack/src/providers/llm-providers.ts",
+      "line": 526,
+      "column": 24,
+      "message": "Property access 'maxRetries' on possibly null/undefined value",
+      "fix": {
+        "description": "Add optional chaining",
+        "code": "validatedRequest.options?.maxRetries"
+      }
+    },
+    {
+      "type": "null-access",
+      "severity": "error",
+      "file": "C:/Users/lmwat/carmack/src/providers/llm-providers.ts",
+      "line": 671,
+      "column": 48,
+      "message": "Property access 'message' on possibly null/undefined value",
+      "fix": {
+        "description": "Add optional chaining",
+        "code": "lastError?.message"
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/providers/llm-providers.ts",
+      "line": 178,
+      "column": 5,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/providers/llm-providers.ts",
+      "line": 181,
+      "column": 9,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/providers/llm-providers.ts",
+      "line": 186,
+      "column": 7,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/providers/llm-providers.ts",
+      "line": 210,
+      "column": 5,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/providers/llm-providers.ts",
+      "line": 223,
+      "column": 9,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/providers/llm-providers.ts",
+      "line": 256,
+      "column": 11,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    },
+    {
+      "type": "performance",
+      "severity": "warning",
+      "file": "C:/Users/lmwat/carmack/src/providers/llm-providers.ts",
+      "line": 275,
+      "column": 9,
+      "message": "Console statement in production code",
+      "fix": {
+        "description": "Remove console statement",
+        "code": ""
+      }
+    }
+  ],
+  "config": {
+    "projectPath": "C:\\Users\\lmwat\\carmack",
+    "includePatterns": [
+      "baml_client\\async_client.ts",
+      "baml_client\\async_request.ts",
+      "baml_client\\config.ts",
+      "baml_client\\globals.ts",
+      "baml_client\\index.ts",
+      "baml_client\\inlinedbaml.ts",
+      "baml_client\\parser.ts",
+      "baml_client\\partial_types.ts",
+      "baml_client\\sync_client.ts",
+      "baml_client\\sync_request.ts",
+      "baml_client\\tracing.ts",
+      "baml_client\\types.ts",
+      "baml_client\\type_builder.ts",
+      "carmack.config.ts",
+      "debug-test.ts",
+      "demo\\epic-testing-demo.ts",
+      "demo\\epic-testing-validation.ts",
+      "demo\\metrics-dashboard.ts",
+      "demo\\package-demo.ts",
+      "demo\\simple-oracle-demo.ts",
+      "demo\\tensorrt-demo-with-telemetry.ts",
+      "demo\\tensorrt-demo.ts",
+      "demo\\test-complete-system.ts",
+      "examples\\tensorrt-scenarios.ts",
+      "index.ts",
+      "oracle-cli.ts",
+      "run-compatibility-migration.ts",
+      "run-migration.ts",
+      "src\\actors\\analysis.ts",
+      "src\\actors\\ast-grep-transformation.ts",
+      "src\\actors\\complexity.ts",
+      "src\\actors\\cpp-transformation.ts",
+      "src\\actors\\dafny.ts",
+      "src\\actors\\feedback-loop.ts",
+      "src\\actors\\git.ts",
+      "src\\actors\\llm-testing-framework.ts",
+      "src\\actors\\llm-transformation-enhanced.ts",
+      "src\\actors\\pattern-discovery.ts",
+      "src\\actors\\pattern-learning.ts",
+      "src\\actors\\template-engine.ts",
+      "src\\actors\\unified-analyzer-actor.ts",
+      "src\\actors\\unified-analyzer.ts",
+      "src\\actors\\validation.ts",
+      "src\\api\\ai-processor.ts",
+      "src\\api\\contracts.ts",
+      "src\\api\\graph-walker.ts",
+      "src\\api\\index.ts",
+      "src\\api\\query-engine.ts",
+      "src\\api\\query-pipeline.ts",
+      "src\\api\\routes\\file.ts",
+      "src\\api\\routes\\pattern.ts",
+      "src\\api\\routes\\query-routes.ts",
+      "src\\api\\routes\\repository.ts",
+      "src\\api\\routes\\telemetry.ts",
+      "src\\api\\routes\\vector.ts",
+      "src\\api\\server.ts",
+      "src\\api\\session-manager.ts",
+      "src\\cli\\documentation-generator-cli.ts",
+      "src\\cli\\knowledge-graph-cli.ts",
+      "src\\cli\\llm-annotate-cli.ts",
+      "src\\config\\environment.ts",
+      "src\\db\\connection.ts",
+      "src\\db\\index.ts",
+      "src\\db\\migrations.ts",
+      "src\\db\\operations.ts",
+      "src\\db\\schema.ts",
+      "src\\db\\seeding.ts",
+      "src\\db\\test-schema.ts",
+      "src\\docs\\demo.ts",
+      "src\\docs\\oracle-query-processor.ts",
+      "src\\docs\\test-system.ts",
+      "src\\docs-generator\\ast-analyzer.ts",
+      "src\\docs-generator\\generator-pipeline.ts",
+      "src\\docs-generator\\generator.ts",
+      "src\\docs-generator\\index.ts",
+      "src\\docs-generator\\multi-language-analyzer.ts",
+      "src\\docs-generator\\repo-watcher.ts",
+      "src\\docs-generator\\types.ts",
+      "src\\example.ts",
+      "src\\ingestion\\content-processor.ts",
+      "src\\ingestion\\github-client.ts",
+      "src\\ingestion\\index.ts",
+      "src\\ingestion\\ingestion-orchestrator.ts",
+      "src\\ingestion\\jobs\\ast-analysis-job.ts",
+      "src\\ingestion\\jobs\\commit-processing-job.ts",
+      "src\\ingestion\\jobs\\embedding-generation-job.ts",
+      "src\\ingestion\\jobs\\index.ts",
+      "src\\ingestion\\jobs\\ingestion-orchestrator-job.ts",
+      "src\\ingestion\\jobs\\pr-extraction-job.ts",
+      "src\\ingestion\\jobs\\repository-clone-job.ts",
+      "src\\ingestion\\repository-manager.ts",
+      "src\\ingestion\\semantic-indexer.ts",
+      "src\\ingestion\\test-ingestion-pipeline.ts",
+      "src\\learning\\clustering.ts",
+      "src\\learning\\effectiveness-scorer.ts",
+      "src\\learning\\index.ts",
+      "src\\learning\\nlp.ts",
+      "src\\learning\\recommendation-engine.ts",
+      "src\\learning\\reinforcement.ts",
+      "src\\learning\\similarity.ts",
+      "src\\learning\\statistics.ts",
+      "src\\learning\\types.ts",
+      "src\\llm-annotation\\analyzer.ts",
+      "src\\llm-annotation\\index.ts",
+      "src\\llm-annotation\\llm-annotate.ts",
+      "src\\llm-annotation\\types.ts",
+      "src\\llm-transformation\\index.ts",
+      "src\\llm-transformation\\llm-transformation.ts",
+      "src\\machine.ts",
+      "src\\monitoring\\index.ts",
+      "src\\pipeline\\production-pipeline.ts",
+      "src\\production\\index.ts",
+      "src\\production\\production-enhanced.ts",
+      "src\\production\\production.config.ts",
+      "src\\production\\production.ts",
+      "src\\providers\\llm-providers.ts",
+      "src\\repository-manager.ts",
+      "src\\scripts\\enhance-commit-message.ts",
+      "src\\scripts\\pre-commit-imports.ts",
+      "src\\scripts\\pre-commit-typescript.ts",
+      "src\\scripts\\setup-database.ts",
+      "src\\scripts\\setup-infrastructure.ts",
+      "src\\scripts\\update-docs.ts",
+      "src\\scripts\\validate-env.ts",
+      "src\\scripts\\verify-deployment.ts",
+      "src\\telemetry\\collector.ts",
+      "src\\telemetry\\index.ts",
+      "src\\telemetry\\integration.ts",
+      "src\\telemetry\\types.ts",
+      "src\\test-e2e-function.ts",
+      "src\\test-function.ts",
+      "src\\testing\\benchmarks\\benchmark-engine.ts",
+      "src\\testing\\benchmarks\\historical-scenarios.ts",
+      "src\\testing\\epic-validation-fix.ts",
+      "src\\testing\\examples\\complete-validation-example.ts",
+      "src\\testing\\framework\\test-orchestrator.ts",
+      "src\\testing\\index.ts",
+      "src\\testing\\integration-test.ts",
+      "src\\testing\\metrics\\engagement-tracker.ts",
+      "src\\testing\\reporting\\test-reporter.ts",
+      "src\\testing\\types.ts",
+      "src\\testing\\validation\\performance-validator.ts",
+      "src\\testing\\validation\\quality-validator.ts",
+      "src\\transformation\\index.ts",
+      "src\\transformation\\transformation-enhanced.ts",
+      "src\\ts-error-resolver\\index.ts",
+      "src\\types\\knowledge-graph.ts",
+      "src\\types\\unified-schemas.ts",
+      "src\\types.ts",
+      "src\\unified-server.ts",
+      "src\\utils\\config-validators.ts",
+      "src\\utils\\index.ts",
+      "src\\utils\\language-detection.ts",
+      "src\\utils\\pattern-filtering.ts",
+      "src\\utils\\yaml-handler.ts",
+      "task-stats.ts",
+      "test\\actors\\analysis.test.ts",
+      "test\\actors\\ast-grep-transformation.test.ts",
+      "test\\actors\\dafny.test.ts",
+      "test\\actors\\feedback-loop.test.ts",
+      "test\\actors\\git.test.ts",
+      "test\\actors\\llm-testing-framework.test.ts",
+      "test\\actors\\llm-transformation.test.ts",
+      "test\\actors\\pattern-discovery.test.ts",
+      "test\\actors\\pattern-learning.test.ts",
+      "test\\actors\\template-engine.test.ts",
+      "test\\actors\\transformation.test.ts",
+      "test\\actors\\unified-analyzer.test.ts",
+      "test\\actors\\validation.test.ts",
+      "test\\config\\environment.test.ts",
+      "test\\deployment\\deployment-validation.test.ts",
+      "test\\e2e\\e2e-test-helpers.ts",
+      "test\\e2e\\pipeline-validation.test.ts",
+      "test\\infrastructure\\integration-suite.ts",
+      "test\\infrastructure\\mock-factories.ts",
+      "test\\infrastructure\\test-debugging.ts",
+      "test\\infrastructure\\test-fixtures.ts",
+      "test\\infrastructure\\test-runner.ts",
+      "test\\infrastructure\\validation-suite.ts",
+      "test\\integration\\actor-integration.test.ts",
+      "test\\integration\\state-machine-integration.test.ts",
+      "test\\integration\\unified-dataflow-integration.test.ts",
+      "test\\patterns\\pattern-validation.test.ts",
+      "test\\performance\\benchmarks.test.ts",
+      "test\\performance\\scalability.test.ts",
+      "test\\pipeline\\production-pipeline.test.ts",
+      "test\\run-tests.ts",
+      "test\\telemetry\\telemetry-validation.test.ts",
+      "test\\telemetry.test.ts",
+      "test\\test-helpers.ts",
+      "test\\utils\\config-validators.test.ts",
+      "test\\utils\\yaml-handler.test.ts",
+      "test\\verification\\formal-verification.test.ts",
+      "validate-configs.ts",
+      "validate-yaml.ts"
+    ],
+    "excludePatterns": [],
+    "enableFixes": true,
+    "checkNullability": true,
+    "checkComponents": true,
+    "reportFormat": "json",
+    "maxIssues": 100
+  }
+}

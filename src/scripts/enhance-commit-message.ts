@@ -355,14 +355,13 @@ async function calculateQualityMetrics(
 
   // Try to get actual TypeScript errors (non-blocking)
   try {
-    const tscOutput = execSync('bunx tsc --noEmit --pretty false', {
+    const unifiedOutput = execSync('bun run src/scripts/pre-commit-typescript.ts --dry-run --max-risk=high', {
       encoding: 'utf-8',
       stdio: 'pipe',
-      timeout: 5000, // 5 second timeout
+      timeout: 10000, // 10 second timeout for analyzer
     });
-
-    // Count error lines
-    typeErrors = (tscOutput.match(/error TS\d+:/g) || []).length;
+    // Count error lines from UnifiedAnalyzer output
+    typeErrors = (unifiedOutput.match(/type-error/g) || []).length;
   } catch (error: unknown) {
     // TypeScript errors are in stderr, count them
     const output = (error as any)?.stdout || (error as any)?.stderr || '';

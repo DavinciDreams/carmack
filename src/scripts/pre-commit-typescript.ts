@@ -12,9 +12,9 @@ import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createActor } from 'xstate';
 import {
-  type TypeScriptFixResult,
-  typeScriptErrorResolverActor,
-} from '../actors/typescript-error-resolver.js';
+  type UnifiedAnalyzerResult,
+  unifiedAnalyzerActor,
+} from '../actors/unified-analyzer-actor.js';
 
 interface PreCommitConfig {
   autoFix: boolean;
@@ -22,6 +22,7 @@ interface PreCommitConfig {
   dryRun: boolean;
   stagedFilesOnly: boolean;
   excludePatterns: string[];
+  // Add more config options as needed
 }
 
 /**
@@ -203,22 +204,26 @@ async function main(): Promise<void> {
     }
 
     // Run TypeScript error resolution
-    const actor = createActor(typeScriptErrorResolverActor, {
+    const actor = createActor(unifiedAnalyzerActor, {
       input: {
-        files: filteredFiles,
-        autoFix: config.autoFix,
-        maxRiskLevel: config.maxRiskLevel,
-        dryRun: config.dryRun,
+        projectPath: process.cwd(),
+        includePatterns: filteredFiles,
+        excludePatterns: config.excludePatterns,
+        enableFixes: config.autoFix,
+        checkNullability: true,
+        checkComponents: true,
+        reportFormat: "json",
+        maxIssues: 100,
       },
     });
 
     actor.start();
-    const result = await new Promise<TypeScriptFixResult>((resolve, reject) => {
+    const result = await new Promise<UnifiedAnalyzerResult>((resolve, reject) => {
       actor.subscribe({
         complete: () => {
           const output = actor.getSnapshot().output;
           if (output) {
-            resolve(output as TypeScriptFixResult);
+            resolve(output as UnifiedAnalyzerResult);
           } else {
             reject(new Error('No output from TypeScript error resolver'));
           }
@@ -230,20 +235,23 @@ async function main(): Promise<void> {
     // Generate summary report
     generateSummaryReport(
       filteredFiles.length,
-      result.errorsFound,
-      result.errorsFixed,
-      result.filesModified,
-      result.warnings
+      result.stats.issuesFound,
+      0,
+      [],
+      result.issues.filter(i => i.severity === "warning").map(i => i.message)
     );
 
-    // Stage fixed files if not dry run
-    if (!config.dryRun && result.filesModified.length > 0) {
+    // Stage fixed files if not dry run and autoFix enabled
+    if (config.autoFix && !config.dryRun && result.filesModified && result.filesModified.length > 0) {
       await stageFixedFiles(result.filesModified);
     }
 
+    // Stage fixed files if not dry run
+    // UnifiedAnalyzer does not modify files, so skip staging
+
     // Exit with appropriate code
-    if (result.errorsRemaining > 0) {
-      console.log(`\n❌ ${result.errorsRemaining} TypeScript errors remain unfixed`);
+    if (result.stats.issuesFound > 0) {
+      console.log(`\n❌ ${result.stats.issuesFound} TypeScript errors remain unfixed`);
       console.log('💡 Consider running with higher risk level or manual fixes');
       process.exit(1);
     } else {
@@ -265,12 +273,13 @@ if (args.includes('--help') || args.includes('-h')) {
 🔧 Pre-Commit TypeScript Error Resolver
 
 Usage: bun run src/scripts/pre-commit-typescript.ts [options]
-
 Options:
   --dry-run          Show what would be fixed without making changes
   --all-files        Check all files instead of just staged files
   --max-risk=LEVEL   Maximum risk level for fixes (low|medium|high)
+  --auto-fix         Attempt to automatically fix issues (default: off)
   --no-auto-fix      Only detect errors, don't fix them
+
 
 Configuration:
   Create .carmack-precommit.json in project root to customize behavior.
@@ -283,7 +292,20 @@ Examples:
 }
 
 // Run if called directly
+// Parse CLI flags for auto-fix
+const cliArgs = process.argv.slice(2);
+let autoFix = false;
+if (cliArgs.includes('--auto-fix')) autoFix = true;
+if (cliArgs.includes('--no-auto-fix')) autoFix = false;
+
 if (import.meta.main) {
+  // Patch loadConfig to override autoFix from CLI
+  const origLoadConfig = loadConfig;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (globalThis as any).loadConfig = async () => {
+    const config = await origLoadConfig();
+    return { ...config, autoFix };
+  };
   main().catch((error) => {
     console.error('Fatal error:', error);
     process.exit(1);

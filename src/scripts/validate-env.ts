@@ -90,14 +90,14 @@ async function validateEnvironment() {
     }
 
     // Validate Node environment
-    if (['development', 'staging', 'production'].includes(env.NODE_ENV)) {
+    if (['development', 'staging', 'production', 'test'].includes(env.NODE_ENV)) {
       addResult('Core', 'pass', `NODE_ENV set to ${env.NODE_ENV}`);
     } else {
       addResult(
         'Core',
         'fail',
         `Invalid NODE_ENV: ${env.NODE_ENV}`,
-        'Set NODE_ENV to development, staging, or production'
+        'Set NODE_ENV to development, staging, production, or test'
       );
     }
 

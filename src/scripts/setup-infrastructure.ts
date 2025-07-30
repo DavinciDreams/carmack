@@ -249,28 +249,27 @@ async function validateTypeScript(): Promise<SetupResult> {
     }
     
     // Test TypeScript compilation
-    const proc = Bun.spawn(['bun', 'run', 'type-check'], {
+    // Use UnifiedAnalyzer for type checking
+    const proc = Bun.spawn(['bun', 'run', 'src/scripts/pre-commit-typescript.ts', '--dry-run', '--max-risk=high'], {
       stdout: 'pipe',
       stderr: 'pipe',
     });
-    
     const result = await proc.exited;
-    
-    if (result !== 0) {
+    const stdout = await new Response(proc.stdout).text();
+    if (result !== 0 || stdout.includes('❌')) {
       const stderr = await new Response(proc.stderr).text();
       return {
         step: 'typescript_validation',
         success: false,
-        message: 'TypeScript type checking failed',
-        details: { error: stderr },
+        message: 'UnifiedAnalyzer type checking failed',
+        details: { error: stderr || stdout },
         duration_ms: Date.now() - startTime,
       };
     }
-    
     return {
       step: 'typescript_validation',
       success: true,
-      message: 'TypeScript configuration and compilation validated successfully',
+      message: 'UnifiedAnalyzer type checking passed',
       details: {
         target: compilerOptions.target,
         module: compilerOptions.module,

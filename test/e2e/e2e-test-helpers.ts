@@ -215,6 +215,18 @@ export class ExternalToolMocker {
         return mockResponse.stdout || '';
       }
 
+      if (command.includes('bun run src/scripts/pre-commit-typescript.ts')) {
+        const mockResponse = ExternalToolMocker.mockResponses.get('unified-analyzer') || {
+          stdout: 'UnifiedAnalyzer: No type errors found',
+        };
+        if (mockResponse.shouldFail) {
+          const error = new Error('UnifiedAnalyzer check failed') as any;
+          error.stdout = mockResponse.stdout || '';
+          error.stderr = mockResponse.stderr || 'Type errors found';
+          throw error;
+        }
+        return mockResponse.stdout || '';
+      }
       if (command.includes('tsc --noEmit')) {
         const mockResponse = ExternalToolMocker.mockResponses.get('typescript') || {
           stdout: 'No type errors found',

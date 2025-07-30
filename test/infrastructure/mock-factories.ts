@@ -158,6 +158,9 @@ export class ExternalToolMockFactory {
       if (command.includes('biome')) {
         return 'All files formatted correctly';
       }
+      if (command.includes('unified-analyzer') || command.includes('pre-commit-typescript')) {
+        return 'UnifiedAnalyzer: No type errors found';
+      }
       if (command.includes('tsc')) {
         return 'No type errors found';
       }
@@ -214,6 +217,9 @@ export class ExternalToolMockFactory {
       stdout: 'Files formatted successfully',
     });
 
+    ExternalToolMockFactory.setMockResponse('bun run src/scripts/pre-commit-typescript.ts', {
+      stdout: 'UnifiedAnalyzer: No type errors found',
+    });
     ExternalToolMockFactory.setMockResponse('tsc --noEmit', {
       stdout: 'No type errors found',
     });
@@ -245,6 +251,11 @@ export class ExternalToolMockFactory {
       error: 'Biome check failed',
     });
 
+    ExternalToolMockFactory.setMockResponse('bun run src/scripts/pre-commit-typescript.ts', {
+      shouldFail: true,
+      stderr: 'UnifiedAnalyzer: Type errors found',
+      error: 'UnifiedAnalyzer type checking failed',
+    });
     ExternalToolMockFactory.setMockResponse('tsc --noEmit', {
       shouldFail: true,
       stderr: 'Type errors found',

@@ -1,2 +1,2 @@
 // TypeScript error detection and resolver utilities
-export * from '../actors/typescript-error-resolver';
+export * from '../actors/unified-analyzer';
