@@ -558,13 +558,13 @@ type ValidationInput = z.infer<typeof ValidationInputSchema>;
  */
 export const validationActor = fromPromise(async ({ input }: { input: ValidationInput }) => {
   const validatedInput = ValidationInputSchema.parse(input);
-  console.log(`Running ${validatedInput.type} validation on ${validatedInput.files.length} files`);
+
   // Route to language-agnostic validation
   return await validateByLanguage(validatedInput.type, validatedInput.files, validatedInput);
 });
 
 async function validateFormat(files: string[]): Promise<ValidationResult> {
-  console.log('Validating code formatting...');
+
 
   // Skip format validation in test environment to prevent timeouts
   if (
@@ -572,7 +572,7 @@ async function validateFormat(files: string[]): Promise<ValidationResult> {
     process.env.BUN_TEST === 'true' ||
     process.env.JEST_WORKER_ID
   ) {
-    console.log('Skipping format validation in test environment');
+
     return {
       isValid: true,
       errors: [],
@@ -645,7 +645,7 @@ async function validateFormat(files: string[]): Promise<ValidationResult> {
       fixableIssues,
     };
   } catch (error) {
-    console.warn('Format validation failed, using fallback:', error);
+
     // Fallback to mock implementation
     return {
       isValid: Math.random() > 0.3, // 70% chance of being valid
@@ -657,7 +657,7 @@ async function validateFormat(files: string[]): Promise<ValidationResult> {
 }
 
 async function fixFormat(files: string[]): Promise<ValidationResult> {
-  console.log('Fixing code formatting...');
+
 
   // Skip format fixing in test environment to prevent timeouts
   if (
@@ -665,7 +665,7 @@ async function fixFormat(files: string[]): Promise<ValidationResult> {
     process.env.BUN_TEST === 'true' ||
     process.env.JEST_WORKER_ID
   ) {
-    console.log('Skipping format fixing in test environment');
+
     return {
       isValid: true,
       errors: [],
@@ -723,7 +723,7 @@ async function fixFormat(files: string[]): Promise<ValidationResult> {
       fixableIssues: 0, // Issues were fixed
     };
   } catch (error) {
-    console.warn('Format fixing failed, using fallback:', error);
+
     // Fallback to mock implementation
     return {
       isValid: true,
@@ -735,7 +735,7 @@ async function fixFormat(files: string[]): Promise<ValidationResult> {
 }
 
 async function validateTypes(files: string[]): Promise<ValidationResult> {
-  console.log(`Validating TypeScript types for ${files.length} files...`);
+
 
   // Skip type validation in test environment to prevent timeouts
   if (
@@ -743,7 +743,7 @@ async function validateTypes(files: string[]): Promise<ValidationResult> {
     process.env.BUN_TEST === 'true' ||
     process.env.JEST_WORKER_ID
   ) {
-    console.log('Skipping type validation in test environment');
+
     return {
       isValid: true,
       errors: [],
@@ -780,7 +780,7 @@ async function validateTypes(files: string[]): Promise<ValidationResult> {
       throw error;
     }
   } catch (error) {
-    console.warn('TypeScript validation failed, using fallback:', error);
+
     return await fallbackTypeValidation(files);
   }
 }
@@ -856,7 +856,7 @@ async function validateTypesWithExec(
  * Fallback type validation using basic syntax checking
  */
 async function fallbackTypeValidation(files: string[]): Promise<ValidationResult> {
-  console.log('Using fallback type validation...');
+
 
   const errors: Array<{
     code: string;
@@ -943,9 +943,8 @@ async function fallbackTypeValidation(files: string[]): Promise<ValidationResult
 }
 
 async function fixTypes(files: string[], errors: ErrorInfo[]): Promise<ValidationResult> {
-  console.log(
-    `Fixing TypeScript type errors for ${files.length} files with ${errors.length} errors...`
-  );
+
+  `Fixing TypeScript type errors for ${files.length} files with ${errors.length} errors...`
 
   const fixedErrors: ErrorInfo[] = [];
   const remainingErrors: ErrorInfo[] = [];
@@ -1066,7 +1065,7 @@ async function fixTypes(files: string[], errors: ErrorInfo[]): Promise<Validatio
 
           if (verificationResult.isValid) {
             fixedErrors.push(...fileErrors);
-            console.log(`✅ Fixed ${fileErrors.length} type errors in ${filePath}`);
+
           } else {
             remainingErrors.push(...fileErrors);
             warnings.push({
@@ -1086,7 +1085,7 @@ async function fixTypes(files: string[], errors: ErrorInfo[]): Promise<Validatio
           });
         }
       } catch (error) {
-        console.warn(`Failed to fix types in ${filePath}:`, error);
+
         remainingErrors.push(...fileErrors);
         warnings.push({
           code: 'TYPE_FIX_ERROR',
@@ -1104,7 +1103,7 @@ async function fixTypes(files: string[], errors: ErrorInfo[]): Promise<Validatio
       fixableIssues: remainingErrors.length,
     };
   } catch (error) {
-    console.warn('Type fixing failed, using fallback:', error);
+
 
     // Fallback: return original errors as unfixed
     return {
@@ -1301,7 +1300,7 @@ export async function lint(filePath: string): Promise<LintResults> {
 }
 
 async function validateQuality(files: string[]): Promise<ValidationResult> {
-  console.log(`Analyzing code quality for ${files.length} files using ESLint...`);
+
 
   // Skip quality validation in test environment to prevent timeouts
   if (
@@ -1309,7 +1308,7 @@ async function validateQuality(files: string[]): Promise<ValidationResult> {
     process.env.BUN_TEST === 'true' ||
     process.env.JEST_WORKER_ID
   ) {
-    console.log('Skipping quality validation in test environment');
+
     return {
       isValid: true,
       errors: [],
@@ -1334,7 +1333,7 @@ async function validateQuality(files: string[]): Promise<ValidationResult> {
           fixableIssues += result.fixableIssues;
         }
       } catch (error) {
-        console.warn(`ESLint failed or timed out for ${filePath}:`, error);
+
         warnings.push({
           code: 'ESLINT_FILE_ERROR',
           message: `Could not analyze ${filePath}: ${error instanceof Error ? error.message : String(error)}`,
@@ -1351,7 +1350,7 @@ async function validateQuality(files: string[]): Promise<ValidationResult> {
       fixableIssues,
     };
   } catch (eslintError) {
-    console.warn('ESLint not available, using fallback quality analysis:', eslintError);
+
 
     // Fallback: Basic quality analysis using regex patterns
     return fallbackQualityAnalysis(files);
@@ -1454,7 +1453,7 @@ async function fallbackQualityAnalysis(files: string[]): Promise<ValidationResul
       const complexityIssues = analyzeCodeComplexity(content, filePath);
       warnings.push(...complexityIssues);
     } catch (fileError) {
-      console.warn(`Failed to analyze ${filePath}:`, fileError);
+
       warnings.push({
         code: 'QUALITY_ANALYSIS_ERROR',
         message: `Could not analyze ${filePath}: ${fileError instanceof Error ? fileError.message : String(fileError)}`,
