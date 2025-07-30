@@ -17,8 +17,7 @@ import { enhancedLLMTransformationActor } from './actors/llm-transformation-enha
 import { patternDiscoveryActor } from './actors/pattern-discovery.ts';
 import { patternLearningActor } from './actors/pattern-learning.ts';
 import { type TemplatePattern, templateEngineActor } from './actors/template-engine.ts';
-import { enhancedTransformationActor } from './actors/transformation-enhanced.ts';
-import { transformationActor } from './actors/transformation.ts';
+import { enhancedTransformationActor } from './transformation/transformation-enhanced.ts';
 import {
   accuracyValidationActor,
   graphTraversalActor,
@@ -105,7 +104,6 @@ const _carmackCoderMachine = setup({
     patternDiscoveryActor,
     patternLearningActor,
     templateEngineActor,
-    transformationActor,
     dataIntegrityActor,
     graphTraversalActor,
     accuracyValidationActor,
@@ -478,13 +476,20 @@ const _carmackCoderMachine = setup({
     applyingAdvancedTransformation: {
       invoke: {
         id: 'advanced-transformation',
-        src: 'transformationActor',
-        input: (ctx) => ({
-          mode: ctx.context.currentTransformation?.mode || 'ast',
-          files: ctx.context.activeFiles,
-          patterns: ctx.context.patterns,
-          request: ctx.context.currentTransformation?.request,
-          dryRun: ctx.context.currentTransformation?.request?.dryRun || false,
+        src: 'enhancedTransformationActor',
+        input: ({ context }) => ({
+          targetFiles: context.activeFiles,
+          transformationType: context.currentTransformation?.mode || 'ast',
+          patterns: context.patterns.map((p) => ({
+            id: p.id,
+            language: p.language,
+            query: p.pattern,
+            options: undefined,
+            description: p.description,
+          })),
+          maxComplexity: context.currentTransformation?.request?.maxComplexity || 10,
+          dryRun: context.currentTransformation?.request?.dryRun || false,
+          context: undefined,
         }),
         onDone: {
           target: 'validatingFormat',

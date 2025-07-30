@@ -133,7 +133,7 @@ export class IntegrationTestSuite {
     );
 
     expect(transformationResult.output).toBeDefined();
-    expect(transformationResult.output?.filesModified).toContain(testFile);
+    expect((transformationResult.output as { filesModified: string[] } | undefined)?.filesModified).toContain(testFile);
 
     // 3. Validation
     const validationInput = {
@@ -230,7 +230,9 @@ export class IntegrationTestSuite {
     );
 
     expect(transformationResult.output).toBeDefined();
-    expect(transformationResult.output?.filesModified.length).toBeGreaterThan(0);
+    expect(
+      (transformationResult.output as { filesModified: string[] } | undefined)?.filesModified.length
+    ).toBeGreaterThan(0);
 
     // Validation with multiple files
     const validationInput = {
@@ -316,7 +318,9 @@ export class IntegrationTestSuite {
     );
 
     expect(transformationResult.output).toBeDefined();
-    expect(transformationResult.output?.filesModified).toContain(testFile);
+    expect(
+      (transformationResult.output as { filesModified: string[] } | undefined)?.filesModified
+    ).toContain(testFile);
 
     console.log('✅ AST-grep Pattern Syntax: PASSED');
   }

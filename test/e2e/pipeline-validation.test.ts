@@ -7,7 +7,7 @@ import { createActor, waitFor } from 'xstate';
 import { analysisActor } from '../../src/actors/analysis.js';
 import { dafnyActor } from '../../src/actors/dafny.js';
 import { gitActor } from '../../src/actors/git.js';
-import { transformationActor } from '../../src/actors/transformation.js';
+import { enhancedTransformationActor } from '../../src/transformation/transformation-enhanced.js';
 import { validationActor } from '../../src/actors/validation.js';
 import type { AstPattern } from '../../src/types.js';
 
@@ -148,12 +148,18 @@ describe('End-to-End Pipeline Validation', () => {
       ];
 
       const transformationInput = {
-        mode: analysis.recommendedMode || ('template' as const),
-        files: ['legacy-code.ts'],
-        patterns: transformationPatterns,
+        transformationType: (analysis.recommendedMode || 'template') as 'template' | 'ast' | 'llm',
+        targetFiles: ['legacy-code.ts'],
+        patterns: transformationPatterns.map(p => ({
+          ...p,
+          query: p.pattern,
+          pattern: undefined // Remove 'pattern' property if not needed
+        })),
+        maxComplexity: 10,
+        dryRun: false,
       };
 
-      const transformationActorInstance = createActor(transformationActor, {
+      const transformationActorInstance = createActor(enhancedTransformationActor, {
         input: transformationInput,
       });
       transformationActorInstance.start();
@@ -390,12 +396,18 @@ describe('End-to-End Pipeline Validation', () => {
       ];
 
       const transformationInput = {
-        mode: 'template' as const, // Use template for safety with complex code
-        files: ['complex-class.ts'],
-        patterns: complexPatterns,
+        targetFiles: ['complex-class.ts'],
+        transformationType: 'template' as const, // Use template for safety with complex code
+        maxComplexity: 10,
+        dryRun: false,
+        patterns: complexPatterns.map(p => ({
+          ...p,
+          query: p.pattern,
+          pattern: undefined // Remove 'pattern' property if not needed
+        })),
       };
 
-      const transformationActorInstance = createActor(transformationActor, {
+      const transformationActorInstance = createActor(enhancedTransformationActor, {
         input: transformationInput,
       });
       transformationActorInstance.start();
@@ -528,12 +540,18 @@ describe('End-to-End Pipeline Validation', () => {
 
         // Attempt transformation
         const transformationInput = {
-          mode: 'llm' as const,
-          files: ['risky-code.ts'],
-          patterns: riskyPatterns,
+          targetFiles: ['risky-code.ts'],
+          transformationType: 'llm' as const,
+          maxComplexity: 10,
+          dryRun: false,
+          patterns: riskyPatterns.map(p => ({
+            ...p,
+            query: p.pattern,
+            pattern: undefined // Remove 'pattern' property if not needed
+          })),
         };
 
-        const transformationActorInstance = createActor(transformationActor, {
+        const transformationActorInstance = createActor(enhancedTransformationActor, {
           input: transformationInput,
         });
         transformationActorInstance.start();
@@ -724,12 +742,17 @@ describe('End-to-End Pipeline Validation', () => {
       ];
 
       const transformationInput = {
-        mode: 'template' as const,
-        files,
-        patterns,
+        targetFiles: files,
+        transformationType: 'template' as const,
+        maxComplexity: 10,
+        dryRun: false,
+        patterns: patterns.map(({ pattern, ...rest }) => ({
+          ...rest,
+          query: pattern,
+        })),
       };
 
-      const transformationActorInstance = createActor(transformationActor, {
+      const transformationActorInstance = createActor(enhancedTransformationActor, {
         input: transformationInput,
       });
       transformationActorInstance.start();
@@ -882,12 +905,18 @@ describe('End-to-End Pipeline Validation', () => {
       ];
 
       const transformationInput = {
-        mode: 'template' as const,
-        files,
-        patterns,
+        targetFiles: files,
+        transformationType: 'template' as const,
+        maxComplexity: 10,
+        dryRun: false,
+        patterns: patterns.map(p => ({
+          ...p,
+          query: p.pattern,
+          pattern: undefined // Remove 'pattern' property if not needed
+        })),
       };
 
-      const transformationActorInstance = createActor(transformationActor, {
+      const transformationActorInstance = createActor(enhancedTransformationActor, {
         input: transformationInput,
       });
       transformationActorInstance.start();
