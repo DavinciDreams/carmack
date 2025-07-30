@@ -129,6 +129,18 @@ const TelemetryEnvironmentSchema = z.object({
   GRAFANA_URL: z.string().url().default('http://localhost:3000'),
   ALERTING_WEBHOOK_URL: z.string().url().optional(),
   ALERT_EMAIL: z.string().email().optional(),
+  
+  // File-based telemetry export
+  TELEMETRY_FILE_EXPORT: z.coerce.boolean().default(false),
+  TELEMETRY_OUTPUT_DIR: z.string().default('./telemetry'),
+  TELEMETRY_FILE_FORMAT: z.enum(['json', 'jsonl']).default('jsonl'),
+  TELEMETRY_FILE_MAX_SIZE: z.coerce.number().positive().default(10485760), // 10MB
+  TELEMETRY_FILE_ROTATION_INTERVAL: z.coerce.number().positive().default(86400000), // 24 hours
+  TELEMETRY_INCLUDE_TIMESTAMP: z.coerce.boolean().default(true),
+  
+  // OpenTelemetry export configuration
+  OTEL_METRICS_EXPORTER: z.enum(['otlp', 'prometheus', 'console', 'file']).optional(),
+  OTEL_LOGS_EXPORTER: z.enum(['otlp', 'console', 'file']).optional(),
 });
 
 /**
