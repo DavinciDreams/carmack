@@ -40,8 +40,8 @@ const IssueSchema = z.object({
 });
 
 export class UnifiedAnalyzer {
-  private program: ts.Program;
-  private checker: ts.TypeChecker;
+  private program!: ts.Program;
+  private checker!: ts.TypeChecker;
   private sourceFiles: ts.SourceFile[] = [];
   private issues: z.infer<typeof IssueSchema>[] = [];
   private stats = {
@@ -122,7 +122,7 @@ export class UnifiedAnalyzer {
     return files;
   }
 
-  analyze(): { issues: typeof this.issues; stats: typeof this.stats } {
+  analyze(): { issues: z.infer<typeof IssueSchema>[]; stats: { filesAnalyzed: number; totalLines: number; issuesFound: number; startTime: number; endTime: number } } {
     console.log(`🔍 Unified Analyzer starting...`);
     console.log(`📁 Found ${this.sourceFiles.length} files to analyze\n`);
 
@@ -356,8 +356,13 @@ export class UnifiedAnalyzer {
 if (import.meta.main) {
   const analyzer = new UnifiedAnalyzer({
     projectPath: process.cwd(),
+    includePatterns: ['**/*.ts', '**/*.tsx'],
+    excludePatterns: ['node_modules', '.next', 'dist', '.test.', '.spec.'],
     enableFixes: true,
-    reportFormat: 'both'
+    checkNullability: true,
+    checkComponents: true,
+    reportFormat: 'both',
+    maxIssues: 1000
   });
   
   analyzer.analyze();
