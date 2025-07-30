@@ -152,7 +152,7 @@ interface OptimizationConfig {
  */
 export const feedbackLoopActor = fromPromise(async ({ input }: { input: FeedbackLoopRequest }) => {
   const validatedInput = FeedbackLoopRequestSchema.parse(input);
-  console.log(`🔄 Starting feedback loop: ${validatedInput.operation}`);
+
   // If AST-grep patterns are provided, validate and prepare them
   if (validatedInput.astGrepPatterns && validatedInput.astGrepPatterns.length > 0) {
     for (const pattern of validatedInput.astGrepPatterns) {
@@ -160,7 +160,7 @@ export const feedbackLoopActor = fromPromise(async ({ input }: { input: Feedback
     }
   }
   const result = await executeFeedbackLoop(validatedInput);
-  console.log(`✨ Feedback loop completed: ${result.status}`);
+
   return result;
 });
 /**
@@ -296,7 +296,7 @@ async function optimizePatterns(request: FeedbackLoopRequest) {
       const optimization = await applyOptimization(recommendation, config);
       appliedOptimizations.push(optimization);
     } catch (error) {
-      console.warn(`Failed to apply optimization for pattern ${recommendation.patternId}:`, error);
+
     }
   }
   // Update pattern confidence scores
@@ -374,7 +374,7 @@ function groupFeedbackByPattern(feedback: FeedbackData[]): Record<string, Feedba
     if (!groups[item.patternId]) {
       groups[item.patternId] = [];
     }
-    groups[item.patternId]?.push(item);
+groups[item.patternId]?.push
   }
   return groups;
 }

@@ -1,14 +1,16 @@
 /**
  * Real LLM Provider Integration System
- *
- * This module provides production-ready LLM provider integrations with:
- * - Multiple provider support (OpenAI, Anthropic, OpenRouter, Ollama)
- * - Rate limiting and cost tracking
- * - Robust error handling and fallback mechanisms
- * - Provider-specific optimizations
- * - Context-aware prompt engineering
  */
 
+// Bun/Node compatible fetch with timeout utility.
+async function fetchWithTimeout(resource: RequestInfo, options: any = {}, timeoutMs: number = 30000): Promise<Response> {
+  return Promise.race([
+    fetch(resource, options),
+    new Promise<Response>((_, reject) =>
+      setTimeout(() => reject(new Error(`Fetch timeout after ${timeoutMs}ms`)), timeoutMs)
+    )
+  ]) as Promise<Response>;
+}
 import { z } from 'zod';
 import { getEnvironmentConfig } from '../config/environment.js';
 
@@ -145,7 +147,7 @@ class RateLimiter {
 
   getTotalCost(provider: string, model: string): number {
     const key = `${provider}-${model}`;
-    return this.state.get(key)?.totalCost || 0;
+this.state.get(key)?.totalCost
   }
 }
 
@@ -166,7 +168,8 @@ abstract class BaseLLMProvider {
 
   abstract makeRequest(request: LLMRequest): Promise<LLMResponse>;
 
-  protected async waitForRateLimit(estimatedTokens: number): Promise<void> {
+  protected async waitForRateLimit(estimatedTokens: number, attempt = 0): Promise<void> {
+    const MAX_ATTEMPTS = 10;
     const canProceed = await this.rateLimiter.checkRateLimit(
       this.config.provider,
       this.config,
@@ -174,11 +177,15 @@ abstract class BaseLLMProvider {
     );
 
     if (!canProceed) {
+      if (attempt >= MAX_ATTEMPTS) {
+
+        throw new Error(`Rate limit wait exceeded maximum attempts (${MAX_ATTEMPTS}).`);
+      }
       // Calculate wait time based on oldest request
       const waitTime = Math.min(60000, 5000); // Max 1 minute, min 5 seconds
-      console.log(`⏳ Rate limit reached, waiting ${waitTime}ms...`);
+
       await new Promise((resolve) => setTimeout(resolve, waitTime));
-      return this.waitForRateLimit(estimatedTokens);
+      return this.waitForRateLimit(estimatedTokens, attempt + 1);
     }
   }
 
@@ -209,11 +216,12 @@ export class OpenAIProvider extends BaseLLMProvider {
 
     const startTime = Date.now();
     let retryCount = 0;
-    const maxRetries = validatedRequest.options?.maxRetries || this.config.retries;
+validatedRequest.options?.maxRetries
 
     while (retryCount <= maxRetries) {
       try {
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+
+        const response = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${this.config.apiKey}`,
@@ -237,15 +245,15 @@ export class OpenAIProvider extends BaseLLMProvider {
             ],
             max_tokens: this.config.maxTokens,
             temperature: this.config.temperature,
-            ...(validatedRequest.options?.jsonMode && {
+validatedRequest.options?.jsonMode
               response_format: { type: 'json_object' },
             }),
           }),
-          signal: AbortSignal.timeout(this.config.timeout),
-        });
+        }, this.config.timeout);
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
+
           throw new Error(
             `OpenAI API error: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`
           );
@@ -263,6 +271,7 @@ export class OpenAIProvider extends BaseLLMProvider {
           usage.total_tokens || estimatedTokens,
           cost
         );
+
 
         return LLMResponseSchema.parse({
           content,
@@ -282,6 +291,7 @@ export class OpenAIProvider extends BaseLLMProvider {
         });
       } catch (error) {
         retryCount++;
+        console.error(`[LLMProvider] OpenAI request error:`, error);
         if (retryCount > maxRetries) {
           throw error;
         }
@@ -315,11 +325,11 @@ export class AnthropicProvider extends BaseLLMProvider {
 
     const startTime = Date.now();
     let retryCount = 0;
-    const maxRetries = validatedRequest.options?.maxRetries || this.config.retries;
+validatedRequest.options?.maxRetries
 
     while (retryCount <= maxRetries) {
       try {
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
+        const response = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
           method: 'POST',
           headers: {
             'x-api-key': this.config.apiKey,
@@ -339,8 +349,7 @@ export class AnthropicProvider extends BaseLLMProvider {
               },
             ],
           }),
-          signal: AbortSignal.timeout(this.config.timeout),
-        });
+        }, this.config.timeout);
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
@@ -414,11 +423,11 @@ export class OpenRouterProvider extends BaseLLMProvider {
     const baseURL = this.config.baseURL || 'https://openrouter.ai/api/v1';
     const startTime = Date.now();
     let retryCount = 0;
-    const maxRetries = validatedRequest.options?.maxRetries || this.config.retries;
+validatedRequest.options?.maxRetries
 
     while (retryCount <= maxRetries) {
       try {
-        const response = await fetch(`${baseURL}/chat/completions`, {
+        const response = await fetchWithTimeout(`${baseURL}/chat/completions`, {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${this.config.apiKey}`,
@@ -446,8 +455,7 @@ export class OpenRouterProvider extends BaseLLMProvider {
             temperature: this.config.temperature,
             stream: false,
           }),
-          signal: AbortSignal.timeout(this.config.timeout),
-        });
+        }, this.config.timeout);
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
@@ -515,21 +523,20 @@ export class OllamaProvider extends BaseLLMProvider {
     const baseURL = this.config.baseURL || 'http://localhost:11434';
     const startTime = Date.now();
     let retryCount = 0;
-    const maxRetries = validatedRequest.options?.maxRetries || this.config.retries;
+validatedRequest.options?.maxRetries
 
     while (retryCount <= maxRetries) {
       try {
         // Check if Ollama is running
-        await fetch(`${baseURL}/api/tags`, {
+        await fetchWithTimeout(`${baseURL}/api/tags`, {
           method: 'GET',
-          signal: AbortSignal.timeout(5000),
-        });
+        }, 5000);
 
         const prompt = validatedRequest.systemPrompt
           ? `${validatedRequest.systemPrompt}\n\n${validatedRequest.prompt}`
           : validatedRequest.prompt;
 
-        const response = await fetch(`${baseURL}/api/generate`, {
+        const response = await fetchWithTimeout(`${baseURL}/api/generate`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -543,8 +550,7 @@ export class OllamaProvider extends BaseLLMProvider {
               num_predict: this.config.maxTokens,
             },
           }),
-          signal: AbortSignal.timeout(this.config.timeout),
-        });
+        }, this.config.timeout);
 
         if (!response.ok) {
           throw new Error(`Ollama API error: ${response.status} ${response.statusText}`);
@@ -662,7 +668,7 @@ export class LLMProviderManager {
     }
 
     throw new Error(
-      `All LLM providers failed. Last error: ${lastError?.message || 'Unknown error'}`
+lastError?.message
     );
   }
 

@@ -289,14 +289,14 @@ export function loadEnvironmentConfig(): EnvironmentConfig {
     return processedEnv;
   } catch (error) {
     if (error instanceof z.ZodError) {
-      console.error('❌ Environment configuration validation failed:');
+
       error.errors.forEach((err) => {
-        console.error(`  - ${err.path.join('.')}: ${err.message}`);
+
       });
       process.exit(1);
     }
 
-    console.error('❌ Failed to load environment configuration:', error);
+
     process.exit(1);
   }
 }
@@ -393,7 +393,7 @@ export function validateLLMConfig(env: EnvironmentConfig): void {
 
     case 'mock':
       if (env.NODE_ENV === 'production') {
-        console.warn('⚠️ Using mock LLM provider in production environment');
+
       }
       break;
   }

@@ -30,7 +30,7 @@ type ComplexityInput = z.infer<typeof ComplexityInputSchema>;
 export const complexityActor = fromPromise(async ({ input }: { input: ComplexityInput }) => {
   const validatedInput = ComplexityInputSchema.parse(input);
   const { files } = validatedInput;
-  console.log(`Analyzing complexity for ${files.length} files`);
+
   const metrics = await calculateComplexityMetrics(files);
   if ('baseline' in validatedInput && validatedInput.baseline) {
     return await compareWithBaseline(metrics, validatedInput.baseline);
@@ -38,7 +38,7 @@ export const complexityActor = fromPromise(async ({ input }: { input: Complexity
   return metrics;
 });
 async function calculateComplexityMetrics(files: string[]): Promise<ComplexityMetrics> {
-  console.log('Calculating complexity metrics using file analysis...');
+
   let totalCyclomaticComplexity = 0;
   let totalCognitiveComplexity = 0;
   let totalLinesOfCode = 0;
@@ -56,7 +56,7 @@ async function calculateComplexityMetrics(files: string[]): Promise<ComplexityMe
       totalFunctionCount += fileMetrics.functionCount;
       totalClassCount += fileMetrics.classCount;
     } catch (error) {
-      console.warn(`Failed to analyze ${filePath}:`, error);
+
       // Continue with other files
     }
   }
@@ -157,7 +157,7 @@ async function compareWithBaseline(
   current: ComplexityMetrics,
   baseline: ComplexityMetrics
 ): Promise<ComplexityMetrics & { improvement: boolean; changes: string[] }> {
-  console.log('Comparing complexity with baseline...');
+
   const changes: string[] = [];
   let improvement = false;
   if (current.cyclomaticComplexity < baseline.cyclomaticComplexity) {

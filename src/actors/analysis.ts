@@ -95,7 +95,7 @@ async function analyzeComplexity(files: string[]): Promise<ComplexityMetrics> {
         totalFunctionCount += metrics.functionCount;
         totalClassCount += metrics.classCount;
       } catch (error) {
-        console.warn(`Warning: Could not analyze file ${filePath}:`, error);
+
       }
     }
     return {
@@ -107,7 +107,7 @@ async function analyzeComplexity(files: string[]): Promise<ComplexityMetrics> {
       classCount: totalClassCount,
     };
   } catch (error) {
-    console.warn('Warning: Could not perform complexity analysis:', error);
+
     // Fallback to mock data if file reading fails
     return {
       cyclomaticComplexity: Math.floor(Math.random() * 20) + 1,

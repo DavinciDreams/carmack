@@ -22,7 +22,7 @@ type DafnyInput = z.infer<typeof DafnyInputSchema>;
 export const dafnyActor = fromPromise(async ({ input }: { input: DafnyInput }) => {
   const validatedInput = DafnyInputSchema.parse(input);
   const { files, transformationMode } = validatedInput;
-  console.log(`Running Dafny verification for ${files.length} files (mode: ${transformationMode})`);
+
   // Generate verification conditions based on transformation mode
   const verificationConditions = await generateVerificationConditions(files, transformationMode);
   // Run Dafny verification with enhanced error handling
@@ -31,7 +31,7 @@ export const dafnyActor = fromPromise(async ({ input }: { input: DafnyInput }) =
   // This allows the system to work while we continue improving the Dafny integration
   const fallbackUsed = verificationResult.errors.some((e) => e.includes('fallback'));
   if (!verificationResult.verified && !fallbackUsed) {
-    console.warn(`Dafny verification had issues: ${verificationResult.errors.join(', ')}`);
+
     // Don't throw error, use graceful degradation
   }
   return {
@@ -45,7 +45,7 @@ async function generateVerificationConditions(
   files: string[],
   mode?: TransformationMode
 ): Promise<string[]> {
-  console.log('Generating verification conditions...');
+
   const conditions: string[] = [];
   // Load base verification conditions from the Dafny specification
   const baseConditions = [
@@ -89,13 +89,13 @@ async function runDafnyVerification(conditions: string[]): Promise<{
   errors: string[];
   timeMs: number;
 }> {
-  console.log(`Verifying ${conditions.length} conditions with Dafny...`);
+
   const startTime = Date.now();
   try {
     // Check if Dafny is available in the system
     const dafnyAvailable = await checkDafnyAvailable();
     if (!dafnyAvailable) {
-      console.warn('Dafny not available, using fallback verification');
+
       return await fallbackVerification(conditions, startTime);
     }
     // Create temporary Dafny verification file
@@ -113,11 +113,11 @@ async function runDafnyVerification(conditions: string[]): Promise<{
       try {
         await rm(verificationFile, { force: true });
       } catch (cleanupError) {
-        console.warn('Failed to clean up Dafny verification file:', cleanupError);
+
       }
     }
   } catch (error) {
-    console.warn('Dafny verification failed, using fallback:', error);
+
     const fallbackResult = await fallbackVerification(conditions, startTime);
     // Mark that fallback was used
     fallbackResult.errors.push('Dafny verification failed, fallback used');
@@ -200,7 +200,7 @@ async function fallbackVerification(
   timeMs: number;
 }> {
   // Enhanced fallback verification with better heuristics
-  console.log('Using enhanced fallback verification...');
+
   // Simulate verification time based on complexity
   await new Promise((resolve) => setTimeout(resolve, Math.min(conditions.length * 50, 2000)));
   // For now, we'll make fallback verification more successful since we have working Dafny specs

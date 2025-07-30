@@ -193,13 +193,13 @@ export const astGrepTransformationActor = fromPromise(
   async ({ input }: { input: AstGrepTransformationRequest }) => {
     const validatedInput = AstGrepTransformationRequestSchema.parse(input);
 
-    console.log(
+
       `🌳 Starting AST-grep transformations on ${validatedInput.targetFiles.length} files with ${validatedInput.patterns.length} patterns`
     );
 
     const results = await applyAstGrepTransformations(validatedInput);
 
-    console.log(
+
       `✨ AST-grep engine completed: ${results.transformationsApplied} transformations across ${results.filesModified.length} files`
     );
 
@@ -244,12 +244,12 @@ async function applyAstGrepTransformations(request: AstGrepTransformationRequest
           totalTransformations += transformation.count;
         }
 
-        console.log(
+
           `🌳 AST-transformed ${filePath}: ${transformResult.transformations.length} patterns applied`
         );
       }
     } catch (error) {
-      console.error(`❌ Error transforming ${filePath}:`, error);
+
     }
   }
 
@@ -269,8 +269,8 @@ function prepareAstPatterns(patterns: AstGrepPattern[], maxComplexity: number): 
     .filter((p) => p.complexity <= maxComplexity)
     .sort((a, b) => {
       // Sort by priority first, then by complexity
-      const aPriority = a.performance?.priority ?? 5;
-      const bPriority = b.performance?.priority ?? 5;
+a.performance?.priority
+b.performance?.priority
 
       if (aPriority !== bPriority) {
         return bPriority - aPriority; // Higher priority first
@@ -299,7 +299,7 @@ async function transformFileWithAstGrep(
 
   // Determine language for AST-grep
   // Use the first pattern's language or infer from file extension
-  let lang: string | Lang = patterns[0]?.language || inferLanguageFromFile(filePath);
+patterns[0]?.language
   if (Lang[lang as keyof typeof Lang]) {
     lang = Lang[lang as keyof typeof Lang];
   }
@@ -308,7 +308,7 @@ async function transformFileWithAstGrep(
   try {
     root = parse(lang, modifiedContent);
   } catch (error) {
-    console.error(`Failed to parse ${filePath}:`, error);
+
     return { content, modified: false, transformations: [] };
   }
 
@@ -320,7 +320,7 @@ async function transformFileWithAstGrep(
     if (options.skipConflicts && pattern.performance?.conflicts) {
       const hasConflict = pattern.performance.conflicts.some((id) => appliedPatterns.has(id));
       if (hasConflict) {
-        console.log(`⚠️  Skipping AST pattern ${pattern.id} due to conflict`);
+
         continue;
       }
     }
@@ -337,13 +337,13 @@ async function transformFileWithAstGrep(
         count: patternResult.matchCount,
       });
 
-      console.log(`🎯 Applied AST pattern ${pattern.id}: ${patternResult.matchCount} matches`);
+
 
       // Re-parse for subsequent patterns
       try {
         root = parse(lang, modifiedContent);
       } catch (error) {
-        console.warn(`Failed to re-parse after ${pattern.id}:`, error);
+
         break; // Stop processing if we can't re-parse
       }
     }
@@ -375,7 +375,7 @@ async function applyAstGrepPattern(
     }
 
     // Limit matches if specified
-    const maxMatches = pattern.performance?.maxMatches || options.maxMatchesPerPattern || 1000;
+pattern.performance?.maxMatches
     const limitedMatches = matches.slice(0, maxMatches);
 
     // Apply transformations in reverse order to maintain indices
@@ -404,7 +404,7 @@ async function applyAstGrepPattern(
       matchCount: limitedMatches.length,
     };
   } catch (error) {
-    console.error(`Error applying AST pattern ${pattern.id}:`, error);
+
     return { content, modified: false, matchCount: 0 };
   }
 }
@@ -445,7 +445,7 @@ function findAstGrepMatches(root: SgRoot, pattern: AstGrepPattern, lang: string 
       matches.push(match);
     }
   } catch (error) {
-    console.error(`Error finding matches for pattern ${pattern.id}:`, error);
+
   }
 
   return matches;
@@ -505,14 +505,14 @@ function extractVariables(node: SgNode, pattern: AstGrepPattern): Record<string,
     const patternText = pattern.pattern.rule.pattern || '';
     const nodeText = node.text();
 
-    console.log(`🔍 [DEBUG] Extracting variables for pattern: ${pattern.id}`);
-    console.log(`   Pattern text: ${patternText}`);
-    console.log(`   Node text: ${nodeText}`);
-    console.log(`   Node kind: ${node.kind()}`);
+
+
+
+
 
     // Extract variable names from the pattern
     const variableNames = extractVariableNames(patternText);
-    console.log(`   Variable names found: ${variableNames.join(', ')}`);
+
 
     for (const varName of variableNames) {
       try {
@@ -523,43 +523,43 @@ function extractVariables(node: SgNode, pattern: AstGrepPattern): Record<string,
         if (matchResult && typeof matchResult.text === 'function') {
           const value = matchResult.text();
           variables[varName] = value;
-          console.log(`   ✅ Variable ${varName} extracted via getMatch(): "${value}"`);
+
         } else {
           // Fallback to manual extraction if getMatch fails
           const manualValue = extractVariableFromText(nodeText, patternText, varName);
           if (manualValue) {
             variables[varName] = manualValue;
-            console.log(`   ✅ Variable ${varName} extracted manually: "${manualValue}"`);
+
           } else {
-            console.log(`   ❌ Variable ${varName} could not be extracted`);
+
           }
         }
       } catch (error) {
-        console.log(`   ⚠️ Error extracting ${varName} via getMatch: ${error}`);
+
         // Fallback to manual extraction on any error
         const manualValue = extractVariableFromText(nodeText, patternText, varName);
         if (manualValue) {
           variables[varName] = manualValue;
-          console.log(`   ✅ Variable ${varName} extracted manually (fallback): "${manualValue}"`);
+
         }
       }
     }
 
     // If no variables were extracted, try pattern-based extraction as final fallback
     if (Object.keys(variables).length === 0) {
-      console.log('   🔄 No variables extracted, trying pattern-based fallback');
+
       const variableMatches = extractVariablesFromPattern(nodeText, patternText);
       Object.assign(variables, variableMatches);
       if (Object.keys(variableMatches).length > 0) {
-        console.log(
+
           `   ✅ Pattern-based extraction found: ${Object.keys(variableMatches).join(', ')}`
         );
       }
     }
 
-    console.log(`   📊 Final variables extracted: ${JSON.stringify(variables)}`);
+
   } catch (error) {
-    console.warn('Error extracting variables from node:', error);
+
   }
 
   return variables;

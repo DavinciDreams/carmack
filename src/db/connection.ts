@@ -171,15 +171,15 @@ export class DatabaseConnectionManager {
 
       // Set up error handling
       this.pool.on('error', (error) => {
-        console.error('❌ PostgreSQL pool error:', error);
+
       });
 
       this.pool.on('connect', () => {
-        console.log('✅ New PostgreSQL client connected');
+
       });
 
       this.pool.on('remove', () => {
-        console.log('🔌 PostgreSQL client removed from pool');
+
       });
 
       // Test initial connection
@@ -189,7 +189,7 @@ export class DatabaseConnectionManager {
       await this.initializePgVector();
 
       this.isInitialized = true;
-      console.log('✅ Database connection pool initialized successfully');
+
     } catch (error) {
       throw new DatabaseConnectionError(
         'Failed to initialize database connection pool',
@@ -221,20 +221,20 @@ export class DatabaseConnectionManager {
         
         try {
           const result = await client.query('SELECT NOW() as timestamp, version() as version');
-          console.log(`✅ Database connection test successful (attempt ${attempt})`);
-          console.log(`📊 Server time: ${result.rows[0]?.timestamp}`);
-          console.log(`🔧 PostgreSQL version: ${result.rows[0]?.version}`);
+
+
+
           return;
         } finally {
           client.release();
         }
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
-        console.warn(`⚠️ Database connection test failed (attempt ${attempt}/${maxRetries}):`, lastError.message);
+
         
         if (attempt < maxRetries) {
           const delay = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
-          console.log(`⏳ Retrying in ${delay}ms...`);
+
           await new Promise(resolve => setTimeout(resolve, delay));
         }
       }
@@ -243,7 +243,7 @@ export class DatabaseConnectionManager {
     throw new DatabaseConnectionError(
       `Database connection test failed after ${maxRetries} attempts`,
       'CONNECTION_TEST_FAILED',
-      { lastError: lastError?.message }
+lastError?.message
     );
   }
 
@@ -264,18 +264,18 @@ export class DatabaseConnectionManager {
       try {
         // Create pgvector extension if it doesn't exist
         await client.query('CREATE EXTENSION IF NOT EXISTS vector');
-        console.log('✅ pgvector extension initialized');
+
 
         // Verify pgvector is working
         const result = await client.query("SELECT '[1,2,3]'::vector as test_vector");
         if (result.rows[0]?.test_vector) {
-          console.log('✅ pgvector functionality verified');
+
         }
       } finally {
         client.release();
       }
     } catch (error) {
-      console.warn('⚠️ Failed to initialize pgvector extension:', error);
+
       // Don't throw here as pgvector might not be available in all environments
     }
   }
@@ -431,7 +431,7 @@ export class DatabaseConnectionManager {
       await this.pool.end();
       this.pool = null;
       this.isInitialized = false;
-      console.log('✅ Database connection pool closed');
+
     }
   }
 }

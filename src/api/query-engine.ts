@@ -509,14 +509,14 @@ export class QueryEngine {
       // Perform hybrid search
       const searchResults = await this.hybridSearch.search(validatedRequest.query, {
         filters: this.buildSearchFilters(validatedRequest.context),
-        limit: validatedRequest.options?.max_results || 20,
+validatedRequest.options?.max_results
         semantic_weight: this.getSemanticWeight(intent),
         keyword_weight: this.getKeywordWeight(intent),
         threshold: this.getThreshold(complexity),
       });
 
       // Convert search results to evidence items
-      const evidenceChain = this.buildEvidenceChain(searchResults, validatedRequest.options?.include_code_snippets);
+validatedRequest.options?.include_code_snippets
       
       // Generate primary answer
       const primaryAnswer = this.generatePrimaryAnswer(validatedRequest.query, intent, evidenceChain);

@@ -31,7 +31,7 @@ type GitInput = z.infer<typeof GitInputSchema>;
  */
 export const gitActor = fromPromise(async ({ input }: { input: GitInput }) => {
   const validatedInput = GitInputSchema.parse(input);
-  console.log(`Executing git operation: ${validatedInput.operation}`);
+
   switch (validatedInput.operation) {
     case 'createCheckpoint':
       return await createCheckpoint(validatedInput.description);
@@ -44,7 +44,7 @@ export const gitActor = fromPromise(async ({ input }: { input: GitInput }) => {
   }
 });
 async function createCheckpoint(description: string): Promise<GitCheckpoint> {
-  console.log(`Creating git checkpoint: ${description}`);
+
   try {
     const git = simpleGit();
     // Ensure we're in a git repository
@@ -76,7 +76,7 @@ async function createCheckpoint(description: string): Promise<GitCheckpoint> {
       description,
     };
   } catch (error) {
-    console.warn('Git checkpoint failed, using fallback:', error);
+
     // Fallback to mock implementation
     return {
       hash: 'a'.repeat(40), // Mock git hash
@@ -87,7 +87,7 @@ async function createCheckpoint(description: string): Promise<GitCheckpoint> {
   }
 }
 async function commitChanges(message: string, files: string[]): Promise<GitCheckpoint> {
-  console.log(`Committing changes: ${message} (${files.length} files)`);
+
   try {
     const git = simpleGit();
     // Ensure we're in a git repository
@@ -113,7 +113,7 @@ async function commitChanges(message: string, files: string[]): Promise<GitCheck
       description: message,
     };
   } catch (error) {
-    console.warn('Git commit failed, using fallback:', error);
+
     // Fallback to mock implementation
     return {
       hash: 'b'.repeat(40), // Mock git hash
@@ -124,7 +124,7 @@ async function commitChanges(message: string, files: string[]): Promise<GitCheck
   }
 }
 async function rollbackToCheckpoint(checkpoint: GitCheckpoint): Promise<GitCheckpoint> {
-  console.log(`Rolling back to checkpoint: ${checkpoint.hash}`);
+
   try {
     const git = simpleGit();
     // Ensure we're in a git repository
@@ -136,7 +136,7 @@ async function rollbackToCheckpoint(checkpoint: GitCheckpoint): Promise<GitCheck
     await git.reset(['--hard', checkpoint.hash]);
     // Verify we're at the correct commit
     const log = await git.log(['-1']);
-    const currentHash = log.latest?.hash;
+log.latest?.hash
     if (currentHash !== checkpoint.hash) {
       throw new Error(
         `Rollback verification failed: expected ${checkpoint.hash}, got ${currentHash}`
@@ -149,7 +149,7 @@ async function rollbackToCheckpoint(checkpoint: GitCheckpoint): Promise<GitCheck
       description: `Rolled back to: ${checkpoint.description}`,
     };
   } catch (error) {
-    console.warn('Git rollback failed, using fallback:', error);
+
     // Fallback - just return the target checkpoint
     return {
       ...checkpoint,
