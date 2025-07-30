@@ -98,17 +98,16 @@
     "oracle:interactive": "bun run oracle-cli.ts --interactive",
     "oracle:stats": "bun run oracle-cli.ts --stats",
     "oracle:simple": "bun run simple-oracle-demo.ts"
-
   },
   "engines": {
     "bun": ">=1.0.0"
   },
   "trustedDependencies": [
     "@biomejs/biome",
+    "@scarf/scarf",
     "esbuild",
     "lefthook",
     "protobufjs"
-
   ],
   "devDependencies": {
     "@anthropic-ai/claude-code": "^1.0.57",

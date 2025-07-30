@@ -52,6 +52,7 @@
     "esbuild",
     "@biomejs/biome",
     "lefthook",
+    "@scarf/scarf",
     "protobufjs",
   ],
   "packages": {
