@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    // Environment setup & latest features
-    "lib": ["ESNext", "DOM"],
-    "target": "ESNext",
+    // Environment setup & latest features - ES2022/ESNext
+    "lib": ["ES2022", "ESNext", "DOM"],
+    "target": "ES2022",
     "module": "ESNext",
     "moduleDetection": "force",
     "moduleResolution": "bundler",

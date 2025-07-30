@@ -194,6 +194,32 @@ const CICDEnvironmentSchema = z.object({
 });
 
 /**
+ * Database configuration schema
+ */
+const DatabaseEnvironmentSchema = z.object({
+  POSTGRES_URL: z.string().optional(),
+  POSTGRES_HOST: z.string().default('localhost'),
+  POSTGRES_PORT: z.coerce.number().default(5432),
+  POSTGRES_USER: z.string().default('carmack'),
+  POSTGRES_PASSWORD: z.string().optional(),
+  POSTGRES_DATABASE: z.string().default('tensorrt_knowledge_graph'),
+  POSTGRES_MAX_CONNECTIONS: z.coerce.number().default(20),
+  POSTGRES_IDLE_TIMEOUT: z.coerce.number().default(30000),
+  POSTGRES_CONNECTION_TIMEOUT: z.coerce.number().default(5000),
+  PGVECTOR_DIMENSIONS: z.coerce.number().default(1536),
+});
+
+/**
+ * External services configuration schema
+ */
+const ExternalServicesEnvironmentSchema = z.object({
+  GITHUB_TOKEN: z.string().optional(),
+  HF_TOKEN: z.string().optional(),
+  BAML_API_KEY: z.string().optional(),
+  TRIGGER_DEV_API_KEY: z.string().optional(),
+});
+
+/**
  * Security configuration schema
  */
 const SecurityEnvironmentSchema = z.object({
@@ -247,6 +273,8 @@ export const EnvironmentSchema = CoreEnvironmentSchema.merge(RepositoryEnvironme
   .merge(PerformanceEnvironmentSchema)
   .merge(BackupEnvironmentSchema)
   .merge(CICDEnvironmentSchema)
+  .merge(DatabaseEnvironmentSchema)
+  .merge(ExternalServicesEnvironmentSchema)
   .merge(SecurityEnvironmentSchema)
   .merge(DevelopmentEnvironmentSchema)
   .merge(FeatureFlagsEnvironmentSchema);

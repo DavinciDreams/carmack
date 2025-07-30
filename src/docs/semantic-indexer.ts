@@ -15,6 +15,7 @@ import {
   validateRepositoryAnalysis,
 } from './types.js';
 import { MultiLanguageAnalyzer } from './multi-language-analyzer.js';
+import { getDatabaseManager } from '../db/connection.js';
 
 // PostgreSQL connection configuration
 interface DatabaseConfig {
@@ -56,41 +57,26 @@ export class SemanticIndexer {
     this.embeddingConfig = embeddingConfig;
     this.analyzer = new MultiLanguageAnalyzer();
   }
-
-  /**
-   * Initialize database connection
-   */
-  async initialize(): Promise<void> {
-    try {
-      const { Client } = await import('pg');
-      this.dbClient = new Client({
-        host: this.dbConfig.host,
-        port: this.dbConfig.port,
-        database: this.dbConfig.database,
-        user: this.dbConfig.user,
-        password: this.dbConfig.password,
-      });
-
-      await this.dbClient.connect();
-      
-      // Set search path to our schema
-      await this.dbClient.query(`SET search_path TO ${this.dbConfig.schema}`);
-      
-      console.log('✅ Database connection established');
-    } catch (error) {
-      console.error('❌ Failed to connect to database:', error);
-      throw error;
-    }
+/**
+ * Initialize database connection
+ */
+async initialize(): Promise<void> {
+  try {
+    this.dbClient = getDatabaseManager();
+    console.log('✅ Database connection established');
+  } catch (error) {
+    console.error('❌ Failed to connect to database:', error);
+    throw error;
   }
+}
 
-  /**
-   * Close database connection
-   */
-  async close(): Promise<void> {
-    if (this.dbClient) {
-      await this.dbClient.end();
-      this.dbClient = null;
-    }
+/**
+ * Close database connection
+ */
+async close(): Promise<void> {
+  // Connection is managed centrally, no need to close here
+  this.dbClient = null;
+}
   }
 
   /**
@@ -192,13 +178,13 @@ export class SemanticIndexer {
 
       // Build SQL query with filters
       let sql = `
-        SELECT 
-          e.*,
-          emb.embedding <-> $1::vector AS distance,
-          1 - (emb.embedding <-> $1::vector) AS similarity
-        FROM code_entities e
-        JOIN entity_embeddings emb ON e.id = emb.entity_id
-        WHERE 1 - (emb.embedding <-> $1::vector) >= $2
+        SELECT
+          *,
+          embedding <-> $1::vector AS distance,
+          1 - (embedding <-> $1::vector) AS similarity
+        FROM artifacts
+        WHERE embedding IS NOT NULL
+        AND 1 - (embedding <-> $1::vector) >= $2
       `;
 
       const params: any[] = [JSON.stringify(queryEmbedding), threshold];
@@ -206,21 +192,21 @@ export class SemanticIndexer {
 
       // Add language filter
       if (languages.length > 0) {
-        sql += ` AND e.language = ANY($${paramIndex})`;
+        sql += ` AND language = ANY($${paramIndex})`;
         params.push(languages);
         paramIndex++;
       }
 
       // Add domain filter
       if (domains.length > 0) {
-        sql += ` AND e.domain = ANY($${paramIndex})`;
+        sql += ` AND COALESCE(metadata->>'domain', 'unknown') = ANY($${paramIndex})`;
         params.push(domains);
         paramIndex++;
       }
 
       // Add entity type filter
       if (entityTypes.length > 0) {
-        sql += ` AND e.type = ANY($${paramIndex})`;
+        sql += ` AND type = ANY($${paramIndex})`;
         params.push(entityTypes);
         paramIndex++;
       }
@@ -231,7 +217,7 @@ export class SemanticIndexer {
       const result = await this.dbClient.query(sql, params);
 
       return result.rows.map((row: any) => ({
-        entity: this.rowToCodeEntity(row),
+        entity: this.rowToArtifact(row),
         similarity: parseFloat(row.similarity),
       }));
     } catch (error) {
@@ -302,25 +288,26 @@ export class SemanticIndexer {
   async getRepositoryStats(repositoryId?: string): Promise<any> {
     try {
       let sql = `
-        SELECT 
+        SELECT
           COUNT(*) as total_entities,
           COUNT(DISTINCT language) as languages_count,
-          COUNT(DISTINCT domain) as domains_count,
+          COUNT(DISTINCT COALESCE(metadata->>'domain', 'unknown')) as domains_count,
           COUNT(DISTINCT file_path) as files_count,
           language,
-          domain,
+          COALESCE(metadata->>'domain', 'unknown') as domain,
           type,
           COUNT(*) as count
-        FROM code_entities
+        FROM artifacts
+        WHERE type IN ('function', 'class', 'module', 'file')
       `;
 
       const params: any[] = [];
       if (repositoryId) {
-        sql += ` WHERE repository_id = $1`;
+        sql += ` AND repository_url = $1`;
         params.push(repositoryId);
       }
 
-      sql += ` GROUP BY ROLLUP(language, domain, type)`;
+      sql += ` GROUP BY ROLLUP(language, COALESCE(metadata->>'domain', 'unknown'), type)`;
 
       const result = await this.dbClient.query(sql, params);
       return this.processStatsResult(result.rows);
@@ -407,7 +394,7 @@ export class SemanticIndexer {
     console.log(`💾 Storing ${entities.length} entities in database`);
 
     const sql = `
-      INSERT INTO code_entities (
+      INSERT INTO artifacts (
         id, name, type, language, file_path, start_line, end_line,
         signature, description, parameters, return_type, complexity,
         domain, keywords, source_code, metadata

@@ -73,6 +73,8 @@
     "status": "echo '🚀 Carmack Coder Status Check' && bun run format && bun run lint && echo '✅ Linting: Clean' && bun run test:high && echo '✅ High Priority Tests: Passed' && echo '🎯 Overall: Production Ready!'",
     "env:validate": "bun run scripts/validate-env.ts",
     "env:check": "bun run scripts/validate-env.ts",
+    "setup:infrastructure": "bun run scripts/setup-infrastructure.ts",
+    "setup:check": "bun run scripts/setup-infrastructure.ts",
     "jsonl:view": "bun run interactive-jsonl-viewer.tsx",
     "jsonl:interactive": "bun run interactive-jsonl-viewer.tsx --delay 50",
     "jsonl:debug": "bun run interactive-jsonl-viewer.tsx --debug",
@@ -80,8 +82,23 @@
     "log:analyze:verbose": "bun run src/log-analysis/index.ts --verbose",
     "log:analyze:custom": "bun run src/log-analysis/index.ts --claude-dir",
     "merge-pr": "./scripts/merge-pr.sh",
-    "log:compact": "bun run src/log-compactor/index.ts",
-    "log:compact:test": "bun run src/log-compactor/index.ts test-sample.jsonl -f xml"
+    "demo": "bun run demo/tensorrt-demo.ts",
+    "demo:interactive": "bun run demo/tensorrt-demo.ts",
+    "demo:engineer": "bun run demo/tensorrt-demo.ts --engineer",
+    "demo:researcher": "bun run demo/tensorrt-demo.ts --researcher",
+    "demo:manager": "bun run demo/tensorrt-demo.ts --manager",
+    "demo:all": "bun run demo/tensorrt-demo.ts --all-demos",
+    "demo:architecture": "bun run demo/tensorrt-demo.ts --architecture",
+    "demo:metrics": "bun run demo/metrics-dashboard.ts",
+    "demo:metrics-report": "bun run demo/metrics-dashboard.ts --report",
+    "demo:metrics-once": "bun run demo/metrics-dashboard.ts --once",
+    "demo:package": "bun run demo/package-demo.ts",
+    "demo:package-report": "bun run demo/package-demo.ts --report-only",
+    "oracle": "bun run oracle-cli.ts",
+    "oracle:interactive": "bun run oracle-cli.ts --interactive",
+    "oracle:stats": "bun run oracle-cli.ts --stats",
+    "oracle:simple": "bun run simple-oracle-demo.ts"
+
   },
   "engines": {
     "bun": ">=1.0.0"
@@ -114,10 +131,13 @@
   "dependencies": {
     "@ast-grep/napi": "^0.38.7",
     "@inkjs/ui": "2.0.0",
+    "@octokit/rest": "^21.0.2",
+    "@trigger.dev/sdk": "^3.2.4",
     "@types/node": "^24.0.15",
     "@types/pg": "^8.15.4",
     "@types/react": "19.1.8",
     "chokidar": "^4.0.3",
+    "fastify": "^5.1.0",
     "glob": "^11.0.3",
     "ink": "6.0.1",
     "ink-spinner": "5.0.0",
