@@ -139,10 +139,18 @@ async function demonstrateEpicTestingSystem() {
         'Maintain high accuracy in future releases.',
       ],
       trends: [
-        { metric: 'speedImprovement', values: [60, 62, 64.4], timestamps: [now, now, now] },
-        { metric: 'averageResponseTime', values: [1500, 1300, 1247], timestamps: [now, now, now] },
+        { metric: 'speedImprovement', trend: 'improving' as const, changePercent: 7.3 },
+        { metric: 'averageResponseTime', trend: 'improving' as const, changePercent: 16.86 },
       ],
-      alerts: [{ type: 'info', message: 'All EPIC requirements currently met.', timestamp: now }],
+      alerts: [
+        {
+          message: 'All EPIC requirements currently met.',
+          metric: 'overall',
+          severity: 'info' as 'info',
+          threshold: 0,
+          actualValue: 0,
+        },
+      ],
       benchmarkResults: [
         {
           scenarioId: 'tensorrt-llm-comprehensive',
@@ -174,6 +182,8 @@ async function demonstrateEpicTestingSystem() {
         passRate: 0.92,
         totalValidations: 150,
         passedValidations: 138,
+        averageAccuracy: 0.873, // Added to match ResponseQualityMetrics
+        validatedResponses: 150, // Added to match ResponseQualityMetrics
       },
       engagementResults: {
         userMetrics: {
@@ -181,22 +191,42 @@ async function demonstrateEpicTestingSystem() {
           activeUsers: 287,
           newUsers: 45,
           returningUsers: 242,
+          voluntaryUsers: Math.round(1250 * 0.85), // Added to satisfy EngagementMetrics type
+          voluntaryUsageRate: 0.85, // Add a default or calculated value if required by EngagementMetrics
         },
         sessionMetrics: {
           totalSessions: 1456,
-          averageSessionDuration: 8.7,
+          averageSessionDuration: 8700, // Convert to ms if EngagementMetrics expects ms
           averageQueriesPerSession: 3.2,
+          sessionCompletionRate: 0.95, // Added to satisfy EngagementMetrics type
+          bounceRate: 0.08, // Added to satisfy EngagementMetrics type
         },
         queryMetrics: {
           totalQueries: 4661,
           successfulQueries: 4427,
-          averageQueryTime: 1247,
-          popularTopics: ['memory-management', 'performance-optimization', 'cuda-kernels'],
+          averageResponseTime: 1247, // Renamed from averageQueryTime
+          averageAccuracy: 0.873, // Use value from qualityResults or a default
+          querySuccessRate: 4427 / 4661, // Calculate or use a default
+          popularQueryTypes: [
+            { type: 'memory-management', count: 1800, percentage: 1800 / 4661 },
+            { type: 'performance-optimization', count: 1600, percentage: 1600 / 4661 },
+            { type: 'cuda-kernels', count: 1261, percentage: 1261 / 4661 },
+          ],
         },
         satisfactionMetrics: {
           averageRating: 4.2,
-          totalRatings: 234,
-          positiveFeedback: 0.87,
+          ratingDistribution: { 1: 5, 2: 10, 3: 25, 4: 80, 5: 114 }, // Example distribution
+          feedbackCount: 234,
+          positiveRatingRate: 0.87,
+        },
+        period: {
+          start: now,
+          end: now,
+        },
+        trends: {
+          userGrowth: 0,
+          engagementTrend: "stable",
+          satisfactionTrend: "stable",
         },
       },
     };
@@ -204,10 +234,45 @@ async function demonstrateEpicTestingSystem() {
     console.log('📄 Generating Reports:');
 
     // Generate HTML report
+    const htmlBenchmarkResults = reportSummary.benchmarkResults.map((result, idx) => ({
+      ...result,
+      timestamp: now,
+      responseTime: result.optimizedTime ?? 0,
+      accuracy: 0.87,
+      scenarioId: result.scenarioId,
+      testId: result.scenarioId + '-benchmark',
+      executionTime: result.optimizedTime ?? 0,
+      relevanceScore: 0.89,
+      evidenceQuality: 0.9,
+      baselineTime: result.baselineTime,
+      optimizedTime: result.optimizedTime,
+      passed: result.passed,
+      speedImprovement: result.speedImprovement,
+      details: result.details,
+      userSatisfaction: 0.87,
+      description: result.description,
+      // Add required fields with default or derived values
+      manualComparisonTime: 0,
+      memoryUsage: result.details?.memoryUsage ?? 0,
+      cpuUsage: result.details?.cpuUtilization ?? 0,
+      errors: [],
+      metadata: {},
+    }));
+
+    const htmlPerformanceResults = reportSummary.performanceResults.map((result) => ({
+      timestamp: result.timestamp,
+      passed: result.passed,
+      actualValue: result.value,
+      testId: result.testId,
+      metadata: {},
+      testType: result.metric as 'response_time' | 'concurrent_users' | 'memory_usage',
+      targetValue: result.target,
+    }));
+
     const htmlReportContent = reporter.generateHTMLReport(
       reportSummary,
-      reportSummary.benchmarkResults,
-      reportSummary.performanceResults,
+      htmlBenchmarkResults,
+      htmlPerformanceResults,
       reportSummary.qualityResults,
       reportSummary.engagementResults,
       dashboardData
@@ -218,10 +283,44 @@ async function demonstrateEpicTestingSystem() {
     console.log(`      Size: ${Math.round(htmlReportContent.length / 1024)}KB`);
 
     // Generate JSON report
+    const jsonBenchmarkResults = reportSummary.benchmarkResults.map((result, idx) => ({
+      ...result,
+      timestamp: now,
+      responseTime: result.optimizedTime ?? 0,
+      accuracy: 0.87,
+      scenarioId: result.scenarioId,
+      testId: result.scenarioId + '-benchmark',
+      executionTime: result.optimizedTime ?? 0,
+      relevanceScore: 0.89,
+      evidenceQuality: 0.9,
+      baselineTime: result.baselineTime,
+      optimizedTime: result.optimizedTime,
+      passed: result.passed,
+      speedImprovement: result.speedImprovement,
+      details: result.details,
+      userSatisfaction: 0.87,
+      description: result.description,
+      manualComparisonTime: 0,
+      memoryUsage: result.details?.memoryUsage ?? 0,
+      cpuUsage: result.details?.cpuUtilization ?? 0,
+      errors: [],
+      metadata: {},
+    }));
+
+    const jsonPerformanceResults = reportSummary.performanceResults.map((result) => ({
+      timestamp: result.timestamp,
+      passed: result.passed,
+      actualValue: result.value,
+      testId: result.testId,
+      metadata: {},
+      testType: result.metric as 'response_time' | 'concurrent_users' | 'memory_usage',
+      targetValue: result.target,
+    }));
+
     const jsonReport = await reporter.generateJSONReport(
       reportSummary,
-      reportSummary.benchmarkResults,
-      reportSummary.performanceResults,
+      jsonBenchmarkResults,
+      jsonPerformanceResults,
       reportSummary.qualityResults,
       reportSummary.engagementResults,
       dashboardData
@@ -230,7 +329,47 @@ async function demonstrateEpicTestingSystem() {
     console.log(`      Size: ${Math.round(jsonReport.length / 1024)}KB`);
 
     // Generate Markdown report
-    const markdownReport = await reporter.generateMarkdownReport(reportSummary, reportConfig);
+    const markdownBenchmarkResults = reportSummary.benchmarkResults.map((result, idx) => ({
+      ...result,
+      timestamp: now,
+      responseTime: result.optimizedTime ?? 0,
+      accuracy: 0.87,
+      scenarioId: result.scenarioId,
+      testId: result.scenarioId + '-benchmark',
+      executionTime: result.optimizedTime ?? 0,
+      relevanceScore: 0.89,
+      evidenceQuality: 0.9,
+      baselineTime: result.baselineTime,
+      optimizedTime: result.optimizedTime,
+      passed: result.passed,
+      speedImprovement: result.speedImprovement,
+      details: result.details,
+      userSatisfaction: 0.87,
+      description: result.description,
+      manualComparisonTime: 0,
+      memoryUsage: result.details?.memoryUsage ?? 0,
+      cpuUsage: result.details?.cpuUtilization ?? 0,
+      errors: [],
+      metadata: {},
+    }));
+
+    const markdownPerformanceResults = reportSummary.performanceResults.map((result) => ({
+      passed: result.passed,
+      timestamp: result.timestamp,
+      actualValue: result.value,
+      testId: result.testId,
+      metadata: {},
+      testType: result.metric as 'response_time' | 'concurrent_users' | 'memory_usage' | 'database_query',
+      targetValue: result.target,
+    }));
+
+    const markdownReport = reporter.generateMarkdownReport(
+      reportSummary,
+      markdownBenchmarkResults,
+      markdownPerformanceResults,
+      reportSummary.qualityResults,
+      reportSummary.engagementResults
+    );
     console.log('   ✅ Markdown Report generated');
     console.log(`      Size: ${Math.round(markdownReport.length / 1024)}KB`);
 
@@ -283,7 +422,7 @@ async function demonstrateEpicTestingSystem() {
       ciResults,
       dashboardData,
       reports: {
-        html: htmlReport,
+        html: htmlReportContent,
         json: jsonReport,
         markdown: markdownReport,
       },
