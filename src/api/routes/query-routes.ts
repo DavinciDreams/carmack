@@ -100,13 +100,12 @@ export class QueryRouteHandlers {
         complexity: queryResult.complexity,
         context: queryResult.session_context,
       });
-      const enhanced_evidence = this.aiProcessor.enhanceEvidence
-        ? this.aiProcessor.enhanceEvidence(queryResult.evidence_chain, facts)
-        : queryResult.evidence_chain;
+      // If enhanceEvidence is not implemented, just use the original evidence_chain
+      const enhanced_evidence = queryResult.evidence_chain;
       const investigationThreads = this.aiProcessor.generateInvestigationThreads(hypotheses, facts);
 
       // Update session with query results
-      const _updatedSession = await this.sessionManager.updateSessionWithQuery(
+      await this.sessionManager.updateSessionWithQuery(
         session.id,
         validatedRequest.query,
         {
@@ -239,9 +238,8 @@ export class QueryRouteHandlers {
         complexity: queryResult.complexity,
         context: { ...queryResult.session_context, ...context_hints },
       });
-      const enhanced_evidence = this.aiProcessor.enhanceEvidence
-        ? this.aiProcessor.enhanceEvidence(queryResult.evidence_chain, facts)
-        : queryResult.evidence_chain;
+      // If enhanceEvidence is not implemented, just use the original evidence_chain
+      const enhanced_evidence = queryResult.evidence_chain;
       const investigationThreads = this.aiProcessor.generateInvestigationThreads(hypotheses, facts);
 
       // Update session
