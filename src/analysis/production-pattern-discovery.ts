@@ -3,12 +3,10 @@ import { readFile } from 'node:fs/promises';
 import {
   ProductionRepositoryAnalyzer,
   RepositoryAnalysisConfigSchema,
-  type RepositoryAnalysisConfig,
   type FileMetadata
 } from './repository-analyzer.js';
 import { 
   PatternDetectionPipeline,
-  type PatternDetectionPipelineConfig,
   type RawPattern 
 } from './pattern-detection-pipeline.js';
 import { 
@@ -403,7 +401,7 @@ async function learnFromHistoryProduction(
   
   for (const group of groups) {
     if (group.length >= config.minOccurrences) {
-      const pattern = generateEnhancedPatternFromGroup(group, config);
+      const pattern = generateEnhancedPatternFromGroup(group);
       if (pattern && pattern.metadata.confidence >= config.confidenceThreshold) {
         patterns.push(pattern);
       }
@@ -554,8 +552,7 @@ function levenshteinDistance(a: string, b: string): number {
 }
 
 function generateEnhancedPatternFromGroup(
-  group: Array<{ before: string; after: string; success: boolean; feedback?: string }>,
-  config: PatternDiscoveryRequest['config']
+  group: Array<{ before: string; after: string; success: boolean; feedback?: string }>
 ): DiscoveredPattern | null {
   if (group.length === 0) return null;
   
@@ -628,4 +625,140 @@ function calculateAverageRating(
 ): number {
   const successfulCount = group.filter(t => t.success).length;
   return (successfulCount / group.length) * 5;
+}
+
+/**
+ * Production Pattern Discovery Class - Main API
+ *
+ * Provides a clean class-based interface for the production pattern discovery system.
+ * This wrapper combines all the production components into a single easy-to-use API.
+ */
+export class ProductionPatternDiscovery {
+  private context: ProductionPatternDiscoveryContext;
+  
+  constructor(config: Partial<ProductionPatternDiscoveryConfig> = {}) {
+    // Parse configuration with defaults
+    const parsedConfig = ProductionPatternDiscoveryConfigSchema.parse(config);
+    
+    // Initialize production components
+    this.context = {
+      repositoryAnalyzer: new ProductionRepositoryAnalyzer(),
+      detectionPipeline: new PatternDetectionPipeline({
+        // Map config to pipeline config
+        optimization: {
+          confidenceThreshold: parsedConfig.pipeline.confidenceThreshold,
+          maxPatternsPerFile: parsedConfig.pipeline.maxPatternsPerFile,
+          enableEarlyTermination: true,
+          enableParallelStages: parsedConfig.performance.enableParallelProcessing,
+          maxConcurrentStages: parsedConfig.performance.maxConcurrentFiles
+        }
+      }),
+      config: parsedConfig
+    };
+    
+    console.log('🚀 ProductionPatternDiscovery initialized with production components');
+  }
+  
+  /**
+   * Discover patterns from a single file or repository
+   */
+  async discover(target: string, options: Partial<PatternDiscoveryRequest['config']> = {}) {
+    console.log(`🔍 Starting pattern discovery for: ${target}`);
+    
+    // Determine if target is a file or repository
+    const isFile = target.endsWith('.ts') || target.endsWith('.js') || target.endsWith('.tsx') || target.endsWith('.jsx');
+    
+    // Create discovery request
+    const request: PatternDiscoveryRequest = {
+      operation: 'discover',
+      sources: isFile
+        ? { codeFiles: [target] }
+        : { repositories: [{ path: target, language: 'typescript' }] },
+      config: {
+        minOccurrences: 1, // Lower threshold for testing
+        confidenceThreshold: 0.5, // Lower threshold to catch more patterns
+        maxPatterns: 100,
+        languages: ['typescript', 'javascript'],
+        categories: ['modernization', 'optimization', 'cleanup', 'error-detection'],
+        complexity: { min: 1, max: 8 },
+        ...options
+      }
+    };
+    
+    console.log(`📋 Request config: confidenceThreshold=${request.config.confidenceThreshold}, minOccurrences=${request.config.minOccurrences}`);
+    
+    // Execute discovery
+    const result = await executeProductionPatternDiscovery(request, this.context);
+    
+    console.log(`✨ Discovery completed: ${result.patterns.length} patterns found`);
+    return result;
+  }
+  
+  /**
+   * Discover patterns from multiple files
+   */
+  async discoverFromFiles(files: string[], options: Partial<PatternDiscoveryRequest['config']> = {}) {
+    const request: PatternDiscoveryRequest = {
+      operation: 'discover',
+      sources: { codeFiles: files },
+      config: {
+        minOccurrences: 1,
+        confidenceThreshold: 0.5,
+        maxPatterns: 100,
+        languages: ['typescript', 'javascript'],
+        categories: ['modernization', 'optimization', 'cleanup', 'error-detection'],
+        complexity: { min: 1, max: 8 },
+        ...options
+      }
+    };
+    
+    return await executeProductionPatternDiscovery(request, this.context);
+  }
+  
+  /**
+   * Discover patterns from repositories
+   */
+  async discoverFromRepositories(
+    repositories: Array<{ path: string; language: string; patterns?: string[] }>,
+    options: Partial<PatternDiscoveryRequest['config']> = {}
+  ) {
+    const request: PatternDiscoveryRequest = {
+      operation: 'discover',
+      sources: {
+        repositories: repositories.map(repo => ({
+          path: repo.path,
+          language: repo.language as any,
+          patterns: repo.patterns
+        }))
+      },
+      config: {
+        minOccurrences: 1,
+        confidenceThreshold: 0.5,
+        maxPatterns: 100,
+        languages: ['typescript', 'javascript'],
+        categories: ['modernization', 'optimization', 'cleanup', 'error-detection'],
+        complexity: { min: 1, max: 8 },
+        ...options
+      }
+    };
+    
+    return await executeProductionPatternDiscovery(request, this.context);
+  }
+  
+  /**
+   * Get pipeline statistics
+   */
+  getStats() {
+    return {
+      pipeline: this.context.detectionPipeline.getStats(),
+      config: this.context.config
+    };
+  }
+  
+  /**
+   * Clear all caches
+   */
+  clearCache() {
+    this.context.detectionPipeline.clearCache();
+  }
 }
