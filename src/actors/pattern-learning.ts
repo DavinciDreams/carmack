@@ -273,6 +273,13 @@ export class PatternLearner {
   private dataPath: string;
   private nlpAnalyzer: ReturnType<typeof createNLPAnalyzer>;
 
+  // Added missing property declarations for TS2339
+  private clusterer: PatternClusterer;
+  private similarityDetector: PatternSimilarityDetector;
+  private statisticalAnalyzer: StatisticalAnalyzer;
+  private patternStatistics: PatternStatistics;
+  private reinforcementLearning: ReinforcementLearningManager;
+
   constructor(dataPath = './data') {
     this.dataPath = dataPath;
 
