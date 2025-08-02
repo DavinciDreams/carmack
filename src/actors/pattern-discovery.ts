@@ -526,67 +526,6 @@ const genericImportPattern: PatternDetector = async (ast, _content, source, conf
 /**
  * Detect variable declaration patterns (var → const/let)
  */
-function _detectVarDeclarationPatterns(
-  _sourceFile: unknown,
-  content: string,
-  source: string,
-  config: PatternDiscoveryRequest['config']
-): DiscoveredPattern[] {
-  const patterns: DiscoveredPattern[] = [];
-  // Simple regex-based detection for demonstration
-  const varMatches = content.match(/var\s+(\w+)\s*=\s*([^;]+);/g);
-  if (varMatches && varMatches.length >= config.minOccurrences) {
-    patterns.push({
-      id: `var-to-const-${Date.now()}`,
-      name: 'Variable Declaration Modernization',
-      description: 'Convert var declarations to const/let based on usage',
-      pattern: {
-        before: 'var $VAR = $VALUE;',
-        after: 'const $VAR = $VALUE;',
-        variables: ['VAR', 'VALUE'],
-        constraints: {
-          VAR: '[a-zA-Z_$][a-zA-Z0-9_$]*',
-          VALUE: '.+',
-        },
-      },
-      metadata: {
-        language: 'typescript',
-        category: 'modernization',
-        complexity: 2,
-        riskLevel: 'low',
-        confidence: 0.9,
-        occurrences: varMatches.length,
-        successRate: 0.95,
-      },
-      evidence: {
-        examples: varMatches.slice(0, 3).map((match) => ({
-          before: match,
-          after: match.replace('var', 'const'),
-          context: 'Variable declaration',
-          source,
-        })),
-        statistics: {
-          totalOccurrences: varMatches.length,
-          successfulTransformations: Math.floor(varMatches.length * 0.95),
-          userRating: 4.5,
-        },
-      },
-      testCases: [
-        {
-          input: 'var message = "hello";',
-          expected: 'const message = "hello";',
-          description: 'Simple string variable',
-        },
-        {
-          input: 'var count = 42;',
-          expected: 'const count = 42;',
-          description: 'Numeric variable',
-        },
-      ],
-    });
-  }
-  return patterns;
-}
 /**
  * Convert function to arrow function (helper)
  */
@@ -597,368 +536,7 @@ function convertFunctionToArrow(functionStr: string): string {
     'const $1 = ($2) => $3;'
   );
 }
-/**
- * Detect function patterns (function → arrow function)
- */
-function _detectFunctionPatterns(
-  _sourceFile: unknown,
-  content: string,
-  source: string,
-  config: PatternDiscoveryRequest['config']
-): DiscoveredPattern[] {
-  const patterns: DiscoveredPattern[] = [];
-  const functionMatches = content.match(
-    /function\s+(\w+)\s*\(([^)]*)\)\s*\{\s*return\s+([^}]+);\s*\}/g
-  );
-  if (functionMatches && functionMatches.length >= config.minOccurrences) {
-    patterns.push({
-      id: `function-to-arrow-${Date.now()}`,
-      name: 'Arrow Function Conversion',
-      description: 'Convert simple functions to arrow functions',
-      pattern: {
-        before: 'function $NAME($PARAMS) { return $EXPR; }',
-        after: 'const $NAME = ($PARAMS) => $EXPR;',
-        variables: ['NAME', 'PARAMS', 'EXPR'],
-        constraints: {
-          NAME: '[a-zA-Z_$][a-zA-Z0-9_$]*',
-          PARAMS: '[^)]*',
-          EXPR: '[^}]+',
-        },
-      },
-      metadata: {
-        language: 'typescript',
-        category: 'modernization',
-        complexity: 3,
-        riskLevel: 'low',
-        confidence: 0.85,
-        occurrences: functionMatches.length,
-        successRate: 0.88,
-      },
-      evidence: {
-        examples: functionMatches.slice(0, 3).map((match) => ({
-          before: match,
-          after: convertFunctionToArrow(match),
-          context: 'Function declaration',
-          source,
-        })),
-        statistics: {
-          totalOccurrences: functionMatches.length,
-          successfulTransformations: Math.floor(functionMatches.length * 0.88),
-          userRating: 4.2,
-        },
-      },
-      testCases: [
-        {
-          input: 'function add(a, b) { return a + b; }',
-          expected: 'const add = (a, b) => a + b;',
-          description: 'Simple addition function',
-        },
-        {
-          input: 'function square(x) { return x * x; }',
-          expected: 'const square = (x) => x * x;',
-          description: 'Single parameter function',
-        },
-      ],
-    });
-  }
-  return patterns;
-}
-/**
- * Detect object patterns (property shorthand, destructuring)
- */
-function _detectObjectPatterns(
-  _sourceFile: unknown,
-  content: string,
-  source: string,
-  config: PatternDiscoveryRequest['config']
-): DiscoveredPattern[] {
-  const patterns: DiscoveredPattern[] = [];
-  // Object property shorthand
-  const shorthandMatches = content.match(/\{\s*(\w+):\s*\1\s*\}/g);
-  if (shorthandMatches && shorthandMatches.length >= config.minOccurrences) {
-    patterns.push({
-      id: `object-shorthand-${Date.now()}`,
-      name: 'Object Property Shorthand',
-      description: 'Use object property shorthand syntax',
-      pattern: {
-        before: '{ $KEY: $KEY }',
-        after: '{ $KEY }',
-        variables: ['KEY'],
-        constraints: {
-          KEY: '[a-zA-Z_$][a-zA-Z0-9_$]*',
-        },
-      },
-      metadata: {
-        language: 'typescript',
-        category: 'modernization',
-        complexity: 1,
-        riskLevel: 'low',
-        confidence: 0.95,
-        occurrences: shorthandMatches.length,
-        successRate: 0.98,
-      },
-      evidence: {
-        examples: shorthandMatches.slice(0, 3).map((match) => ({
-          before: match,
-          after: match.replace(/(\w+):\s*\1/, '$1'),
-          context: 'Object literal',
-          source,
-        })),
-        statistics: {
-          totalOccurrences: shorthandMatches.length,
-          successfulTransformations: Math.floor(shorthandMatches.length * 0.98),
-          userRating: 4.8,
-        },
-      },
-      testCases: [
-        {
-          input: '{ name: name, age: age }',
-          expected: '{ name, age }',
-          description: 'Multiple property shorthand',
-        },
-      ],
-    });
-  }
-  return patterns;
-}
-/**
- * Detect array patterns (indexOf → includes)
- */
-function _detectArrayPatterns(
-  _sourceFile: unknown,
-  content: string,
-  source: string,
-  config: PatternDiscoveryRequest['config']
-): DiscoveredPattern[] {
-  const patterns: DiscoveredPattern[] = [];
-  const indexOfMatches = content.match(/(\w+)\.indexOf\(([^)]+)\)\s*!==\s*-1/g);
-  if (indexOfMatches && indexOfMatches.length >= config.minOccurrences) {
-    patterns.push({
-      id: `indexof-to-includes-${Date.now()}`,
-      name: 'Array includes() Method',
-      description: 'Use Array.includes() instead of indexOf() !== -1',
-      pattern: {
-        before: '$ARRAY.indexOf($ITEM) !== -1',
-        after: '$ARRAY.includes($ITEM)',
-        variables: ['ARRAY', 'ITEM'],
-        constraints: {
-          ARRAY: '[a-zA-Z_$][a-zA-Z0-9_$]*',
-          ITEM: '[^)]+',
-        },
-      },
-      metadata: {
-        language: 'typescript',
-        category: 'modernization',
-        complexity: 2,
-        riskLevel: 'low',
-        confidence: 0.92,
-        occurrences: indexOfMatches.length,
-        successRate: 0.94,
-      },
-      evidence: {
-        examples: indexOfMatches.slice(0, 3).map((match) => ({
-          before: match,
-          after: match.replace(/(\w+)\.indexOf\(([^)]+)\)\s*!==\s*-1/, '$1.includes($2)'),
-          context: 'Array membership check',
-          source,
-        })),
-        statistics: {
-          totalOccurrences: indexOfMatches.length,
-          successfulTransformations: Math.floor(indexOfMatches.length * 0.94),
-          userRating: 4.6,
-        },
-      },
-      testCases: [
-        {
-          input: 'items.indexOf(item) !== -1',
-          expected: 'items.includes(item)',
-          description: 'Array membership check',
-        },
-      ],
-    });
-  }
-  return patterns;
-}
-/**
- * Detect Promise patterns (then/catch → async/await)
- */
-function _detectPromisePatterns(
-  _sourceFile: unknown,
-  content: string,
-  source: string,
-  config: PatternDiscoveryRequest['config']
-): DiscoveredPattern[] {
-  const patterns: DiscoveredPattern[] = [];
-  const promiseMatches = content.match(/(\w+)\.then\(([^)]+)\)/g);
-  if (promiseMatches && promiseMatches.length >= config.minOccurrences) {
-    patterns.push({
-      id: `promise-to-await-${Date.now()}`,
-      name: 'Promise to Async/Await',
-      description: 'Convert Promise.then() to async/await syntax',
-      pattern: {
-        before: '$PROMISE.then($CALLBACK)',
-        after: 'const result = await $PROMISE;',
-        variables: ['PROMISE', 'CALLBACK'],
-        constraints: {
-          PROMISE: '[a-zA-Z_$][a-zA-Z0-9_$]*',
-          CALLBACK: '[^)]+',
-        },
-      },
-      metadata: {
-        language: 'typescript',
-        category: 'modernization',
-        complexity: 5,
-        riskLevel: 'medium',
-        confidence: 0.75,
-        occurrences: promiseMatches.length,
-        successRate: 0.82,
-      },
-      evidence: {
-        examples: promiseMatches.slice(0, 3).map((match) => ({
-          before: match,
-          after: `const result = await ${match.split('.then')[0]};`,
-          context: 'Promise handling',
-          source,
-        })),
-        statistics: {
-          totalOccurrences: promiseMatches.length,
-          successfulTransformations: Math.floor(promiseMatches.length * 0.82),
-          userRating: 4.0,
-        },
-      },
-      testCases: [
-        {
-          input: 'fetchData().then(data => console.log(data))',
-          expected: 'const data = await fetchData(); console.log(data);',
-          description: 'Simple promise to await',
-        },
-      ],
-    });
-  }
-  return patterns;
-}
-/**
- * Detect import patterns
- */
-function _detectImportPatterns(
-  _sourceFile: unknown,
-  content: string,
-  source: string,
-  config: PatternDiscoveryRequest['config']
-): DiscoveredPattern[] {
-  const patterns: DiscoveredPattern[] = [];
-  const requireMatches = content.match(/const\s+(\w+)\s*=\s*require\(['"]([^'"]+)['"]\)/g);
-  if (requireMatches && requireMatches.length >= config.minOccurrences) {
-    patterns.push({
-      id: `require-to-import-${Date.now()}`,
-      name: 'CommonJS to ES6 Imports',
-      description: 'Convert require() to ES6 import statements',
-      pattern: {
-        before: 'const $VAR = require("$MODULE")',
-        after: 'import $VAR from "$MODULE";',
-        variables: ['VAR', 'MODULE'],
-        constraints: {
-          VAR: '[a-zA-Z_$][a-zA-Z0-9_$]*',
-          MODULE: '[^"]+',
-        },
-      },
-      metadata: {
-        language: 'typescript',
-        category: 'modernization',
-        complexity: 3,
-        riskLevel: 'medium',
-        confidence: 0.88,
-        occurrences: requireMatches.length,
-        successRate: 0.91,
-      },
-      evidence: {
-        examples: requireMatches.slice(0, 3).map((match) => ({
-          before: match,
-          after: match.replace(
-            /const\s+(\w+)\s*=\s*require\(['"]([^'"]+)['"]\)/,
-            'import $1 from "$2";'
-          ),
-          context: 'Module import',
-          source,
-        })),
-        statistics: {
-          totalOccurrences: requireMatches.length,
-          successfulTransformations: Math.floor(requireMatches.length * 0.91),
-          userRating: 4.3,
-        },
-      },
-      testCases: [
-        {
-          input: 'const fs = require("fs")',
-          expected: 'import fs from "fs";',
-          description: 'Node.js module import',
-        },
-      ],
-    });
-  }
-  return patterns;
-}
-/**
- * Detect class patterns
- */
-function _detectClassPatterns(
-  _sourceFile: unknown,
-  content: string,
-  source: string,
-  config: PatternDiscoveryRequest['config']
-): DiscoveredPattern[] {
-  const patterns: DiscoveredPattern[] = [];
-  // Constructor property assignment
-  const constructorMatches = content.match(
-    /constructor\([^)]*\)\s*\{[^}]*this\.(\w+)\s*=\s*\1[^}]*\}/g
-  );
-  if (constructorMatches && constructorMatches.length >= config.minOccurrences) {
-    patterns.push({
-      id: `constructor-shorthand-${Date.now()}`,
-      name: 'Constructor Parameter Properties',
-      description: 'Use TypeScript parameter properties in constructors',
-      pattern: {
-        before: 'constructor($PARAM: $TYPE) { this.$PARAM = $PARAM; }',
-        after: 'constructor(private $PARAM: $TYPE) {}',
-        variables: ['PARAM', 'TYPE'],
-        constraints: {
-          PARAM: '[a-zA-Z_$][a-zA-Z0-9_$]*',
-          TYPE: '[a-zA-Z_$][a-zA-Z0-9_$]*',
-        },
-      },
-      metadata: {
-        language: 'typescript',
-        category: 'modernization',
-        complexity: 4,
-        riskLevel: 'low',
-        confidence: 0.83,
-        occurrences: constructorMatches.length,
-        successRate: 0.89,
-      },
-      evidence: {
-        examples: constructorMatches.slice(0, 3).map((match) => ({
-          before: match,
-          after: 'constructor(private param: Type) {}',
-          context: 'Class constructor',
-          source,
-        })),
-        statistics: {
-          totalOccurrences: constructorMatches.length,
-          successfulTransformations: Math.floor(constructorMatches.length * 0.89),
-          userRating: 4.1,
-        },
-      },
-      testCases: [
-        {
-          input: 'constructor(name: string) { this.name = name; }',
-          expected: 'constructor(private name: string) {}',
-          description: 'Parameter property shorthand',
-        },
-      ],
-    });
-  }
-  return patterns;
-}
+
 /**
  * Analyze repositories for patterns
  */
@@ -969,10 +547,9 @@ async function analyzeRepositories(
   const patterns: DiscoveredPattern[] = [];
   for (const repo of repositories) {
     try {
-      // This would integrate with git/file system analysis
-      console.log(`Analyzing repository: ${repo.path}`);
-      // For now, simulate repository analysis
-      const repoPatterns = await simulateRepositoryAnalysis(repo, config);
+      // Production repository analysis
+      console.log(`🔍 Analyzing repository with production system: ${repo.path}`);
+      const repoPatterns = await analyzeRepositoryProduction(repo, config);
       patterns.push(...repoPatterns);
     } catch (error) {
       console.warn(`Failed to analyze repository ${repo.path}:`, error);
@@ -981,15 +558,55 @@ async function analyzeRepositories(
   return patterns;
 }
 /**
- * Simulate repository analysis (placeholder for real implementation)
+ * Production repository analysis - replaces simulation
  */
-async function simulateRepositoryAnalysis(
-  _repo: { path: string; language: string; patterns?: string[] },
-  _config: PatternDiscoveryRequest['config']
+async function analyzeRepositoryProduction(
+  repo: { path: string; language: string; patterns?: string[] },
+  config: PatternDiscoveryRequest['config']
 ): Promise<DiscoveredPattern[]> {
-  // This would perform actual repository analysis
-  // For now, return empty array
-  return [];
+  try {
+    // Import production components dynamically to avoid circular dependencies
+    const {
+      ProductionRepositoryAnalyzer
+    } = await import('../analysis/repository-analyzer.js');
+    
+    const { PatternDetectionPipeline } = await import('../analysis/pattern-detection-pipeline.js');
+    
+    const {
+      executeProductionPatternDiscovery,
+      ProductionPatternDiscoveryConfigSchema
+    } = await import('../analysis/production-pattern-discovery.js');
+    
+    // Create production context
+    const context = {
+      repositoryAnalyzer: new ProductionRepositoryAnalyzer(),
+      detectionPipeline: new PatternDetectionPipeline(),
+      config: ProductionPatternDiscoveryConfigSchema.parse({})
+    };
+    
+    // Create request for production system
+    const productionRequest: PatternDiscoveryRequest = {
+      operation: 'discover',
+      sources: {
+        repositories: [{
+          path: repo.path,
+          language: repo.language as any, // Type assertion for compatibility
+          ...(repo.patterns && { patterns: repo.patterns })
+        }]
+      },
+      config
+    };
+    
+    // Execute production pattern discovery
+    const result = await executeProductionPatternDiscovery(productionRequest, context);
+    
+    console.log(`🚀 Production repository analysis completed: ${result.patterns.length} patterns discovered from ${repo.path}`);
+    return result.patterns;
+    
+  } catch (error) {
+    console.warn(`Production repository analysis failed for ${repo.path}, falling back to empty result:`, error);
+    return [];
+  }
 }
 /**
  * Learn patterns from transformation history
