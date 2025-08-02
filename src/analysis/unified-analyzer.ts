@@ -232,7 +232,8 @@ export class UnifiedAnalyzer {
     }
     const issuesByFile: Record<string, z.infer<typeof IssueSchema>[]> = {};
     for (const issue of this.issues) {
-      if (issue.fix) {
+      // For type errors, always add to issuesByFile for LLM fix attempt
+      if (issue.type === 'type-error' || issue.fix) {
         if (!issuesByFile[issue.file]) {
           issuesByFile[issue.file] = [];
         }
@@ -252,8 +253,114 @@ export class UnifiedAnalyzer {
         const sourceFile: import('ts-morph').SourceFile =
           project.getSourceFile(file) || project.addSourceFileAtPath(file);
         let modified = false;
+        let needsLLM = false;
 
         for (const issue of issues) {
+          // Aggressively remove unused declarations for "declared but never used" or "its value is never read"
+          if (
+            issue.type === 'type-error' &&
+            /is declared but (never used|its value is never read)/.test(issue.message)
+          ) {
+            const fullText = sourceFile.getFullText();
+            const pos = getOffsetFromLineCol(fullText, issue.line, issue.column);
+            const node = sourceFile.getDescendantAtPos(pos);
+
+            // Try to remove variable, function, type alias, interface, enum, or import
+            let removed = false;
+            if (node) {
+              // Variable, function, class, enum, type alias, interface
+              const decl =
+                node.getFirstAncestor((a) =>
+                  [
+                    SyntaxKind.VariableStatement,
+                    SyntaxKind.FunctionDeclaration,
+                    SyntaxKind.ClassDeclaration,
+                    SyntaxKind.EnumDeclaration,
+                    SyntaxKind.TypeAliasDeclaration,
+                    SyntaxKind.InterfaceDeclaration,
+                  ].includes(a.getKind())
+                );
+
+              if (decl) {
+                // Remove only if the node supports .remove()
+                switch (decl.getKind()) {
+                  case SyntaxKind.VariableStatement: {
+                    // Remove only the unused variable from the declaration list
+                    const varStmt = decl as import('ts-morph').VariableStatement;
+                    const varDecls = varStmt.getDeclarations();
+                    if (node.asKind && node.asKind(SyntaxKind.VariableDeclaration)) {
+                      const varDecl = node.asKind(SyntaxKind.VariableDeclaration);
+                      if (varDecls.length > 1 && varDecl) {
+                        varDecl.remove();
+                        removed = true;
+                        console.log(`Removed unused variable declaration '${varDecl.getName()}' from ${file}`);
+                      } else {
+                        varStmt.remove();
+                        removed = true;
+                        console.log(`Removed unused variable statement from ${file}`);
+                      }
+                    }
+                    break;
+                  }
+                  case SyntaxKind.FunctionDeclaration:
+                  case SyntaxKind.ClassDeclaration:
+                  case SyntaxKind.EnumDeclaration:
+                  case SyntaxKind.TypeAliasDeclaration:
+                  case SyntaxKind.InterfaceDeclaration:
+                    (decl as import('ts-morph').Node & { remove(): void }).remove();
+                    removed = true;
+                    console.log(`Removed unused declaration from ${file}`);
+                    break;
+                  default:
+                    break;
+                }
+              } else if (node.asKind && node.asKind(SyntaxKind.VariableDeclaration)) {
+                // Remove only the unused variable from the declaration list
+                const varDecl = node.asKind(SyntaxKind.VariableDeclaration);
+                const parentStmt = varDecl?.getFirstAncestorByKind(SyntaxKind.VariableStatement);
+                if (parentStmt && varDecl) {
+                  const varDecls = parentStmt.getDeclarations();
+                  if (varDecls.length > 1) {
+                    varDecl.remove();
+                    removed = true;
+                    console.log(`Removed unused variable declaration '${varDecl.getName()}' from ${file}`);
+                  } else {
+                    parentStmt.remove();
+                    removed = true;
+                    console.log(`Removed unused variable statement from ${file}`);
+                  }
+                }
+              } else {
+                // Remove named import if possible
+                const namedImport = node.getFirstAncestorByKind(SyntaxKind.ImportSpecifier);
+                if (namedImport) {
+                  namedImport.remove();
+                  removed = true;
+                } else {
+                  // Remove default or namespace import
+                  const importDecl = node.getFirstAncestorByKind(SyntaxKind.ImportDeclaration);
+                  if (importDecl) {
+                    importDecl.remove();
+                    removed = true;
+                  }
+                }
+              }
+            }
+            if (removed) {
+              modified = true;
+              sourceFile.saveSync();
+              continue;
+            }
+            // If not removed, fallback to LLM
+            needsLLM = true;
+            continue;
+          }
+
+          // If it's a type error, always try LLM fix
+          if (issue.type === 'type-error') {
+            needsLLM = true;
+            continue;
+          }
           if (!issue.fix) continue;
 
           if (issue.fix.description === 'Add optional chaining') {
@@ -278,6 +385,30 @@ export class UnifiedAnalyzer {
               exprStmt.remove();
               modified = true;
             }
+          } else if (issue.fix.description === 'Remove unused import') {
+            // Remove the unused import using ts-morph
+            const pos = getOffsetFromLineCol(sourceFile.getFullText(), issue.line, issue.column);
+            const node = sourceFile.getDescendantAtPos(pos);
+            // Find the import declaration or named import to remove
+            let removed = false;
+            if (node) {
+              // Remove named import if possible
+              const namedImport = node.getFirstAncestorByKind(SyntaxKind.ImportSpecifier);
+              if (namedImport) {
+                namedImport.remove();
+                removed = true;
+              } else {
+                // Remove default or namespace import
+                const importDecl = node.getFirstAncestorByKind(SyntaxKind.ImportDeclaration);
+                if (importDecl) {
+                  importDecl.remove();
+                  removed = true;
+                }
+              }
+            }
+            if (removed) {
+              modified = true;
+            }
           } else {
             const fullText = sourceFile.getFullText();
             const pos = getOffsetFromLineCol(fullText, issue.line, issue.column);
@@ -293,6 +424,10 @@ export class UnifiedAnalyzer {
           sourceFile.saveSync();
           this.filesModified.push(file);
           console.log(`💡 Auto-fixed (AST): ${file}`);
+        }
+        // If LLM is needed for this file, add to set
+        if (needsLLM) {
+          llmTypeErrorFiles.add(file);
         }
       } catch (e) {
         if (issues.some((i) => i.type === 'type-error')) {
@@ -459,11 +594,92 @@ export class UnifiedAnalyzer {
       this.checkNullability(sourceFile);
     }
 
+    // Check for unused imports using ts-morph
+    this.checkUnusedImports(sourceFile);
+
     // Check for common issues
     this.checkCommonPatterns(sourceFile);
 
     // Type errors
     this.checkTypeErrors(sourceFile);
+  }
+
+  /**
+   * Detect unused imports using ts-morph and add issues for them.
+   */
+  private checkUnusedImports(sourceFile: ts.SourceFile) {
+    try {
+      const filePath = sourceFile.fileName;
+      if (!filePath.endsWith('.ts') && !filePath.endsWith('.tsx')) return;
+
+      // Use the TypeScript type checker to find all used symbols (including type-only)
+      const importSymbols = new Map<string, { node: ts.Node; importDecl: ts.ImportDeclaration }>();
+
+      sourceFile.forEachChild((node) => {
+        if (ts.isImportDeclaration(node) && node.importClause) {
+          const { name, namedBindings } = node.importClause;
+          if (name) {
+            importSymbols.set(name.text, { node: name, importDecl: node });
+          }
+          if (namedBindings) {
+            if (ts.isNamedImports(namedBindings)) {
+              for (const element of namedBindings.elements) {
+                importSymbols.set(element.name.text, { node: element.name, importDecl: node });
+              }
+            } else if (ts.isNamespaceImport(namedBindings)) {
+              importSymbols.set(namedBindings.name.text, { node: namedBindings.name, importDecl: node });
+            }
+          }
+        }
+      });
+
+      // Gather all identifiers used in the file (value and type positions)
+      const used = new Set<string>();
+      const checker = this.checker;
+      function visit(node: ts.Node) {
+        if (ts.isIdentifier(node)) {
+          // Check if this identifier refers to an import symbol
+          const symbol = checker.getSymbolAtLocation(node);
+          if (symbol && symbol.declarations && symbol.declarations.length > 0) {
+            const decl = symbol.declarations[0];
+            if (
+              decl &&
+              (ts.isImportClause(decl as ts.Node) ||
+                ts.isImportSpecifier(decl as ts.Node) ||
+                ts.isNamespaceImport(decl as ts.Node))
+            ) {
+              used.add(node.text);
+            }
+          }
+        }
+        ts.forEachChild(node, visit);
+      }
+      visit(sourceFile);
+
+      // Mark as unused only if not referenced in any position
+      for (const [name, { node, importDecl }] of importSymbols.entries()) {
+        if (!used.has(name)) {
+          const pos = node.getStart();
+          const { line, character } = sourceFile.getLineAndCharacterOfPosition(pos);
+          this.addIssue({
+            type: 'unused-code',
+            severity: 'warning',
+            file: filePath,
+            line: line + 1,
+            column: character + 1,
+            message: `Unused import: '${name}'`,
+            fix: this.config.enableFixes
+              ? {
+                  description: 'Remove unused import',
+                  code: '', // Removal handled in applyFixes
+                }
+              : undefined,
+          });
+        }
+      }
+    } catch (err) {
+      // Fail silently, do not block analysis
+    }
   }
 
   private checkNullability(sourceFile: ts.SourceFile) {
