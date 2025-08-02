@@ -8,7 +8,7 @@ async function main() {
     // Analyze all TS/TSX files in src
     includePatterns: ['**/*.ts', '**/*.tsx'],
     excludePatterns: [],
-    enableFixes: false, // Dry run: do not apply fixes
+    enableFixes: true, // Autofix mode: apply all supported fixes
     checkNullability: true,
     checkComponents: true,
     reportFormat: 'both',
