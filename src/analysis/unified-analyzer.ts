@@ -8,6 +8,8 @@ import * as ts from 'typescript';
 import { z } from 'zod';
 // LLM transformation actor import
 import { EnhancedLLMTransformer } from '../actors/llm-transformation-enhanced';
+// Enhanced TypeScript error detection
+import { TypeScriptErrorDetector } from './typescript-error-detector.js';
 
 // Configuration schema
 export const AnalyzerConfigSchema = z.object({
@@ -27,8 +29,8 @@ export type AnalyzerConfig = z.infer<typeof AnalyzerConfigSchema>;
 
 // Result schemas
 const IssueSchema = z.object({
-  type: z.enum(['null-access', 'type-error', 'missing-import', 'unused-code', 'performance']),
-  severity: z.enum(['error', 'warning', 'info']),
+  type: z.enum(['null-access', 'type-error', 'missing-import', 'unused-code', 'performance', 'typescript-compilation']),
+  severity: z.enum(['error', 'warning', 'info', 'suggestion']),
   file: z.string(),
   line: z.number(),
   column: z.number(),
@@ -39,6 +41,13 @@ const IssueSchema = z.object({
       code: z.string(),
     })
     .optional(),
+  // Enhanced metadata for TypeScript error patterns
+  metadata: z.object({
+    tsErrorCode: z.number().optional(),
+    category: z.string().optional(),
+    autoFixable: z.boolean().optional(),
+    patternType: z.string().optional(),
+  }).optional(),
 });
 
 export class UnifiedAnalyzer {
@@ -55,9 +64,12 @@ export class UnifiedAnalyzer {
     startTime: 0,
     endTime: 0,
   };
+  // Enhanced TypeScript error detector
+  private tsErrorDetector: TypeScriptErrorDetector;
 
   constructor(private config: AnalyzerConfig) {
     this.config = AnalyzerConfigSchema.parse(config);
+    this.tsErrorDetector = new TypeScriptErrorDetector();
     this.initializeProgram();
   }
 
@@ -600,8 +612,11 @@ export class UnifiedAnalyzer {
     // Check for common issues
     this.checkCommonPatterns(sourceFile);
 
-    // Type errors
+    // Type errors (original basic detection)
     this.checkTypeErrors(sourceFile);
+    
+    // Enhanced TypeScript error detection with actionable patterns
+    this.checkEnhancedTypeScriptErrors(sourceFile);
   }
 
   /**
@@ -756,6 +771,125 @@ export class UnifiedAnalyzer {
           message: ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'),
         });
       }
+    }
+  }
+
+  /**
+   * Enhanced TypeScript error detection with actionable patterns and fixes
+   */
+  private checkEnhancedTypeScriptErrors(sourceFile: ts.SourceFile) {
+    try {
+      const filePath = sourceFile.fileName;
+      
+      // Skip non-TypeScript files
+      if (!filePath.endsWith('.ts') && !filePath.endsWith('.tsx') &&
+          !filePath.endsWith('.js') && !filePath.endsWith('.jsx')) {
+        return;
+      }
+
+      // Read file content
+      const content = fs.readFileSync(filePath, 'utf8');
+      
+      // Create minimal file metadata for the detector
+      const fileMetadata = {
+        path: filePath,
+        relativePath: path.relative(this.config.projectPath, filePath),
+        language: filePath.endsWith('.tsx') || filePath.endsWith('.jsx') ? 'tsx' : 'typescript',
+        mtime: Date.now(),
+        size: content.length,
+        encoding: 'utf8',
+        lineCount: content.split('\n').length
+      };
+
+      // Use enhanced TypeScript error detector
+      const patterns = this.tsErrorDetector.detectErrorPatternsSync(fileMetadata, content);
+      
+      // Convert patterns to issues
+      for (const pattern of patterns) {
+        const severity = this.mapPatternSeverityToIssueSeverity(pattern.metadata?.severity || 'error');
+        const issueType = this.mapPatternTypeToIssueType(pattern.type);
+        
+        this.addIssue({
+          type: issueType,
+          severity,
+          file: filePath,
+          line: pattern.location.startLine,
+          column: pattern.location.startColumn || 1,
+          message: pattern.metadata?.reason || `TypeScript error: ${pattern.type}`,
+          fix: pattern.after ? {
+            description: this.generateFixDescription(pattern.type),
+            code: pattern.after
+          } : undefined,
+          metadata: {
+            tsErrorCode: pattern.metadata?.tsErrorCode,
+            category: pattern.metadata?.category,
+            autoFixable: pattern.metadata?.autoFixable,
+            patternType: pattern.type,
+          }
+        });
+      }
+
+      if (patterns.length > 0) {
+        console.log(`🔍 Enhanced TypeScript analysis found ${patterns.length} actionable patterns in ${path.basename(filePath)}`);
+      }
+
+    } catch (error) {
+      console.warn(`⚠️ Enhanced TypeScript error detection failed for ${sourceFile.fileName}:`, (error as Error).message);
+    }
+  }
+
+  private mapPatternSeverityToIssueSeverity(severity: string): 'error' | 'warning' | 'info' | 'suggestion' {
+    switch (severity) {
+      case 'error': return 'error';
+      case 'warning': return 'warning';
+      case 'suggestion': return 'suggestion';
+      default: return 'info';
+    }
+  }
+
+  private mapPatternTypeToIssueType(patternType: string): 'null-access' | 'type-error' | 'missing-import' | 'unused-code' | 'performance' | 'typescript-compilation' {
+    if (patternType.includes('null-safety') || patternType.includes('undefined-safety')) {
+      return 'null-access';
+    }
+    if (patternType.includes('unused')) {
+      return 'unused-code';
+    }
+    if (patternType.includes('console')) {
+      return 'performance';
+    }
+    if (patternType.includes('missing-import')) {
+      return 'missing-import';
+    }
+    if (patternType.includes('typescript-compilation-error') || patternType.includes('type')) {
+      return 'typescript-compilation';
+    }
+    return 'type-error';
+  }
+
+  private generateFixDescription(patternType: string): string {
+    switch (patternType) {
+      case 'null-safety-optional-chaining':
+      case 'undefined-safety-optional-chaining':
+        return 'Add optional chaining';
+      case 'undefined-function-call':
+        return 'Add null check before function call';
+      case 'missing-parameter-type':
+        return 'Add parameter type annotation';
+      case 'missing-variable-type':
+        return 'Add variable type annotation';
+      case 'missing-return-type':
+        return 'Add return type annotation';
+      case 'unused-variable':
+      case 'unused-function':
+        return 'Remove unused declaration';
+      case 'console-cleanup':
+        return 'Remove console statement';
+      case 'empty-catch-block':
+        return 'Add proper error handling';
+      case 'any-type-improvement':
+        return 'Replace any with specific type';
+      default:
+        return `Fix ${patternType.replace(/-/g, ' ')}`;
     }
   }
 
