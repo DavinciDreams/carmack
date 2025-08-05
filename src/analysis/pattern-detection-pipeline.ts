@@ -1,7 +1,8 @@
 import { z } from 'zod';
-import { parse as astGrepParse, type SgRoot } from '@ast-grep/napi';
 import { createHash } from 'node:crypto';
 import { type FileMetadata } from './repository-analyzer.js';
+import { TsMorphPatternDetector } from './ts-morph-pattern-detector.js';
+import { TypeScriptErrorDetector } from './typescript-error-detector.js';
 
 /**
  * Pattern Detection Pipeline with Multi-Stage Analysis
@@ -27,8 +28,9 @@ export const PatternDetectionPipelineConfigSchema = z.object({
   stages: z.array(PatternDetectionStageSchema).default([
     { name: 'lexical', type: 'lexical', enabled: true, priority: 1, parallelizable: true },
     { name: 'syntactic', type: 'syntactic', enabled: true, priority: 2, parallelizable: true },
-    { name: 'semantic', type: 'semantic', enabled: true, priority: 3, parallelizable: false },
-    { name: 'cross-file', type: 'cross-file', enabled: true, priority: 4, parallelizable: false }
+    { name: 'typescript-errors', type: 'semantic', enabled: true, priority: 3, parallelizable: false },
+    { name: 'semantic', type: 'semantic', enabled: true, priority: 4, parallelizable: false },
+    { name: 'cross-file', type: 'cross-file', enabled: true, priority: 5, parallelizable: false }
   ]),
   caching: z.object({
     enableStageCache: z.boolean().default(true),
@@ -71,7 +73,7 @@ export const AnalysisContextSchema = z.object({
     path: z.string(),
     content: z.string(),
     metadata: z.any(), // FileMetadata type
-    ast: z.any().optional() // SgRoot type
+    sourceFile: z.any().optional() // ts-morph SourceFile type
   }),
   patterns: z.array(RawPatternSchema).default([]),
   stageResults: z.record(z.any()).default({}),
@@ -315,144 +317,108 @@ class LexicalAnalysisStage extends PatternDetectionStageBase {
 }
 
 /**
- * Syntactic analysis stage - AST-based pattern detection
+ * Syntactic analysis stage - ts-morph based pattern detection
  */
 class SyntacticAnalysisStage extends PatternDetectionStageBase {
   readonly name = 'syntactic';
   readonly type = 'syntactic' as const;
   readonly parallelizable = true;
+  private tsMorphDetector: TsMorphPatternDetector;
+
+  constructor() {
+    super();
+    this.tsMorphDetector = new TsMorphPatternDetector();
+  }
 
   async detect(context: AnalysisContext): Promise<RawPattern[]> {
-    const patterns: RawPattern[] = [];
     const { content, path, metadata } = context.file;
     
     try {
-      // Parse AST using ast-grep
-      const ast = astGrepParse(content, metadata.language);
-      context.file.ast = ast;
+      // Skip non-TypeScript/JavaScript files
+      if (!this.isValidLanguageForAST(metadata.language)) {
+        console.log(`🔍 Skipping syntactic analysis for ${path} (${metadata.language})`);
+        return [];
+      }
       
-      // Detect AST-based patterns
-      patterns.push(...this.detectFunctionPatterns(ast, path));
-      patterns.push(...this.detectClassPatterns(ast, path));
-      patterns.push(...this.detectImportPatterns(ast, path));
+      console.log(`🔍 Running syntactic analysis with ts-morph for ${path}`);
+      
+      // Use the existing TsMorphPatternDetector which works properly
+      const patterns = await this.tsMorphDetector.detectPatterns(metadata, content);
+      
+      // Mark patterns as coming from syntactic stage
+      patterns.forEach(pattern => {
+        if (pattern.metadata) {
+          pattern.metadata.stage = 'syntactic';
+          pattern.metadata.detector = 'ts-morph';
+        }
+      });
+      
+      console.log(`✅ Syntactic analysis completed: ${patterns.length} patterns found in ${path}`);
+      return patterns;
       
     } catch (error) {
-      console.warn(`Failed to parse AST for ${path}:`, error);
+      console.warn(`❌ Syntactic analysis failed for ${path}:`, (error as Error).message);
+      return [];
     }
-    
-    return patterns;
   }
 
-  private detectFunctionPatterns(ast: SgRoot, filePath: string): RawPattern[] {
-    const patterns: RawPattern[] = [];
+  private isValidLanguageForAST(language: string): boolean {
+    // Only parse AST for languages that ts-morph supports
+    const supportedLanguages = ['typescript', 'javascript', 'tsx', 'jsx'];
+    return supportedLanguages.includes(language.toLowerCase());
+  }
+}
+
+/**
+ * TypeScript Error Analysis Stage - detects compilation errors and type issues
+ */
+class TypeScriptErrorAnalysisStage extends PatternDetectionStageBase {
+  readonly name = 'typescript-errors';
+  readonly type = 'semantic' as const;
+  readonly parallelizable = false;
+  private typeScriptErrorDetector: TypeScriptErrorDetector;
+
+  constructor() {
+    super();
+    this.typeScriptErrorDetector = new TypeScriptErrorDetector();
+  }
+
+  async detect(context: AnalysisContext): Promise<RawPattern[]> {
+    const { content, path, metadata } = context.file;
     
-    // Find function declarations that could be arrow functions
-    const functionNodes = ast.root().findAll('function_declaration');
-    
-    for (const node of functionNodes) {
-      const text = node.text();
-      
-      // Check if it's a simple function that could be an arrow function
-      if (this.isSimpleFunction(text)) {
-        patterns.push({
-          id: this.generatePatternId('function-to-arrow', filePath),
-          type: 'function-to-arrow',
-          language: 'typescript',
-          before: text,
-          after: this.convertToArrowFunction(text),
-          confidence: this.calculateConfidence({ syntactic: 0.9, semantic: 0.8, frequency: 0.7 }),
-          location: {
-            startLine: node.range().start.line + 1,
-            endLine: node.range().end.line + 1,
-            startColumn: node.range().start.column,
-            endColumn: node.range().end.column
-          },
-          metadata: {
-            stage: 'syntactic',
-            nodeType: 'function_declaration'
-          }
-        });
+    try {
+      // Skip non-TypeScript/JavaScript files
+      if (!this.isValidLanguageForAST(metadata.language)) {
+        console.log(`🔍 Skipping TypeScript error analysis for ${path} (${metadata.language})`);
+        return [];
       }
-    }
-    
-    return patterns;
-  }
-
-  private detectClassPatterns(ast: SgRoot, filePath: string): RawPattern[] {
-    const patterns: RawPattern[] = [];
-    
-    // Find class declarations
-    const classNodes = ast.root().findAll('class_declaration');
-    
-    for (const node of classNodes) {
-      const text = node.text();
       
-      patterns.push({
-        id: this.generatePatternId('class-analysis', filePath),
-        type: 'class-analysis',
-        language: 'typescript',
-        before: text,
-        confidence: this.calculateConfidence({ syntactic: 0.8, semantic: 0.6, frequency: 0.5 }),
-        location: {
-          startLine: node.range().start.line + 1,
-          endLine: node.range().end.line + 1,
-          startColumn: node.range().start.column,
-          endColumn: node.range().end.column
-        },
-        metadata: {
-          stage: 'syntactic',
-          nodeType: 'class_declaration'
+      console.log(`🔍 Running TypeScript error detection for ${path}`);
+      
+      // Use the TypeScript error detector
+      const patterns = await this.typeScriptErrorDetector.detectErrorPatterns(metadata, content);
+      
+      // Mark patterns as coming from TypeScript error stage
+      patterns.forEach(pattern => {
+        if (pattern.metadata) {
+          pattern.metadata.stage = 'typescript-errors';
+          pattern.metadata.detector = 'typescript-error-detector';
         }
       });
-    }
-    
-    return patterns;
-  }
-
-  private detectImportPatterns(ast: SgRoot, filePath: string): RawPattern[] {
-    const patterns: RawPattern[] = [];
-    
-    // Find import declarations
-    const importNodes = ast.root().findAll('import_statement');
-    
-    for (const node of importNodes) {
-      const text = node.text();
       
-      patterns.push({
-        id: this.generatePatternId('import-analysis', filePath),
-        type: 'import-analysis',
-        language: 'typescript',
-        before: text,
-        confidence: this.calculateConfidence({ syntactic: 0.9, semantic: 0.7, frequency: 0.8 }),
-        location: {
-          startLine: node.range().start.line + 1,
-          endLine: node.range().end.line + 1,
-          startColumn: node.range().start.column,
-          endColumn: node.range().end.column
-        },
-        metadata: {
-          stage: 'syntactic',
-          nodeType: 'import_statement'
-        }
-      });
+      console.log(`✅ TypeScript error analysis completed: ${patterns.length} patterns found in ${path}`);
+      return patterns;
+      
+    } catch (error) {
+      console.warn(`❌ TypeScript error analysis failed for ${path}:`, (error as Error).message);
+      return [];
     }
-    
-    return patterns;
   }
 
-  private isSimpleFunction(functionText: string): boolean {
-    // Simple heuristic to determine if function can be converted to arrow function
-    return functionText.includes('return') && 
-           !functionText.includes('this') && 
-           functionText.split('\n').length <= 5;
-  }
-
-  private convertToArrowFunction(functionText: string): string {
-    // Simple conversion for demonstration
-    return functionText.replace(
-      /function\s+(\w+)\s*\(([^)]*)\)\s*\{\s*return\s+([^}]+);\s*\}/,
-      'const $1 = ($2) => $3;'
-    );
+  private isValidLanguageForAST(language: string): boolean {
+    // Only parse AST for languages that ts-morph supports
+    const supportedLanguages = ['typescript', 'javascript', 'tsx', 'jsx'];
+    return supportedLanguages.includes(language.toLowerCase());
   }
 }
 
@@ -463,6 +429,7 @@ export class PatternDetectionPipeline {
   private config: PatternDetectionPipelineConfig;
   private cache: PatternCache<RawPattern[]>;
   private stages: Map<string, PatternDetectionStageBase> = new Map();
+  private tsMorphDetector: TsMorphPatternDetector;
 
   constructor(config: Partial<PatternDetectionPipelineConfig> = {}) {
     this.config = PatternDetectionPipelineConfigSchema.parse(config);
@@ -470,6 +437,9 @@ export class PatternDetectionPipeline {
       this.config.caching.maxCacheSize,
       this.config.caching.cacheTTL
     );
+    
+    // Initialize ts-morph detector for better TypeScript analysis
+    this.tsMorphDetector = new TsMorphPatternDetector();
     
     this.initializeStages();
   }
@@ -502,7 +472,23 @@ export class PatternDetectionPipeline {
     
     const allPatterns: RawPattern[] = [];
     
-    // Execute stages in priority order
+    // First, try ts-morph detector for TypeScript/JavaScript files
+    if (this.isTypeScriptFile(file.language)) {
+      try {
+        console.log(`🔍 Running ts-morph detector for ${file.relativePath}`);
+        const tsMorphPatterns = await this.tsMorphDetector.detectPatterns(file, content);
+        
+        if (tsMorphPatterns && tsMorphPatterns.length > 0) {
+          console.log(`🔍 ts-morph detected ${tsMorphPatterns.length} patterns in ${file.relativePath}`);
+          allPatterns.push(...tsMorphPatterns);
+          context.stageResults['ts-morph'] = tsMorphPatterns;
+        }
+      } catch (error) {
+        console.warn(`❌ ts-morph detector failed for ${file.relativePath}:`, (error as Error).message);
+      }
+    }
+    
+    // Execute traditional stages in priority order
     const orderedStages = this.getOrderedStages();
     
     for (const stageConfig of orderedStages) {
@@ -520,9 +506,16 @@ export class PatternDetectionPipeline {
           stageConfig.timeout
         );
         
-        allPatterns.push(...stagePatterns);
-        context.patterns.push(...stagePatterns);
-        context.stageResults[stage.name] = stagePatterns;
+        if (stagePatterns && Array.isArray(stagePatterns)) {
+          allPatterns.push(...stagePatterns);
+          context.patterns.push(...stagePatterns);
+          context.stageResults[stage.name] = stagePatterns;
+          
+          console.log(`✅ ${stage.name} stage completed: ${stagePatterns.length} patterns found`);
+        } else {
+          console.warn(`⚠️ ${stage.name} stage returned invalid results for ${file.relativePath}`);
+          context.stageResults[stage.name] = [];
+        }
         
         // Early termination if confidence threshold met
         if (this.config.optimization.enableEarlyTermination &&
@@ -532,12 +525,15 @@ export class PatternDetectionPipeline {
         }
         
       } catch (error) {
-        console.warn(`Stage ${stage.name} failed for ${file.path}:`, error);
+        console.warn(`❌ Stage ${stage.name} failed for ${file.relativePath}:`, (error as Error).message);
+        context.stageResults[stage.name] = [];
+        // Continue with next stage instead of failing completely
       }
     }
     
-    // Limit patterns per file
-    const limitedPatterns = allPatterns
+    // Remove duplicate patterns and limit per file
+    const deduplicatedPatterns = this.deduplicatePatterns(allPatterns);
+    const limitedPatterns = deduplicatedPatterns
       .sort((a, b) => b.confidence - a.confidence)
       .slice(0, this.config.optimization.maxPatternsPerFile);
     
@@ -550,12 +546,29 @@ export class PatternDetectionPipeline {
     return limitedPatterns;
   }
 
+  private isTypeScriptFile(language: string): boolean {
+    return ['typescript', 'javascript', 'tsx', 'jsx'].includes(language.toLowerCase());
+  }
+
+  private deduplicatePatterns(patterns: RawPattern[]): RawPattern[] {
+    const seen = new Set<string>();
+    return patterns.filter(pattern => {
+      const key = `${pattern.type}-${pattern.before}-${pattern.location.startLine}`;
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
+  }
+
   /**
    * Initialize pattern detection stages
    */
   private initializeStages(): void {
     this.stages.set('lexical', new LexicalAnalysisStage());
     this.stages.set('syntactic', new SyntacticAnalysisStage());
+    this.stages.set('typescript-errors', new TypeScriptErrorAnalysisStage());
     // Additional stages would be added here
   }
 
