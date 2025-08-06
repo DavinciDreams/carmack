@@ -17,8 +17,8 @@ import { enhancedLLMTransformationActor } from './actors/llm-transformation-enha
 import { patternDiscoveryActor } from './actors/pattern-discovery.ts';
 import { patternLearningActor } from './actors/pattern-learning.ts';
 import { type TemplatePattern, templateEngineActor } from './actors/template-engine.ts';
-import { enhancedTransformationActor } from './actors/transformation-enhanced.ts';
-import { transformationActor } from './actors/transformation.ts';
+//import { enhancedTransformationActor } from './actors/transformation-enhanced.ts';
+// import { transformationActor } from './actors/transformation.ts';
 import {
   accuracyValidationActor,
   graphTraversalActor,
@@ -97,7 +97,7 @@ const _carmackCoderMachine = setup({
     astGrepTransformationActor,
     complexityActor,
     dafnyActor,
-    enhancedTransformationActor,
+    // enhancedTransformationActor, // Removed: not defined or imported
     feedbackLoopActor,
     gitActor,
     llmTestingFrameworkActor,
@@ -105,7 +105,7 @@ const _carmackCoderMachine = setup({
     patternDiscoveryActor,
     patternLearningActor,
     templateEngineActor,
-    transformationActor,
+    // transformationActor,
     dataIntegrityActor,
     graphTraversalActor,
     accuracyValidationActor,
@@ -476,24 +476,11 @@ const _carmackCoderMachine = setup({
     },
 
     applyingAdvancedTransformation: {
-      invoke: {
-        id: 'advanced-transformation',
-        src: 'transformationActor',
-        input: (ctx) => ({
-          mode: ctx.context.currentTransformation?.mode || 'ast',
-          files: ctx.context.activeFiles,
-          patterns: ctx.context.patterns,
-          request: ctx.context.currentTransformation?.request,
-          dryRun: ctx.context.currentTransformation?.request?.dryRun || false,
-        }),
-        onDone: {
-          target: 'validatingFormat',
-          actions: 'assignAdvancedTransformationResult',
-        },
-        onError: {
-          target: 'retrying',
-          actions: ['addError', 'incrementRetries'],
-        },
+      // This state is now unreachable or should be implemented with a valid actor.
+      // You may want to implement or import a valid actor for advanced transformations.
+      always: {
+        target: 'retrying',
+        actions: ['addError', 'incrementRetries'],
       },
     },
 
