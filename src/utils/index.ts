@@ -262,4 +262,22 @@ export function isValidFilePath(path: string): boolean {
    console.log(`Merged ${mainPatterns.length} main patterns with ${enhancedPatterns.length} enhanced patterns (${allPatterns.length} total)`);
    
    return allPatterns;
- }
+}
+
+/**
+* Returns true if all checks succeeded.
+* @param checks - Record of checks to evaluate.
+* @returns {boolean} True if all checks have status "succeeded".
+*/
+export function all_succeeded<CheckName extends string>(checks: Record<CheckName, { status: "succeeded" | "failed" }>): boolean {
+ return Object.values(checks).every((check) => (check as { status: "succeeded" | "failed" }).status === "succeeded");
+}
+
+/**
+* Returns an array of checks from a record.
+* @param checks - Record of checks.
+* @returns {Array} Array of Check objects.
+*/
+export function get_checks<CheckName extends string, CheckType = { status: "succeeded" | "failed" }>(checks: Record<CheckName, CheckType>): CheckType[] {
+ return Object.values(checks);
+}
