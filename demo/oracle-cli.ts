@@ -6,7 +6,8 @@
  */
 
 import { OracleQueryProcessor } from '../src/docs/oracle-query-processor.js';
-import { SemanticIndexer } from './src/docs/semantic-indexer.js';
+import { SemanticIndexer } from '../src/ingestion/semantic-indexer.js';
+import type { z } from 'zod';
 
 // Database configuration
 const dbConfig = {
@@ -24,7 +25,11 @@ class OracleCLI {
 
   constructor() {
     this.processor = new OracleQueryProcessor(dbConfig);
-    this.indexer = new SemanticIndexer(dbConfig);
+    this.indexer = new SemanticIndexer({
+      model: 'text-embedding-3-small',
+      maxTokens: 8192,
+      batchSize: 100,
+    });
   }
 
   async initialize(): Promise<void> {
@@ -169,12 +174,33 @@ TIPS:
 
   async showStats(): Promise<void> {
     console.log('\n📊 Oracle Database Statistics:');
-    
     try {
       await this.indexer.initialize();
-      const stats = await this.indexer.getRepositoryStats();
+      // Import zod types at the top of the file for type inference
+      const { z } = await import('zod');
+      const StatsSchema = z.object({
+        total: z.object({
+          totalEntities: z.number(),
+          languagesCount: z.number(),
+          domainsCount: z.number(),
+          filesCount: z.number(),
+        }).optional(),
+        byLanguage: z.record(z.string(), z.number()).optional(),
+        byDomain: z.record(z.string(), z.number()).optional(),
+      }).strict();
+
+      const rawStats = await this.indexer.getRepositoryStats();
+      type StatsType = import('zod').infer<typeof StatsSchema>;
+      let stats: StatsType;
+      try {
+        stats = StatsSchema.parse(rawStats);
+      } catch (e) {
+        console.error('❌ Invalid stats format:', e);
+        await this.indexer.close();
+        return;
+      }
       
-      console.log('Database Status:');
+      (console as Console).log('Database Status:');
       if (stats.total && stats.total.totalEntities > 0) {
         console.log(`  • Total Entities: ${stats.total.totalEntities}`);
         console.log(`  • Languages: ${stats.total.languagesCount}`);

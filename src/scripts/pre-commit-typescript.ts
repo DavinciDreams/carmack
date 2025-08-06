@@ -14,7 +14,7 @@ import { createActor } from 'xstate';
 import {
   type UnifiedAnalyzerResult,
   unifiedAnalyzerActor,
-} from '../actors/unified-analyzer-actor.js';
+} from '../actors/unified-analyzer-actor.ts';
 
 interface PreCommitConfig {
   autoFix: boolean;

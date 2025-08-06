@@ -507,13 +507,16 @@ export class QueryEngine {
       const complexity = this.assessComplexity(validatedRequest.query, intent);
       
 // Perform hybrid search
-const searchResults = await this.hybridSearch.search(validatedRequest.query, {
+const searchOptions: Parameters<typeof this.hybridSearch.search>[1] = {
   filters: this.buildSearchFilters(validatedRequest.context),
-validatedRequest.options?.max_results
   semantic_weight: this.getSemanticWeight(intent),
   keyword_weight: this.getKeywordWeight(intent),
   threshold: this.getThreshold(complexity),
-});
+};
+if (validatedRequest.options?.max_results !== undefined) {
+  searchOptions.limit = validatedRequest.options.max_results;
+}
+const searchResults = await this.hybridSearch.search(validatedRequest.query, searchOptions);
 
 // Build evidence chain from search results
 const evidenceChain = this.buildEvidenceChain(
