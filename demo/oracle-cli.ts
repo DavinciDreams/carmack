@@ -5,7 +5,7 @@
  * Query the TensorRT Oracle system interactively
  */
 
-import { OracleQueryProcessor } from './src/docs/oracle-query-processor.js';
+import { OracleQueryProcessor } from '../src/docs/oracle-query-processor.js';
 import { SemanticIndexer } from './src/docs/semantic-indexer.js';
 
 // Database configuration

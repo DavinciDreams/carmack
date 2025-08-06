@@ -120,6 +120,7 @@ src/
 ## Installation & Setup
 
 ### Prerequisites
+
 - [Bun](https://bun.sh) runtime
 - [Dafny](https://dafny.org) for formal verification (optional)
 - Git for version control
