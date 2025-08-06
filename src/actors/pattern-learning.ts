@@ -324,8 +324,7 @@ export class PatternLearner {
       result.metrics.learningTime = Date.now() - startTime;
 
 
-        `🎓 Pattern learning completed: ${result.metrics.patternsDiscovered} discovered, ${result.metrics.patternsOptimized} optimized`
-      );
+      // `🎓 Pattern learning completed: ${result.metrics.patternsDiscovered} discovered, ${result.metrics.patternsOptimized} optimized`
 
       return result;
     } catch (error) {
