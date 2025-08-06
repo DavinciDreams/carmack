@@ -35,6 +35,15 @@ client<llm> CustomHaiku {
   }
 }
 
+client<llm> CustomKimi {
+  provider openrouter
+  retry_policy Constant
+  options {
+    model "moonshotai/kimi-k2:free"
+    api_key env.OPENROUTER_API_KEY
+  }
+}
+
 // https://docs.boundaryml.com/docs/snippets/clients/round-robin
 client<llm> CustomFast {
   provider round-robin
