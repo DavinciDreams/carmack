@@ -223,7 +223,7 @@ console.log(`Tests: ${suite.successCount}/${suite.results.length} passed`);
 
 ```bash
 # Required for GitHub data
-GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx
+GITHUB_TOKEN=process.env.GITHUB_TOKEN
 
 # Required for embeddings
 HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxx

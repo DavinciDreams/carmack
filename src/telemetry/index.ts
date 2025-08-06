@@ -7,8 +7,8 @@
 export { getTelemetryCollector, initializeTelemetry, TelemetryCollector } from './collector.js';
 
 // File-based telemetry export
-export { FileBasedTelemetryExporter, createFileExporter } from './file-exporter.js';
-export type { FileExporterConfig } from './file-exporter.js';
+//export { FileBasedTelemetryExporter, createFileExporter } from './file-exporter.js';
+//export type { FileExporterConfig } from './file-exporter.js';
 
 // Integration helpers
 export {
