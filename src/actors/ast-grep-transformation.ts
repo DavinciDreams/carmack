@@ -1,7 +1,12 @@
 import { parse, pattern as compilePattern, Lang, type SgNode, type SgRoot } from '@ast-grep/napi';
 import { readFile, writeFile } from 'node:fs/promises';
 import { fromPromise } from 'xstate';
-import { z } from 'zod';
+import {
+  AstGrepTransformationRequestSchema,
+  type AstGrepPattern,
+  type AstGrepTransformationRequest,
+  type AstMatch
+} from './transformation';
 
 /**
  * Enhanced AST-grep Transformation Engine
@@ -19,172 +24,8 @@ import { z } from 'zod';
  */
 
 // Enhanced AST pattern schema for real AST-grep patterns
-const AstGrepPatternSchema = z.object({
-  id: z.string(),
-  language: z.string(), // Accept any language supported by AST-grep
+/* AstGrepPatternSchema now imported from ./transformation */
 
-  // AST-grep pattern configuration
-  pattern: z.object({
-    // AST-grep pattern syntax
-    rule: z.object({
-      pattern: z.string().optional(),
-      kind: z.string().optional(),
-      regex: z.string().optional(),
-      inside: z
-        .object({
-          pattern: z.string().optional(),
-          kind: z.string().optional(),
-        })
-        .optional(),
-      has: z
-        .object({
-          pattern: z.string().optional(),
-          kind: z.string().optional(),
-        })
-        .optional(),
-      follows: z
-        .object({
-          pattern: z.string().optional(),
-          kind: z.string().optional(),
-        })
-        .optional(),
-      precedes: z
-        .object({
-          pattern: z.string().optional(),
-          kind: z.string().optional(),
-        })
-        .optional(),
-      all: z
-        .array(
-          z.object({
-            pattern: z.string().optional(),
-            kind: z.string().optional(),
-            regex: z.string().optional(),
-          })
-        )
-        .optional(),
-      any: z
-        .array(
-          z.object({
-            pattern: z.string().optional(),
-            kind: z.string().optional(),
-            regex: z.string().optional(),
-          })
-        )
-        .optional(),
-      not: z
-        .object({
-          pattern: z.string().optional(),
-          kind: z.string().optional(),
-          regex: z.string().optional(),
-        })
-        .optional(),
-    }),
-    // Variable constraints
-    constraints: z
-      .record(
-        z.object({
-          regex: z.string().optional(),
-          kind: z.string().optional(),
-        })
-      )
-      .optional(),
-  }),
-
-  // Transformation specification
-  replacement: z.object({
-    // Replacement template with AST-grep variables
-    template: z.string(),
-    // Post-processing transformations
-    transformers: z
-      .record(
-        z.enum([
-          'camelCase',
-          'pascalCase',
-          'kebabCase',
-          'snakeCase',
-          'uppercase',
-          'lowercase',
-          'trim',
-          'escape',
-        ])
-      )
-      .optional(),
-    // Conditional replacements
-    conditions: z
-      .array(
-        z.object({
-          when: z.string(), // AST-grep condition
-          // biome-ignore lint/suspicious/noThenProperty: AST-grep uses 'then' for replacement templates
-          then: z.string(), // Replacement template
-        })
-      )
-      .optional(),
-  }),
-
-  // Metadata
-  description: z.string(),
-  complexity: z.number().min(1).max(10),
-  riskLevel: z.enum(['low', 'medium', 'high']),
-  category: z.string(),
-
-  // Performance configuration
-  performance: z
-    .object({
-      priority: z.number().min(1).max(10).default(5),
-      batchable: z.boolean().default(true),
-      conflicts: z.array(z.string()).optional(),
-      maxMatches: z.number().optional(),
-    })
-    .optional(),
-
-  // Test cases for validation
-  testCases: z
-    .array(
-      z.object({
-        input: z.string(),
-        expected: z.string(),
-        description: z.string(),
-      })
-    )
-    .optional(),
-});
-
-const AstGrepTransformationRequestSchema = z.object({
-  targetFiles: z.array(z.string()),
-  patterns: z.array(AstGrepPatternSchema),
-  options: z
-    .object({
-      dryRun: z.boolean().default(false),
-      maxComplexity: z.number().default(7),
-      enableBatching: z.boolean().default(true),
-      skipConflicts: z.boolean().default(true),
-      preserveFormatting: z.boolean().default(true),
-      maxMatchesPerPattern: z.number().default(1000),
-    })
-    .optional()
-    .default({}),
-});
-
-export type AstGrepPattern = z.infer<typeof AstGrepPatternSchema>;
-export type AstGrepTransformationRequest = z.infer<typeof AstGrepTransformationRequestSchema>;
-
-/**
- * AST match result with rich metadata
- */
-interface AstMatch {
-  pattern: AstGrepPattern;
-  node: SgNode;
-  text: string;
-  range: { start: number; end: number };
-  variables: Record<string, string>;
-  context: {
-    parent?: SgNode | null;
-    ancestors: SgNode[];
-    siblings: SgNode[];
-    scope: 'global' | 'function' | 'block' | 'class';
-  };
-}
 
 /**
  * Enhanced AST-grep transformation actor
@@ -195,13 +36,11 @@ export const astGrepTransformationActor = fromPromise(
 
 
       `🌳 Starting AST-grep transformations on ${validatedInput.targetFiles.length} files with ${validatedInput.patterns.length} patterns`
-    );
 
     const results = await applyAstGrepTransformations(validatedInput);
 
 
       `✨ AST-grep engine completed: ${results.transformationsApplied} transformations across ${results.filesModified.length} files`
-    );
 
     return results;
   }
@@ -246,7 +85,6 @@ async function applyAstGrepTransformations(request: AstGrepTransformationRequest
 
 
           `🌳 AST-transformed ${filePath}: ${transformResult.transformations.length} patterns applied`
-        );
       }
     } catch (error) {
 
@@ -269,8 +107,8 @@ function prepareAstPatterns(patterns: AstGrepPattern[], maxComplexity: number): 
     .filter((p) => p.complexity <= maxComplexity)
     .sort((a, b) => {
       // Sort by priority first, then by complexity
-a.performance?.priority
-b.performance?.priority
+      const aPriority = a.performance?.priority ?? 5;
+      const bPriority = b.performance?.priority ?? 5;
 
       if (aPriority !== bPriority) {
         return bPriority - aPriority; // Higher priority first
@@ -299,7 +137,7 @@ async function transformFileWithAstGrep(
 
   // Determine language for AST-grep
   // Use the first pattern's language or infer from file extension
-patterns[0]?.language
+  let lang = patterns[0]?.language || inferLanguageFromFile(filePath);
   if (Lang[lang as keyof typeof Lang]) {
     lang = Lang[lang as keyof typeof Lang];
   }
@@ -375,7 +213,7 @@ async function applyAstGrepPattern(
     }
 
     // Limit matches if specified
-pattern.performance?.maxMatches
+    const maxMatches = pattern.performance?.maxMatches ?? matches.length;
     const limitedMatches = matches.slice(0, maxMatches);
 
     // Apply transformations in reverse order to maintain indices
@@ -553,7 +391,6 @@ function extractVariables(node: SgNode, pattern: AstGrepPattern): Record<string,
       if (Object.keys(variableMatches).length > 0) {
 
           `   ✅ Pattern-based extraction found: ${Object.keys(variableMatches).join(', ')}`
-        );
       }
     }
 

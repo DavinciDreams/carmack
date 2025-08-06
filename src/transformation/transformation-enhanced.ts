@@ -289,19 +289,38 @@ export const enhancedTransformationOrchestratorActor = fromPromise(
 
 
 // --- Main stage runner ---
+
+// Define explicit stage function types for clarity and type safety
+type StageFnWithAnnotation = (
+  request: EnhancedOrchestratorRequest,
+  state: EnhancedOrchestratorState,
+  annotationData?: any[]
+) => Promise<void>;
+type StageFn = (
+  request: EnhancedOrchestratorRequest,
+  state: EnhancedOrchestratorState
+) => Promise<void>;
+type StageFnStateOnly = (state: EnhancedOrchestratorState) => Promise<void>;
+
+interface Stage {
+  name: string;
+  fn: StageFnWithAnnotation | StageFn | StageFnStateOnly;
+  kind: 'withAnnotation' | 'stateOnly' | 'default';
+}
+
 async function executeEnhancedOrchestrationStages(
   request: EnhancedOrchestratorRequest,
   state: EnhancedOrchestratorState,
   annotationData?: any[]
 ): Promise<EnhancedTransformationOrchestratorResult> {
-  const stages = [
-    { name: 'pre-analysis', fn: preAnalysisStage },
-    { name: 'dependency-analysis', fn: dependencyAnalysisStage },
-    { name: 'transformation-planning', fn: transformationPlanningStage },
-    { name: 'transformation-execution', fn: transformationExecutionStage },
-    { name: 'quality-validation', fn: qualityValidationStage },
-    { name: 'rollback-preparation', fn: rollbackPreparationStage },
-    { name: 'monitoring-collection', fn: monitoringCollectionStage },
+  const stages: Stage[] = [
+    { name: 'pre-analysis', fn: preAnalysisStage as StageFnWithAnnotation, kind: 'withAnnotation' },
+    { name: 'dependency-analysis', fn: dependencyAnalysisStage as StageFn, kind: 'default' },
+    { name: 'transformation-planning', fn: transformationPlanningStage as StageFn, kind: 'default' },
+    { name: 'transformation-execution', fn: transformationExecutionStage as StageFnWithAnnotation, kind: 'withAnnotation' },
+    { name: 'quality-validation', fn: qualityValidationStage as StageFn, kind: 'default' },
+    { name: 'rollback-preparation', fn: rollbackPreparationStage as StageFn, kind: 'default' },
+    { name: 'monitoring-collection', fn: monitoringCollectionStage as StageFnStateOnly, kind: 'stateOnly' },
   ];
 
   for (const stage of stages) {
@@ -309,13 +328,13 @@ async function executeEnhancedOrchestrationStages(
 
     try {
       console.log(`📋 Enhanced Orchestrator executing stage: ${stage.name}`);
-      // Pass annotationData to preAnalysisStage and other stages as needed
-      if (stage.name === 'pre-analysis') {
-        await stage.fn(request, state, annotationData);
-      } else if (stage.name === 'transformation-execution') {
-        await stage.fn(request, state, annotationData);
+      // Call the stage function with the correct parameters based on its kind
+      if (stage.kind === 'withAnnotation') {
+        await (stage.fn as StageFnWithAnnotation)(request, state, annotationData);
+      } else if (stage.kind === 'stateOnly') {
+        await (stage.fn as StageFnStateOnly)(state);
       } else {
-        await stage.fn(request, state);
+        await (stage.fn as StageFn)(request, state);
       }
 
       const elapsed = Date.now() - stageStart;
@@ -348,7 +367,7 @@ async function executeEnhancedOrchestrationStages(
     }
   }
 
-  return buildEnhancedOrchestratorResult(request, state);
+  return buildEnhancedOrchestratorResult(state);
 }
 
 /**
@@ -838,10 +857,9 @@ async function rollbackPreparationStage(
  * Stage 7: Monitoring Collection - Collect metrics and monitoring data
  */
 async function monitoringCollectionStage(
-  _request: EnhancedOrchestratorRequest,
   state: EnhancedOrchestratorState
 ): Promise<void> {
-  if (!state || !state.performanceMetrics && !state.startTime) {
+  if (!state || (!state.performanceMetrics && !state.startTime)) {
     // Defensive: state should always be present, but check for safety
     return;
   }
@@ -870,7 +888,6 @@ async function monitoringCollectionStage(
  * Build final enhanced orchestrator result
  */
 function buildEnhancedOrchestratorResult(
-  request: EnhancedOrchestratorRequest,
   state: EnhancedOrchestratorState
 ): EnhancedTransformationOrchestratorResult {
   const qualityImprovement = calculateQualityImprovement(state);

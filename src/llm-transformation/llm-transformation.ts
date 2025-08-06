@@ -1,10 +1,9 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { fromPromise } from 'xstate';
+import { getLLMProviderManager, LLMProviderSchema, LLMConfigSchema } from '../providers/llm-providers.js';
+// import type { LLMProvider, LLMConfig } from '../providers/llm-providers.js';
 import { z } from 'zod';
 
-import { getLLMProviderManager } from '../providers/llm-providers.js';
-
-import type { LLMResponse as ProviderLLMResponse } from '../providers/llm-providers.js';
 import type { AstPattern, ComplexityMetrics, TransformationRequest } from '../types.js';
 
 /**
@@ -18,24 +17,6 @@ import type { AstPattern, ComplexityMetrics, TransformationRequest } from '../ty
  * - Performance optimization with caching and batching
  */
 
-// LLM Provider configuration
-const LLMProviderSchema = z.enum(['openai', 'anthropic', 'openrouter', 'local', 'mock']);
-
-// LLM Configuration schema
-const LLMConfigSchema = z
-  .object({
-    provider: LLMProviderSchema.default('mock'),
-    apiKey: z.string().optional(),
-    model: z.string().default('gpt-4'),
-    baseURL: z.string().optional(), // For local models
-    maxTokens: z.number().default(4000),
-    temperature: z.number().min(0).max(2).default(0.1), // Low temperature for deterministic code
-    timeout: z.number().default(30000), // 30 second timeout
-    retries: z.number().default(3),
-  })
-  .default({});
-
-// LLM Transformation input schema
 const LLMTransformationInputSchema = z.object({
   files: z.array(z.string()),
   request: z.custom<TransformationRequest>().optional(),
@@ -50,7 +31,7 @@ const LLMTransformationInputSchema = z.object({
     .optional(),
 });
 
-// LLM Response schema for internal transformation results
+// LLM Transformation response schema (internal, not provider)
 const LLMTransformationResponseSchema = z.object({
   transformedCode: z.string(),
   explanation: z.string(),
@@ -59,7 +40,7 @@ const LLMTransformationResponseSchema = z.object({
   appliedTransformations: z.array(z.string()),
 });
 
-// Transformation result schema
+// Transformation result schema (internal, not provider)
 const LLMTransformationResultSchema = z.object({
   filesModified: z.array(z.string()),
   transformationsApplied: z.number(),
@@ -820,4 +801,4 @@ export function createLLMTransformer(config?: Partial<LLMConfig>): LLMTransforme
  */
 export function validateLLMConfig(config: unknown): LLMConfig {
   return LLMConfigSchema.parse(config);
-}
+}

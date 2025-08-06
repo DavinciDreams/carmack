@@ -1,37 +1,46 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { fromPromise } from 'xstate';
+import { getLLMProviderManager } from '../providers/llm-providers.js';
 import { z } from 'zod';
+import {
+  EnhancedLLMConfigSchema,
+  EnhancedLLMTransformationInputSchema,
+  type EnhancedLLMConfig,
+  type EnhancedLLMTransformationInput
+} from './transformation';
 
-import { getLLMProviderManager, type LLMRequest } from '../providers/llm-providers.js';
-
-import type {
-
-/**
- * Enhanced LLM Transformation Actor
- *
- * This module provides production-ready LLM-based code transformations using
- * the new provider system with real API integrations, fallback mechanisms,
- * context-aware transformations, advanced prompt engineering, and comprehensive
- * error handling with rollback capabilities.
- */
-
-  ContextAwarePrompt,
-  EnhancedTransformationContext,
-  EnhancedTransformationRequest,
-  MultiFileContext,
-  PerformanceOptimization,
-  RollbackInfo,
-  TransformationRequest,
-} from '../types.js';
+import type { LLMRequest } from '../providers/llm-providers.js';
+// import type { TransformationRequest } from '../types.js'; // Removed unused import
 
 // =============================================================================
 // ENHANCED LLM TRANSFORMATION SCHEMAS
+// (moved to ./transformation)
 // =============================================================================
 
-/**
- * Schema for file context analysis results
- * Provides comprehensive type safety for code analysis data
- */
+const EnhancedLLMTransformationResultSchema = z.object({
+  filesModified: z.array(z.string()),
+  transformationsApplied: z.number(),
+  mode: z.literal('llm'),
+  totalTokensUsed: z.number().optional(),
+  totalCost: z.number().optional(),
+  averageConfidence: z.number().optional(),
+  providersUsed: z.array(z.string()).optional(),
+  errors: z.array(z.string()).optional(),
+  warnings: z.array(z.string()).optional(),
+  rollbackAvailable: z.boolean().default(false),
+  rollbackPath: z.string().optional(),
+  performance: z
+    .object({
+      totalTime: z.number(),
+      averageTimePerFile: z.number(),
+      successRate: z.number(),
+      cacheHitRate: z.number(),
+      batchingEfficiency: z.number(),
+    })
+    .optional(),
+});
+export type EnhancedLLMTransformationResult = z.infer<typeof EnhancedLLMTransformationResultSchema>;
+
 const FileContextAnalysisSchema = z.object({
   language: z.string(),
   framework: z.string().optional(),
@@ -43,11 +52,8 @@ const FileContextAnalysisSchema = z.object({
   classes: z.number().int().min(0),
   issues: z.array(z.string()),
 });
+export type FileContextAnalysis = z.infer<typeof FileContextAnalysisSchema>;
 
-/**
- * Schema for transformation cache entries
- * Ensures type safety for cached transformation results
- */
 const TransformationCacheEntrySchema = z.object({
   success: z.boolean(),
   transformationCount: z.number().int().min(0),
@@ -57,11 +63,8 @@ const TransformationCacheEntrySchema = z.object({
   timestamp: z.number(),
   cacheKey: z.string(),
 });
+export type TransformationCacheEntry = z.infer<typeof TransformationCacheEntrySchema>;
 
-/**
- * Interface for transformation result that matches cache return type
- * Provides compatibility between cache storage and method return types
- */
 interface TransformationMethodResult {
   success: boolean;
   transformationCount: number;
@@ -70,10 +73,6 @@ interface TransformationMethodResult {
   error?: string;
 }
 
-/**
- * Schema for validating LLM JSON responses
- * Provides runtime validation with comprehensive defaults
- */
 const LLMTransformationResponseSchema = z.object({
   transformedCode: z.string(),
   explanation: z.string().default('No explanation provided'),
@@ -81,111 +80,8 @@ const LLMTransformationResponseSchema = z.object({
   warnings: z.array(z.string()).default([]),
   appliedTransformations: z.array(z.string()).default([]),
 });
-
 export type LLMTransformationResponse = z.infer<typeof LLMTransformationResponseSchema>;
-export type FileContextAnalysis = z.infer<typeof FileContextAnalysisSchema>;
-export type TransformationCacheEntry = z.infer<typeof TransformationCacheEntrySchema>;
-
-const EnhancedLLMConfigSchema = z.object({
-  provider: z.enum(['openai', 'anthropic', 'openrouter', 'local', 'mock']).default('openai'),
-  model: z.string().default('gpt-4'),
-  temperature: z.number().min(0).max(2).default(0.1),
-  maxTokens: z.number().default(8000),
-  timeout: z.number().default(60000), // Increased for complex transformations
-  retries: z.number().default(3),
-  enableFallback: z.boolean().default(true),
-  costLimit: z.number().default(2.0), // Increased for enhanced features
-
-  // Advanced features
-  enableContextAwareness: z.boolean().default(true),
-  enableMultiFileAnalysis: z.boolean().default(true),
-  enableIncrementalTransformation: z.boolean().default(true),
-  enableRollback: z.boolean().default(true),
-
-  // Performance optimizations
-  performance: z
-    .object({
-      enableCaching: z.boolean().default(true),
-      enableBatching: z.boolean().default(true),
-      maxBatchSize: z.number().default(5),
-      cacheStrategy: z.enum(['memory', 'disk', 'hybrid']).default('hybrid'),
-    })
-    .default({}),
-});
-
-const EnhancedLLMTransformationInputSchema = z.object({
-  files: z.array(z.string()),
-  request: z.custom<EnhancedTransformationRequest>().optional(),
-  config: EnhancedLLMConfigSchema.optional(),
-  context: z.custom<EnhancedTransformationContext>().optional(),
-
-  // Advanced options
-  multiFileContext: z.custom<MultiFileContext>().optional(),
-  contextAwarePrompts: z.array(z.custom<ContextAwarePrompt>()).optional(),
-  rollbackInfo: z.custom<RollbackInfo>().optional(),
-  performanceOptions: z.custom<PerformanceOptimization>().optional(),
-});
-
-const EnhancedLLMTransformationResultSchema = z.object({
-  filesModified: z.array(z.string()),
-  transformationsApplied: z.number(),
-  mode: z.literal('llm'),
-
-  // Enhanced metrics
-  totalTokensUsed: z.number().optional(),
-  totalCost: z.number().optional(),
-  averageConfidence: z.number().optional(),
-  providersUsed: z.array(z.string()).optional(),
-
-  // Context awareness results
-  contextAnalysis: z
-    .object({
-      projectComplexity: z.number(),
-      frameworkDetected: z.string().optional(),
-      dependenciesAnalyzed: z.number(),
-      crossFilePatterns: z.number(),
-    })
-    .optional(),
-
-  // Quality metrics
-  qualityImprovement: z
-    .object({
-      complexityReduction: z.number(),
-      codeQualityScore: z.number(),
-      maintainabilityIndex: z.number(),
-    })
-    .optional(),
-
-  // Performance data
-  performance: z
-    .object({
-      totalTime: z.number(),
-      averageTimePerFile: z.number(),
-      successRate: z.number(),
-      cacheHitRate: z.number(),
-      batchingEfficiency: z.number(),
-    })
-    .optional(),
-
-  // Error handling and rollback
-  errors: z.array(z.string()).optional(),
-  warnings: z.array(z.string()).optional(),
-  rollbackAvailable: z.boolean().default(false),
-  rollbackPath: z.string().optional(),
-
-  // Learning and recommendations
-  learningData: z
-    .object({
-      patternsDiscovered: z.array(z.string()),
-      recommendations: z.array(z.string()),
-      effectivenessScore: z.number(),
-    })
-    .optional(),
-});
-
-export type EnhancedLLMConfig = z.infer<typeof EnhancedLLMConfigSchema>;
-export type EnhancedLLMTransformationInput = z.infer<typeof EnhancedLLMTransformationInputSchema>;
-export type EnhancedLLMTransformationResult = z.infer<typeof EnhancedLLMTransformationResultSchema>;
+// Use LLMProviderSchema and LLMConfigSchema from providers module for provider config.
 
 // =============================================================================
 // ENHANCED LLM TRANSFORMATION ACTOR
@@ -317,10 +213,11 @@ export class EnhancedLLMTransformer {
       const fileContext = await this.analyzeFileContext(originalContent, filePath, input.context);
 
       // Generate transformation prompt
+      const customPrompt = this.getDefaultLLMTransformationGoals(fileContext);
       const prompt = this.generateEnhancedTransformationPrompt(
         originalContent,
         fileContext,
-        input.request as TransformationRequest
+        customPrompt
       );
 
       // Check cache first
@@ -476,20 +373,14 @@ export class EnhancedLLMTransformer {
     const patterns = this.detectCodePatterns(content);
     const issues = this.detectCodeIssues(content);
 
-context?.framework
+    let detectedFramework = context?.framework;
+    if (!detectedFramework) {
+      detectedFramework = this.detectFramework(imports);
+    }
 
-    const result: {
-      language: string;
-      framework?: string;
-      complexity: number;
-      patterns: string[];
-      imports: string[];
-      exports: string[];
-      functions: number;
-      classes: number;
-      issues: string[];
-    } = {
+    const result: FileContextAnalysis = {
       language,
+      framework: detectedFramework,
       complexity,
       patterns,
       imports,
@@ -498,10 +389,6 @@ context?.framework
       classes,
       issues,
     };
-
-    if (detectedFramework) {
-      result.framework = detectedFramework;
-    }
 
     return result;
   }
@@ -518,14 +405,14 @@ context?.framework
   private generateEnhancedTransformationPrompt(
     content: string,
     context: FileContextAnalysis,
-    request?: TransformationRequest
+    customPrompt?: string
   ): string {
-request?.prompt
+    const goals = customPrompt ?? this.getDefaultLLMTransformationGoals(context);
 
     return `You are an expert code transformation assistant specializing in complex transformations that require semantic understanding and type inference. This code has already been processed by template and AST transformations - you should focus on intelligent, context-aware improvements.
-
+    
 COMPLEX TRANSFORMATION GOALS:
-${customPrompt}
+${goals}
 
 CODE ANALYSIS:
 - Language: ${context.language}
@@ -602,8 +489,11 @@ Focus on modern best practices and clean code principles.`;
       return validatedResponse;
     } catch (parseError) {
       // If not JSON, try to extract code from markdown blocks
+      let extractedCode: string | undefined = undefined;
       const codeMatch = response.match(/```[\w]*\n([\s\S]*?)\n```/);
-codeMatch?.[1]?.trim
+      if (codeMatch && codeMatch[1]) {
+        extractedCode = codeMatch[1].trim();
+      }
 
       // Use Zod to create a valid response with defaults
       const fallbackResponse = LLMTransformationResponseSchema.parse({
@@ -967,4 +857,4 @@ export function createEnhancedLLMTransformer(
   config?: Partial<EnhancedLLMConfig>
 ): EnhancedLLMTransformer {
   return new EnhancedLLMTransformer(config);
-}
+}

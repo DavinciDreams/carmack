@@ -1,6 +1,10 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { fromPromise } from 'xstate';
-import { z } from 'zod';
+import {
+  CppTransformationRequestSchema,
+  type CppPattern,
+  type CppTransformationRequest
+} from './transformation';
 
 /**
  * C++ Modernization Transformation Engine
@@ -13,68 +17,12 @@ import { z } from 'zod';
  */
 
 // Enhanced C++ pattern schema
-const CppPatternSchema = z.object({
-  id: z.string(),
-  language: z.literal('cpp'),
-  pattern: z.string(),
-  replacement: z.string(),
-  description: z.string(),
-  complexity: z.number().int().min(1).max(10),
-  riskLevel: z.enum(['low', 'medium', 'high']),
-  mode: z.enum(['template', 'ast']),
-  category: z.enum(['safety', 'performance', 'hygiene', 'modernization']),
+// (Removed unused CppPatternSchema)
 
-  // Performance and conflict resolution
-  performance: z
-    .object({
-      priority: z.number().min(1).max(10).default(5),
-      batchable: z.boolean().default(true),
-      conflicts: z.array(z.string()).optional(),
-      maxMatches: z.number().optional(),
-    })
-    .optional(),
+// (Removed duplicate local declaration of CppTransformationRequestSchema; using imported version)
 
-  // Formal verification support
-  verification: z
-    .object({
-      dafnySpec: z.string().optional(),
-      invariants: z.array(z.string()).optional(),
-      preconditions: z.array(z.string()).optional(),
-      postconditions: z.array(z.string()).optional(),
-    })
-    .optional(),
-
-  // Test cases for validation
-  testCases: z
-    .array(
-      z.object({
-        input: z.string(),
-        expected: z.string(),
-        description: z.string(),
-      })
-    )
-    .optional(),
-});
-
-const CppTransformationRequestSchema = z.object({
-  targetFiles: z.array(z.string()),
-  patterns: z.array(CppPatternSchema),
-  options: z
-    .object({
-      dryRun: z.boolean().default(false),
-      maxComplexity: z.number().default(7),
-      enableBatching: z.boolean().default(true),
-      skipConflicts: z.boolean().default(true),
-      preserveFormatting: z.boolean().default(true),
-      enableVerification: z.boolean().default(true),
-      maxMatchesPerPattern: z.number().default(1000),
-    })
-    .optional()
-    .default({}),
-});
-
-export type CppPattern = z.infer<typeof CppPatternSchema>;
-export type CppTransformationRequest = z.infer<typeof CppTransformationRequestSchema>;
+// export type CppPattern = z.infer<typeof CppPatternSchema>;
+// Removed local CppTransformationRequest type to avoid import conflict
 
 /**
  * C++ transformation result with enhanced metadata
