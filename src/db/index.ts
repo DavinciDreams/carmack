@@ -111,6 +111,28 @@ export {
 // DATABASE OPERATIONS
 // =============================================================================
 
+/**
+ * Type-safe, high-level database operations for artifacts, edges, and sessions.
+ *
+ * Usage example for ingestion modules:
+ *
+ * ```ts
+ * import { getDatabaseOperations } from './db/index.ts';
+ * const dbOps = getDatabaseOperations();
+ *
+ * // Create a new artifact
+ * await dbOps.artifacts.create({ ... });
+ *
+ * // Batch create artifacts
+ * await dbOps.artifacts.batchCreate([{ ... }, { ... }]);
+ *
+ * // Semantic search
+ * await dbOps.artifacts.semanticSearch({ embedding, filters, limit });
+ *
+ * // Create a graph edge
+ * await dbOps.edges.create({ ... });
+ * ```
+ */
 export {
   DatabaseOperations,
   ArtifactOperations,
