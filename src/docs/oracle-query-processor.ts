@@ -1,5 +1,4 @@
 import { fromPromise } from 'xstate';
-import { z } from 'zod';
 
 import { SemanticIndexer } from '../ingestion/semantic-indexer.ts';
 
@@ -9,8 +8,8 @@ import type {
   KnowledgePattern,
   LanguageType,
   DomainType,
-} from '../docs-generator/types.ts';
-import { validateOracleQuery } from '../docs-generator/types.ts';
+} from '../docs/types.ts';
+import { validateOracleQuery } from '../docs/types.ts';
 
 // Query intent classification
 const INTENT_PATTERNS = {
@@ -103,6 +102,9 @@ const LANGUAGE_KEYWORDS = {
  * Oracle Query Processor for TensorRT codebase analysis
  * Processes natural language queries and returns intelligent responses
  */
+/**
+ * OracleQueryProcessor processes natural language queries and generates responses using code/documentation analysis.
+ */
 export class OracleQueryProcessor {
   private indexer: SemanticIndexer;
   // ...existing code...
@@ -188,7 +190,7 @@ export class OracleQueryProcessor {
 
       if (oracleQuery.results.length === 0) {
         response += "I couldn't find any relevant code entities for your query. Try rephrasing or using different keywords.\n\n";
-        response += this.generateSuggestions(oracleQuery.query);
+        response += this.generateSuggestions();
         return response;
       }
 
@@ -580,7 +582,7 @@ export class OracleQueryProcessor {
     return languageMap[language] || 'text';
   }
 
-    private generateSuggestions(query: string): string {
+    private generateSuggestions(): string {
       let suggestions = "**Suggestions:**\n\n";
       suggestions += "- Try using more specific technical terms\n";
       suggestions += "- Include language keywords (e.g., Python, C++, Java, Go, Rust)\n";
