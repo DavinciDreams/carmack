@@ -148,7 +148,8 @@ const AstGrepPatternSchema = z.object({
       })
     )
     .optional(),
-});
+})
+.strict();
 
 const AstGrepTransformationRequestSchema = z.object({
   targetFiles: z.array(z.string()),
@@ -160,11 +161,11 @@ const AstGrepTransformationRequestSchema = z.object({
       enableBatching: z.boolean().default(true),
       skipConflicts: z.boolean().default(true),
       preserveFormatting: z.boolean().default(true),
-      maxMatchesPerPattern: z.number().default(1000),
-    })
-    .optional()
-    .default({}),
-});
+          maxMatchesPerPattern: z.number().default(1000),
+        })
+        .optional()
+        .default({}),
+    });
 
 export type AstGrepPattern = z.infer<typeof AstGrepPatternSchema>;
 export type AstGrepTransformationRequest = z.infer<typeof AstGrepTransformationRequestSchema>;
@@ -178,13 +179,13 @@ interface AstMatch {
   text: string;
   range: { start: number; end: number };
   variables: Record<string, string>;
-  context: {
-    parent?: SgNode | null;
-    ancestors: SgNode[];
-    siblings: SgNode[];
-    scope: 'global' | 'function' | 'block' | 'class';
-  };
-}
+        context: {
+          parent?: SgNode | null;
+          ancestors: SgNode[];
+          siblings: SgNode[];
+          scope: 'global' | 'function' | 'block' | 'class';
+        };
+    }
 
 /**
  * Enhanced AST-grep transformation actor
@@ -193,15 +194,13 @@ export const astGrepTransformationActor = fromPromise(
   async ({ input }: { input: AstGrepTransformationRequest }) => {
     const validatedInput = AstGrepTransformationRequestSchema.parse(input);
 
-
-      `🌳 Starting AST-grep transformations on ${validatedInput.targetFiles.length} files with ${validatedInput.patterns.length} patterns`
-    );
+    // Optionally log start message here if needed
+    // console.log(`🌳 Starting AST-grep transformations on ${validatedInput.targetFiles.length} files with ${validatedInput.patterns.length} patterns`);
 
     const results = await applyAstGrepTransformations(validatedInput);
 
-
-      `✨ AST-grep engine completed: ${results.transformationsApplied} transformations across ${results.filesModified.length} files`
-    );
+    // Optionally log completion message here if needed
+    // console.log(`✨ AST-grep engine completed: ${results.transformationsApplied} transformations across ${results.filesModified.length} files`);
 
     return results;
   }
@@ -244,12 +243,13 @@ async function applyAstGrepTransformations(request: AstGrepTransformationRequest
           totalTransformations += transformation.count;
         }
 
-
-          `🌳 AST-transformed ${filePath}: ${transformResult.transformations.length} patterns applied`
-        );
+        // Optionally log transformation summary here
+        // console.log(
+        //   `🌳 AST-transformed ${filePath}: ${transformResult.transformations.length} patterns applied`
+        // );
       }
     } catch (error) {
-
+      // Optionally handle or log errors here
     }
   }
 
@@ -267,17 +267,17 @@ async function applyAstGrepTransformations(request: AstGrepTransformationRequest
 function prepareAstPatterns(patterns: AstGrepPattern[], maxComplexity: number): AstGrepPattern[] {
   return patterns
     .filter((p) => p.complexity <= maxComplexity)
-    .sort((a, b) => {
-      // Sort by priority first, then by complexity
+.sort((a, b) => {
+  // Sort by priority first, then by complexity
 a.performance?.priority
 b.performance?.priority
 
-      if (aPriority !== bPriority) {
-        return bPriority - aPriority; // Higher priority first
-      }
+  if (aPriority !== bPriority) {
+    return bPriority - aPriority; // Higher priority first
+  }
 
-      return a.complexity - b.complexity; // Lower complexity first
-    });
+  return a.complexity - b.complexity; // Lower complexity first
+});
 }
 
 /**
@@ -297,12 +297,12 @@ async function transformFileWithAstGrep(
   const transformations: Array<{ patternId: string; count: number }> = [];
   let totalModified = false;
 
-  // Determine language for AST-grep
-  // Use the first pattern's language or infer from file extension
+// Determine language for AST-grep
+// Use the first pattern's language or infer from file extension
 patterns[0]?.language
-  if (Lang[lang as keyof typeof Lang]) {
-    lang = Lang[lang as keyof typeof Lang];
-  }
+if (Lang[lang as keyof typeof Lang]) {
+  lang = Lang[lang as keyof typeof Lang];
+}
   // Parse the source code into AST
   let root: SgRoot;
   try {
@@ -374,9 +374,12 @@ async function applyAstGrepPattern(
       return { content, modified: false, matchCount: 0 };
     }
 
-    // Limit matches if specified
+// Limit matches if specified
+const maxMatches =
 pattern.performance?.maxMatches
-    const limitedMatches = matches.slice(0, maxMatches);
+  options.maxMatchesPerPattern ??
+  1000;
+const limitedMatches = matches.slice(0, maxMatches);
 
     // Apply transformations in reverse order to maintain indices
     let modifiedContent = content;
@@ -552,8 +555,7 @@ function extractVariables(node: SgNode, pattern: AstGrepPattern): Record<string,
       Object.assign(variables, variableMatches);
       if (Object.keys(variableMatches).length > 0) {
 
-          `   ✅ Pattern-based extraction found: ${Object.keys(variableMatches).join(', ')}`
-        );
+        // Pattern-based extraction found: ${Object.keys(variableMatches).join(', ')}
       }
     }
 
@@ -939,3 +941,5 @@ export const BUILTIN_AST_PATTERNS: AstGrepPattern[] = [
     },
   },
 ];
+
+

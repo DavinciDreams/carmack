@@ -147,7 +147,7 @@ class RateLimiter {
 
 getTotalCost(provider: string, model: string): number {
   const key = `${provider}-${model}`;
-  return this.state.get(key)?.totalCost ?? 0;
+this.state.get(key)?.totalCost
 }
 }
 
@@ -216,7 +216,7 @@ async makeRequest(request: LLMRequest): Promise<LLMResponse> {
 
   const startTime = Date.now();
   let retryCount = 0;
-  const maxRetries = validatedRequest.options?.maxRetries ?? this.config.retries ?? 3;
+validatedRequest.options?.maxRetries
 
   while (retryCount <= maxRetries) {
     try {
@@ -325,7 +325,7 @@ export class AnthropicProvider extends BaseLLMProvider {
 
 const startTime = Date.now();
 let retryCount = 0;
-const maxRetries = validatedRequest.options?.maxRetries ?? this.config.retries ?? 3;
+validatedRequest.options?.maxRetries
 
 while (retryCount <= maxRetries) {
       try {
@@ -423,7 +423,7 @@ export class OpenRouterProvider extends BaseLLMProvider {
 const baseURL = this.config.baseURL || 'https://openrouter.ai/api/v1';
 const startTime = Date.now();
 let retryCount = 0;
-const maxRetries = validatedRequest.options?.maxRetries ?? this.config.retries ?? 3;
+validatedRequest.options?.maxRetries
 
 while (retryCount <= maxRetries) {
       try {
@@ -523,7 +523,7 @@ export class OllamaProvider extends BaseLLMProvider {
 const baseURL = this.config.baseURL || 'http://localhost:11434';
 const startTime = Date.now();
 let retryCount = 0;
-const maxRetries = validatedRequest.options?.maxRetries ?? this.config.retries ?? 3;
+validatedRequest.options?.maxRetries
 
 while (retryCount <= maxRetries) {
       try {

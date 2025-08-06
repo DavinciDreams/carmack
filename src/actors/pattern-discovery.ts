@@ -148,13 +148,13 @@ export type PatternDiscoveryRequest = z.infer<typeof PatternDiscoveryRequestSche
 export const patternDiscoveryActor = fromPromise(
   async ({ input }: { input: PatternDiscoveryRequest }) => {
     const validatedInput = PatternDiscoveryRequestSchema.parse(input);
-    console.log(`🔍 Starting pattern discovery: ${validatedInput.operation}`);
+
     const result = await executePatternDiscovery(validatedInput);
     // Validate all discovered patterns with Zod
     if (Array.isArray(result.patterns)) {
       result.patterns = result.patterns.map((p) => DiscoveredPatternSchema.parse(p));
     }
-    console.log(`✨ Pattern discovery completed: ${result.patterns.length} patterns discovered`);
+
     return result;
   }
 );
@@ -280,7 +280,7 @@ async function analyzeCodeFiles(
       const filePatterns = await extractPatternsFromCode(content, filePath, config);
       patterns.push(...filePatterns);
     } catch (error) {
-      console.warn(`Failed to analyze file ${filePath}:`, error);
+
     }
   }
   return patterns;
@@ -311,14 +311,14 @@ async function extractPatternsFromCode(
       patterns.push(...detectedPatterns);
     }
   } catch (error) {
-    console.warn(`Failed to parse ${source} as ${language}:`, error);
+
   }
   return patterns;
 }
 
 // Infer language from file extension or config
 function inferLanguageFromFile(filePath: string, fallback: string): string {
-  const ext = filePath.split('.').pop()?.toLowerCase();
+filePath.split('.').pop()?.toLowerCase
   const extMap: Record<string, string> = {
     ts: 'typescript', js: 'javascript', py: 'python', cpp: 'cpp', c: 'c', java: 'java', go: 'go', rs: 'rust', rb: 'ruby', php: 'php', cs: 'csharp', kt: 'kotlin', swift: 'swift', scala: 'scala', hs: 'haskell', ex: 'elixir', sh: 'shell', json: 'json', yaml: 'yaml', yml: 'yaml', toml: 'toml', lua: 'lua', pl: 'perl', r: 'r', dart: 'dart',
   };
@@ -938,12 +938,12 @@ async function analyzeRepositories(
   for (const repo of repositories) {
     try {
       // This would integrate with git/file system analysis
-      console.log(`Analyzing repository: ${repo.path}`);
+
       // For now, simulate repository analysis
       const repoPatterns = await simulateRepositoryAnalysis(repo, config);
       patterns.push(...repoPatterns);
     } catch (error) {
-      console.warn(`Failed to analyze repository ${repo.path}:`, error);
+
     }
   }
   return patterns;
