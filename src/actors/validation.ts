@@ -944,8 +944,7 @@ async function fallbackTypeValidation(files: string[]): Promise<ValidationResult
 
 async function fixTypes(files: string[], errors: ErrorInfo[]): Promise<ValidationResult> {
 
-    `Fixing TypeScript type errors for ${files.length} files with ${errors.length} errors...`
-  );
+  // Fixing TypeScript type errors for ${files.length} files with ${errors.length} errors...
 
   const fixedErrors: ErrorInfo[] = [];
   const remainingErrors: ErrorInfo[] = [];
