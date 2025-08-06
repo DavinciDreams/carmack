@@ -9,7 +9,7 @@
 // Core components
 export * from './repository-manager.ts';
 export * from './github-client.ts';
-export * from '../docs-generator/ast-analyzer.ts';
+export * from '../docs-generator/multi-language-analyzer.ts';
 export * from './content-processor.ts';
 export * from './ingestion-orchestrator.ts';
 
@@ -18,7 +18,8 @@ export * from './jobs/index.ts';
 
 // Testing and CLI
 
-export { main as IngestionTestMain } from './test-ingestion-pipeline.ts';
+// export { main as IngestionTestMain } from './test-ingestion-pipeline.ts';
+// Removed: './test-ingestion-pipeline.ts' does not exist or cannot be found.
 export { IngestionCLI, parseCommandLineArgs } from '../cli/knowledge-graph-cli.ts';
 export { main as IngestionCLIMain } from '../cli/knowledge-graph-cli.ts';
 
@@ -28,7 +29,6 @@ export { main as IngestionCLIMain } from '../cli/knowledge-graph-cli.ts';
 export { createIngestionOrchestrator } from './ingestion-orchestrator.ts';
 export { createRepositoryManager } from './repository-manager.ts';
 export { createGitHubClient } from './github-client.ts';
-export { runIngestionTests } from './test-ingestion-pipeline.ts';
 
 // Types and schemas
 

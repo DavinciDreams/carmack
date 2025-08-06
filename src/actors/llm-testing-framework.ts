@@ -185,13 +185,11 @@ export type ExecutionResult = z.infer<typeof ExecutionResultSchema>;
 export const llmTestingFrameworkActor = fromPromise(
   async ({ input }: { input: TestExecutionRequest }) => {
     const validatedInput = TestExecutionRequestSchema.parse(input);
-    console.log(
+
       `🧪 Starting LLM testing framework with ${validatedInput.suites.length} test suites`
-    );
     const results = await executeTestSuites(validatedInput);
-    console.log(
+
       `✅ Testing completed: ${results.summary.passed}/${results.summary.total} tests passed`
-    );
     return results;
   }
 );
@@ -204,12 +202,12 @@ async function executeTestSuites(request: TestExecutionRequest) {
   // Ensure output directory exists
   await mkdir(request.options.outputDir, { recursive: true });
   for (const suite of request.suites) {
-    console.log(`🏃 Running test suite: ${suite.name}`);
+
     const suiteResult = await executeTestSuite(suite, request.options);
     suiteResults.push(suiteResult);
     // Fail fast if enabled and suite failed
     if (request.options.failFast && suiteResult.summary.failed > 0) {
-      console.log(`❌ Failing fast due to test failures in suite: ${suite.name}`);
+
       break;
     }
   }
@@ -283,7 +281,7 @@ async function executeTestCase(
 ): Promise<TestResult> {
   const startTime = Date.now();
   try {
-    console.log(`  🔬 Running test: ${testCase.name}`);
+
     // Execute the transformation
     const actualOutput = await executeTransformation(testCase.input);
     // Run assertions
@@ -444,17 +442,17 @@ async function runSingleAssertion(
         expected: 'valid syntax',
       };
     }
-    case 'performance_under': {
-      const duration = actualOutput?.performance?.duration || 0;
-      const underLimit = duration < assertion.value;
-      return {
-        type: assertion.type,
-        passed: underLimit,
-        message: assertion.message || `Expected execution time under ${assertion.value}ms`,
-        actual: duration,
-        expected: assertion.value,
-      };
-    }
+case 'performance_under': {
+  const duration = actualOutput?.performance?.duration ?? 0;
+  const underLimit = duration < assertion.value;
+  return {
+    type: assertion.type,
+    passed: underLimit,
+    message: assertion.message || `Expected execution time under ${assertion.value}ms`,
+    actual: duration,
+    expected: assertion.value,
+  };
+}
     case 'complexity_reduced': {
       const complexityReduced = await checkComplexityReduction(
         testCase.input.code,
@@ -571,7 +569,7 @@ async function checkTypesSafety(_code: string, language: string): Promise<boolea
         },
       });
     });
-    return result.errors?.length === 0;
+    return !(result.errors && result.errors.length > 0);
   } catch {
     return false; // Assume not type-safe if we can't validate
   }
@@ -604,7 +602,7 @@ async function generateTestReport(
     const htmlContent = generateHtmlReport(executionResult);
     await writeFile(htmlReportPath, htmlContent, 'utf-8');
   }
-  console.log(`📊 Test report generated: ${reportPath}`);
+
 }
 /**
  * Generate HTML test report

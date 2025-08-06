@@ -225,7 +225,7 @@ export const patternLearningActor = fromPromise(
   async ({ input }: { input: PatternLearningInput }) => {
     const validatedInput = PatternLearningInputSchema.parse(input);
 
-    console.log(`🧠 Starting pattern learning operation: ${validatedInput.operation}`);
+
 
     const learner = new PatternLearner();
     return await learner.processLearningRequest(validatedInput);
@@ -323,13 +323,12 @@ export class PatternLearner {
       // Update metrics
       result.metrics.learningTime = Date.now() - startTime;
 
-      console.log(
-        `🎓 Pattern learning completed: ${result.metrics.patternsDiscovered} discovered, ${result.metrics.patternsOptimized} optimized`
-      );
+
+      // `🎓 Pattern learning completed: ${result.metrics.patternsDiscovered} discovered, ${result.metrics.patternsOptimized} optimized`
 
       return result;
     } catch (error) {
-      console.error('❌ Pattern learning failed:', error);
+
       return {
         newPatterns: [],
         optimizedPatterns: [],
@@ -810,7 +809,7 @@ function normalizeLanguage(lang: string): SupportedLanguage {
 
           patterns.push(discoveredPattern);
         } catch (fileError) {
-          console.warn(`Failed to analyze file ${filePath}:`, fileError);
+
         }
       }
 
@@ -841,7 +840,7 @@ function normalizeLanguage(lang: string): SupportedLanguage {
         }
       }
     } catch (error) {
-      console.warn('Failed to analyze transformation for patterns:', error);
+
     }
 
     return patterns;

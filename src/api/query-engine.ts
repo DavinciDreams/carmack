@@ -506,27 +506,33 @@ export class QueryEngine {
       const intent = this.classifyIntent(validatedRequest.query);
       const complexity = this.assessComplexity(validatedRequest.query, intent);
       
-      // Perform hybrid search
-      const searchResults = await this.hybridSearch.search(validatedRequest.query, {
-        filters: this.buildSearchFilters(validatedRequest.context),
-validatedRequest.options?.max_results
-        semantic_weight: this.getSemanticWeight(intent),
-        keyword_weight: this.getKeywordWeight(intent),
-        threshold: this.getThreshold(complexity),
-      });
+// Perform hybrid search
+const searchOptions: Parameters<typeof this.hybridSearch.search>[1] = {
+  filters: this.buildSearchFilters(validatedRequest.context),
+  semantic_weight: this.getSemanticWeight(intent),
+  keyword_weight: this.getKeywordWeight(intent),
+  threshold: this.getThreshold(complexity),
+};
+if (validatedRequest.options?.max_results !== undefined) {
+  searchOptions.limit = validatedRequest.options.max_results;
+}
+const searchResults = await this.hybridSearch.search(validatedRequest.query, searchOptions);
 
-      // Convert search results to evidence items
+// Build evidence chain from search results
+const evidenceChain = this.buildEvidenceChain(
+  searchResults,
 validatedRequest.options?.include_code_snippets
+);
+
+// Generate primary answer
+const primaryAnswer = this.generatePrimaryAnswer(validatedRequest.query, intent, evidenceChain);
       
-      // Generate primary answer
-      const primaryAnswer = this.generatePrimaryAnswer(validatedRequest.query, intent, evidenceChain);
+// Calculate confidence score
+const confidenceScore = this.calculateConfidenceScore(evidenceChain, searchResults.length);
       
-      // Calculate confidence score
-      const confidenceScore = this.calculateConfidenceScore(evidenceChain, searchResults.length);
-      
-      // Generate investigation threads and suggestions
-      const investigationThreads = this.generateInvestigationThreads(intent, evidenceChain);
-      const suggestedQuestions = this.generateSuggestedQuestions(intent, evidenceChain);
+// Generate investigation threads and suggestions
+const investigationThreads = this.generateInvestigationThreads(intent, evidenceChain);
+const suggestedQuestions = this.generateSuggestedQuestions(intent, evidenceChain);
 
       const executionTime = Date.now() - startTime;
 

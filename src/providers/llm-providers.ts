@@ -215,10 +215,13 @@ async makeRequest(request: LLMRequest): Promise<LLMResponse> {
   }
 
   const startTime = Date.now();
-  let retryCount = 0;
-  const maxRetries = validatedRequest.options?.maxRetries ?? this.config.retries ?? 3;
+let retryCount = 0;
+const maxRetries =
+  validatedRequest.options?.maxRetries ??
+  this.config.retries ??
+  3;
 
-  while (retryCount <= maxRetries) {
+while (retryCount <= maxRetries) {
     try {
 
       const response = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
@@ -325,7 +328,10 @@ export class AnthropicProvider extends BaseLLMProvider {
 
 const startTime = Date.now();
 let retryCount = 0;
-const maxRetries = validatedRequest.options?.maxRetries ?? this.config.retries ?? 3;
+const maxRetries =
+  validatedRequest.options?.maxRetries ??
+  this.config.retries ??
+  3;
 
 while (retryCount <= maxRetries) {
       try {
@@ -423,7 +429,10 @@ export class OpenRouterProvider extends BaseLLMProvider {
 const baseURL = this.config.baseURL || 'https://openrouter.ai/api/v1';
 const startTime = Date.now();
 let retryCount = 0;
-const maxRetries = validatedRequest.options?.maxRetries ?? this.config.retries ?? 3;
+const maxRetries =
+  validatedRequest.options?.maxRetries ??
+  this.config.retries ??
+  3;
 
 while (retryCount <= maxRetries) {
       try {
@@ -523,7 +532,10 @@ export class OllamaProvider extends BaseLLMProvider {
 const baseURL = this.config.baseURL || 'http://localhost:11434';
 const startTime = Date.now();
 let retryCount = 0;
-const maxRetries = validatedRequest.options?.maxRetries ?? this.config.retries ?? 3;
+const maxRetries =
+  validatedRequest.options?.maxRetries ??
+  this.config.retries ??
+  3;
 
 while (retryCount <= maxRetries) {
       try {

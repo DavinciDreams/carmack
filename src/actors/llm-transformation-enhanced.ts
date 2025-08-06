@@ -195,8 +195,6 @@ export const enhancedLLMTransformationActor = fromPromise(
   async ({ input }: { input: EnhancedLLMTransformationInput }) => {
     const validatedInput = EnhancedLLMTransformationInputSchema.parse(input);
 
-    console.log(`🤖 Starting enhanced LLM transformations on ${validatedInput.files.length} files`);
-
     const transformer = new EnhancedLLMTransformer(validatedInput.config);
     return await transformer.transformFiles(validatedInput);
   }
@@ -256,18 +254,17 @@ export class EnhancedLLMTransformer {
             warnings.push(...result.warnings);
           }
 
-          console.log(
-            `✅ Enhanced LLM transformed ${filePath} (confidence: ${result.confidence?.toFixed(2) || 'N/A'})`
-          );
+
+          // `✅ Enhanced LLM transformed ${filePath} (confidence: ${result.confidence?.toFixed(2) || 'N/A'})`
         } else {
           const errorMsg = `Failed to transform ${filePath}: ${result.error}`;
           errors.push(errorMsg);
-          console.error(`❌ ${errorMsg}`);
+
         }
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error);
         errors.push(`Error transforming ${filePath}: ${errorMsg}`);
-        console.error(`❌ Error transforming ${filePath}:`, error);
+
       }
     }
 
@@ -328,7 +325,7 @@ export class EnhancedLLMTransformer {
       const cachedResult = this.cache.get(cacheKey);
 
       if (cachedResult) {
-        console.log(`📋 Using cached result for ${filePath}`);
+
         this.stats.cacheHits++;
         
         // Validate and extract cached transformation result with comprehensive error handling
@@ -399,7 +396,7 @@ export class EnhancedLLMTransformer {
       // Apply the transformation if it's different
       const finalTransformedCode = transformationResult.transformedCode || originalContent;
       if (originalContent !== finalTransformedCode) {
-        console.log(`📝 Writing enhanced transformed code to ${filePath}`);
+
         await writeFile(filePath, finalTransformedCode, 'utf-8');
 
         const result = {
@@ -472,38 +469,43 @@ export class EnhancedLLMTransformer {
     // Enhanced complexity calculation
     const complexity = this.calculateEnhancedComplexity(content);
 
-    // Detect code patterns and issues
-    const patterns = this.detectCodePatterns(content);
-    const issues = this.detectCodeIssues(content);
+// Detect code patterns and issues
+const patterns = this.detectCodePatterns(content);
+const issues = this.detectCodeIssues(content);
 
-context?.framework
+// Detect framework using imports or context
+const detectedFramework =
+  (context && typeof context === 'object' && 'framework' in context && typeof (context as any).framework === 'string'
+    ? (context as any).framework
+    : undefined) ||
+  this.detectFramework(imports);
 
-    const result: {
-      language: string;
-      framework?: string;
-      complexity: number;
-      patterns: string[];
-      imports: string[];
-      exports: string[];
-      functions: number;
-      classes: number;
-      issues: string[];
-    } = {
-      language,
-      complexity,
-      patterns,
-      imports,
-      exports,
-      functions,
-      classes,
-      issues,
-    };
+const result: {
+  language: string;
+  framework?: string;
+  complexity: number;
+  patterns: string[];
+  imports: string[];
+  exports: string[];
+  functions: number;
+  classes: number;
+  issues: string[];
+} = {
+  language,
+  complexity,
+  patterns,
+  imports,
+  exports,
+  functions,
+  classes,
+  issues,
+};
 
-    if (detectedFramework) {
-      result.framework = detectedFramework;
-    }
+if (detectedFramework) {
+  result.framework = detectedFramework;
+}
 
-    return result;
+return result;
   }
 
   /**
@@ -520,7 +522,7 @@ context?.framework
     context: FileContextAnalysis,
     request?: TransformationRequest
   ): string {
-request?.prompt
+const customPrompt = request?.prompt ?? this.getDefaultLLMTransformationGoals(context);
 
     return `You are an expert code transformation assistant specializing in complex transformations that require semantic understanding and type inference. This code has already been processed by template and AST transformations - you should focus on intelligent, context-aware improvements.
 
@@ -601,20 +603,20 @@ Focus on modern best practices and clean code principles.`;
 
       return validatedResponse;
     } catch (parseError) {
-      // If not JSON, try to extract code from markdown blocks
-      const codeMatch = response.match(/```[\w]*\n([\s\S]*?)\n```/);
-codeMatch?.[1]?.trim
+// If not JSON, try to extract code from markdown blocks
+const codeMatch = response.match(/```[\w]*\n([\s\S]*?)\n```/);
+const extractedCode = codeMatch && codeMatch[1] ? codeMatch[1].trim() : undefined;
 
-      // Use Zod to create a valid response with defaults
-      const fallbackResponse = LLMTransformationResponseSchema.parse({
-        transformedCode: extractedCode || originalCode,
-        explanation: 'Raw response from LLM - could not parse JSON',
-        confidence: extractedCode ? 0.4 : 0.1,
-        warnings: ['Could not parse structured JSON response'],
-        appliedTransformations: extractedCode ? ['markdown-extraction'] : ['no-transformation'],
-      });
+// Use Zod to create a valid response with defaults
+const fallbackResponse = LLMTransformationResponseSchema.parse({
+  transformedCode: extractedCode || originalCode,
+  explanation: 'Raw response from LLM - could not parse JSON',
+  confidence: extractedCode ? 0.4 : 0.1,
+  warnings: ['Could not parse structured JSON response'],
+  appliedTransformations: extractedCode ? ['markdown-extraction'] : ['no-transformation'],
+});
 
-      return fallbackResponse;
+return fallbackResponse;
     }
   }
 
@@ -765,7 +767,7 @@ codeMatch?.[1]?.trim
       const maxCacheAge = 24 * 60 * 60 * 1000; // 24 hours
       
       if (cacheAge > maxCacheAge) {
-        console.warn(`⚠️ Cache entry for ${filePath} is stale (${Math.round(cacheAge / 1000 / 60)} minutes old)`);
+
       }
       
       // Efficient object construction using destructuring and computed properties
@@ -798,7 +800,7 @@ codeMatch?.[1]?.trim
       };
       
       // Log cache hit with performance metrics
-      console.log(`📋 Cache hit for ${filePath} (age: ${Math.round(cacheAge / 1000)}s, confidence: ${confidence?.toFixed(2) || 'N/A'})`);
+
       
       return result;
       
@@ -808,7 +810,7 @@ codeMatch?.[1]?.trim
         ? validationError.message
         : String(validationError);
       
-      console.error(`❌ Cache validation failed for ${filePath}: ${errorMessage}`);
+
       
       // Graceful degradation: attempt to extract basic properties safely
       try {
@@ -824,12 +826,12 @@ codeMatch?.[1]?.trim
           ...(cachedResult.error && { error: String(cachedResult.error) })
         };
         
-        console.warn(`⚠️ Using fallback cache extraction for ${filePath}`);
+
         return fallbackResult;
         
       } catch (fallbackError) {
         // Ultimate fallback: return safe default values
-        console.error(`❌ Fallback cache extraction failed for ${filePath}: ${fallbackError}`);
+
         
         return {
           success: false,
@@ -844,25 +846,25 @@ codeMatch?.[1]?.trim
   /**
    * Helper methods (reused from original implementation)
    */
-  private detectLanguage(filePath: string): string {
-    const ext = filePath.split('.').pop()?.toLowerCase();
-    switch (ext) {
-      case 'ts':
-      case 'tsx':
-        return 'typescript';
-      case 'js':
-      case 'jsx':
-        return 'javascript';
-      case 'py':
-        return 'python';
-      case 'rs':
-        return 'rust';
-      case 'go':
-        return 'go';
-      default:
-        return 'unknown';
-    }
+private detectLanguage(filePath: string): string {
+  const ext = filePath.split('.').pop()?.toLowerCase();
+  switch (ext) {
+    case 'ts':
+    case 'tsx':
+      return 'typescript';
+    case 'js':
+    case 'jsx':
+      return 'javascript';
+    case 'py':
+      return 'python';
+    case 'rs':
+      return 'rust';
+    case 'go':
+      return 'go';
+    default:
+      return 'unknown';
   }
+}
 
   private extractImports(content: string): string[] {
     const imports = content.match(/import\s+.*?from\s+['"][^'"]+['"]/g) || [];
@@ -967,4 +969,4 @@ export function createEnhancedLLMTransformer(
   config?: Partial<EnhancedLLMConfig>
 ): EnhancedLLMTransformer {
   return new EnhancedLLMTransformer(config);
-}
+}
