@@ -191,7 +191,10 @@ export class TelemetryCollector extends EventEmitter {
   private performanceMonitor!: PerformanceMonitor;
   private sessionId!: string;
   private isEnabled: boolean;
-  private fileExporter?: FileBasedTelemetryExporter;
+  private fileExporter?: {
+    export: (events: any[]) => Promise<void>;
+    cleanup: (retentionDays: number) => Promise<void>;
+  };
 
   /**
    * Emit a unified telemetry event conforming to TelemetryEventSchema.
@@ -244,19 +247,20 @@ export class TelemetryCollector extends EventEmitter {
    * Initialize file-based telemetry exporter
    */
   private async initializeFileExporter(): Promise<void> {
-    // Check if file export is enabled via environment variables
-    const enableFileExport = process.env.OTEL_METRICS_EXPORTER === 'file' || 
-                           process.env.OTEL_LOGS_EXPORTER === 'file' ||
-                           process.env.TELEMETRY_FILE_EXPORT === 'true';
+    // Check if file export is enabled via centralized config
+    const env = getEnvironmentConfig();
+    const enableFileExport = (env.OTEL_METRICS_EXPORTER === 'file') ||
+                             (env.OTEL_LOGS_EXPORTER === 'file') ||
+                             env.TELEMETRY_FILE_EXPORT;
 
     if (enableFileExport) {
       try {
         this.fileExporter = await createFileExporter({
-          outputDir: process.env.TELEMETRY_OUTPUT_DIR || './telemetry',
-          format: process.env.TELEMETRY_FILE_FORMAT === 'json' ? 'json' : 'jsonl',
-          maxFileSize: parseInt(process.env.TELEMETRY_FILE_MAX_SIZE || '10485760'), // 10MB default
-          rotationInterval: parseInt(process.env.TELEMETRY_FILE_ROTATION_INTERVAL || '86400000'), // 24h default
-          includeTimestamp: process.env.TELEMETRY_INCLUDE_TIMESTAMP !== 'false',
+          outputDir: env.TELEMETRY_OUTPUT_DIR,
+          format: env.TELEMETRY_FILE_FORMAT,
+          maxFileSize: env.TELEMETRY_FILE_MAX_SIZE,
+          rotationInterval: env.TELEMETRY_FILE_ROTATION_INTERVAL,
+          includeTimestamp: env.TELEMETRY_INCLUDE_TIMESTAMP,
         });
         console.log('[Telemetry] File exporter enabled');
       } catch (error) {
@@ -700,7 +704,8 @@ export class TelemetryCollector extends EventEmitter {
     }
 
     // Example: Log to console in development
-    if (process.env.NODE_ENV === 'development' && !this.fileExporter) {
+    const env = getEnvironmentConfig();
+    if (env.NODE_ENV === 'development' && !this.fileExporter) {
       console.log(`[Telemetry] Flushed ${events.length} events`);
     }
   }
@@ -726,7 +731,8 @@ export class TelemetryCollector extends EventEmitter {
       // Clean up file exporter if present
       if (this.fileExporter) {
         // Optionally clean up old files based on retention policy
-        const retentionDays = parseInt(process.env.TELEMETRY_RETENTION_DAYS || '90');
+        const env = getEnvironmentConfig();
+        const retentionDays = env.TELEMETRY_RETENTION_DAYS;
         await this.fileExporter.cleanup(retentionDays);
       }
       
@@ -803,3 +809,85 @@ export function initializeTelemetry(config: Partial<TelemetryConfig>): Telemetry
   });
   return globalCollector;
 }
+
+/**
+ * File-based telemetry exporter for batch event export.
+ * Writes events to a file in JSON or JSONL format with rotation and size limits.
+ */
+export async function createFileExporter({
+  outputDir,
+  format,
+  maxFileSize,
+  rotationInterval,
+  includeTimestamp,
+}: {
+  outputDir: string;
+  format: "json" | "jsonl";
+  maxFileSize: number;
+  rotationInterval: number;
+  includeTimestamp: boolean;
+}) {
+  const fs = await import('node:fs/promises');
+  const path = await import('node:path');
+
+  let currentFile = '';
+  let currentSize = 0;
+  let fileHandle: any = null;
+  let lastRotation = Date.now();
+
+  async function rotateFile() {
+    if (fileHandle) {
+      await fileHandle.close();
+    }
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    currentFile = path.join(
+      outputDir,
+      `telemetry-${timestamp}.${format === 'jsonl' ? 'jsonl' : 'json'}`
+    );
+    await fs.mkdir(outputDir, { recursive: true });
+    fileHandle = await fs.open(currentFile, 'a');
+    currentSize = 0;
+    lastRotation = Date.now();
+  }
+
+  async function exportEvents(events: any[]) {
+    if (!fileHandle || Date.now() - lastRotation > rotationInterval || currentSize > maxFileSize) {
+      await rotateFile();
+    }
+    let data = '';
+    if (format === 'jsonl') {
+      data = events.map(e => JSON.stringify(includeTimestamp ? { ...e, exportedAt: Date.now() } : e)).join('\n') + '\n';
+    } else {
+      data = JSON.stringify(
+        includeTimestamp
+          ? events.map(e => ({ ...e, exportedAt: Date.now() }))
+          : events,
+        null,
+        2
+      ) + '\n';
+    }
+    await fileHandle.write(data);
+    currentSize += Buffer.byteLength(data);
+  }
+
+  async function cleanup(retentionDays: number) {
+    const files = await fs.readdir(outputDir);
+    const now = Date.now();
+    for (const file of files) {
+      const filePath = path.join(outputDir, file);
+      const stat = await fs.stat(filePath);
+      if (now - stat.mtimeMs > retentionDays * 24 * 60 * 60 * 1000) {
+        await fs.unlink(filePath);
+      }
+    }
+  }
+
+  // Initial rotation
+  await rotateFile();
+
+  return {
+    export: exportEvents,
+    cleanup,
+  };
+}
+
