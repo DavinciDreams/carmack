@@ -20,9 +20,8 @@ $ pnpm add @boundaryml/baml
 
 import type { BamlRuntime, BamlCtxManager, ClientRegistry, Image, Audio, Pdf, Video } from "@boundaryml/baml"
 import { toBamlError, HTTPRequest } from "@boundaryml/baml"
-import type { Checked, Check } from "./types"
+import type { Checked, Check, Resume } from "../src/types"
 import type * as types from "./types"
-import type {Resume} from "./types"
 import type TypeBuilder from "./type_builder"
 
 type BamlCallOptions = {
