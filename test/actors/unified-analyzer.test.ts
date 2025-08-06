@@ -1,7 +1,7 @@
 // UnifiedAnalyzer integration test
 
 import { describe, it, expect } from "bun:test";
-import { UnifiedAnalyzer, AnalyzerConfigSchema } from "../../src/actors/unified-analyzer";
+import { UnifiedAnalyzer } from "../../src/docs/unified-analyzer";
 import { z } from "zod";
 import * as fs from "fs";
 import * as path from "path";

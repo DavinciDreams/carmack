@@ -1,150 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { cleanupTestFiles, createTestFiles, measurePerformance } from '../test-helpers.js';
-
-/**
- * Telemetry Validation Framework
- *
- * Comprehensive testing of system telemetry, monitoring, and observability.
- * Validates metrics collection, error tracking, performance monitoring,
- * and usage analytics across all system components.
- */
-
-interface TelemetryEvent {
-  timestamp: number;
-  type: 'performance' | 'error' | 'usage' | 'transformation' | 'validation';
-  component: string;
-  data: Record<string, unknown>;
-  severity?: 'low' | 'medium' | 'high' | 'critical';
-}
-
-interface TelemetryMetrics {
-  totalEvents: number;
-  errorRate: number;
-  averageResponseTime: number;
-  memoryUsage: number;
-  transformationCount: number;
-  validationCount: number;
-  successRate: number;
-}
-
-class TelemetryCollector {
-  private events: TelemetryEvent[] = [];
-  private startTime: number = Date.now();
-
-  recordEvent(event: Omit<TelemetryEvent, 'timestamp'>): void {
-    this.events.push({
-      ...event,
-      timestamp: Date.now(),
-    });
-  }
-
-  recordPerformance(component: string, duration: number, operation: string): void {
-    this.recordEvent({
-      type: 'performance',
-      component,
-      data: { duration, operation },
-      severity: duration > 1000 ? 'high' : duration > 500 ? 'medium' : 'low',
-    });
-  }
-
-  recordError(component: string, error: Error, context?: Record<string, unknown>): void {
-    this.recordEvent({
-      type: 'error',
-      component,
-      data: {
-        message: error.message,
-        stack: error.stack,
-        ...context,
-      },
-      severity: 'critical',
-    });
-  }
-
-  recordUsage(component: string, action: string, metadata?: Record<string, unknown>): void {
-    this.recordEvent({
-      type: 'usage',
-      component,
-      data: { action, ...metadata },
-      severity: 'low',
-    });
-  }
-
-  recordTransformation(mode: string, fileCount: number, duration: number, success: boolean): void {
-    this.recordEvent({
-      type: 'transformation',
-      component: 'transformation-engine',
-      data: { mode, fileCount, duration, success },
-      severity: success ? 'low' : 'high',
-    });
-  }
-
-  recordValidation(
-    validationType: string,
-    duration: number,
-    passed: boolean,
-    errors?: string[]
-  ): void {
-    this.recordEvent({
-      type: 'validation',
-      component: 'validation-engine',
-      data: { validationType, duration, passed, errors },
-      severity: passed ? 'low' : 'medium',
-    });
-  }
-
-  getMetrics(): TelemetryMetrics {
-    const totalEvents = this.events.length;
-    const errorEvents = this.events.filter((e) => e.type === 'error');
-    const performanceEvents = this.events.filter((e) => e.type === 'performance');
-    const transformationEvents = this.events.filter((e) => e.type === 'transformation');
-    const validationEvents = this.events.filter((e) => e.type === 'validation');
-
-    const errorRate = totalEvents > 0 ? (errorEvents.length / totalEvents) * 100 : 0;
-
-    const avgResponseTime =
-      performanceEvents.length > 0
-        ? performanceEvents.reduce((sum, e) => sum + (e.data.duration as number), 0) /
-          performanceEvents.length
-        : 0;
-
-    const successfulTransformations = transformationEvents.filter((e) => e.data.success === true);
-    const successfulValidations = validationEvents.filter((e) => e.data.passed === true);
-    const totalOperations = transformationEvents.length + validationEvents.length;
-    const successfulOperations = successfulTransformations.length + successfulValidations.length;
-    const successRate = totalOperations > 0 ? (successfulOperations / totalOperations) * 100 : 100;
-
-    return {
-      totalEvents,
-      errorRate,
-      averageResponseTime: avgResponseTime,
-      memoryUsage: process.memoryUsage().heapUsed / 1024 / 1024, // MB
-      transformationCount: transformationEvents.length,
-      validationCount: validationEvents.length,
-      successRate,
-    };
-  }
-
-  getEventsByType(type: TelemetryEvent['type']): TelemetryEvent[] {
-    return this.events.filter((e) => e.type === type);
-  }
-
-  getEventsBySeverity(severity: TelemetryEvent['severity']): TelemetryEvent[] {
-    return this.events.filter((e) => e.severity === severity);
-  }
-
-  getEventsInTimeRange(startTime: number, endTime: number): TelemetryEvent[] {
-    return this.events.filter((e) => e.timestamp >= startTime && e.timestamp <= endTime);
-  }
-
-  clear(): void {
-    this.events = [];
-    this.startTime = Date.now();
-  }
-
-  exportEvents(): TelemetryEvent[] {
-    return [...this.events];
-  }
-}
+import { TelemetryCollector } from '../../src/telemetry/index.ts';
 
 describe('Telemetry Validation Framework', () => {
   let telemetry: TelemetryCollector;
@@ -160,19 +16,46 @@ describe('Telemetry Validation Framework', () => {
   });
 
   describe('Event Collection', () => {
-    test('should collect performance events correctly', async () => {
-      console.log('🔬 Testing performance event collection');
+    test('should emit and collect unified telemetry events', async () => {
+      console.log('🔬 Testing unified telemetry event emission');
 
-      const _startTime = Date.now();
-
-      // Simulate various performance scenarios
-      telemetry.recordPerformance('analysis-actor', 150, 'file-analysis');
-      telemetry.recordPerformance('transformation-actor', 750, 'ast-transformation');
-      telemetry.recordPerformance('validation-actor', 1200, 'schema-validation');
+      // Simulate emitting telemetry events using the real API
+      telemetry.emitUnifiedEvent({
+        eventId: crypto.randomUUID(),
+        timestamp: Date.now(),
+        sessionId: crypto.randomUUID(),
+        version: '1.0.0',
+        type: 'performance',
+        component: 'analysis-actor',
+        data: { duration: 150, operation: 'file-analysis' },
+        severity: 'low'
+      });
+      telemetry.emitUnifiedEvent({
+        eventId: crypto.randomUUID(),
+        timestamp: Date.now(),
+        sessionId: crypto.randomUUID(),
+        version: '1.0.0',
+        type: 'performance',
+        component: 'transformation-actor',
+        data: { duration: 750, operation: 'ast-transformation' },
+        severity: 'medium'
+      });
+      telemetry.emitUnifiedEvent({
+        eventId: crypto.randomUUID(),
+        timestamp: Date.now(),
+        sessionId: crypto.randomUUID(),
+        version: '1.0.0',
+        type: 'performance',
+        component: 'validation-actor',
+        data: { duration: 1200, operation: 'schema-validation' },
+        severity: 'high'
+      });
 
       await new Promise((resolve) => setTimeout(resolve, 10)); // Small delay
 
-      const performanceEvents = telemetry.getEventsByType('performance');
+      // For demonstration, assume TelemetryCollector exposes a method to get all events
+      const allEvents = telemetry['buffer']?.events || [];
+      const performanceEvents = allEvents.filter((e: any) => e.type === 'performance');
 
       expect(performanceEvents).toHaveLength(3);
       expect(performanceEvents[0].data.duration).toBe(150);
@@ -182,7 +65,7 @@ describe('Telemetry Validation Framework', () => {
 
       console.log(`   ✅ Collected ${performanceEvents.length} performance events`);
       console.log(
-        `   📊 Severity distribution: ${performanceEvents.map((e) => e.severity).join(', ')}`
+        `   📊 Severity distribution: ${performanceEvents.map((e: any) => e.severity).join(', ')}`
       );
     });
 

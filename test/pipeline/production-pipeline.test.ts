@@ -3,12 +3,12 @@ import { existsSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createActor } from 'xstate';
 import type { z } from 'zod';
-import type { PipelineRequest } from '../../src/pipeline/production-pipeline';
+import type { PipelineRequest } from '../../src/production/production-pipeline';
 import {
   defaultProductionConfig,
   ProductionPipelineResultSchema, // <-- Remove this line if not exported
   productionPipelineActor,
-} from '../../src/pipeline/production-pipeline';
+} from '../../src/production/production-pipeline';
 
 describe('Production Pipeline', () => {
   const testFile = join(process.cwd(), 'test-file.ts');
