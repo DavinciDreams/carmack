@@ -187,11 +187,9 @@ export const llmTestingFrameworkActor = fromPromise(
     const validatedInput = TestExecutionRequestSchema.parse(input);
 
       `🧪 Starting LLM testing framework with ${validatedInput.suites.length} test suites`
-    );
     const results = await executeTestSuites(validatedInput);
 
       `✅ Testing completed: ${results.summary.passed}/${results.summary.total} tests passed`
-    );
     return results;
   }
 );
@@ -444,17 +442,17 @@ async function runSingleAssertion(
         expected: 'valid syntax',
       };
     }
-    case 'performance_under': {
-actualOutput?.performance?.duration
-      const underLimit = duration < assertion.value;
-      return {
-        type: assertion.type,
-        passed: underLimit,
-        message: assertion.message || `Expected execution time under ${assertion.value}ms`,
-        actual: duration,
-        expected: assertion.value,
-      };
-    }
+case 'performance_under': {
+  const duration = actualOutput?.performance?.duration ?? 0;
+  const underLimit = duration < assertion.value;
+  return {
+    type: assertion.type,
+    passed: underLimit,
+    message: assertion.message || `Expected execution time under ${assertion.value}ms`,
+    actual: duration,
+    expected: assertion.value,
+  };
+}
     case 'complexity_reduced': {
       const complexityReduced = await checkComplexityReduction(
         testCase.input.code,
@@ -571,7 +569,7 @@ async function checkTypesSafety(_code: string, language: string): Promise<boolea
         },
       });
     });
-result.errors?.length
+    return !(result.errors && result.errors.length > 0);
   } catch {
     return false; // Assume not type-safe if we can't validate
   }
