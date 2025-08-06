@@ -122,7 +122,7 @@ class DeploymentVerifier {
       try {
         if (config.healthPath) {
           // HTTP health check
-          const response = await this.httpHealthCheck(serviceName, config.port, config.healthPath);
+          const response = await this.httpHealthCheck(config.port, config.healthPath);
           return {
             service: serviceName,
             status: 'healthy',
@@ -131,7 +131,7 @@ class DeploymentVerifier {
           };
         } else {
           // TCP connection check
-          await this.tcpHealthCheck(serviceName, config.port);
+          await this.tcpHealthCheck(config.port);
           return {
             service: serviceName,
             status: 'healthy',
@@ -159,7 +159,7 @@ class DeploymentVerifier {
     };
   }
 
-  private async httpHealthCheck(serviceName: string, port: number, healthPath: string): Promise<any> {
+  private async httpHealthCheck(port: number, healthPath: string): Promise<any> {
     const url = `http://localhost:${port}${healthPath}`;
     
     const controller = new AbortController();
@@ -198,7 +198,7 @@ class DeploymentVerifier {
     }
   }
 
-  private async tcpHealthCheck(serviceName: string, port: number): Promise<void> {
+  private async tcpHealthCheck(port: number): Promise<void> {
     // For TCP-only services like PostgreSQL and Redis, we'll try to establish a connection
     const { createConnection } = await import('node:net');
     
@@ -293,7 +293,6 @@ class DockerComposeManager {
   async checkDockerCompose(): Promise<boolean> {
     try {
       const { spawn } = await import('node:child_process');
-      const { promisify } = await import('node:util');
       
       return new Promise((resolve) => {
         const process = spawn('docker-compose', ['--version'], { stdio: 'pipe' });
@@ -308,8 +307,7 @@ class DockerComposeManager {
   async getServicesStatus(): Promise<any[]> {
     try {
       const { exec } = await import('node:child_process');
-      const { promisify } = await import('node:util');
-      const execAsync = promisify(exec);
+      const execAsync = (await import('node:util')).promisify(exec);
       
       const { stdout } = await execAsync(`docker-compose -f ${this.composeFile} ps --format json`);
       return JSON.parse(`[${stdout.trim().split('\n').join(',')}]`);
@@ -322,8 +320,7 @@ class DockerComposeManager {
   async startServices(): Promise<void> {
     console.log('🚀 Starting Docker Compose services...');
     const { exec } = await import('node:child_process');
-    const { promisify } = await import('node:util');
-    const execAsync = promisify(exec);
+    const execAsync = (await import('node:util')).promisify(exec);
     
     try {
       await execAsync(`docker-compose -f ${this.composeFile} up -d`);

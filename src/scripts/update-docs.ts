@@ -1,5 +1,5 @@
 // Script to update Carmack repo documentation before commit (for Lefthook)
-import { generateAndStoreDocs } from '../docs-generator/generator-pipeline';
+import { generateAndStoreDocs } from '../docs/generator-pipeline';
 
 async function main() {
   await generateAndStoreDocs({

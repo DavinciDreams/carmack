@@ -406,7 +406,7 @@ async function validateProjectStructure(): Promise<SetupResult> {
         if (!stat) {
           // Try alternative check
           try {
-            const files = await Array.fromAsync(new Bun.Glob('*').scan({ cwd: dir }));
+            await Array.fromAsync(new Bun.Glob('*').scan({ cwd: dir }));
             // Directory exists if we can scan it
           } catch {
             missingDirectories.push(dir);
