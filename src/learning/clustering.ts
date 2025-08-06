@@ -175,37 +175,39 @@ vectors[0]?.length
   /**
    * Update centroids based on current assignments
    */
-  private updateCentroids(vectors: Vector[], assignments: number[], centroids: Vector[]): void {
-vectors[0]?.length
-    const clusterCounts = new Array(centroids.length).fill(0);
+private updateCentroids(vectors: Vector[], assignments: number[], centroids: Vector[]): void {
+  const dimension = vectors[0]?.length ?? 0;
+  const clusterCounts = new Array(centroids.length).fill(0);
+  const clusterSums: number[][] = Array.from({ length: centroids.length }, () =>
+    new Array(dimension).fill(0)
+  );
 
-    // Sum vectors for each cluster
-    for (let i = 0; i < vectors.length; i++) {
-      const clusterId = assignments[i];
-      const vector = vectors[i];
-      if (clusterId !== undefined && vector) {
-        clusterCounts[clusterId]++;
+  // Sum vectors for each cluster
+  for (let i = 0; i < vectors.length; i++) {
+    const clusterId = assignments[i];
+    const vector = vectors[i];
+    if (clusterId !== undefined && vector) {
+      clusterCounts[clusterId]++;
 
-        for (let j = 0; j < vector.length; j++) {
-          const clusterSum = clusterSums[clusterId];
-          if (clusterSum) {
-            clusterSum[j] = (clusterSum[j] ?? 0) + (vector[j] ?? 0);
-          }
-        }
-      }
-    }
-
-    // Update centroids (average of assigned vectors)
-    for (let i = 0; i < centroids.length; i++) {
-      const centroid = centroids[i];
-      const clusterSum = clusterSums[i];
-      if (clusterCounts[i] > 0 && centroid && clusterSum) {
-        for (let j = 0; j < centroid.length; j++) {
-          centroid[j] = (clusterSum[j] ?? 0) / clusterCounts[i];
+      for (let j = 0; j < vector.length; j++) {
+        if (clusterSums[clusterId]) {
+          clusterSums[clusterId][j] = (clusterSums[clusterId][j] ?? 0) + (vector[j] ?? 0);
         }
       }
     }
   }
+
+  // Update centroids (average of assigned vectors)
+  for (let i = 0; i < centroids.length; i++) {
+    const centroid = centroids[i];
+    const clusterSum = clusterSums[i];
+    if (clusterCounts[i] > 0 && centroid && clusterSum) {
+      for (let j = 0; j < centroid.length; j++) {
+        centroid[j] = (clusterSum[j] ?? 0) / clusterCounts[i];
+      }
+    }
+  }
+}
 
   /**
    * Build final cluster results
