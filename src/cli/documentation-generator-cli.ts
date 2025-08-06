@@ -3,8 +3,8 @@ import { existsSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 import { z } from 'zod';
 
-import { DocumentationGenerator } from '../docs-generator/generator.ts';
-import { DocumentationFormatSchema, DocumentationTypeSchema } from '../docs-generator/types.js';
+import { DocumentationGenerator } from '../docs/generator.ts';
+import { DocumentationFormatSchema, DocumentationTypeSchema } from '../docs/types.js';
 
 /**
  * CLI interface for the Documentation Generator
