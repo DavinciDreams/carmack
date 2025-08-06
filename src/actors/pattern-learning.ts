@@ -1,29 +1,23 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { fromPromise } from 'xstate';
-import { z } from 'zod';
 
 import { PatternClusterer } from '../learning/clustering.ts';
 import { createNLPAnalyzer } from '../learning/nlp.ts';
-import { ReinforcementLearningManager } from '../learning/reinforcement.ts';
-import { PatternSimilarityDetector } from '../learning/similarity.ts';
-import { PatternStatistics, StatisticalAnalyzer } from '../learning/statistics.ts';
 
 import type { NLPAnalysis, PatternFeatureVector } from '../learning/types.ts';
-import type { AstPattern, ComplexityMetrics } from '../types.js';
-
-// Canonical language enum (should match pattern-discovery)
-export const SupportedLanguageEnum = [
-  'typescript', 'javascript', 'python', 'cpp', 'c', 'java', 'go', 'rust', 'ruby', 'php', 'csharp', 'kotlin', 'swift', 'scala', 'haskell', 'elixir', 'shell', 'json', 'yaml', 'toml', 'lua', 'perl', 'r', 'dart',
-  'xml', 'ini', 'sql', 'docker', 'make',
-  'other',
-] as const;
-export type SupportedLanguage = typeof SupportedLanguageEnum[number];
-
-// Extended pattern type for learning with confidence
-type LearnedPattern = Omit<AstPattern, 'language'> & {
-  language: SupportedLanguage;
-  confidence?: number;
-};
+import type { ComplexityMetrics } from '../types.js';
+import {
+  SupportedLanguageEnum,
+  PatternLearningInputSchema,
+} from '../patterns';
+import type {
+  SupportedLanguage,
+  PatternLearningInput,
+  PatternEffectiveness,
+  DiscoveredPattern,
+  LearningResult,
+  LearnedPattern
+} from '../patterns';
 
 /**
  * Pattern Learning System
@@ -40,183 +34,6 @@ type LearnedPattern = Omit<AstPattern, 'language'> & {
  * - Pattern lifecycle management (experimental → stable → deprecated)
  */
 
-// Pattern Learning Input Schema
-const PatternLearningInputSchema = z.object({
-  operation: z.enum(['learn', 'discover', 'optimize', 'evaluate']),
-  transformation: z
-    .object({
-      id: z.string(),
-      mode: z.enum(['template', 'ast', 'llm']),
-      filesModified: z.array(z.string()),
-      complexity: z
-        .object({
-          cyclomaticComplexity: z.number().int().min(0),
-          cognitiveComplexity: z.number().int().min(0),
-          linesOfCode: z.number().int().min(0),
-          nestingDepth: z.number().int().min(0),
-          functionCount: z.number().int().min(0),
-          classCount: z.number().int().min(0),
-        })
-        .optional(),
-      validation: z
-        .object({
-          isValid: z.boolean(),
-          errors: z.array(
-            z.object({
-              code: z.string(),
-              message: z.string(),
-              file: z.string().optional(),
-              line: z.number().int().positive().optional(),
-              column: z.number().int().positive().optional(),
-              severity: z.enum(['error', 'warning', 'info']),
-            })
-          ),
-          warnings: z.array(
-            z.object({
-              code: z.string(),
-              message: z.string(),
-              file: z.string().optional(),
-              line: z.number().int().positive().optional(),
-              column: z.number().int().positive().optional(),
-              severity: z.enum(['error', 'warning', 'info']),
-            })
-          ),
-          fixableIssues: z.number().int().min(0),
-        })
-        .optional(),
-      startTime: z.number(),
-      endTime: z.number().optional(),
-      errors: z.array(z.string()),
-      summary: z.string().optional(),
-    })
-    .optional(),
-  patterns: z
-    .array(
-      z.object({
-        id: z.string(),
-        language: z.string(),
-        pattern: z.string(),
-        replacement: z.string(),
-        description: z.string(),
-        complexity: z.number().int().min(1).max(10),
-        riskLevel: z.enum(['low', 'medium', 'high']),
-        mode: z.enum(['template', 'ast', 'llm']).optional().default('template'),
-      })
-    )
-    .optional(),
-  context: z
-    .object({
-      codebase: z
-        .object({
-          language: z.enum(SupportedLanguageEnum).default('typescript'),
-          framework: z.string().optional(),
-          complexity: z.number().default(5),
-          size: z.number().default(1000), // lines of code
-        })
-        .optional(),
-      environment: z
-        .object({
-          performance: z
-            .object({
-              transformationTime: z.number(),
-              memoryUsage: z.number().optional(),
-              cpuUsage: z.number().optional(),
-            })
-            .optional(),
-          success: z.boolean().default(true),
-          userFeedback: z.number().min(0).max(10).optional(), // 0-10 rating
-        })
-        .optional(),
-    })
-    .optional(),
-});
-
-// Pattern Effectiveness Metrics Schema
-const PatternEffectivenessSchema = z.object({
-  patternId: z.string(),
-  successRate: z.number().min(0).max(1),
-  averagePerformance: z.number().min(0), // milliseconds
-  complexityReduction: z.number(), // positive = reduced complexity
-  errorRate: z.number().min(0).max(1),
-  userSatisfaction: z.number().min(0).max(10),
-  applicabilityScore: z.number().min(0).max(1), // how often pattern is applicable
-  lastUpdated: z.number(),
-  usageCount: z.number().min(0),
-  lifecycle: z.enum(['experimental', 'stable', 'mature', 'deprecated']),
-});
-
-// Discovered Pattern Schema
-const DiscoveredPatternSchema = z.object({
-  id: z.string(),
-  confidence: z.number().min(0).max(1),
-  frequency: z.number().min(1), // how many times this pattern was observed
-  context: z.object({
-    language: z.string(),
-    framework: z.string().optional(),
-    complexity: z.number(),
-    fileTypes: z.array(z.string()),
-  }),
-  pattern: z.object({
-    before: z.string(), // code pattern before transformation
-    after: z.string(), // code pattern after transformation
-    variables: z.array(z.string()).optional(), // extracted variables
-  }),
-  metadata: z.object({
-    discoveredAt: z.number(),
-    examples: z.array(
-      z.object({
-        file: z.string(),
-        lineNumber: z.number(),
-        context: z.string(),
-      })
-    ),
-    relatedPatterns: z.array(z.string()).optional(),
-  }),
-});
-
-// Learning Result Schema
-const LearningResultSchema = z.object({
-  newPatterns: z.array(
-    z.object({
-      id: z.string(),
-      language: z.string(),
-      pattern: z.string(),
-      replacement: z.string(),
-      description: z.string(),
-      complexity: z.number().int().min(1).max(10),
-      riskLevel: z.enum(['low', 'medium', 'high']),
-      mode: z.enum(['template', 'ast', 'llm']).optional().default('template'),
-      confidence: z.number().min(0).max(1).optional(),
-    })
-  ),
-  optimizedPatterns: z.array(
-    z.object({
-      id: z.string(),
-      language: z.string(),
-      pattern: z.string(),
-      replacement: z.string(),
-      description: z.string(),
-      complexity: z.number().int().min(1).max(10),
-      riskLevel: z.enum(['low', 'medium', 'high']),
-      mode: z.enum(['template', 'ast', 'llm']).optional().default('template'),
-      confidence: z.number().min(0).max(1).optional(),
-    })
-  ),
-  deprecatedPatterns: z.array(z.string()), // pattern IDs
-  insights: z.array(z.string()),
-  recommendations: z.array(z.string()),
-  metrics: z.object({
-    patternsDiscovered: z.number(),
-    patternsOptimized: z.number(),
-    averageConfidence: z.number(),
-    learningTime: z.number(),
-  }),
-});
-
-export type PatternLearningInput = z.infer<typeof PatternLearningInputSchema>;
-export type PatternEffectiveness = z.infer<typeof PatternEffectivenessSchema>;
-export type DiscoveredPattern = z.infer<typeof DiscoveredPatternSchema>;
-export type LearningResult = z.infer<typeof LearningResultSchema>;
 
 /**
  * Pattern Learning Actor
@@ -246,22 +63,12 @@ export class PatternLearner {
   private dataPath: string;
 
   // ML Components
-  private clusterer: PatternClusterer;
-  private similarityDetector: PatternSimilarityDetector;
-  private statisticalAnalyzer: StatisticalAnalyzer;
-  private patternStatistics: PatternStatistics;
-  private reinforcementLearning: ReinforcementLearningManager;
   private nlpAnalyzer: ReturnType<typeof createNLPAnalyzer>;
 
   constructor(dataPath = './data') {
     this.dataPath = dataPath;
 
     // Initialize ML components
-    this.clusterer = new PatternClusterer();
-    this.similarityDetector = new PatternSimilarityDetector();
-    this.statisticalAnalyzer = new StatisticalAnalyzer();
-    this.patternStatistics = new PatternStatistics();
-    this.reinforcementLearning = new ReinforcementLearningManager();
     this.nlpAnalyzer = createNLPAnalyzer({
       enableSentimentAnalysis: true,
       enableKeywordExtraction: true,
@@ -269,7 +76,8 @@ export class PatternLearner {
       maxKeywords: 15,
     });
 
-    this.loadExistingData();
+    // Load existing learning data on initialization
+    void this.loadExistingData();
   }
 
   /**
@@ -794,8 +602,8 @@ export class PatternLearner {
           const discoveredPattern: LearnedPattern = {
             id: `discovered-${transformation.id}-${Date.now()}`,
             language: normalizeLanguage(featureVector.metadata.language),
-            pattern: this.generatePatternFromAnalysis(fileContent, nlpAnalysis),
-            replacement: this.generateReplacementFromAnalysis(fileContent, nlpAnalysis),
+            pattern: this.generatePatternFromAnalysis(nlpAnalysis),
+            replacement: this.generateReplacementFromAnalysis(nlpAnalysis),
             description: `Auto-discovered ${nlpAnalysis.extractedFeatures.intent} pattern: ${nlpAnalysis.extractedFeatures.keywords.slice(0, 3).join(', ')}`,
             complexity: Math.ceil(nlpAnalysis.extractedFeatures.complexity),
             riskLevel: featureVector.metadata.riskLevel as 'low' | 'medium' | 'high',
@@ -850,7 +658,7 @@ function normalizeLanguage(lang: string): SupportedLanguage {
   /**
    * Generate pattern from file content and NLP analysis
    */
-  private generatePatternFromAnalysis(fileContent: string, nlpAnalysis: NLPAnalysis): string {
+  private generatePatternFromAnalysis(nlpAnalysis: NLPAnalysis): string {
     const intent = nlpAnalysis.extractedFeatures.intent;
     const keywords = nlpAnalysis.extractedFeatures.keywords;
 
@@ -875,7 +683,7 @@ function normalizeLanguage(lang: string): SupportedLanguage {
   /**
    * Generate replacement from file content and NLP analysis
    */
-  private generateReplacementFromAnalysis(fileContent: string, nlpAnalysis: NLPAnalysis): string {
+  private generateReplacementFromAnalysis(nlpAnalysis: NLPAnalysis): string {
     const intent = nlpAnalysis.extractedFeatures.intent;
     const keywords = nlpAnalysis.extractedFeatures.keywords;
 

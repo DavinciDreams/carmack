@@ -270,7 +270,19 @@ function findAstGrepMatches(root: SgRoot, pattern: AstGrepPattern, lang: string 
       const nodeRange = node.range();
       const match: AstMatch = {
         pattern,
-        node,
+        node: {
+          type: node.kind?.().toString() ?? 'unknown',
+          text: node.text(),
+          start: nodeRange.start.index,
+          end: nodeRange.end.index,
+          children: node.children?.().map(child => ({
+            type: child.kind?.().toString() ?? 'unknown',
+            text: child.text(),
+            start: child.range().start.index,
+            end: child.range().end.index,
+            // children property will be recursively filled if needed
+          })),
+        },
         text: node.text(),
         range: {
           start: nodeRange.start.index,
@@ -500,18 +512,42 @@ function extractVariablesFromPattern(
  * Analyze node context for better transformation decisions
  */
 function analyzeNodeContext(node: SgNode): AstMatch['context'] {
-  const ancestors: SgNode[] = [];
+  const ancestors: Array<{
+    type: string;
+    text: string;
+    start: number;
+    end: number;
+    children?: Array<{
+      type: string;
+      text: string;
+      start: number;
+      end: number;
+    }>;
+  }> = [];
   let current = node.parent();
 
   while (current) {
-    ancestors.push(current);
+    const range = current.range();
+    ancestors.push({
+      type: current.kind?.().toString() ?? 'unknown',
+      text: current.text(),
+      start: range.start.index,
+      end: range.end.index,
+      children: current.children?.().map(child => ({
+        type: child.kind?.().toString() ?? 'unknown',
+        text: child.text(),
+        start: child.range().start.index,
+        end: child.range().end.index,
+      })),
+    });
     current = current.parent();
   }
 
   // Determine scope
   let scope: 'global' | 'function' | 'block' | 'class' = 'global';
   for (const ancestor of ancestors) {
-    const kind = ancestor.kind();
+    // ancestor is a mapped SgNode, not the original SgNode, so use type property
+    const kind = (ancestor as any).type;
     if (
       kind === 'function_declaration' ||
       kind === 'arrow_function' ||
@@ -531,11 +567,27 @@ function analyzeNodeContext(node: SgNode): AstMatch['context'] {
   }
 
   // Get siblings
-  const parent = node.parent();
-  const siblings = parent ? parent.children() : [];
+  const parent = node.parent() as SgNode | null;
+  const siblings = parent
+    ? parent.children().map(child => {
+        const range = child.range();
+        return {
+          type: child.kind?.().toString() ?? 'unknown',
+          text: child.text(),
+          start: range.start.index,
+          end: range.end.index,
+          children: child.children?.().map(grandchild => ({
+            type: grandchild.kind?.().toString() ?? 'unknown',
+            text: grandchild.text(),
+            start: grandchild.range().start.index,
+            end: grandchild.range().end.index,
+          })),
+        };
+      })
+    : [];
 
   return {
-    parent,
+    parent: null, // or remove this line if not needed
     ancestors,
     siblings,
     scope,
@@ -586,7 +638,12 @@ function evaluateAstCondition(condition: string, match: AstMatch): boolean {
 
     if (condition.includes('kind')) {
       const expectedKind = condition.match(/kind\s*==\s*['"]([^'"]+)['"]/)?.[1];
-      return expectedKind ? match.node.kind() === expectedKind : false;
+      // Safely access kind: prefer kind() if available, else use type
+      if (!expectedKind) return false;
+      const nodeKind = typeof match.node.kind === 'function'
+        ? match.node.kind()
+        : match.node.type;
+      return nodeKind === expectedKind;
     }
 
     if (condition.includes('scope')) {
