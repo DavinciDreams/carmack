@@ -124,6 +124,101 @@ export class FileFilterError extends Error {
  * Repository Manager for git operations and file processing
  */
 export class RepositoryManager {
+  /**
+   * Acquire the repository and return its state.
+   * @param options Repository acquisition options
+   */
+  async acquireRepository(options: {
+    url: string;
+    branch: string;
+    includePatterns?: string[];
+    excludePatterns?: string[];
+    maxFileSize?: number;
+    timeout?: number;
+  }): Promise<{
+    id: string;
+    url: string;
+    branch: string;
+    localPath: string;
+    status: 'active' | 'inactive' | 'error' | 'cloning' | 'analyzing';
+    created: number;
+    lastAccessed: number;
+    metadata: {
+      fileCount: number;
+      diskSize: number;
+      patterns: any[];
+      complexity?: number;
+    };
+  }> {
+    // Minimal mock implementation for compatibility
+    return {
+      id: (globalThis.crypto ?? await import('node:crypto')).randomUUID(),
+      url: options.url,
+      branch: options.branch,
+      localPath: this.config.localPath,
+      status: 'active',
+      created: Date.now(),
+      lastAccessed: Date.now(),
+      metadata: {
+        fileCount: 0,
+        diskSize: 0,
+        patterns: [],
+      },
+    };
+  }
+  /**
+   * Release the repository and perform cleanup if necessary.
+   * @param repoId The repository ID to release
+   */
+  async releaseRepository(repoId: string): Promise<void> {
+    // For now, just log and resolve. Implement actual cleanup as needed.
+    console.log(`Repository released: ${repoId}`);
+    // Example: await fs.rm(this.config.localPath, { recursive: true, force: true });
+  }
+  /**
+   * Consolidate transformation patterns from various sources.
+   * @param sources Pattern sources (patternFiles, learnedPatterns, repositoryPatterns)
+   * @returns Promise resolving to an array of consolidated patterns
+   */
+  async consolidatePatterns(sources: {
+    patternFiles?: string[];
+    learnedPatterns?: any[];
+    repositoryPatterns?: any[];
+  }): Promise<any[]> {
+    const patterns: any[] = [];
+    // Load from pattern files if provided
+    if (sources.patternFiles) {
+      const { readFile } = await import('node:fs/promises');
+      for (const file of sources.patternFiles) {
+        try {
+          const content = await readFile(file, 'utf-8');
+          const data = JSON.parse(content);
+          if (Array.isArray(data.patterns)) {
+            patterns.push(...data.patterns);
+          }
+        } catch (error) {
+          console.warn(`   ⚠️ Failed to load patterns from ${file}: ${error}`);
+        }
+      }
+    }
+    // Merge learned and repository patterns if provided
+    if (sources.learnedPatterns) {
+      patterns.push(...sources.learnedPatterns);
+    }
+    if (sources.repositoryPatterns) {
+      patterns.push(...sources.repositoryPatterns);
+    }
+    // Remove duplicates by id if present
+    const seen = new Set();
+    const uniquePatterns = patterns.filter((p: any) => {
+      if (p && p.id && !seen.has(p.id)) {
+        seen.add(p.id);
+        return true;
+      }
+      return false;
+    });
+    return uniquePatterns;
+  }
   private git: SimpleGit;
   private config: {
     url: string;

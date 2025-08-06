@@ -9,7 +9,7 @@
 // Core components
 export * from './repository-manager.ts';
 export * from './github-client.ts';
-export * from '../docs-generator/ast-analyzer.ts';
+export * from '../docs/ast-analyzer.ts';
 export * from './content-processor.ts';
 export * from './ingestion-orchestrator.ts';
 
@@ -18,8 +18,7 @@ export * from './jobs/index.ts';
 
 // Testing and CLI
 
-export { main as IngestionTestMain } from './test-ingestion-pipeline.ts';
-export { IngestionCLI, parseCommandLineArgs } from '../cli/knowledge-graph-cli.ts';
+// export { main as IngestionTestMain } from './test-ingestion-pipeline.ts';
 export { main as IngestionCLIMain } from '../cli/knowledge-graph-cli.ts';
 
 // Re-export commonly used functions
@@ -28,7 +27,7 @@ export { main as IngestionCLIMain } from '../cli/knowledge-graph-cli.ts';
 export { createIngestionOrchestrator } from './ingestion-orchestrator.ts';
 export { createRepositoryManager } from './repository-manager.ts';
 export { createGitHubClient } from './github-client.ts';
-export { runIngestionTests } from './test-ingestion-pipeline.ts';
+// export { runIngestionTests } from './test-ingestion-pipeline.ts';
 
 // Types and schemas
 
@@ -48,9 +47,9 @@ export type {
 export type {
   ContentProcessingConfig,
   ContentChunk,
-  SemanticAnnotation,
   ProcessingResult,
 } from './content-processor.ts';
+export type { SemanticAnnotation } from '../llm-annotation/types.js';
 
 export type {
   IngestionConfig,

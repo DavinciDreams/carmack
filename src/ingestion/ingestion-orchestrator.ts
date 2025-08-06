@@ -19,9 +19,9 @@ export interface Artifact {
 }
 import { z } from 'zod';
 
-import { getDatabaseManager } from '../db/connection.ts';
-import { ASTAnalyzer } from '../docs-generator/ast-analyzer';
-import { ModuleDocSchema } from '../docs-generator/types';
+import { getDatabaseOperations } from '../db/index.ts';
+import { ASTAnalyzer } from '../docs/ast-analyzer';
+import { ModuleDocSchema } from '../docs/types';
 import { ContentProcessor, ProcessingResultSchema } from './content-processor.ts';
 import { GitHubClient, PullRequestSchema } from './github-client.ts';
 import { RepositoryManager, createRepositoryManager } from './repository-manager.ts';
@@ -46,7 +46,9 @@ import { CommitMetadataSchema, FileContentMetadataSchema, FileMetadataSchema } f
  * Ingestion configuration schema
  */
 // Dynamically resolve repo URL and workspace path from environment
-const DEFAULT_REPO_URL = process.env.REPO_URL || 'https://github.com/example/repo';
+import { getEnvironmentConfig } from '../config/environment.ts';
+const env = getEnvironmentConfig();
+const DEFAULT_REPO_URL = env.REPOSITORY_URL || 'https://github.com/example/repo';
 const repoNameFromUrl = (url: string) => {
   const match = url.match(/github.com[/:]([^/]+)\/([^/.]+)/);
   return match ? match[2] : 'repo';
@@ -204,7 +206,7 @@ export class IngestionOrchestrator {
     this.githubClient = new GitHubClient({
       owner,
       repo,
-      token: process.env.GITHUB_TOKEN,
+      token: env.GITHUB_TOKEN,
     });
     this.astAnalyzer = new ASTAnalyzer();
     this.contentProcessor = new ContentProcessor();
@@ -533,78 +535,89 @@ export class IngestionOrchestrator {
     try {
       console.log('💾 Storing data in knowledge graph...');
       
-      const db = getDatabaseManager();
+      const dbOps = getDatabaseOperations();
       const artifacts: any[] = [];
       const cstNodes: any[] = [];
       
-      // Store commits as artifacts
-      for (const commit of commits) {
-        const artifact = {
-          type: 'commit' as const,
-          name: commit.subject || commit.message.split('\n')[0],
-          description: commit.message,
-          commit_hash: commit.hash,
-          author_name: commit.author.name,
-          author_email: commit.author.email,
-          created_date: commit.date,
-          repository_url: this.config.repositoryUrl,
-          metadata: {
-            parentHashes: commit.parentHashes,
-            diff: commit.diff,
-          },
-        };
-        const result = await db.query(
-          'INSERT INTO artifacts (type, name, description, commit_hash, author_name, author_email, created_date, repository_url, metadata) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id',
-          [artifact.type, artifact.name, artifact.description, artifact.commit_hash, artifact.author_name, artifact.author_email, artifact.created_date, artifact.repository_url, JSON.stringify(artifact.metadata)]
-        );
-        artifacts.push({ ...artifact, id: result.rows[0].id });
-      }
-      
-      // Store PRs as artifacts
-      for (const pr of prs) {
-        const artifact = {
-          type: 'pr' as const,
-          name: pr.title,
-          description: pr.body || '',
-          author_name: pr.user.login,
-          created_date: new Date(pr.createdAt),
-          repository_url: this.config.repositoryUrl,
-          metadata: {
-            number: pr.number,
-            state: pr.state,
-            merged: pr.merged,
-            mergedAt: pr.mergedAt,
-            labels: pr.labels,
-          },
-        };
-        const result = await db.query(
-          'INSERT INTO artifacts (type, name, description, author_name, created_date, repository_url, metadata) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
-          [artifact.type, artifact.name, artifact.description, artifact.author_name, artifact.created_date, artifact.repository_url, JSON.stringify(artifact.metadata)]
-        );
-        artifacts.push({ ...artifact, id: result.rows[0].id });
-      }
-      
-      // Store files and content as artifacts
-      for (const content of processedContent) {
-        const artifact = {
-          type: 'file' as const,
-          name: content.filePath.split('/').pop() || content.filePath,
-          description: content.annotation.summary,
-          file_path: content.filePath,
-          language: content.chunks[0]?.language || 'unknown',
-          repository_url: this.config.repositoryUrl,
-          metadata: {
-            annotation: content.annotation,
-            chunkCount: content.chunks.length,
-          },
-        };
-        const result = await db.query(
-          'INSERT INTO artifacts (type, name, description, file_path, language, repository_url, metadata) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
-          [artifact.type, artifact.name, artifact.description, artifact.file_path, artifact.language, artifact.repository_url, JSON.stringify(artifact.metadata)]
-        );
-        artifacts.push({ ...artifact, id: result.rows[0].id });
-      }
-      
+      // Store all artifacts in batch using dbOps
+      const commitArtifacts = commits.map(commit => ({
+        type: 'commit',
+        name: commit.subject || commit.message.split('\n')[0],
+        description: commit.message,
+        content: '', // No content for commit
+        file_path: '',
+        line_start: undefined,
+        line_end: undefined,
+        language: '',
+        repository_url: this.config.repositoryUrl,
+        commit_hash: commit.hash,
+        author_name: commit.author.name,
+        author_email: commit.author.email,
+        created_date: commit.date,
+        modified_date: commit.date,
+        embedding: undefined,
+        metadata: {
+          parentHashes: commit.parentHashes,
+          diff: commit.diff,
+        },
+        complexity_score: undefined,
+        performance_impact: undefined,
+        quality_score: undefined,
+      }));
+      const prArtifacts = prs.map(pr => ({
+        type: 'pr',
+        name: pr.title,
+        description: pr.body || '',
+        content: '',
+        file_path: '',
+        line_start: undefined,
+        line_end: undefined,
+        language: '',
+        repository_url: this.config.repositoryUrl,
+        commit_hash: undefined,
+        author_name: pr.user.login,
+        author_email: '',
+        created_date: new Date(pr.createdAt),
+        modified_date: new Date(pr.createdAt),
+        embedding: undefined,
+        metadata: {
+          number: pr.number,
+          state: pr.state,
+          merged: pr.merged,
+          mergedAt: pr.mergedAt,
+          labels: pr.labels,
+        },
+        complexity_score: undefined,
+        performance_impact: undefined,
+        quality_score: undefined,
+      }));
+      const fileArtifacts = processedContent.map(content => ({
+        type: 'file',
+        name: content.filePath.split('/').pop() || content.filePath,
+        description: content.annotation.summary,
+        content: '', // Could store file content if needed
+        file_path: content.filePath,
+        line_start: undefined,
+        line_end: undefined,
+        language: content.chunks[0]?.language || 'unknown',
+        repository_url: this.config.repositoryUrl,
+        commit_hash: undefined,
+        author_name: '',
+        author_email: '',
+        created_date: new Date(),
+        modified_date: new Date(),
+        embedding: undefined,
+        metadata: {
+          annotation: content.annotation,
+          chunkCount: content.chunks.length,
+        },
+        complexity_score: undefined,
+        performance_impact: undefined,
+        quality_score: undefined,
+      }));
+      const allArtifacts = [...commitArtifacts, ...prArtifacts, ...fileArtifacts];
+      const createdArtifacts = await dbOps.artifacts.batchCreate(allArtifacts as any);
+      artifacts.push(...createdArtifacts);
       this.progress.metrics.artifactsCreated = artifacts.length;
       console.log(`✅ Stored ${artifacts.length} artifacts`);
       
@@ -654,7 +667,7 @@ export class IngestionOrchestrator {
     try {
       console.log('🔗 Building graph relationships...');
       
-      const db = getDatabaseManager();
+      const dbOps = getDatabaseOperations();
       const relationships: Array<z.infer<typeof IngestionOrchestrator.RelationshipSchema>> = [];
 
       // Zod-validate all inputs
@@ -676,10 +689,17 @@ export class IngestionOrchestrator {
               evidence: 'Merge commit SHA match',
             });
 
-            await db.query(
-              'INSERT INTO graph_edges (source_id, target_id, relation_type, confidence, evidence) VALUES ($1, $2, $3, $4, $5)',
-              [relationship.source_id, relationship.target_id, relationship.relation_type, relationship.confidence, relationship.evidence]
-            );
+            await dbOps.edges.create({
+              source_id: String(relationship.source_id) as string,
+              target_id: String(relationship.target_id) as string,
+              relation_type: "pr_link" as const,
+              confidence: relationship.confidence,
+              weight: 1,
+              is_bidirectional: false,
+              metadata: {},
+              evidence: relationship.evidence,
+              evidence_type: 'explicit',
+            });
 
             relationships.push(relationship);
           }

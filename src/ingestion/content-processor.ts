@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { getEnvironmentConfig } from '../config/environment.ts';
 import { getTelemetryCollector } from '../telemetry/index.ts';
 import { FileMetadataSchema, VectorEmbeddingSchema, TelemetryEventSchema } from '../types/unified-schemas.ts';
+import { SemanticAnnotationSchema } from '../llm-annotation/types.js';
+import type { SemanticAnnotation } from '../llm-annotation/types.js';
 
 
 
@@ -56,23 +58,6 @@ export const ContentChunkSchema = z.object({
 
 export type ContentChunk = z.infer<typeof ContentChunkSchema>;
 
-/**
- * Semantic annotation schema
- */
-export const SemanticAnnotationSchema = z.object({
-  summary: z.string(),
-  purpose: z.string(),
-  complexity: z.enum(['low', 'medium', 'high']),
-  domain: z.array(z.string()),
-  keywords: z.array(z.string()),
-  dependencies: z.array(z.string()),
-  performance_impact: z.enum(['critical', 'high', 'normal', 'low']),
-  maintainability: z.number().min(0).max(1),
-  testability: z.number().min(0).max(1),
-  technical_debt: z.number().min(0).max(1),
-});
-
-export type SemanticAnnotation = z.infer<typeof SemanticAnnotationSchema>;
 
 /**
  * Processing result schema
@@ -164,8 +149,10 @@ export class ContentProcessor {
       // Step 1: Chunk the content
       const chunks = this.chunkContent(fileContent);
 
-      // Step 2: Generate semantic annotation using BAML
-      const annotation = await this.generateSemanticAnnotation(fileContent, astResult);
+      // Step 2: Generate semantic annotation using LLM-Annotation module
+      const annotation = await import('../llm-annotation/analyzer.js').then(mod =>
+        mod.generateSemanticAnnotation(fileContent, astResult)
+      );
 
       // Step 3: Generate embeddings for chunks
       const embeddingVectors = await this.generateEmbeddings(chunks.map(c => c.content));
@@ -478,90 +465,6 @@ export class ContentProcessor {
   // SEMANTIC ANNOTATION (BAML Integration)
   // =============================================================================
 
-  /**
-   * Generate semantic annotation using BAML
-   */
-  private async generateSemanticAnnotation(
-    fileContent: z.infer<typeof FileMetadataSchema> & { content: string },
-  astResult?: unknown
-  ): Promise<SemanticAnnotation> {
-    try {
-      // For now, implement a simple heuristic-based annotation
-      // In a real implementation, this would use BAML API
-      const annotation = this.generateHeuristicAnnotation(fileContent, astResult);
-
-      return SemanticAnnotationSchema.parse(annotation);
-    } catch (error) {
-      throw new BAMLError(
-        'Failed to generate semantic annotation',
-        'ANNOTATION_FAILED',
-        {
-          filePath: fileContent.path,
-          error: error instanceof Error ? error.message : String(error),
-        }
-      );
-    }
-  }
-
-  /**
-   * Generate heuristic-based annotation
-   */
-  private generateHeuristicAnnotation(
-    fileContent: z.infer<typeof FileMetadataSchema> & { content: string },
-  astResult?: unknown
-  ): SemanticAnnotation {
-    const content = fileContent.content;
-    const path = fileContent.path;
-
-    // Analyze content for patterns
-    const isScheduler = path.includes('scheduler') || content.includes('schedule');
-    const isMemory = path.includes('memory') || content.includes('malloc') || content.includes('alloc');
-    const isKernel = path.includes('.cu') || content.includes('__global__') || content.includes('__device__');
-    const isBinding = path.includes('python') || content.includes('PYBIND11') || content.includes('py::');
-    const isTest = path.includes('test') || content.includes('TEST(') || content.includes('EXPECT_');
-
-    // Determine complexity
-    const lineCount = content.split('\n').length;
-    const complexity = lineCount > 500 ? 'high' : lineCount > 200 ? 'medium' : 'low';
-
-    // Determine domain
-    const domains: string[] = [];
-    if (isScheduler) domains.push('scheduling');
-    if (isMemory) domains.push('memory_management');
-    if (isKernel) domains.push('gpu_computing');
-    if (isBinding) domains.push('python_bindings');
-    if (isTest) domains.push('testing');
-    if (domains.length === 0) domains.push('general');
-
-    // Extract keywords
-    const keywords = this.extractKeywords(content);
-
-    // Calculate metrics
-    const complexity_score = (astResult && typeof astResult === 'object' && 'metrics' in astResult && typeof (astResult as any).metrics?.complexity === 'number')
-      ? (astResult as any).metrics.complexity
-      : lineCount / 100;
-    const maintainability = Math.max(0, 1 - (complexity_score / 10));
-    const testability = isTest ? 0.9 : maintainability * 0.7;
-    const technical_debt = Math.min(1, complexity_score / 20);
-
-    // Determine performance impact
-    const performance_impact = isKernel || isScheduler ? 'critical' :
-                              isMemory ? 'high' :
-                              isBinding ? 'normal' : 'low';
-
-    return {
-      summary: this.generateSummary(fileContent, domains),
-  purpose: this.inferPurpose(domains),
-      complexity: complexity as 'low' | 'medium' | 'high',
-      domain: domains,
-      keywords: keywords.slice(0, 20), // Limit keywords
-      dependencies: this.extractDependencies(content),
-      performance_impact: performance_impact as 'critical' | 'high' | 'normal' | 'low',
-      maintainability,
-      testability,
-      technical_debt,
-    };
-  }
 
   // =============================================================================
   // EMBEDDING GENERATION

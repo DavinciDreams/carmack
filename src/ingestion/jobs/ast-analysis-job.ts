@@ -15,7 +15,7 @@ export const astAnalysisTask = task({
     const input = ASTAnalysisJobInputSchema.parse(payload);
   // Real AST analysis logic
   // Dynamically import ASTAnalyzer to avoid circular deps
-  const { ASTAnalyzer } = await import('../../docs-generator/ast-analyzer');
+  const { ASTAnalyzer } = await import('../../docs/ast-analyzer');
   const analyzer = new ASTAnalyzer();
   const moduleDoc = await analyzer.analyzeFile(input.filePath);
   return { status: 'success', input, moduleDoc };
