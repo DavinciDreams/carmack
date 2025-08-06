@@ -195,8 +195,6 @@ export const enhancedLLMTransformationActor = fromPromise(
   async ({ input }: { input: EnhancedLLMTransformationInput }) => {
     const validatedInput = EnhancedLLMTransformationInputSchema.parse(input);
 
-
-
     const transformer = new EnhancedLLMTransformer(validatedInput.config);
     return await transformer.transformFiles(validatedInput);
   }
@@ -257,8 +255,7 @@ export class EnhancedLLMTransformer {
           }
 
 
-            `✅ Enhanced LLM transformed ${filePath} (confidence: ${result.confidence?.toFixed(2) || 'N/A'})`
-          );
+          // `✅ Enhanced LLM transformed ${filePath} (confidence: ${result.confidence?.toFixed(2) || 'N/A'})`
         } else {
           const errorMsg = `Failed to transform ${filePath}: ${result.error}`;
           errors.push(errorMsg);
@@ -472,38 +469,43 @@ export class EnhancedLLMTransformer {
     // Enhanced complexity calculation
     const complexity = this.calculateEnhancedComplexity(content);
 
-    // Detect code patterns and issues
-    const patterns = this.detectCodePatterns(content);
-    const issues = this.detectCodeIssues(content);
+// Detect code patterns and issues
+const patterns = this.detectCodePatterns(content);
+const issues = this.detectCodeIssues(content);
 
-context?.framework
+// Detect framework using imports or context
+const detectedFramework =
+  (context && typeof context === 'object' && 'framework' in context && typeof (context as any).framework === 'string'
+    ? (context as any).framework
+    : undefined) ||
+  this.detectFramework(imports);
 
-    const result: {
-      language: string;
-      framework?: string;
-      complexity: number;
-      patterns: string[];
-      imports: string[];
-      exports: string[];
-      functions: number;
-      classes: number;
-      issues: string[];
-    } = {
-      language,
-      complexity,
-      patterns,
-      imports,
-      exports,
-      functions,
-      classes,
-      issues,
-    };
+const result: {
+  language: string;
+  framework?: string;
+  complexity: number;
+  patterns: string[];
+  imports: string[];
+  exports: string[];
+  functions: number;
+  classes: number;
+  issues: string[];
+} = {
+  language,
+  complexity,
+  patterns,
+  imports,
+  exports,
+  functions,
+  classes,
+  issues,
+};
 
-    if (detectedFramework) {
-      result.framework = detectedFramework;
-    }
+if (detectedFramework) {
+  result.framework = detectedFramework;
+}
 
-    return result;
+return result;
   }
 
   /**
@@ -520,7 +522,7 @@ context?.framework
     context: FileContextAnalysis,
     request?: TransformationRequest
   ): string {
-request?.prompt
+const customPrompt = request?.prompt ?? this.getDefaultLLMTransformationGoals(context);
 
     return `You are an expert code transformation assistant specializing in complex transformations that require semantic understanding and type inference. This code has already been processed by template and AST transformations - you should focus on intelligent, context-aware improvements.
 
@@ -601,20 +603,20 @@ Focus on modern best practices and clean code principles.`;
 
       return validatedResponse;
     } catch (parseError) {
-      // If not JSON, try to extract code from markdown blocks
-      const codeMatch = response.match(/```[\w]*\n([\s\S]*?)\n```/);
-codeMatch?.[1]?.trim
+// If not JSON, try to extract code from markdown blocks
+const codeMatch = response.match(/```[\w]*\n([\s\S]*?)\n```/);
+const extractedCode = codeMatch && codeMatch[1] ? codeMatch[1].trim() : undefined;
 
-      // Use Zod to create a valid response with defaults
-      const fallbackResponse = LLMTransformationResponseSchema.parse({
-        transformedCode: extractedCode || originalCode,
-        explanation: 'Raw response from LLM - could not parse JSON',
-        confidence: extractedCode ? 0.4 : 0.1,
-        warnings: ['Could not parse structured JSON response'],
-        appliedTransformations: extractedCode ? ['markdown-extraction'] : ['no-transformation'],
-      });
+// Use Zod to create a valid response with defaults
+const fallbackResponse = LLMTransformationResponseSchema.parse({
+  transformedCode: extractedCode || originalCode,
+  explanation: 'Raw response from LLM - could not parse JSON',
+  confidence: extractedCode ? 0.4 : 0.1,
+  warnings: ['Could not parse structured JSON response'],
+  appliedTransformations: extractedCode ? ['markdown-extraction'] : ['no-transformation'],
+});
 
-      return fallbackResponse;
+return fallbackResponse;
     }
   }
 
@@ -844,25 +846,25 @@ codeMatch?.[1]?.trim
   /**
    * Helper methods (reused from original implementation)
    */
-  private detectLanguage(filePath: string): string {
-filePath.split('.').pop()?.toLowerCase
-    switch (ext) {
-      case 'ts':
-      case 'tsx':
-        return 'typescript';
-      case 'js':
-      case 'jsx':
-        return 'javascript';
-      case 'py':
-        return 'python';
-      case 'rs':
-        return 'rust';
-      case 'go':
-        return 'go';
-      default:
-        return 'unknown';
-    }
+private detectLanguage(filePath: string): string {
+  const ext = filePath.split('.').pop()?.toLowerCase();
+  switch (ext) {
+    case 'ts':
+    case 'tsx':
+      return 'typescript';
+    case 'js':
+    case 'jsx':
+      return 'javascript';
+    case 'py':
+      return 'python';
+    case 'rs':
+      return 'rust';
+    case 'go':
+      return 'go';
+    default:
+      return 'unknown';
   }
+}
 
   private extractImports(content: string): string[] {
     const imports = content.match(/import\s+.*?from\s+['"][^'"]+['"]/g) || [];
@@ -967,4 +969,4 @@ export function createEnhancedLLMTransformer(
   config?: Partial<EnhancedLLMConfig>
 ): EnhancedLLMTransformer {
   return new EnhancedLLMTransformer(config);
-}
+}
