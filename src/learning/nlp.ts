@@ -614,7 +614,7 @@ class SemanticEmbedding {
     // Top keyword features (use scores of top 10 keywords)
     const topKeywords = keywords.slice(0, 10);
     for (let i = 0; i < 10; i++) {
-      features.push(topKeywords[i]?.score || 0);
+topKeywords[i]?.score
     }
 
     // Sentiment features

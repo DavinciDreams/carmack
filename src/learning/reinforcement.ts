@@ -215,7 +215,7 @@ export class QLearningAgent {
       );
       this.explorationRate = parsed.explorationRate || this.config.explorationRate;
     } catch (error) {
-      console.warn('Failed to load Q-learning model:', error);
+
     }
   }
 }
@@ -259,7 +259,7 @@ export class PolicyGradientAgent {
    * Store experience for episode
    */
   storeExperience(state: RLState, action: RLAction, reward: number): void {
-    const logProb = action.parameters?.logProb || 0;
+action.parameters?.logProb
     this.episodeHistory.push({ state, action, reward, logProb });
   }
 
@@ -736,7 +736,7 @@ export class ReinforcementLearningManager {
       const pgData = JSON.parse(models.pgModel);
       (this.pgAgent as any).policy = new Map(pgData.policy);
     } catch (error) {
-      console.warn('Failed to load RL models:', error);
+
     }
   }
 

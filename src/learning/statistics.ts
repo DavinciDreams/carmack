@@ -692,7 +692,7 @@ export class PatternStatistics {
       throw new Error('No pattern feature vectors provided');
     }
 
-    const dimensionality = patterns[0]?.features.length ?? 0;
+patterns[0]?.features?.length
     const featureStatistics: StatisticalSummary[] = [];
 
     // Analyze each feature dimension
@@ -726,7 +726,7 @@ export class PatternStatistics {
     cumulative_variance: number[];
   } {
     const features = patterns.map((p) => p.features);
-    const dimensionality = features[0]?.length ?? 0;
+features[0]?.length
 
     // Calculate variance for each dimension as a simple approximation
     const explained_variance: number[] = [];

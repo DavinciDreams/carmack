@@ -341,7 +341,7 @@ export class VectorUtils {
       return [];
     }
 
-    const dimensions = vectors[0]?.length ?? 0;
+vectors[0]?.length
     const centroid = new Array(dimensions).fill(0);
 
     for (const vector of vectors) {

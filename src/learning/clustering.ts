@@ -90,7 +90,7 @@ export class KMeansClusterer {
    */
   private initializeCentroidsKMeansPlusPlus(vectors: Vector[]): Vector[] {
     const centroids: Vector[] = [];
-    const dimensions = vectors[0]?.length ?? 0;
+vectors[0]?.length
 
     if (vectors.length === 0) {
       return [];
@@ -176,7 +176,7 @@ export class KMeansClusterer {
    * Update centroids based on current assignments
    */
   private updateCentroids(vectors: Vector[], assignments: number[], centroids: Vector[]): void {
-    const clusterSums: Vector[] = centroids.map(() => new Array(vectors[0]?.length ?? 0).fill(0));
+vectors[0]?.length
     const clusterCounts = new Array(centroids.length).fill(0);
 
     // Sum vectors for each cluster
