@@ -506,44 +506,50 @@ export class QueryEngine {
       const intent = this.classifyIntent(validatedRequest.query);
       const complexity = this.assessComplexity(validatedRequest.query, intent);
       
-      // Perform hybrid search
-      const searchResults = await this.hybridSearch.search(validatedRequest.query, {
-        filters: this.buildSearchFilters(validatedRequest.context),
-validatedRequest.options?.max_results
-        semantic_weight: this.getSemanticWeight(intent),
-        keyword_weight: this.getKeywordWeight(intent),
-        threshold: this.getThreshold(complexity),
-      });
+// Perform hybrid search
+const searchOptions: Parameters<typeof this.hybridSearch.search>[1] = {
+  filters: this.buildSearchFilters(validatedRequest.context),
+  semantic_weight: this.getSemanticWeight(intent),
+  keyword_weight: this.getKeywordWeight(intent),
+  threshold: this.getThreshold(complexity),
+};
+if (validatedRequest.options?.max_results !== undefined) {
+  searchOptions.limit = validatedRequest.options.max_results;
+}
+const searchResults = await this.hybridSearch.search(validatedRequest.query, searchOptions);
 
-      // Convert search results to evidence items
-validatedRequest.options?.include_code_snippets
-      
-      // Generate primary answer
-      const primaryAnswer = this.generatePrimaryAnswer(validatedRequest.query, intent, evidenceChain);
-      
-      // Calculate confidence score
-      const confidenceScore = this.calculateConfidenceScore(evidenceChain, searchResults.length);
-      
-      // Generate investigation threads and suggestions
-      const investigationThreads = this.generateInvestigationThreads(intent, evidenceChain);
-      const suggestedQuestions = this.generateSuggestedQuestions(intent, evidenceChain);
+// Convert search results to evidence items
+const evidenceChain = this.buildEvidenceChain(
+  searchResults,
+  validatedRequest.options?.include_code_snippets
+);
 
-      const executionTime = Date.now() - startTime;
+// Generate primary answer
+const primaryAnswer = this.generatePrimaryAnswer(validatedRequest.query, intent, evidenceChain);
 
-      return {
-        intent,
-        complexity,
-        primary_answer: primaryAnswer,
-        evidence_chain: evidenceChain,
-        confidence_score: confidenceScore,
-        investigation_threads: investigationThreads,
-        suggested_questions: suggestedQuestions,
-        execution_time_ms: executionTime,
-        artifacts_searched: searchResults.length,
-        relationships_traversed: 0, // Will be updated when graph walker is implemented
-        session_context: this.buildSessionContext(validatedRequest, searchResults),
-        created_at: new Date(),
-      };
+// Calculate confidence score
+const confidenceScore = this.calculateConfidenceScore(evidenceChain, searchResults.length);
+
+// Generate investigation threads and suggestions
+const investigationThreads = this.generateInvestigationThreads(intent, evidenceChain);
+const suggestedQuestions = this.generateSuggestedQuestions(intent, evidenceChain);
+
+const executionTime = Date.now() - startTime;
+
+return {
+  intent,
+  complexity,
+  primary_answer: primaryAnswer,
+  evidence_chain: evidenceChain,
+  confidence_score: confidenceScore,
+  investigation_threads: investigationThreads,
+  suggested_questions: suggestedQuestions,
+  execution_time_ms: executionTime,
+  artifacts_searched: searchResults.length,
+  relationships_traversed: 0, // Will be updated when graph walker is implemented
+  session_context: this.buildSessionContext(validatedRequest, searchResults),
+  created_at: new Date(),
+};
     } catch (error) {
       throw new QueryEngineError(
         'Query processing failed',
