@@ -341,14 +341,14 @@ export class VectorUtils {
       return [];
     }
 
-vectors[0]?.length
-    const centroid = new Array(dimensions).fill(0);
+const dimensions = vectors[0]?.length ?? 0;
+const centroid = new Array(dimensions).fill(0);
 
-    for (const vector of vectors) {
-      for (let i = 0; i < dimensions; i++) {
-        centroid[i] += vector[i];
-      }
-    }
+for (const vector of vectors) {
+  for (let i = 0; i < dimensions; i++) {
+    centroid[i] += vector[i];
+  }
+}
 
     return centroid.map((val) => val / vectors.length);
   }
@@ -379,4 +379,4 @@ vectors[0]?.length
   static scale(vector: Vector, scalar: number): Vector {
     return vector.map((val) => val * scalar);
   }
-}
+}
