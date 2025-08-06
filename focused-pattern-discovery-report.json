@@ -1,0 +1,1257 @@
+{
+  "metadata": {
+    "timestamp": "2025-08-02T13:36:43.645Z",
+    "filesAnalyzed": 4,
+    "patternsFound": 23,
+    "averageConfidence": 0.719130434782609
+  },
+  "patterns": [
+    {
+      "id": "function-to-arrow-40597b49",
+      "type": "function-to-arrow",
+      "category": "modernization",
+      "confidence": 0.7200000000000001,
+      "before": "function calculateTotal(items) {  // Could be arrow function\n  return items.reduce((sum, item) => sum + item.price, 0);\n}",
+      "after": "const calculateTotal = (items) => items.reduce((sum, item) => sum + item.price, 0);",
+      "location": {
+        "startLine": 16,
+        "endLine": 18,
+        "startColumn": 0,
+        "endColumn": 121
+      },
+      "file": "unknown"
+    },
+    {
+      "id": "string-to-template-1031b7b9",
+      "type": "string-to-template",
+      "category": "modernization",
+      "confidence": 0.7400000000000001,
+      "before": "'Processing item ' + i",
+      "after": "`Processing item ${i}`",
+      "location": {
+        "startLine": 9,
+        "endLine": 9,
+        "startColumn": 16,
+        "endColumn": 38
+      },
+      "file": "unknown"
+    },
+    {
+      "id": "string-to-template-29a923ff",
+      "type": "string-to-template",
+      "category": "modernization",
+      "confidence": 0.7400000000000001,
+      "before": "'User: ' + userName + ' ID: '",
+      "after": "`User: ${userName} ID: `",
+      "location": {
+        "startLine": 12,
+        "endLine": 12,
+        "startColumn": 15,
+        "endColumn": 44
+      },
+      "file": "unknown"
+    },
+    {
+      "id": "string-to-template-29a923ff",
+      "type": "string-to-template",
+      "category": "modernization",
+      "confidence": 0.7400000000000001,
+      "before": "'User: ' + userName",
+      "after": "`User: ${userName}`",
+      "location": {
+        "startLine": 12,
+        "endLine": 12,
+        "startColumn": 15,
+        "endColumn": 34
+      },
+      "file": "unknown"
+    },
+    {
+      "id": "console-log-template-a4a9628e",
+      "type": "console-log-template",
+      "category": "optimization",
+      "confidence": 0.62,
+      "before": "console.log('Processing item ' + i)",
+      "after": "console.log(`Processing item ${i}`)",
+      "location": {
+        "startLine": 9,
+        "endLine": 9,
+        "startColumn": 4,
+        "endColumn": 39
+      },
+      "file": "unknown"
+    },
+    {
+      "id": "string-to-template-26400566",
+      "type": "string-to-template",
+      "category": "modernization",
+      "confidence": 0.7400000000000001,
+      "before": "'Hello ' + name + '!'",
+      "after": "`Hello ${name}!`",
+      "location": {
+        "startLine": 4,
+        "endLine": 4,
+        "startColumn": 17,
+        "endColumn": 38
+      },
+      "file": "unknown"
+    },
+    {
+      "id": "string-to-template-26400566",
+      "type": "string-to-template",
+      "category": "modernization",
+      "confidence": 0.7400000000000001,
+      "before": "'Hello ' + name",
+      "after": "`Hello ${name}`",
+      "location": {
+        "startLine": 4,
+        "endLine": 4,
+        "startColumn": 17,
+        "endColumn": 32
+      },
+      "file": "unknown"
+    },
+    {
+      "id": "string-to-template-26400566",
+      "type": "string-to-template",
+      "category": "modernization",
+      "confidence": 0.7400000000000001,
+      "before": "'You are ' + age + ' years old'",
+      "after": "`You are ${age} years old`",
+      "location": {
+        "startLine": 5,
+        "endLine": 5,
+        "startColumn": 13,
+        "endColumn": 44
+      },
+      "file": "unknown"
+    },
+    {
+      "id": "string-to-template-26400566",
+      "type": "string-to-template",
+      "category": "modernization",
+      "confidence": 0.7400000000000001,
+      "before": "'You are ' + age",
+      "after": "`You are ${age}`",
+      "location": {
+        "startLine": 5,
+        "endLine": 5,
+        "startColumn": 13,
+        "endColumn": 29
+      },
+      "file": "unknown"
+    },
+    {
+      "id": "string-to-template-5cc9a285",
+      "type": "string-to-template",
+      "category": "modernization",
+      "confidence": 0.7400000000000001,
+      "before": "'User info: ' + greeting + ' '",
+      "after": "`User info: ${greeting} `",
+      "location": {
+        "startLine": 7,
+        "endLine": 7,
+        "startColumn": 14,
+        "endColumn": 44
+      },
+      "file": "unknown"
+    },
+    {
+      "id": "string-to-template-5cc9a285",
+      "type": "string-to-template",
+      "category": "modernization",
+      "confidence": 0.7400000000000001,
+      "before": "'User info: ' + greeting",
+      "after": "`User info: ${greeting}`",
+      "location": {
+        "startLine": 7,
+        "endLine": 7,
+        "startColumn": 14,
+        "endColumn": 38
+      },
+      "file": "unknown"
+    },
+    {
+      "id": "console-log-template-81c92a18",
+      "type": "console-log-template",
+      "category": "optimization",
+      "confidence": 0.62,
+      "before": "console.log('User info: ' + greeting + ' ' + info)",
+      "after": "console.log(`User info: ${greeting} `)",
+      "location": {
+        "startLine": 7,
+        "endLine": 7,
+        "startColumn": 2,
+        "endColumn": 52
+      },
+      "file": "unknown"
+    },
+    {
+      "id": "function-to-arrow-d7b18a4e",
+      "type": "function-to-arrow",
+      "category": "modernization",
+      "confidence": 0.7200000000000001,
+      "before": "function add(a: number, b: number) {\n  return a + b;\n}",
+      "after": "const add = (a: number, b: number) => a + b;",
+      "location": {
+        "startLine": 3,
+        "endLine": 5,
+        "startColumn": 0,
+        "endColumn": 54
+      },
+      "file": "unknown"
+    },
+    {
+      "id": "function-to-arrow-d7b18a4e",
+      "type": "function-to-arrow",
+      "category": "modernization",
+      "confidence": 0.7200000000000001,
+      "before": "function multiply(x: number, y: number) {\n  return x * y;\n}",
+      "after": "const multiply = (x: number, y: number) => x * y;",
+      "location": {
+        "startLine": 7,
+        "endLine": 9,
+        "startColumn": 0,
+        "endColumn": 59
+      },
+      "file": "unknown"
+    },
+    {
+      "id": "function-to-arrow-89b1b027",
+      "type": "function-to-arrow",
+      "category": "modernization",
+      "confidence": 0.7200000000000001,
+      "before": "function isEven(num: number) {\n  return num % 2 === 0;\n}",
+      "after": "const isEven = (num: number) => num % 2 === 0;",
+      "location": {
+        "startLine": 11,
+        "endLine": 13,
+        "startColumn": 0,
+        "endColumn": 56
+      },
+      "file": "unknown"
+    },
+    {
+      "id": "function-to-arrow-89b1b027",
+      "type": "function-to-arrow",
+      "category": "modernization",
+      "confidence": 0.7200000000000001,
+      "before": "function greet(name: string) {\n  return 'Hello ' + name;\n}",
+      "after": "const greet = (name: string) => 'Hello ' + name;",
+      "location": {
+        "startLine": 15,
+        "endLine": 17,
+        "startColumn": 0,
+        "endColumn": 58
+      },
+      "file": "unknown"
+    },
+    {
+      "id": "string-to-template-455d6787",
+      "type": "string-to-template",
+      "category": "modernization",
+      "confidence": 0.7400000000000001,
+      "before": "'Hello ' + name",
+      "after": "`Hello ${name}`",
+      "location": {
+        "startLine": 16,
+        "endLine": 16,
+        "startColumn": 9,
+        "endColumn": 24
+      },
+      "file": "unknown"
+    },
+    {
+      "id": "function-to-arrow-43392b9c",
+      "type": "function-to-arrow",
+      "category": "modernization",
+      "confidence": 0.7200000000000001,
+      "before": "function formatData(data: any[]) {\n  return data.map(item => item.name + ': ' + item.value);  // String concatenation in map\n}",
+      "after": "const formatData = (data: any[]) => data.map(item => item.name + ': ' + item.value);",
+      "location": {
+        "startLine": 18,
+        "endLine": 20,
+        "startColumn": 0,
+        "endColumn": 126
+      },
+      "file": "unknown"
+    },
+    {
+      "id": "string-to-template-d2c67447",
+      "type": "string-to-template",
+      "category": "modernization",
+      "confidence": 0.7400000000000001,
+      "before": "'User ' + i",
+      "after": "`User ${i}`",
+      "location": {
+        "startLine": 9,
+        "endLine": 9,
+        "startColumn": 15,
+        "endColumn": 26
+      },
+      "file": "unknown"
+    },
+    {
+      "id": "string-to-template-d2c67447",
+      "type": "string-to-template",
+      "category": "modernization",
+      "confidence": 0.7400000000000001,
+      "before": "'Processed ' + count + ' users'",
+      "after": "`Processed ${count} users`",
+      "location": {
+        "startLine": 12,
+        "endLine": 12,
+        "startColumn": 16,
+        "endColumn": 47
+      },
+      "file": "unknown"
+    },
+    {
+      "id": "string-to-template-b2dc2571",
+      "type": "string-to-template",
+      "category": "modernization",
+      "confidence": 0.7400000000000001,
+      "before": "'Processed ' + count",
+      "after": "`Processed ${count}`",
+      "location": {
+        "startLine": 12,
+        "endLine": 12,
+        "startColumn": 16,
+        "endColumn": 36
+      },
+      "file": "unknown"
+    },
+    {
+      "id": "string-to-template-b2dc2571",
+      "type": "string-to-template",
+      "category": "modernization",
+      "confidence": 0.7400000000000001,
+      "before": "'Status: ' + message",
+      "after": "`Status: ${message}`",
+      "location": {
+        "startLine": 13,
+        "endLine": 13,
+        "startColumn": 14,
+        "endColumn": 34
+      },
+      "file": "unknown"
+    },
+    {
+      "id": "console-log-template-dacac03a",
+      "type": "console-log-template",
+      "category": "optimization",
+      "confidence": 0.62,
+      "before": "console.log('Status: ' + message)",
+      "after": "console.log(`Status: ${message}`)",
+      "location": {
+        "startLine": 13,
+        "endLine": 13,
+        "startColumn": 2,
+        "endColumn": 35
+      },
+      "file": "unknown"
+    }
+  ],
+  "summary": {
+    "byType": {
+      "function-to-arrow": [
+        {
+          "id": "function-to-arrow-40597b49",
+          "type": "function-to-arrow",
+          "language": "typescript",
+          "before": "function calculateTotal(items) {  // Could be arrow function\n  return items.reduce((sum, item) => sum + item.price, 0);\n}",
+          "after": "const calculateTotal = (items) => items.reduce((sum, item) => sum + item.price, 0);",
+          "confidence": 0.7200000000000001,
+          "location": {
+            "startLine": 16,
+            "endLine": 18,
+            "startColumn": 0,
+            "endColumn": 121
+          },
+          "metadata": {
+            "functionName": "calculateTotal",
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "simple function without this usage"
+          }
+        },
+        {
+          "id": "function-to-arrow-d7b18a4e",
+          "type": "function-to-arrow",
+          "language": "typescript",
+          "before": "function add(a: number, b: number) {\n  return a + b;\n}",
+          "after": "const add = (a: number, b: number) => a + b;",
+          "confidence": 0.7200000000000001,
+          "location": {
+            "startLine": 3,
+            "endLine": 5,
+            "startColumn": 0,
+            "endColumn": 54
+          },
+          "metadata": {
+            "functionName": "add",
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "simple function without this usage"
+          }
+        },
+        {
+          "id": "function-to-arrow-d7b18a4e",
+          "type": "function-to-arrow",
+          "language": "typescript",
+          "before": "function multiply(x: number, y: number) {\n  return x * y;\n}",
+          "after": "const multiply = (x: number, y: number) => x * y;",
+          "confidence": 0.7200000000000001,
+          "location": {
+            "startLine": 7,
+            "endLine": 9,
+            "startColumn": 0,
+            "endColumn": 59
+          },
+          "metadata": {
+            "functionName": "multiply",
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "simple function without this usage"
+          }
+        },
+        {
+          "id": "function-to-arrow-89b1b027",
+          "type": "function-to-arrow",
+          "language": "typescript",
+          "before": "function isEven(num: number) {\n  return num % 2 === 0;\n}",
+          "after": "const isEven = (num: number) => num % 2 === 0;",
+          "confidence": 0.7200000000000001,
+          "location": {
+            "startLine": 11,
+            "endLine": 13,
+            "startColumn": 0,
+            "endColumn": 56
+          },
+          "metadata": {
+            "functionName": "isEven",
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "simple function without this usage"
+          }
+        },
+        {
+          "id": "function-to-arrow-89b1b027",
+          "type": "function-to-arrow",
+          "language": "typescript",
+          "before": "function greet(name: string) {\n  return 'Hello ' + name;\n}",
+          "after": "const greet = (name: string) => 'Hello ' + name;",
+          "confidence": 0.7200000000000001,
+          "location": {
+            "startLine": 15,
+            "endLine": 17,
+            "startColumn": 0,
+            "endColumn": 58
+          },
+          "metadata": {
+            "functionName": "greet",
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "simple function without this usage"
+          }
+        },
+        {
+          "id": "function-to-arrow-43392b9c",
+          "type": "function-to-arrow",
+          "language": "typescript",
+          "before": "function formatData(data: any[]) {\n  return data.map(item => item.name + ': ' + item.value);  // String concatenation in map\n}",
+          "after": "const formatData = (data: any[]) => data.map(item => item.name + ': ' + item.value);",
+          "confidence": 0.7200000000000001,
+          "location": {
+            "startLine": 18,
+            "endLine": 20,
+            "startColumn": 0,
+            "endColumn": 126
+          },
+          "metadata": {
+            "functionName": "formatData",
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "simple function without this usage"
+          }
+        }
+      ],
+      "string-to-template": [
+        {
+          "id": "string-to-template-1031b7b9",
+          "type": "string-to-template",
+          "language": "typescript",
+          "before": "'Processing item ' + i",
+          "after": "`Processing item ${i}`",
+          "confidence": 0.7400000000000001,
+          "location": {
+            "startLine": 9,
+            "endLine": 9,
+            "startColumn": 16,
+            "endColumn": 38
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "string concatenation can use template literal"
+          }
+        },
+        {
+          "id": "string-to-template-29a923ff",
+          "type": "string-to-template",
+          "language": "typescript",
+          "before": "'User: ' + userName + ' ID: '",
+          "after": "`User: ${userName} ID: `",
+          "confidence": 0.7400000000000001,
+          "location": {
+            "startLine": 12,
+            "endLine": 12,
+            "startColumn": 15,
+            "endColumn": 44
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "string concatenation can use template literal"
+          }
+        },
+        {
+          "id": "string-to-template-29a923ff",
+          "type": "string-to-template",
+          "language": "typescript",
+          "before": "'User: ' + userName",
+          "after": "`User: ${userName}`",
+          "confidence": 0.7400000000000001,
+          "location": {
+            "startLine": 12,
+            "endLine": 12,
+            "startColumn": 15,
+            "endColumn": 34
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "string concatenation can use template literal"
+          }
+        },
+        {
+          "id": "string-to-template-26400566",
+          "type": "string-to-template",
+          "language": "typescript",
+          "before": "'Hello ' + name + '!'",
+          "after": "`Hello ${name}!`",
+          "confidence": 0.7400000000000001,
+          "location": {
+            "startLine": 4,
+            "endLine": 4,
+            "startColumn": 17,
+            "endColumn": 38
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "string concatenation can use template literal"
+          }
+        },
+        {
+          "id": "string-to-template-26400566",
+          "type": "string-to-template",
+          "language": "typescript",
+          "before": "'Hello ' + name",
+          "after": "`Hello ${name}`",
+          "confidence": 0.7400000000000001,
+          "location": {
+            "startLine": 4,
+            "endLine": 4,
+            "startColumn": 17,
+            "endColumn": 32
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "string concatenation can use template literal"
+          }
+        },
+        {
+          "id": "string-to-template-26400566",
+          "type": "string-to-template",
+          "language": "typescript",
+          "before": "'You are ' + age + ' years old'",
+          "after": "`You are ${age} years old`",
+          "confidence": 0.7400000000000001,
+          "location": {
+            "startLine": 5,
+            "endLine": 5,
+            "startColumn": 13,
+            "endColumn": 44
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "string concatenation can use template literal"
+          }
+        },
+        {
+          "id": "string-to-template-26400566",
+          "type": "string-to-template",
+          "language": "typescript",
+          "before": "'You are ' + age",
+          "after": "`You are ${age}`",
+          "confidence": 0.7400000000000001,
+          "location": {
+            "startLine": 5,
+            "endLine": 5,
+            "startColumn": 13,
+            "endColumn": 29
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "string concatenation can use template literal"
+          }
+        },
+        {
+          "id": "string-to-template-5cc9a285",
+          "type": "string-to-template",
+          "language": "typescript",
+          "before": "'User info: ' + greeting + ' '",
+          "after": "`User info: ${greeting} `",
+          "confidence": 0.7400000000000001,
+          "location": {
+            "startLine": 7,
+            "endLine": 7,
+            "startColumn": 14,
+            "endColumn": 44
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "string concatenation can use template literal"
+          }
+        },
+        {
+          "id": "string-to-template-5cc9a285",
+          "type": "string-to-template",
+          "language": "typescript",
+          "before": "'User info: ' + greeting",
+          "after": "`User info: ${greeting}`",
+          "confidence": 0.7400000000000001,
+          "location": {
+            "startLine": 7,
+            "endLine": 7,
+            "startColumn": 14,
+            "endColumn": 38
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "string concatenation can use template literal"
+          }
+        },
+        {
+          "id": "string-to-template-455d6787",
+          "type": "string-to-template",
+          "language": "typescript",
+          "before": "'Hello ' + name",
+          "after": "`Hello ${name}`",
+          "confidence": 0.7400000000000001,
+          "location": {
+            "startLine": 16,
+            "endLine": 16,
+            "startColumn": 9,
+            "endColumn": 24
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "string concatenation can use template literal"
+          }
+        },
+        {
+          "id": "string-to-template-d2c67447",
+          "type": "string-to-template",
+          "language": "typescript",
+          "before": "'User ' + i",
+          "after": "`User ${i}`",
+          "confidence": 0.7400000000000001,
+          "location": {
+            "startLine": 9,
+            "endLine": 9,
+            "startColumn": 15,
+            "endColumn": 26
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "string concatenation can use template literal"
+          }
+        },
+        {
+          "id": "string-to-template-d2c67447",
+          "type": "string-to-template",
+          "language": "typescript",
+          "before": "'Processed ' + count + ' users'",
+          "after": "`Processed ${count} users`",
+          "confidence": 0.7400000000000001,
+          "location": {
+            "startLine": 12,
+            "endLine": 12,
+            "startColumn": 16,
+            "endColumn": 47
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "string concatenation can use template literal"
+          }
+        },
+        {
+          "id": "string-to-template-b2dc2571",
+          "type": "string-to-template",
+          "language": "typescript",
+          "before": "'Processed ' + count",
+          "after": "`Processed ${count}`",
+          "confidence": 0.7400000000000001,
+          "location": {
+            "startLine": 12,
+            "endLine": 12,
+            "startColumn": 16,
+            "endColumn": 36
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "string concatenation can use template literal"
+          }
+        },
+        {
+          "id": "string-to-template-b2dc2571",
+          "type": "string-to-template",
+          "language": "typescript",
+          "before": "'Status: ' + message",
+          "after": "`Status: ${message}`",
+          "confidence": 0.7400000000000001,
+          "location": {
+            "startLine": 13,
+            "endLine": 13,
+            "startColumn": 14,
+            "endColumn": 34
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "string concatenation can use template literal"
+          }
+        }
+      ],
+      "console-log-template": [
+        {
+          "id": "console-log-template-a4a9628e",
+          "type": "console-log-template",
+          "language": "typescript",
+          "before": "console.log('Processing item ' + i)",
+          "after": "console.log(`Processing item ${i}`)",
+          "confidence": 0.62,
+          "location": {
+            "startLine": 9,
+            "endLine": 9,
+            "startColumn": 4,
+            "endColumn": 39
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "optimization",
+            "reason": "console.log with string concatenation"
+          }
+        },
+        {
+          "id": "console-log-template-81c92a18",
+          "type": "console-log-template",
+          "language": "typescript",
+          "before": "console.log('User info: ' + greeting + ' ' + info)",
+          "after": "console.log(`User info: ${greeting} `)",
+          "confidence": 0.62,
+          "location": {
+            "startLine": 7,
+            "endLine": 7,
+            "startColumn": 2,
+            "endColumn": 52
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "optimization",
+            "reason": "console.log with string concatenation"
+          }
+        },
+        {
+          "id": "console-log-template-dacac03a",
+          "type": "console-log-template",
+          "language": "typescript",
+          "before": "console.log('Status: ' + message)",
+          "after": "console.log(`Status: ${message}`)",
+          "confidence": 0.62,
+          "location": {
+            "startLine": 13,
+            "endLine": 13,
+            "startColumn": 2,
+            "endColumn": 35
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "optimization",
+            "reason": "console.log with string concatenation"
+          }
+        }
+      ]
+    },
+    "byCategory": {
+      "modernization": [
+        {
+          "id": "function-to-arrow-40597b49",
+          "type": "function-to-arrow",
+          "language": "typescript",
+          "before": "function calculateTotal(items) {  // Could be arrow function\n  return items.reduce((sum, item) => sum + item.price, 0);\n}",
+          "after": "const calculateTotal = (items) => items.reduce((sum, item) => sum + item.price, 0);",
+          "confidence": 0.7200000000000001,
+          "location": {
+            "startLine": 16,
+            "endLine": 18,
+            "startColumn": 0,
+            "endColumn": 121
+          },
+          "metadata": {
+            "functionName": "calculateTotal",
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "simple function without this usage"
+          }
+        },
+        {
+          "id": "string-to-template-1031b7b9",
+          "type": "string-to-template",
+          "language": "typescript",
+          "before": "'Processing item ' + i",
+          "after": "`Processing item ${i}`",
+          "confidence": 0.7400000000000001,
+          "location": {
+            "startLine": 9,
+            "endLine": 9,
+            "startColumn": 16,
+            "endColumn": 38
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "string concatenation can use template literal"
+          }
+        },
+        {
+          "id": "string-to-template-29a923ff",
+          "type": "string-to-template",
+          "language": "typescript",
+          "before": "'User: ' + userName + ' ID: '",
+          "after": "`User: ${userName} ID: `",
+          "confidence": 0.7400000000000001,
+          "location": {
+            "startLine": 12,
+            "endLine": 12,
+            "startColumn": 15,
+            "endColumn": 44
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "string concatenation can use template literal"
+          }
+        },
+        {
+          "id": "string-to-template-29a923ff",
+          "type": "string-to-template",
+          "language": "typescript",
+          "before": "'User: ' + userName",
+          "after": "`User: ${userName}`",
+          "confidence": 0.7400000000000001,
+          "location": {
+            "startLine": 12,
+            "endLine": 12,
+            "startColumn": 15,
+            "endColumn": 34
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "string concatenation can use template literal"
+          }
+        },
+        {
+          "id": "string-to-template-26400566",
+          "type": "string-to-template",
+          "language": "typescript",
+          "before": "'Hello ' + name + '!'",
+          "after": "`Hello ${name}!`",
+          "confidence": 0.7400000000000001,
+          "location": {
+            "startLine": 4,
+            "endLine": 4,
+            "startColumn": 17,
+            "endColumn": 38
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "string concatenation can use template literal"
+          }
+        },
+        {
+          "id": "string-to-template-26400566",
+          "type": "string-to-template",
+          "language": "typescript",
+          "before": "'Hello ' + name",
+          "after": "`Hello ${name}`",
+          "confidence": 0.7400000000000001,
+          "location": {
+            "startLine": 4,
+            "endLine": 4,
+            "startColumn": 17,
+            "endColumn": 32
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "string concatenation can use template literal"
+          }
+        },
+        {
+          "id": "string-to-template-26400566",
+          "type": "string-to-template",
+          "language": "typescript",
+          "before": "'You are ' + age + ' years old'",
+          "after": "`You are ${age} years old`",
+          "confidence": 0.7400000000000001,
+          "location": {
+            "startLine": 5,
+            "endLine": 5,
+            "startColumn": 13,
+            "endColumn": 44
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "string concatenation can use template literal"
+          }
+        },
+        {
+          "id": "string-to-template-26400566",
+          "type": "string-to-template",
+          "language": "typescript",
+          "before": "'You are ' + age",
+          "after": "`You are ${age}`",
+          "confidence": 0.7400000000000001,
+          "location": {
+            "startLine": 5,
+            "endLine": 5,
+            "startColumn": 13,
+            "endColumn": 29
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "string concatenation can use template literal"
+          }
+        },
+        {
+          "id": "string-to-template-5cc9a285",
+          "type": "string-to-template",
+          "language": "typescript",
+          "before": "'User info: ' + greeting + ' '",
+          "after": "`User info: ${greeting} `",
+          "confidence": 0.7400000000000001,
+          "location": {
+            "startLine": 7,
+            "endLine": 7,
+            "startColumn": 14,
+            "endColumn": 44
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "string concatenation can use template literal"
+          }
+        },
+        {
+          "id": "string-to-template-5cc9a285",
+          "type": "string-to-template",
+          "language": "typescript",
+          "before": "'User info: ' + greeting",
+          "after": "`User info: ${greeting}`",
+          "confidence": 0.7400000000000001,
+          "location": {
+            "startLine": 7,
+            "endLine": 7,
+            "startColumn": 14,
+            "endColumn": 38
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "string concatenation can use template literal"
+          }
+        },
+        {
+          "id": "function-to-arrow-d7b18a4e",
+          "type": "function-to-arrow",
+          "language": "typescript",
+          "before": "function add(a: number, b: number) {\n  return a + b;\n}",
+          "after": "const add = (a: number, b: number) => a + b;",
+          "confidence": 0.7200000000000001,
+          "location": {
+            "startLine": 3,
+            "endLine": 5,
+            "startColumn": 0,
+            "endColumn": 54
+          },
+          "metadata": {
+            "functionName": "add",
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "simple function without this usage"
+          }
+        },
+        {
+          "id": "function-to-arrow-d7b18a4e",
+          "type": "function-to-arrow",
+          "language": "typescript",
+          "before": "function multiply(x: number, y: number) {\n  return x * y;\n}",
+          "after": "const multiply = (x: number, y: number) => x * y;",
+          "confidence": 0.7200000000000001,
+          "location": {
+            "startLine": 7,
+            "endLine": 9,
+            "startColumn": 0,
+            "endColumn": 59
+          },
+          "metadata": {
+            "functionName": "multiply",
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "simple function without this usage"
+          }
+        },
+        {
+          "id": "function-to-arrow-89b1b027",
+          "type": "function-to-arrow",
+          "language": "typescript",
+          "before": "function isEven(num: number) {\n  return num % 2 === 0;\n}",
+          "after": "const isEven = (num: number) => num % 2 === 0;",
+          "confidence": 0.7200000000000001,
+          "location": {
+            "startLine": 11,
+            "endLine": 13,
+            "startColumn": 0,
+            "endColumn": 56
+          },
+          "metadata": {
+            "functionName": "isEven",
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "simple function without this usage"
+          }
+        },
+        {
+          "id": "function-to-arrow-89b1b027",
+          "type": "function-to-arrow",
+          "language": "typescript",
+          "before": "function greet(name: string) {\n  return 'Hello ' + name;\n}",
+          "after": "const greet = (name: string) => 'Hello ' + name;",
+          "confidence": 0.7200000000000001,
+          "location": {
+            "startLine": 15,
+            "endLine": 17,
+            "startColumn": 0,
+            "endColumn": 58
+          },
+          "metadata": {
+            "functionName": "greet",
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "simple function without this usage"
+          }
+        },
+        {
+          "id": "string-to-template-455d6787",
+          "type": "string-to-template",
+          "language": "typescript",
+          "before": "'Hello ' + name",
+          "after": "`Hello ${name}`",
+          "confidence": 0.7400000000000001,
+          "location": {
+            "startLine": 16,
+            "endLine": 16,
+            "startColumn": 9,
+            "endColumn": 24
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "string concatenation can use template literal"
+          }
+        },
+        {
+          "id": "function-to-arrow-43392b9c",
+          "type": "function-to-arrow",
+          "language": "typescript",
+          "before": "function formatData(data: any[]) {\n  return data.map(item => item.name + ': ' + item.value);  // String concatenation in map\n}",
+          "after": "const formatData = (data: any[]) => data.map(item => item.name + ': ' + item.value);",
+          "confidence": 0.7200000000000001,
+          "location": {
+            "startLine": 18,
+            "endLine": 20,
+            "startColumn": 0,
+            "endColumn": 126
+          },
+          "metadata": {
+            "functionName": "formatData",
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "simple function without this usage"
+          }
+        },
+        {
+          "id": "string-to-template-d2c67447",
+          "type": "string-to-template",
+          "language": "typescript",
+          "before": "'User ' + i",
+          "after": "`User ${i}`",
+          "confidence": 0.7400000000000001,
+          "location": {
+            "startLine": 9,
+            "endLine": 9,
+            "startColumn": 15,
+            "endColumn": 26
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "string concatenation can use template literal"
+          }
+        },
+        {
+          "id": "string-to-template-d2c67447",
+          "type": "string-to-template",
+          "language": "typescript",
+          "before": "'Processed ' + count + ' users'",
+          "after": "`Processed ${count} users`",
+          "confidence": 0.7400000000000001,
+          "location": {
+            "startLine": 12,
+            "endLine": 12,
+            "startColumn": 16,
+            "endColumn": 47
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "string concatenation can use template literal"
+          }
+        },
+        {
+          "id": "string-to-template-b2dc2571",
+          "type": "string-to-template",
+          "language": "typescript",
+          "before": "'Processed ' + count",
+          "after": "`Processed ${count}`",
+          "confidence": 0.7400000000000001,
+          "location": {
+            "startLine": 12,
+            "endLine": 12,
+            "startColumn": 16,
+            "endColumn": 36
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "string concatenation can use template literal"
+          }
+        },
+        {
+          "id": "string-to-template-b2dc2571",
+          "type": "string-to-template",
+          "language": "typescript",
+          "before": "'Status: ' + message",
+          "after": "`Status: ${message}`",
+          "confidence": 0.7400000000000001,
+          "location": {
+            "startLine": 13,
+            "endLine": 13,
+            "startColumn": 14,
+            "endColumn": 34
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "modernization",
+            "reason": "string concatenation can use template literal"
+          }
+        }
+      ],
+      "optimization": [
+        {
+          "id": "console-log-template-a4a9628e",
+          "type": "console-log-template",
+          "language": "typescript",
+          "before": "console.log('Processing item ' + i)",
+          "after": "console.log(`Processing item ${i}`)",
+          "confidence": 0.62,
+          "location": {
+            "startLine": 9,
+            "endLine": 9,
+            "startColumn": 4,
+            "endColumn": 39
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "optimization",
+            "reason": "console.log with string concatenation"
+          }
+        },
+        {
+          "id": "console-log-template-81c92a18",
+          "type": "console-log-template",
+          "language": "typescript",
+          "before": "console.log('User info: ' + greeting + ' ' + info)",
+          "after": "console.log(`User info: ${greeting} `)",
+          "confidence": 0.62,
+          "location": {
+            "startLine": 7,
+            "endLine": 7,
+            "startColumn": 2,
+            "endColumn": 52
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "optimization",
+            "reason": "console.log with string concatenation"
+          }
+        },
+        {
+          "id": "console-log-template-dacac03a",
+          "type": "console-log-template",
+          "language": "typescript",
+          "before": "console.log('Status: ' + message)",
+          "after": "console.log(`Status: ${message}`)",
+          "confidence": 0.62,
+          "location": {
+            "startLine": 13,
+            "endLine": 13,
+            "startColumn": 2,
+            "endColumn": 35
+          },
+          "metadata": {
+            "stage": "ts-morph",
+            "category": "optimization",
+            "reason": "console.log with string concatenation"
+          }
+        }
+      ]
+    }
+  }
+}

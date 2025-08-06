@@ -1,0 +1,128 @@
+{
+  "timestamp": "2025-08-02T17:15:19.280Z",
+  "repositoryPath": "./src",
+  "totalAnalysisTime": 22023,
+  "overallResults": {
+    "totalFilesAnalyzed": 132,
+    "totalPatternsFound": 108,
+    "averageConfidence": 0.7127777777777766,
+    "cacheHitRate": 0
+  },
+  "patternBreakdown": {
+    "byCategory": {
+      "modernization": 89,
+      "cleanup": 18,
+      "other": 1
+    },
+    "byStage": {
+      "unknown": 108
+    },
+    "byRiskLevel": {
+      "medium": 89,
+      "high": 19
+    }
+  },
+  "topPatterns": [
+    {
+      "name": "Var To Const",
+      "category": "modernization",
+      "confidence": 0.7800000000000001,
+      "riskLevel": "medium",
+      "description": "Var To Const pattern detected in typescript code",
+      "exampleBefore": "var i =",
+      "exampleAfter": "const i ="
+    },
+    {
+      "name": "Var To Const",
+      "category": "modernization",
+      "confidence": 0.7800000000000001,
+      "riskLevel": "medium",
+      "description": "Var To Const pattern detected in typescript code",
+      "exampleBefore": "var oldVariable =",
+      "exampleAfter": "const oldVariable ="
+    },
+    {
+      "name": "Var To Const",
+      "category": "modernization",
+      "confidence": 0.7800000000000001,
+      "riskLevel": "medium",
+      "description": "Var To Const pattern detected in typescript code",
+      "exampleBefore": "var anotherVar =",
+      "exampleAfter": "const anotherVar ="
+    },
+    {
+      "name": "Var To Const",
+      "category": "modernization",
+      "confidence": 0.7800000000000001,
+      "riskLevel": "medium",
+      "description": "Var To Const pattern detected in typescript code",
+      "exampleBefore": "var x =",
+      "exampleAfter": "const x ="
+    },
+    {
+      "name": "Var To Const",
+      "category": "modernization",
+      "confidence": 0.7800000000000001,
+      "riskLevel": "medium",
+      "description": "Var To Const pattern detected in typescript code",
+      "exampleBefore": "var name =",
+      "exampleAfter": "const name ="
+    },
+    {
+      "name": "Var To Const",
+      "category": "modernization",
+      "confidence": 0.7800000000000001,
+      "riskLevel": "medium",
+      "description": "Var To Const pattern detected in typescript code",
+      "exampleBefore": "var count =",
+      "exampleAfter": "const count ="
+    },
+    {
+      "name": "Var To Const",
+      "category": "modernization",
+      "confidence": 0.7800000000000001,
+      "riskLevel": "medium",
+      "description": "Var To Const pattern detected in typescript code",
+      "exampleBefore": "var item =",
+      "exampleAfter": "const item ="
+    },
+    {
+      "name": "Var To Const",
+      "category": "modernization",
+      "confidence": 0.7800000000000001,
+      "riskLevel": "medium",
+      "description": "Var To Const pattern detected in typescript code",
+      "exampleBefore": "var test =",
+      "exampleAfter": "const test ="
+    },
+    {
+      "name": "String To Template",
+      "category": "modernization",
+      "confidence": 0.7400000000000001,
+      "riskLevel": "medium",
+      "description": "String To Template pattern detected in typescript code",
+      "exampleBefore": "'\\n' + next.messageText",
+      "exampleAfter": "`\\n${next}`"
+    },
+    {
+      "name": "Function To Arrow",
+      "category": "modernization",
+      "confidence": 0.7200000000000001,
+      "riskLevel": "medium",
+      "description": "Function To Arrow pattern detected in typescript code",
+      "exampleBefore": "function addCORSHeaders(res: ResponseInit = {}) {\n  return {\n    ...res,\n    headers: {\n      ...(res.headers || {}),\n      'Access-Control-Allow-Origin': '*',\n      'Access-Control-Allow-Methods': 'G",
+      "exampleAfter": "const addCORSHeaders = (res: ResponseInit = {}) => {\n    ...res,\n    headers: {\n      ...(res.headers || {}),\n      'Access-Control-Allow-Origin': '*',\n      'Access-Control-Allow-Methods': 'GET, POST"
+    }
+  ],
+  "performanceMetrics": {
+    "avgTimePerFile": 166.8409090909091,
+    "patternsPerFile": 0.8181818181818182,
+    "memoryUsage": 250.237286567688
+  },
+  "systemValidation": {
+    "typescriptErrorDetection": false,
+    "modernizationDetection": true,
+    "multiStageProcessing": false,
+    "patternAggregation": true
+  }
+}
