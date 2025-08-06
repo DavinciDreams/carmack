@@ -140,6 +140,24 @@ export type ArchitecturalAnnotation = z.infer<typeof ArchitecturalAnnotationSche
 export type TransformationOpportunity = z.infer<typeof TransformationOpportunitySchema>;
 export type LLMAnnotation = z.infer<typeof LLMAnnotationSchema>;
 
+/**
+ * Semantic annotation schema for LLM and ingestion modules.
+ * Used for summarizing code files for downstream LLM tasks.
+ */
+export const SemanticAnnotationSchema = z.object({
+  summary: z.string(),
+  purpose: z.string(),
+  complexity: z.enum(['low', 'medium', 'high']),
+  domain: z.array(z.string()),
+  keywords: z.array(z.string()),
+  dependencies: z.array(z.string()),
+  performance_impact: z.enum(['critical', 'high', 'normal', 'low']),
+  maintainability: z.number().min(0).max(1),
+  testability: z.number().min(0).max(1),
+  technical_debt: z.number().min(0).max(1),
+});
+export type SemanticAnnotation = z.infer<typeof SemanticAnnotationSchema>;
+
 // Annotation request and response types
 export const AnnotationRequestSchema = z.object({
   sourceFiles: z.array(z.string()),

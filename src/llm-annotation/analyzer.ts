@@ -1,6 +1,6 @@
 import * as yaml from 'js-yaml';
 import { fromPromise } from 'xstate';
-import { ASTAnalyzer } from '../docs-generator/ast-analyzer.js';
+import { ASTAnalyzer } from '../docs/ast-analyzer.js';
 
 import type {
   AnnotationRequest,
@@ -11,7 +11,7 @@ import type {
   PatternAnnotation,
   TransformationOpportunity,
 } from './types';
-import { AnnotationRequestSchema, LLMAnnotationSchema } from './types.js';
+import { AnnotationRequestSchema, LLMAnnotationSchema, type SemanticAnnotation } from './types.js';
 import { z } from 'zod';
 // Zod schemas for file paths and directories
 const FilePathSchema = z.string().min(1, 'File path must not be empty');
@@ -1170,6 +1170,157 @@ ${annotation.llmPrompts.optimization}
         return 'Language-specific compilation and testing';
     }
   }
+}
+
+/**
+ * Generate semantic annotation using a heuristic (BAML-style) for ingestion.
+ * Used by ContentProcessor for file-level annotation.
+ */
+export async function generateSemanticAnnotation(
+  fileContent: any,
+  astResult?: unknown
+): Promise<SemanticAnnotation> {
+  // For now, implement a simple heuristic-based annotation
+  return generateHeuristicAnnotation(fileContent, astResult);
+}
+
+/**
+ * Generate heuristic-based annotation for a file.
+ */
+export function generateHeuristicAnnotation(
+  fileContent: any,
+  astResult?: unknown
+): SemanticAnnotation {
+  const content = fileContent.content;
+  const path = fileContent.path;
+
+  // Analyze content for patterns
+  const isScheduler = path.includes('scheduler') || content.includes('schedule');
+  const isMemory = path.includes('memory') || content.includes('malloc') || content.includes('alloc');
+  const isKernel = path.includes('.cu') || content.includes('__global__') || content.includes('__device__');
+  const isBinding = path.includes('python') || content.includes('PYBIND11') || content.includes('py::');
+  const isTest = path.includes('test') || content.includes('TEST(') || content.includes('EXPECT_');
+
+  // Determine complexity
+  const lineCount = content.split('\n').length;
+  const complexity = lineCount > 500 ? 'high' : lineCount > 200 ? 'medium' : 'low';
+
+  // Determine domain
+  const domains: string[] = [];
+  if (isScheduler) domains.push('scheduling');
+  if (isMemory) domains.push('memory_management');
+  if (isKernel) domains.push('gpu_computing');
+  if (isBinding) domains.push('python_bindings');
+  if (isTest) domains.push('testing');
+  if (domains.length === 0) domains.push('general');
+
+  // Extract keywords
+  const keywords = extractKeywords(content);
+
+  // Calculate metrics
+  const complexity_score = (astResult && typeof astResult === 'object' && 'metrics' in astResult && typeof (astResult as any).metrics?.complexity === 'number')
+    ? (astResult as any).metrics.complexity
+    : lineCount / 100;
+  const maintainability = Math.max(0, 1 - (complexity_score / 10));
+  const testability = isTest ? 0.9 : maintainability * 0.7;
+  const technical_debt = Math.min(1, complexity_score / 20);
+
+  // Determine performance impact
+  const performance_impact = isKernel || isScheduler ? 'critical' :
+                            isMemory ? 'high' :
+                            isBinding ? 'normal' : 'low';
+
+  return {
+    summary: generateSummary(fileContent, domains),
+    purpose: inferPurpose(domains),
+    complexity: complexity as 'low' | 'medium' | 'high',
+    domain: domains,
+    keywords: keywords.slice(0, 20), // Limit keywords
+    dependencies: extractDependencies(content),
+    performance_impact: performance_impact as 'critical' | 'high' | 'normal' | 'low',
+    maintainability,
+    testability,
+    technical_debt,
+  };
+}
+
+// Utility functions for annotation logic
+function extractKeywords(content: string): string[] {
+  const keywords = new Set<string>();
+  const technicalPatterns = [
+    /\b(scheduler|schedule|batch|queue|thread|async|await)\b/gi,
+    /\b(memory|malloc|alloc|buffer|pool|cache|heap|stack)\b/gi,
+    /\b(kernel|cuda|gpu|device|host|shared|global)\b/gi,
+    /\b(tensor|matrix|vector|array|data|input|output)\b/gi,
+    /\b(optimize|performance|speed|latency|throughput)\b/gi,
+    /\b(error|exception|handle|check|validate|assert)\b/gi,
+  ];
+  for (const pattern of technicalPatterns) {
+    const matches = content.match(pattern);
+    if (matches) {
+      matches.forEach(match => keywords.add(match.toLowerCase()));
+    }
+  }
+  return Array.from(keywords);
+}
+
+function inferPurpose(domains: string[]): string {
+  if (domains.includes('scheduling')) {
+    return 'Manages task scheduling and execution ordering';
+  }
+  if (domains.includes('memory_management')) {
+    return 'Handles memory allocation and management';
+  }
+  if (domains.includes('gpu_computing')) {
+    return 'Implements GPU kernel functions and CUDA operations';
+  }
+  if (domains.includes('python_bindings')) {
+    return 'Provides Python interface bindings';
+  }
+  if (domains.includes('testing')) {
+    return 'Contains unit tests and validation logic';
+  }
+  return 'General implementation file';
+}
+
+function generateSummary(fileContent: any, domains: string[]): string {
+  const fileName = fileContent.path?.split('/')?.pop() || 'file';
+  const primaryDomain = domains[0] || 'general';
+  const lineCount = fileContent.content.split('\n').length;
+  return `${fileName} - ${primaryDomain} implementation (${lineCount} lines)`;
+}
+
+function extractDependencies(content: string): string[] {
+  const dependencies = new Set<string>();
+  // C++ includes
+  const includeMatches = content.match(/#include\s*[<"](.*?)[>"]/g);
+  if (includeMatches) {
+    includeMatches.forEach(match => {
+      const dep = match.replace(/#include\s*[<"]/, '').replace(/[>"].*/, '');
+      dependencies.add(dep);
+    });
+  }
+  // Python imports
+  const importMatches = content.match(/(?:from\s+(\S+)\s+)?import\s+(\S+)/g);
+  if (importMatches) {
+    importMatches.forEach(match => {
+      const parts = match.split(/\s+/);
+      if (parts.includes('from')) {
+        const fromIndex = parts.indexOf('from') + 1;
+        const fromPart = parts[fromIndex];
+        if (fromPart) {
+          dependencies.add(fromPart);
+        }
+      } else {
+        const importIndex = parts.indexOf('import') + 1;
+        const importPart = parts[importIndex];
+        if (importPart) {
+          dependencies.add(importPart);
+        }
+      }
+    });
+  }
+  return Array.from(dependencies).slice(0, 10); // Limit dependencies
 }
 
 // Create and export the annotation actor
