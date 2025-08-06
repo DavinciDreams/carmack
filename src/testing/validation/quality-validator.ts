@@ -1,5 +1,4 @@
 // --- Data Integrity Validation Actor ---
-type DataIntegrityInput = void;
 
 export const dataIntegrityActor = fromPromise(
   async () => {
@@ -92,7 +91,7 @@ function detectCycles(paths: string[][]): boolean {
   }
   return false;
 }
-function calculateRelationshipAccuracy(expectedPaths: string[][], actualPaths: string[][]): number {
+function calculateRelationshipAccuracy(): number {
   // Simplified relationship accuracy calculation
   return 0.85; // Mock value
 }
@@ -123,7 +122,7 @@ export const graphTraversalActor = fromPromise(
       // Calculate max depth reached
       const maxDepthReached = Math.max(...test.actualPaths.map(path => path.length));
       // Calculate relationship accuracy
-      const relationshipAccuracy = calculateRelationshipAccuracy(test.expectedPaths, test.actualPaths);
+      const relationshipAccuracy = calculateRelationshipAccuracy();
       // Determine if test passed
       const passed = correctnessScore >= 0.8 &&
                     completenessScore >= 0.7 &&
@@ -463,7 +462,7 @@ function identifyIssues(validation: AccuracyValidation, issueTracker: Map<string
   if (validation.completenessScore < 0.8) issueTracker.set('Incomplete response', (issueTracker.get('Incomplete response') || 0) + 1);
   if (validation.evidenceQuality < 0.8) issueTracker.set('Poor evidence quality', (issueTracker.get('Poor evidence quality') || 0) + 1);
 }
-function assessIssueImpact(issue: string, frequency: number, total: number): 'high' | 'medium' | 'low' {
+function assessIssueImpact(_unused: string, frequency: number, total: number): 'high' | 'medium' | 'low' {
   const rate = frequency / total;
   if (rate > 0.3) return 'high';
   if (rate > 0.1) return 'medium';

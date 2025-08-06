@@ -2,16 +2,11 @@ import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
 import {
-  PerformanceMetricsSchema,
-  LoadTestConfigSchema,
-  LoadTestResultSchema,
   validatePerformanceMetrics,
-  validateLoadTestConfig,
   validateLoadTestResult,
 } from '../../types/unified-schemas';
 import type {
   PerformanceMetrics,
-  LoadTestConfig,
   LoadTestResult,
 } from '../../types/unified-schemas';
 
@@ -28,7 +23,7 @@ import type {
 // Dummy UserSimulator for type completeness (replace with real import if available)
 class UserSimulator {
   constructor(public id: string, public queries: string[]) {}
-  async start(duration: number) {
+  async start(_duration: number) {
     // Simulate user activity
     return [];
   }
@@ -142,7 +137,7 @@ export class PerformanceValidator {
   }
 
   private async warmup(queries: string[]): Promise<void> { await Promise.all(queries.map(() => Promise.resolve())); }
-  private async executeQuery(query: string): Promise<void> { await Promise.resolve(); }
+  private async executeQuery(_query: string): Promise<void> { await Promise.resolve(); }
   private categorizeQueryComplexity(query: string): string { return query.length > 100 ? 'complex' : 'simple'; }
   private startResourceMonitoring(): void { this.resourceSnapshots = []; }
 
