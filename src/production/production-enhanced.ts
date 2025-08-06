@@ -11,9 +11,9 @@ import { parseArgs } from 'node:util';
 import { createActor } from 'xstate';
 import { z } from 'zod';
 import { CARMACK_REPOSITORY_URL, carmackConfig } from '../../carmack.config.ts';
-import { DocumentationGenerator } from '../docs-generator/generator.ts';
+import { DocumentationGenerator } from '../docs/generator.ts';
 import { carmackCoderMachine } from '../machine.ts';
-import { RepositoryManager } from '../repository-manager.ts';
+import { RepositoryManager } from '../ingestion/repository-manager.ts';
 import type { MachineEvent } from '../types.ts';
 
 // ===== REPOSITORY STATE SCHEMA =====
@@ -98,7 +98,11 @@ export class CarmackPipelineOrchestrator {
   private docGenerator: DocumentationGenerator;
 
   constructor() {
-    this.repoManager = new RepositoryManager();
+    this.repoManager = new RepositoryManager({
+      url: CARMACK_REPOSITORY_URL,
+      localPath: process.cwd(),
+      branch: carmackConfig.project.repository.branch,
+    });
     this.docGenerator = new DocumentationGenerator();
   }
 
@@ -570,12 +574,6 @@ export class CarmackPipelineOrchestrator {
 
   // ===== HELPER METHODS =====
 
-  private async analyzeRepositoryReadiness(
-    _repoPath: string
-  ): Promise<{ fileCount: number; complexity: string }> {
-    // Placeholder for repository analysis
-    return { fileCount: 42, complexity: 'medium' };
-  }
 
   private async discoverEligibleFiles(repoPath: string, args: EnhancedCLIArgs): Promise<string[]> {
     // Use existing file discovery logic from production.ts
@@ -790,6 +788,8 @@ async function main(): Promise<void> {
         ? Number.parseFloat(args['adaptation-threshold'])
         : undefined,
     });
+
+    // Now uses orchestrator from pipeline module
 
     if (parsedArgs.help) {
       console.log(`

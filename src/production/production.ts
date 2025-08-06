@@ -9,9 +9,7 @@ import { existsSync, mkdirSync } from 'node:fs';
 import { readdir, stat } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
-import { simpleGit } from 'simple-git';
 import { createActor } from 'xstate';
-// ...existing code...
 import {
   defaultProductionConfig,
   type ProductionConfig,
@@ -137,114 +135,7 @@ async function setupWorkspace(config: ProductionConfig, customWorkspace?: string
   return workspaceDir;
 }
 
-async function cloneRepository(
-  repoUrl: string,
-  branch: string,
-  workspaceDir: string
-): Promise<void> {
-  const git = simpleGit();
-  const repoDir = join(workspaceDir, 'repository');
 
-  console.log(`📥 Cloning repository: ${repoUrl}`);
-  console.log(`🌿 Target branch: ${branch}`);
-
-  if (existsSync(repoDir)) {
-    console.log('🔄 Repository exists, updating...');
-    const repoGit = simpleGit(repoDir);
-    await repoGit.fetch();
-    await repoGit.checkout(branch);
-    await repoGit.pull();
-  } else {
-    await git.clone(repoUrl, repoDir, ['--branch', branch, '--single-branch']);
-  }
-
-  console.log('✅ Repository ready');
-}
-
-async function validateRepository(repoDir: string, config: ProductionConfig): Promise<void> {
-  console.log('🔍 Validating repository structure...');
-
-  // Check for project indicators across multiple languages and build systems
-  const indicators = [
-    // JavaScript/TypeScript/Node.js
-    'package.json',
-    'tsconfig.json',
-    
-    // Python
-    'pyproject.toml',
-    'setup.py',
-    'requirements.txt',
-    
-    // Rust
-    'Cargo.toml',
-    
-    // Java/Maven/Gradle
-    'pom.xml',
-    'build.gradle',
-    'build.gradle.kts',
-    
-    // C++/CUDA/CMake
-    'CMakeLists.txt',
-    'Makefile',
-    'makefile',
-    'configure',
-    'configure.ac',
-    'configure.in',
-    'meson.build',
-    'BUILD',
-    'BUILD.bazel',
-    
-    // C/C++ project files
-    'vcpkg.json',
-    'conanfile.txt',
-    'conanfile.py',
-    
-    // Go
-    'go.mod',
-    
-    // .NET
-    '*.csproj',
-    '*.sln',
-    
-    // Generic project indicators
-    'README.md',
-    'README.txt',
-    'LICENSE'
-  ];
-  
-  const hasProjectFile = indicators.some((file) => {
-    if (file.includes('*')) {
-      // Handle wildcard patterns like *.csproj
-      const pattern = file.replace('*', '');
-      try {
-        const { readdirSync } = require('node:fs');
-        const files = readdirSync(repoDir);
-        return files.some((f: string) => f.endsWith(pattern));
-      } catch {
-        return false;
-      }
-    }
-    return existsSync(join(repoDir, file));
-  });
-
-  if (!hasProjectFile) {
-    throw new ProductionError('No recognized project structure found', 'INVALID_PROJECT', {
-      repoDir,
-      checkedFiles: indicators,
-      message: 'Repository must contain at least one project indicator file (CMakeLists.txt, Makefile, package.json, etc.)',
-    });
-  }
-
-  // Count eligible files
-  const eligibleFiles = await discoverEligibleFiles(repoDir, config, { verbose: false });
-  console.log(`📊 Found ${eligibleFiles.length} eligible files for transformation`);
-
-  if (eligibleFiles.length === 0) {
-    throw new ProductionError('No eligible files found for transformation', 'NO_FILES_FOUND', {
-      extensions: config.transformation.allowedFileExtensions,
-    });
-  }
-}
 
 async function discoverEligibleFiles(
   repoDir: string,
@@ -498,6 +389,8 @@ async function runProductionTransformation(config: ProductionConfig, args: CLIAr
   });
 }
 
+import { getEnvironmentConfig } from '../config/environment.ts';
+
 async function main(): Promise<void> {
   try {
     // Parse CLI arguments
@@ -539,8 +432,10 @@ async function main(): Promise<void> {
     // Override config with environment variables first, then CLI arguments
     // REPOSITORY_URL is the target repository (e.g., NVIDIA TensorRT)
     // CARMACK_REPOSITORY_URL is the Carmack system repository (should not be used for target)
-    if (process.env.REPOSITORY_URL) {
-      config.repository.url = process.env.REPOSITORY_URL;
+    // Use centralized config for repository URL override
+    const env = getEnvironmentConfig();
+    if (env.REPOSITORY_URL) {
+      config.repository.url = env.REPOSITORY_URL;
     }
     if (args.repository) {
       config.repository.url = args.repository;
