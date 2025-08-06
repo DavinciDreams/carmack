@@ -269,8 +269,8 @@ function prepareAstPatterns(patterns: AstGrepPattern[], maxComplexity: number): 
     .filter((p) => p.complexity <= maxComplexity)
 .sort((a, b) => {
   // Sort by priority first, then by complexity
-a.performance?.priority
-b.performance?.priority
+  const aPriority = a.performance?.priority ?? 5;
+  const bPriority = b.performance?.priority ?? 5;
 
   if (aPriority !== bPriority) {
     return bPriority - aPriority; // Higher priority first
@@ -299,7 +299,7 @@ async function transformFileWithAstGrep(
 
 // Determine language for AST-grep
 // Use the first pattern's language or infer from file extension
-patterns[0]?.language
+let lang: string | Lang = patterns[0]?.language || inferLanguageFromFile(filePath);
 if (typeof lang === 'string' && Lang[lang as keyof typeof Lang]) {
   lang = Lang[lang as keyof typeof Lang];
 }
