@@ -318,7 +318,7 @@ async function extractPatternsFromCode(
 
 // Infer language from file extension or config
 function inferLanguageFromFile(filePath: string, fallback: string): string {
-filePath.split('.').pop()?.toLowerCase
+  const ext = filePath.split('.').pop()?.toLowerCase();
   const extMap: Record<string, string> = {
     ts: 'typescript', js: 'javascript', py: 'python', cpp: 'cpp', c: 'c', java: 'java', go: 'go', rs: 'rust', rb: 'ruby', php: 'php', cs: 'csharp', kt: 'kotlin', swift: 'swift', scala: 'scala', hs: 'haskell', ex: 'elixir', sh: 'shell', json: 'json', yaml: 'yaml', yml: 'yaml', toml: 'toml', lua: 'lua', pl: 'perl', r: 'r', dart: 'dart',
   };
