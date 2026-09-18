@@ -1,0 +1,29 @@
+name: Epistemic Core
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  core:
+    name: Strict core, tests, build, and demo
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: '1.2.18'
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Verify strict core
+        run: bun run check:core
+
+      - name: Exercise epistemic learning edge
+        run: bun run epistemic:demo
