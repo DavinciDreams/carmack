@@ -1,336 +1,212 @@
 #!/usr/bin/env bun
 
-import { createActor } from 'xstate';
-import { carmackCoderMachine } from './src/machine.js';
-import type {
-  AstPattern,
-  MachineEvent,
-  TransformationMode,
-  TransformationRequest,
-} from './src/types.js';
-import { loadPatterns } from './src/utils/index.js';
+import { access } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
 
-/**
- * Carmack Coder - Code Editing Agent Architecture
- *
- * A sophisticated code transformation system that uses:
- * - Zod for runtime validation and type safety
- * - XState for deterministic state machine orchestration
- * - AST-grep for syntax tree transformations
- * - Dafny for formal verification of correctness
- * - Biome for formatting and ESLint for quality analysis
- *
- * The system prioritizes speed (template -> AST -> LLM) while ensuring
- * provably correct outputs through formal verification.
- */
-
-// Export core transformation system types
-export type {
-  TransformationMode,
-  TransformationRequest,
-} from './src/types.js';
+import {
+  applyTemplateTransformations,
+  type TemplatePattern,
+} from './src/actors/template-engine.ts';
+import type { AstPattern, TransformationMode } from './src/types.ts';
+import { loadPatterns } from './src/utils/index.ts';
 
 interface CliOptions {
-  mode: TransformationMode | undefined;
+  mode: TransformationMode;
   dryRun: boolean;
   maxComplexity: number;
   verbose: boolean;
   help: boolean;
+  patternsPath: string;
   files: string[];
 }
+
+const defaultPatternsPath = join(import.meta.dir, 'src', 'patterns', 'patterns.json');
 
 function parseCliArgs(): CliOptions {
   const args = process.argv.slice(2);
   const options: CliOptions = {
-    mode: undefined, // Auto-detect by default
-    dryRun: false,
+    mode: 'template',
+    dryRun: true,
     maxComplexity: 15,
     verbose: false,
     help: false,
+    patternsPath: defaultPatternsPath,
     files: [],
   };
 
-  for (let i = 0; i < args.length; i++) {
-    const arg = args[i];
-
+  for (let index = 0; index < args.length; index++) {
+    const arg = args[index];
     if (!arg) continue;
 
     switch (arg) {
       case '--mode':
       case '-m': {
-        i++;
-        const modeArg = args[i];
-        if (!modeArg) {
-          console.error('❌ Mode option requires a value');
-          process.exit(1);
+        const mode = args[++index] as TransformationMode | undefined;
+        if (!mode || !['template', 'ast', 'llm'].includes(mode)) {
+          throw new Error('Mode must be one of: template, ast, llm');
         }
-        const mode = modeArg as TransformationMode;
-        if (['template', 'ast', 'llm'].includes(mode)) {
-          options.mode = mode;
-        } else {
-          console.error(`❌ Invalid mode: ${mode}. Valid modes: template, ast, llm`);
-          process.exit(1);
-        }
+        options.mode = mode;
         break;
       }
-
       case '--complexity':
       case '-c': {
-        i++;
-        const complexityArg = args[i];
-        if (!complexityArg) {
-          console.error('❌ Complexity option requires a value');
-          process.exit(1);
-        }
-        const complexity = Number.parseInt(complexityArg, 10);
-        if (Number.isNaN(complexity) || complexity < 1) {
-          console.error(`❌ Invalid complexity: ${complexityArg}. Must be a positive number.`);
-          process.exit(1);
+        const value = args[++index];
+        const complexity = value ? Number.parseInt(value, 10) : Number.NaN;
+        if (!Number.isInteger(complexity) || complexity < 1) {
+          throw new Error('Complexity must be a positive integer');
         }
         options.maxComplexity = complexity;
         break;
       }
-
+      case '--patterns': {
+        const value = args[++index];
+        if (!value) throw new Error('--patterns requires a file path');
+        options.patternsPath = resolve(value);
+        break;
+      }
+      case '--write':
+        options.dryRun = false;
+        break;
       case '--dry-run':
       case '-d':
         options.dryRun = true;
         break;
-
       case '--verbose':
       case '-v':
         options.verbose = true;
         break;
-
       case '--help':
       case '-h':
         options.help = true;
         break;
-
       default:
-        if (arg.startsWith('-')) {
-          console.error(`❌ Unknown option: ${arg}`);
-          process.exit(1);
-        } else {
-          options.files.push(arg);
-        }
-        break;
+        if (arg.startsWith('-')) throw new Error(`Unknown option: ${arg}`);
+        options.files.push(resolve(arg));
     }
   }
 
   return options;
 }
 
-function showHelp() {
+function showHelp(): void {
   console.log(`
-🎯 Carmack Coder - Provably Correct Code Transformations
+Carmack Coder - deterministic code transformations
 
 USAGE:
   bun run index.ts [OPTIONS] [FILES...]
 
 OPTIONS:
-  -m, --mode <mode>         Transformation mode: template, ast, llm
-                           (default: auto-detect based on complexity)
-  
-  -d, --dry-run            Preview changes without applying them
-  
-  -c, --complexity <num>   Maximum complexity threshold (default: 15)
-  
-  -v, --verbose            Enable verbose output
-  
-  -h, --help               Show this help message
-
-MODES:
-  template                 Fast regex-based transformations (⚡ fastest)
-  ast                      AST-grep semantic transformations (🧠 smarter)
-  llm                      AI-powered intelligent transformations (🤖 smartest)
+  -m, --mode <mode>         Transformation mode (template is currently supported)
+  -d, --dry-run             Preview matches without changing files (default)
+      --write               Apply transformations to files explicitly
+  -c, --complexity <num>    Maximum pattern complexity (default: 15)
+      --patterns <path>     Pattern catalog (default: src/patterns/patterns.json)
+  -v, --verbose             Print the resolved request and result
+  -h, --help                Show this help
 
 EXAMPLES:
   bun run index.ts src/example.ts
-  bun run index.ts --mode ast src/**/*.ts
-  bun run index.ts --mode template --dry-run test.ts
-  bun run index.ts --complexity 10 --verbose src/
+  bun run index.ts --dry-run src/example.ts
+  bun run index.ts --write src/example.ts
 
-PATTERN CATEGORIES:
-  Template Mode: var→const, ==→===, console.log→console.error
-  AST Mode: object shorthand, Promise→async/await, smart var analysis
-  LLM Mode: complex refactoring, architectural improvements
+SAFETY:
+  Dry-run is the default. Carmack never stages, commits, or resets Git state.
+  The legacy AST and LLM orchestration tiers are disabled until their contracts
+  and integration tests are restored.
 `);
 }
 
-async function main() {
-  const options = parseCliArgs();
+function toTemplatePattern(pattern: AstPattern): TemplatePattern {
+  return {
+    id: pattern.id,
+    language: pattern.language,
+    pattern: {
+      template: pattern.pattern,
+      flags: 'g',
+    },
+    replacement: {
+      template: pattern.replacement,
+    },
+    description: pattern.description,
+    complexity: pattern.complexity,
+    riskLevel: pattern.riskLevel,
+    category: pattern.category ?? 'general',
+    performance: pattern.performance
+      ? {
+          priority: pattern.performance.priority,
+          batchable: pattern.performance.batchable,
+          conflicts: pattern.performance.conflicts,
+        }
+      : undefined,
+    testCases: pattern.testCases,
+  };
+}
 
+async function main(): Promise<void> {
+  const options = parseCliArgs();
   if (options.help) {
     showHelp();
     return;
   }
 
-  console.log('🚀 Starting Carmack Coder...');
-
-  if (options.verbose) {
-    console.log('🔧 CLI Options:', JSON.stringify(options, null, 2));
-  }
-
-  // Use provided files or default to example
-  const targetFiles = options.files.length > 0 ? options.files : ['./src/example.ts'];
-
-  if (options.verbose) {
-    console.log(`📁 Target files: ${targetFiles.join(', ')}`);
-  }
-
-  // Load transformation patterns
-  const patterns = await loadPatterns('./patterns.json');
-  console.log(`📋 Loaded ${patterns.length} transformation patterns`);
-
-  // If user specified a specific mode, run only that mode
-  if (options.mode) {
-    const filteredPatterns = patterns.filter(
-      (p) => p.mode === options.mode || (!p.mode && options.mode === 'template')
+  if (options.mode !== 'template') {
+    throw new Error(
+      `${options.mode} mode is part of the legacy pipeline and is disabled during the safety revival`
     );
-    console.log(`🎯 Filtered to ${filteredPatterns.length} patterns for ${options.mode} mode`);
-
-    await runSingleTransformation(options.mode, targetFiles, filteredPatterns, options);
-  } else {
-    // Run all transformation modes in succession: Template → AST → LLM
-    console.log('🚀 Running comprehensive transformation pipeline: Template → AST → LLM');
-
-    const modes: TransformationMode[] = ['template', 'ast', 'llm'];
-    let totalTransformations = 0;
-    const results: Array<{ mode: TransformationMode; success: boolean; duration: number }> = [];
-
-    for (const mode of modes) {
-      console.log(`\n${'='.repeat(60)}`);
-      console.log(`🔄 Starting ${mode.toUpperCase()} transformation mode...`);
-      console.log(`${'='.repeat(60)}`);
-
-      const filteredPatterns = patterns.filter(
-        (p) => p.mode === mode || (!p.mode && mode === 'template')
-      );
-
-      if (filteredPatterns.length === 0) {
-        console.log(`⚠️  No patterns available for ${mode} mode, skipping...`);
-        results.push({ mode, success: true, duration: 0 });
-        continue;
-      }
-
-      console.log(`🎯 Using ${filteredPatterns.length} patterns for ${mode} mode`);
-
-      const startTime = Date.now();
-      try {
-        await runSingleTransformation(mode, targetFiles, filteredPatterns, options);
-        const duration = Date.now() - startTime;
-        results.push({ mode, success: true, duration });
-        totalTransformations++;
-        console.log(`✅ ${mode.toUpperCase()} transformation completed in ${duration}ms`);
-      } catch (error) {
-        const duration = Date.now() - startTime;
-        results.push({ mode, success: false, duration });
-        console.error(`❌ ${mode.toUpperCase()} transformation failed:`, error);
-
-        // Continue with next mode instead of stopping
-        if (options.verbose) {
-          console.log('Continuing with next transformation mode...');
-        }
-      }
-    }
-
-    // Summary report
-    console.log(`\n${'='.repeat(60)}`);
-    console.log('📊 TRANSFORMATION PIPELINE SUMMARY');
-    console.log(`${'='.repeat(60)}`);
-
-    results.forEach(({ mode, success, duration }) => {
-      const status = success ? '✅ SUCCESS' : '❌ FAILED';
-      const time = duration > 0 ? `${duration}ms` : 'skipped';
-      console.log(`${mode.toUpperCase().padEnd(8)} ${status.padEnd(10)} (${time})`);
-    });
-
-    const successCount = results.filter((r) => r.success).length;
-    const totalTime = results.reduce((sum, r) => sum + r.duration, 0);
-
-    console.log(`\n🎯 Pipeline completed: ${successCount}/${results.length} modes successful`);
-    console.log(`📊 Total successful transformations: ${totalTransformations}`);
-    console.log(`⏱️  Total execution time: ${totalTime}ms`);
-
-    if (successCount === results.length) {
-      console.log(
-        `🎉 All transformation modes completed successfully! (${totalTransformations} transformations applied)`
-      );
-    } else {
-      console.log(
-        `⚠️  Some transformation modes encountered issues but pipeline continued (${totalTransformations} transformations applied)`
-      );
-    }
   }
 
-  async function runSingleTransformation(
-    mode: TransformationMode,
-    targetFiles: string[],
-    filteredPatterns: AstPattern[],
-    options: CliOptions
-  ): Promise<void> {
-    // Create and start the state machine actor
-    const actor = createActor(carmackCoderMachine as import('xstate').AnyActorLogic);
+  const targetFiles = options.files.length > 0 ? options.files : [resolve('./src/example.ts')];
+  await Promise.all(targetFiles.map((filePath) => access(filePath)));
 
-    // Subscribe to state changes for debugging
-    if (options.verbose) {
-      actor.subscribe((state) => {
-        console.log(`State: ${state.value}`);
-        if (state.context.currentTransformation) {
-          console.log(`Status: ${state.context.currentTransformation.status}`);
-        }
-      });
-    }
+  const patterns = await loadPatterns(options.patternsPath);
+  const templatePatterns = patterns
+    .filter((pattern) => pattern.mode === 'template')
+    .map(toTemplatePattern);
 
-    actor.start();
+  if (templatePatterns.length === 0) {
+    throw new Error(`No template patterns were loaded from ${options.patternsPath}`);
+  }
 
-    // Dynamic transformation request based on mode
-    const transformationRequest: TransformationRequest = {
-      targetFiles,
-      transformationType: mode,
-      patterns: filteredPatterns,
-      maxComplexity: options.maxComplexity,
+  if (options.verbose) {
+    console.log(
+      JSON.stringify(
+        {
+          mode: options.mode,
+          dryRun: options.dryRun,
+          maxComplexity: options.maxComplexity,
+          patternsPath: options.patternsPath,
+          targetFiles,
+          patternCount: templatePatterns.length,
+        },
+        null,
+        2
+      )
+    );
+  }
+
+  const result = await applyTemplateTransformations({
+    targetFiles,
+    patterns: templatePatterns,
+    options: {
       dryRun: options.dryRun,
-    };
+      maxComplexity: options.maxComplexity,
+      enableBatching: true,
+      skipConflicts: true,
+      preserveFormatting: true,
+    },
+  });
 
-    if (options.verbose) {
-      console.log('🎛️ Transformation Request:', JSON.stringify(transformationRequest, null, 2));
-    }
+  const verb = options.dryRun ? 'would change' : 'changed';
+  console.log(
+    `${options.dryRun ? 'Dry run' : 'Write complete'}: ${result.transformationsApplied} transformation(s) ${verb} ${result.filesModified.length} file(s).`
+  );
 
-    // Send transformation request
-    // Send transformation request with proper typing
-    const startEvent: Extract<MachineEvent, { type: 'START_TRANSFORMATION' }> = {
-      type: 'START_TRANSFORMATION',
-      request: transformationRequest,
-    };
-
-    actor.send(startEvent);
-
-    // Wait for completion
-    await new Promise<void>((resolve, reject) => {
-      actor.subscribe((state) => {
-        if (state.matches('succeeded')) {
-          console.log(`✅ ${mode.toUpperCase()} transformation succeeded!`);
-          if (options.verbose) {
-            console.log('Final context:', JSON.stringify(state.context, null, 2));
-          }
-          actor.stop();
-          resolve();
-        } else if (state.matches('failed')) {
-          console.error(`❌ ${mode.toUpperCase()} transformation failed`);
-          if (options.verbose) {
-            console.log('Final context:', JSON.stringify(state.context, null, 2));
-          }
-          actor.stop();
-          reject(new Error(`${mode} transformation failed`));
-        }
-      });
-    });
+  if (options.verbose && result.appliedPatterns.length > 0) {
+    console.log(JSON.stringify(result.appliedPatterns, null, 2));
   }
 }
 
-// Handle errors gracefully
 main().catch((error) => {
-  console.error('❌ Error in Carmack Coder:', error);
-  process.exit(1);
+  console.error(`Carmack failed: ${error instanceof Error ? error.message : String(error)}`);
+  process.exitCode = 1;
 });

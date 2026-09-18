@@ -7,6 +7,15 @@ export const TimestampSchema = z.number().int().positive();
 
 // Transformation types
 export const TransformationModeSchema = z.enum(['template', 'ast', 'llm']);
+export const CodeLanguageSchema = z.enum([
+  'typescript',
+  'javascript',
+  'python',
+  'c',
+  'cpp',
+  'cuda',
+  'lean',
+]);
 export const TransformationStatusSchema = z.enum([
   'pending',
   'analyzing',
@@ -30,7 +39,7 @@ export const ComplexityMetricsSchema = z.object({
 // AST pattern schema with enhanced language support
 export const AstPatternSchema = z.object({
   id: z.string(),
-  language: z.enum(['typescript', 'javascript', 'cpp', 'c']),
+  language: CodeLanguageSchema,
   pattern: z.string(),
   replacement: z.string(),
   description: z.string(),
@@ -297,6 +306,7 @@ export type FilePath = z.infer<typeof FilePathSchema>;
 export type GitHash = z.infer<typeof GitHashSchema>;
 export type Timestamp = z.infer<typeof TimestampSchema>;
 export type TransformationMode = z.infer<typeof TransformationModeSchema>;
+export type CodeLanguage = z.infer<typeof CodeLanguageSchema>;
 export type TransformationStatus = z.infer<typeof TransformationStatusSchema>;
 export type ComplexityMetrics = z.infer<typeof ComplexityMetricsSchema>;
 export type AstPattern = z.infer<typeof AstPatternSchema>;

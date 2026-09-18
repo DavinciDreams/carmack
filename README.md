@@ -1,8 +1,14 @@
 # Carmack Coder ⚡
 
-**Status: ✅ Production Ready with Comprehensive Testing**
+> **Revival status (September 2026):** the deterministic template tier is the
+> supported execution path and runs in dry-run mode by default. The legacy AST,
+> LLM, automatic Git, and full state-machine paths are disabled from the CLI
+> until their contracts and integration tests are restored. The repository-wide
+> type check still contains legacy failures outside the template tier.
+
+**Status: 🛠️ Deterministic core revived; legacy pipeline under repair**
 **Philosophy: Traditional Programming > AI Prompting**
-**Test Coverage: 96+ Tests Across 7 Validation Frameworks**
+**Verified slice: template matching, dry-run safety, explicit writes, and CLI build**
 
 A **provably correct** code editing agent architecture that prioritizes traditional programming approaches over prompting. Built with Zod, Dafny, and AST-grep to guarantee correctness while achieving **17x better reliability** and **20-100x faster performance** than conventional AI agents.
 
@@ -49,6 +55,34 @@ Carmack Coder implements a sophisticated state machine-based approach to automat
 - **Adaptive Behavior**: Optimize mode selection based on historical data
 
 **[📚 Pattern Learning System Documentation →](./docs/PATTERN-LEARNING-SYSTEM.md)**
+
+## Epistemic learning edge
+
+The revived core includes a deterministic reference interpreter for a reasoner
+that learns from discrepancies between forecasts and observations. It tracks
+weighted competing hypotheses and classifies their current relationship to the
+evidence into four modes:
+
+- **steady** — observations agree with a well-supported prediction;
+- **curious** — uncertainty is useful, but there is not yet a sharp conflict;
+- **learning-edge** — reality is surprising enough to challenge the incumbent
+  while a plausible alternative can explain the discrepancy;
+- **confused** — surprise is high but the current hypotheses do not yet provide
+  a discriminating explanation.
+
+Surprise triggers Socratic questions such as *why did the incumbent miss this?*
+and *what observation would distinguish the remaining explanations?* The model
+reports semantic surprise as negative log probability and approximate semantic
+perplexity as the exponential of mean surprise over observations. These scores
+apply to declared outcomes, not language-model tokens.
+
+This implementation is deliberately small and deterministic: it makes the
+belief-update rules, thresholds, questions, and metrics inspectable. It is a
+reference semantics for later training and machine-specific compilation, not a
+trained learning model. Run `bun run epistemic:demo` for a minimal posterior
+shift at the learning edge. The
+[reference specification and preregistered hypotheses](./docs/EPISTEMIC-REFERENCE-MODEL.md)
+also define the proposed silent, rubber-duck, and Socratic control arms.
 
 ## 🤖 Automated Testing & Error Resolution
 
@@ -127,44 +161,33 @@ src/
 
 ### Quick Start
 
-```bash
+```powershell
 # Install dependencies
-bun install
+bun install --frozen-lockfile
 
-# Set up environment configuration
-cp .env.example .env
-# Edit .env with your configuration
+# Inspect the supported command
+bun run index.ts --help
 
-# Install automated git hooks (one-time setup)
-bunx lefthook install
+# Preview deterministic transformations; files are not changed
+bun run index.ts --dry-run src/example.ts
 
-# Validate environment setup
-bun run env:validate
+# Apply them only when explicitly requested
+bun run index.ts --write src/example.ts
 
-# Run type checking
-bun run type-check
-
-# Format and lint code
-bun run format
-bun run lint
-
-# Test automated error resolution
-bun run fix:types:dry
-
-# Run the transformation system
-bun run dev
-
-# Run all checks
-bun run all-checks
+# Verify the revived deterministic core
+bun run check:core
 ```
+
+The template CLI does not require an `.env` file. Environment configuration is
+needed only for the legacy provider, database, and deployment paths.
 
 ### Environment Configuration
 
 Carmack Coder uses a comprehensive environment configuration system with type-safe validation:
 
-```bash
+```powershell
 # Copy and configure environment
-cp .env.example .env
+Copy-Item .env.example .env
 
 # Validate your configuration
 bun run env:validate
@@ -233,29 +256,24 @@ bun run test:all           # Complete test suite
 
 ### Basic Transformation
 
-```typescript
-import { createActor } from 'xstate';
-import { carmackCoderMachine } from './src/machine.js';
+```powershell
+# Safe preview is the default
+bun run index.ts src/example.ts
 
-const actor = createActor(carmackCoderMachine);
-actor.start();
+# Show exactly which patterns matched
+bun run index.ts --verbose src/example.ts
 
-// Define transformation request
-const request = {
-  targetFiles: ['./src/example.ts'],
-  transformationType: 'template',
-  maxComplexity: 10,
-  dryRun: false,
-};
-
-// Execute transformation
-actor.send({
-  type: 'START_TRANSFORMATION',
-  request,
-});
+# Write only after reviewing the preview
+bun run index.ts --write src/example.ts
 ```
 
-### Advanced Configuration
+Use `--patterns <path>` to select another validated pattern catalog and
+`--complexity <number>` to cap the patterns eligible for execution.
+
+### Legacy Advanced Configuration
+
+This context shape documents the intended state-machine architecture. It is not
+currently wired into the supported CLI.
 
 ```typescript
 // Machine context with custom configuration
@@ -274,7 +292,10 @@ const customContext = {
 };
 ```
 
-## State Machine Flow
+## Legacy State Machine Design
+
+The following flow is the architectural target, not a claim about the currently
+supported execution path.
 
 The transformation pipeline follows this deterministic flow:
 
