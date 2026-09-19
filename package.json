@@ -16,7 +16,7 @@
     "check:core": "bun run type-check:core && bun run test:core && bun run build",
     "test": "bun run test/infrastructure/test-runner.ts",
     "test:all": "bun run test/infrastructure/test-runner.ts",
-    "test:core": "bun test test/actors/template-engine.test.ts test/actors/template-engine-safety.test.ts test/epistemic/**/*.test.ts test/fallacy-forge/atlas-seven-tenets.test.ts test/fallacy-forge/typesafe-jev.test.ts",
+    "test:core": "bun test test/actors/template-engine.test.ts test/actors/template-engine-safety.test.ts test/epistemic/**/*.test.ts test/fallacy-forge/atlas-seven-tenets.test.ts test/fallacy-forge/typesafe-jev.test.ts test/wikiracing/**/*.test.ts",
     "test:unit": "bun run test/infrastructure/test-runner.ts --category=unit",
     "test:integration": "bun run test/infrastructure/test-runner.ts --category=integration",
     "test:performance": "bun run test/infrastructure/test-runner.ts --category=performance",
@@ -89,6 +89,8 @@
     "epistemic:demo": "bun run demo/epistemic-learning-edge.ts",
     "fallacy-forge:demo": "bun run demo/fallacy-forge-atlas.ts",
     "fallacy-forge:jev": "bun run demo/fallacy-forge-jev.ts",
+    "wikiracing:baselines": "bun run demo/wikiracing-baselines.ts",
+    "wikiracing:capture": "bun run scripts/capture-wikiracing.ts",
     "demo:interactive": "bun run demo/tensorrt-demo.ts",
     "demo:engineer": "bun run demo/tensorrt-demo.ts --engineer",
     "demo:researcher": "bun run demo/tensorrt-demo.ts --researcher",
@@ -104,7 +106,6 @@
     "oracle:interactive": "bun run demo/oracle-cli.ts --interactive",
     "oracle:stats": "bun run demo/oracle-cli.ts --stats",
     "oracle:simple": "bun run demo/simple-oracle-demo.ts"
-
   },
   "engines": {
     "bun": ">=1.0.0"
@@ -114,7 +115,6 @@
     "esbuild",
     "lefthook",
     "protobufjs"
-
   ],
   "devDependencies": {
     "@anthropic-ai/claude-code": "^1.0.57",
