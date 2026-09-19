@@ -34,3 +34,6 @@ jobs:
 
       - name: Exercise Jev construct bridges
         run: bun run fallacy-forge:jev
+
+      - name: Exercise frozen Wikiracing baselines
+        run: bun run wikiracing:baselines

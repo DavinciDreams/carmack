@@ -1,0 +1,429 @@
+{
+  "id": "wikipedia-mini-001",
+  "capturedAt": "2026-09-19T05:35:57.072Z",
+  "source": "MediaWiki action=query&prop=links, namespace 0; induced subgraph of manifest titles",
+  "pages": [
+    {
+      "title": "3D computer graphics",
+      "links": [
+        "Computer graphics",
+        "Game engine",
+        "Video game"
+      ],
+      "totalArticleLinks": 453
+    },
+    {
+      "title": "Artificial intelligence",
+      "links": [
+        "Breadth-first search",
+        "Computer graphics",
+        "Dijkstra's algorithm",
+        "Information retrieval",
+        "Large language model",
+        "Machine learning",
+        "Search algorithm",
+        "Semantic Web",
+        "Software engineering",
+        "Video game",
+        "Wikidata",
+        "World Wide Web"
+      ],
+      "totalArticleLinks": 2134
+    },
+    {
+      "title": "Breadth-first search",
+      "links": [
+        "Artificial intelligence",
+        "Dijkstra's algorithm",
+        "Directed graph",
+        "Search algorithm",
+        "Shortest path problem"
+      ],
+      "totalArticleLinks": 129
+    },
+    {
+      "title": "Computer graphics",
+      "links": [
+        "3D computer graphics",
+        "Doom (1993 video game)",
+        "First-person shooter",
+        "Id Software",
+        "John Carmack",
+        "Quake (video game)",
+        "Video game"
+      ],
+      "totalArticleLinks": 682
+    },
+    {
+      "title": "Computer programming",
+      "links": [
+        "Artificial intelligence",
+        "Computer graphics",
+        "Debugging",
+        "Game engine",
+        "Information retrieval",
+        "Machine learning",
+        "Software engineering",
+        "Video game",
+        "World Wide Web"
+      ],
+      "totalArticleLinks": 548
+    },
+    {
+      "title": "Debugging",
+      "links": [
+        "Software engineering"
+      ],
+      "totalArticleLinks": 190
+    },
+    {
+      "title": "Dijkstra's algorithm",
+      "links": [
+        "Artificial intelligence",
+        "Breadth-first search",
+        "Directed graph",
+        "Graph theory",
+        "Search algorithm",
+        "Shortest path problem",
+        "Software engineering"
+      ],
+      "totalArticleLinks": 252
+    },
+    {
+      "title": "Directed graph",
+      "links": [
+        "Graph (discrete mathematics)",
+        "Graph theory"
+      ],
+      "totalArticleLinks": 79
+    },
+    {
+      "title": "Doom (1993 video game)",
+      "links": [
+        "Doom engine",
+        "First-person shooter",
+        "Game engine",
+        "Id Software",
+        "John Carmack",
+        "Machine learning",
+        "Quake (video game)",
+        "Video game developer"
+      ],
+      "totalArticleLinks": 432
+    },
+    {
+      "title": "Doom engine",
+      "links": [
+        "Doom (1993 video game)",
+        "Game engine",
+        "Id Software",
+        "John Carmack",
+        "Video game"
+      ],
+      "totalArticleLinks": 325
+    },
+    {
+      "title": "Duck",
+      "links": [
+        "Rubber duck"
+      ],
+      "totalArticleLinks": 165
+    },
+    {
+      "title": "First-person shooter",
+      "links": [
+        "3D computer graphics",
+        "Doom (1993 video game)",
+        "Id Software",
+        "Quake (video game)"
+      ],
+      "totalArticleLinks": 301
+    },
+    {
+      "title": "Game engine",
+      "links": [
+        "3D computer graphics",
+        "Artificial intelligence",
+        "Doom (1993 video game)",
+        "Doom engine",
+        "First-person shooter",
+        "Id Software",
+        "Video game",
+        "Video game developer"
+      ],
+      "totalArticleLinks": 357
+    },
+    {
+      "title": "Graph (discrete mathematics)",
+      "links": [
+        "Directed graph",
+        "Graph theory",
+        "Shortest path problem"
+      ],
+      "totalArticleLinks": 113
+    },
+    {
+      "title": "Graph theory",
+      "links": [
+        "Artificial intelligence",
+        "Computer graphics",
+        "Directed graph",
+        "Graph (discrete mathematics)",
+        "Hyperlink",
+        "Information retrieval",
+        "Machine learning",
+        "Shortest path problem",
+        "Software engineering",
+        "Video game",
+        "World Wide Web"
+      ],
+      "totalArticleLinks": 633
+    },
+    {
+      "title": "Hyperlink",
+      "links": [
+        "Graph (discrete mathematics)",
+        "PageRank",
+        "Wikipedia",
+        "World Wide Web"
+      ],
+      "totalArticleLinks": 209
+    },
+    {
+      "title": "Id Software",
+      "links": [
+        "3D computer graphics",
+        "Computer programming",
+        "Doom (1993 video game)",
+        "Doom engine",
+        "First-person shooter",
+        "Game engine",
+        "John Carmack",
+        "Quake (video game)",
+        "Video game developer"
+      ],
+      "totalArticleLinks": 513
+    },
+    {
+      "title": "Information retrieval",
+      "links": [
+        "PageRank",
+        "Semantic Web",
+        "Software engineering",
+        "Wikipedia",
+        "World Wide Web"
+      ],
+      "totalArticleLinks": 235
+    },
+    {
+      "title": "John Carmack",
+      "links": [
+        "3D computer graphics",
+        "Doom (1993 video game)",
+        "Doom engine",
+        "Id Software",
+        "Quake (video game)",
+        "Video game",
+        "Video game developer"
+      ],
+      "totalArticleLinks": 583
+    },
+    {
+      "title": "Knowledge graph",
+      "links": [
+        "Graph (discrete mathematics)",
+        "Machine learning",
+        "Semantic Web",
+        "Wikidata",
+        "Wikipedia"
+      ],
+      "totalArticleLinks": 153
+    },
+    {
+      "title": "Large language model",
+      "links": [
+        "Artificial intelligence",
+        "Machine learning",
+        "Wikidata"
+      ],
+      "totalArticleLinks": 846
+    },
+    {
+      "title": "Machine learning",
+      "links": [
+        "Artificial intelligence",
+        "Computer graphics",
+        "Information retrieval",
+        "Large language model",
+        "Search algorithm",
+        "Software engineering",
+        "Video game",
+        "Wikidata",
+        "World Wide Web"
+      ],
+      "totalArticleLinks": 1024
+    },
+    {
+      "title": "PageRank",
+      "links": [
+        "Hyperlink",
+        "Random walk",
+        "Wikipedia",
+        "World Wide Web"
+      ],
+      "totalArticleLinks": 209
+    },
+    {
+      "title": "Quake (video game)",
+      "links": [
+        "Doom (1993 video game)",
+        "Doom engine",
+        "First-person shooter",
+        "Game engine",
+        "Id Software",
+        "John Carmack",
+        "Video game developer"
+      ],
+      "totalArticleLinks": 363
+    },
+    {
+      "title": "Random walk",
+      "links": [
+        "Computer programming",
+        "Graph (discrete mathematics)",
+        "Machine learning",
+        "PageRank"
+      ],
+      "totalArticleLinks": 411
+    },
+    {
+      "title": "Rubber duck",
+      "links": [
+        "Duck",
+        "Rubber duck debugging"
+      ],
+      "totalArticleLinks": 80
+    },
+    {
+      "title": "Rubber duck debugging",
+      "links": [
+        "Debugging",
+        "Rubber duck",
+        "Software engineering"
+      ],
+      "totalArticleLinks": 34
+    },
+    {
+      "title": "SPARQL",
+      "links": [
+        "Semantic Web",
+        "Wikidata",
+        "World Wide Web"
+      ],
+      "totalArticleLinks": 166
+    },
+    {
+      "title": "Search algorithm",
+      "links": [
+        "Artificial intelligence",
+        "Breadth-first search",
+        "Dijkstra's algorithm",
+        "Information retrieval",
+        "Shortest path problem"
+      ],
+      "totalArticleLinks": 139
+    },
+    {
+      "title": "Semantic Web",
+      "links": [
+        "Artificial intelligence",
+        "Hyperlink",
+        "Information retrieval",
+        "SPARQL",
+        "Wikidata",
+        "World Wide Web"
+      ],
+      "totalArticleLinks": 386
+    },
+    {
+      "title": "Shortest path problem",
+      "links": [
+        "Breadth-first search",
+        "Dijkstra's algorithm",
+        "Graph (discrete mathematics)",
+        "Graph theory"
+      ],
+      "totalArticleLinks": 128
+    },
+    {
+      "title": "Software engineering",
+      "links": [
+        "Artificial intelligence",
+        "Computer graphics",
+        "Computer programming",
+        "Debugging",
+        "Information retrieval",
+        "Machine learning",
+        "Video game",
+        "World Wide Web"
+      ],
+      "totalArticleLinks": 680
+    },
+    {
+      "title": "Video game",
+      "links": [
+        "3D computer graphics",
+        "Artificial intelligence",
+        "Computer programming",
+        "Doom (1993 video game)",
+        "First-person shooter",
+        "Game engine",
+        "Video game developer"
+      ],
+      "totalArticleLinks": 983
+    },
+    {
+      "title": "Video game developer",
+      "links": [
+        "Game engine",
+        "Video game"
+      ],
+      "totalArticleLinks": 231
+    },
+    {
+      "title": "Wikidata",
+      "links": [
+        "Artificial intelligence",
+        "Knowledge graph",
+        "Large language model",
+        "Machine learning",
+        "SPARQL",
+        "Wikipedia"
+      ],
+      "totalArticleLinks": 439
+    },
+    {
+      "title": "Wikipedia",
+      "links": [
+        "Artificial intelligence",
+        "Information retrieval",
+        "Machine learning",
+        "PageRank",
+        "Semantic Web",
+        "Wikidata",
+        "World Wide Web"
+      ],
+      "totalArticleLinks": 1097
+    },
+    {
+      "title": "World Wide Web",
+      "links": [
+        "Hyperlink",
+        "SPARQL",
+        "Semantic Web",
+        "Wikipedia"
+      ],
+      "totalArticleLinks": 695
+    }
+  ]
+}

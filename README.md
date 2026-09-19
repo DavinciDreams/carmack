@@ -95,6 +95,17 @@ reference-model agreement to correctness, and confidence concentration to calibr
 Run `bun run fallacy-forge:demo` and `bun run fallacy-forge:jev`, or read the
 [Fallacy Forge reference specification](./docs/FALLACY-FORGE.md).
 
+## Link-only Wikiracing baselines
+
+A frozen 37-article Wikipedia subgraph supplies 979 reachable start/goal tasks
+and a six-click budget. Seeded random and visible-title overlap policies see
+only the current page's legal links; a full-graph shortest-path oracle is
+reported separately as a bound, never passed to a policy. This is a controlled
+pilot arena, not the complete Wikipedia game or a Jev/Astra comparison.
+
+Run `bun run wikiracing:baselines` and see the
+[baseline protocol and limitations](./docs/WIKIRACING-BASELINES.md).
+
 ## 🤖 Automated Testing & Error Resolution
 
 Carmack Coder includes a **comprehensive automated system** that continuously improves code quality and prevents errors from reaching the repository:

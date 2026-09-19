@@ -5,15 +5,19 @@
     "src/actors/template-engine.ts",
     "src/epistemic/**/*.ts",
     "src/fallacy-forge/**/*.ts",
+    "src/wikiracing/**/*.ts",
     "src/types.ts",
     "src/utils/index.ts",
     "demo/epistemic-learning-edge.ts",
     "demo/fallacy-forge-atlas.ts",
     "demo/fallacy-forge-jev.ts",
+    "demo/wikiracing-baselines.ts",
+    "scripts/capture-wikiracing.ts",
     "fixtures/fallacy-forge/**/*.ts",
     "test/actors/template-engine-safety.test.ts",
     "test/epistemic/**/*.test.ts",
-    "test/fallacy-forge/**/*.test.ts"
+    "test/fallacy-forge/**/*.test.ts",
+    "test/wikiracing/**/*.test.ts"
   ],
   "exclude": ["node_modules", "dist"]
 }
