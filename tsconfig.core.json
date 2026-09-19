@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "index.ts",
+    "src/actors/template-engine.ts",
+    "src/epistemic/**/*.ts",
+    "src/types.ts",
+    "src/utils/index.ts",
+    "demo/epistemic-learning-edge.ts",
+    "test/actors/template-engine-safety.test.ts",
+    "test/epistemic/**/*.test.ts"
+  ],
+  "exclude": ["node_modules", "dist"]
+}

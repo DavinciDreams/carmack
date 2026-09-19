@@ -110,6 +110,7 @@ const TemplateTransformationRequestSchema = z.object({
 
 export type TemplatePattern = z.infer<typeof TemplatePatternSchema>;
 export type TemplateTransformationRequest = z.infer<typeof TemplateTransformationRequestSchema>;
+export type TemplateTransformationInput = z.input<typeof TemplateTransformationRequestSchema>;
 
 /**
  * Template variable with metadata for sophisticated matching
@@ -148,7 +149,7 @@ interface TemplateMatch {
  * Ultra-fast template transformation engine actor
  */
 export const templateEngineActor = fromPromise(
-  async ({ input }: { input: TemplateTransformationRequest }) => {
+  async ({ input }: { input: TemplateTransformationInput }) => {
     const validatedInput = TemplateTransformationRequestSchema.parse(input);
 
     console.log(
@@ -169,7 +170,8 @@ export const templateEngineActor = fromPromise(
  /**
   * Apply template transformations with advanced pattern matching and language awareness
   */
- async function applyTemplateTransformations(request: TemplateTransformationRequest) {
+export async function applyTemplateTransformations(input: TemplateTransformationInput) {
+   const request = TemplateTransformationRequestSchema.parse(input);
    const filesModified: string[] = [];
    const appliedPatterns: Array<{ file: string; pattern: string; count: number }> = [];
    let totalTransformations = 0;
@@ -215,9 +217,12 @@ export const templateEngineActor = fromPromise(
         request.options
       );
 
-      if (transformResult.modified && !request.options.dryRun) {
-        await writeFile(filePath, transformResult.content, 'utf-8');
+      if (transformResult.modified) {
         filesModified.push(filePath);
+
+        if (!request.options.dryRun) {
+          await writeFile(filePath, transformResult.content, 'utf-8');
+        }
       }
 
       if (transformResult.transformations.length > 0) {
@@ -428,105 +433,148 @@ function findBasicTemplateMatches(content: string, pattern: TemplatePattern): Te
  */
 function templateToRegex(template: string): { regex: RegExp; variableNames: string[] } {
   const variableNames: string[] = [];
+  const variablePattern = /\$([A-Z_][A-Z0-9_]*)/g;
+  let regexPattern = '';
+  let cursor = 0;
+  let variableMatch: RegExpExecArray | null;
 
-  // Escape special regex characters except our template variables
-  let regexPattern = template.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // Escape literal template segments independently. Escaping the complete
+  // template first also escaped the `$` in placeholders and left a stray
+  // backslash before each capture group, producing invalid regular expressions.
+  // biome-ignore lint/suspicious/noAssignInExpressions: Standard regex tokenization loop
+  while ((variableMatch = variablePattern.exec(template)) !== null) {
+    regexPattern += escapeRegex(template.slice(cursor, variableMatch.index));
 
-  // Replace template variables with capture groups
-  regexPattern = regexPattern.replace(/\$([A-Z_][A-Z0-9_]*)/g, (_, varName) => {
+    const varName = variableMatch[1];
+    if (!varName) {
+      cursor = variableMatch.index + variableMatch[0].length;
+      continue;
+    }
+
     variableNames.push(varName);
 
     // Enhanced smart capture groups with better pattern recognition
-
+    let capturePattern: string;
     switch (varName) {
       case 'IDENTIFIER':
       case 'NAME':
       case 'VAR':
       case 'KEY':
-        return '([a-zA-Z_$][\\w$]*)';
+        capturePattern = '([a-zA-Z_$][\\w$]*)';
+        break;
 
       case 'VALUE':
       case 'EXPR':
       case 'EXPRESSION':
-        return '([^;,}\\]\\)\\n]+?)';
+        capturePattern = '([^;,}\\]\\)\\n]+?)';
+        break;
 
       case 'STATEMENT':
       case 'BODY':
-        return '([^}]+?)';
+        capturePattern = '([^}]+?)';
+        break;
 
       case 'TYPE':
-        return '([a-zA-Z_$][\\w$<>\\[\\]|&]*\\??*)';
+        capturePattern = '([a-zA-Z_$][\\w$<>\\[\\]|&]*\\??*)';
+        break;
 
       case 'STRING':
       case 'STR':
-        return '([\'"`][^\'"`]*[\'"`])';
+        capturePattern = '([\'"`][^\'"`]*[\'"`])';
+        break;
 
       case 'NUMBER':
       case 'NUM':
-        return '(\\d+(?:\\.\\d+)?)';
+        capturePattern = '(\\d+(?:\\.\\d+)?)';
+        break;
 
       case 'BOOLEAN':
       case 'BOOL':
-        return '(true|false)';
+        capturePattern = '(true|false)';
+        break;
 
       case 'FUNCTION_NAME':
-        return '([a-zA-Z_$][\\w$]*(?=\\s*\\())';
+        capturePattern = '([a-zA-Z_$][\\w$]*(?=\\s*\\())';
+        break;
 
       case 'PARAMS':
       case 'PARAMETERS':
-        return '([^)]*?)';
+        capturePattern = '([^)]*?)';
+        break;
 
       case 'ARGS':
       case 'ARGUMENTS':
-        return '([^)]*?)';
+        capturePattern = '([^)]*?)';
+        break;
 
       case 'PROPERTY':
       case 'PROP':
-        return '([a-zA-Z_$][\\w$]*(?=\\s*:))';
+        capturePattern = '([a-zA-Z_$][\\w$]*(?=\\s*:))';
+        break;
 
       case 'METHOD':
-        return '([a-zA-Z_$][\\w$]*(?=\\s*\\())';
+        capturePattern = '([a-zA-Z_$][\\w$]*(?=\\s*\\())';
+        break;
 
       case 'CLASS_NAME':
-        return '([A-Z][\\w$]*)';
+        capturePattern = '([A-Z][\\w$]*)';
+        break;
 
       case 'VARIABLE_DECLARATION':
-        return '((?:const|let|var)\\s+[a-zA-Z_$][\\w$]*)';
+        capturePattern = '((?:const|let|var)\\s+[a-zA-Z_$][\\w$]*)';
+        break;
 
       case 'IMPORT_PATH':
-        return '([\'"`][^\'"`]*[\'"`])';
+        capturePattern = '([\'"`][^\'"`]*[\'"`])';
+        break;
 
       case 'WHITESPACE':
       case 'WS':
-        return '(\\s*)';
+        capturePattern = '(\\s*)';
+        break;
 
       case 'OPTIONAL_WHITESPACE':
       case 'OWS':
-        return '(\\s*)';
+        capturePattern = '(\\s*)';
+        break;
 
       case 'NEWLINE':
       case 'NL':
-        return '(\\n?)';
+        capturePattern = '(\\n?)';
+        break;
 
       case 'ANY':
-        return '([\\s\\S]*?)';
+        capturePattern = '([\\s\\S]*?)';
+        break;
 
       case 'WORD':
-        return '(\\w+)';
+        capturePattern = '(\\w+)';
+        break;
 
       case 'DIGITS':
-        return '(\\d+)';
+        capturePattern = '(\\d+)';
+        break;
 
       default:
         // Enhanced generic capture with better boundary detection
-        return '([\\w\\s.\\[\\]()\\+\\*/-=<>!&|:;,{}]+?)';
+        capturePattern = '([\\w\\s.\\[\\]()\\+\\*/=<>!&|:;,{}-]+?)';
+        break;
     }
-  });
+
+    regexPattern += capturePattern;
+    cursor = variableMatch.index + variableMatch[0].length;
+  }
+
+  regexPattern += escapeRegex(template.slice(cursor));
 
   return {
     regex: new RegExp(regexPattern, 'g'),
     variableNames,
   };
+}
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /**
