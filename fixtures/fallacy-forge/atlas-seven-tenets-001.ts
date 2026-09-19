@@ -134,12 +134,12 @@ const statements: Record<string, Record<TextStyle, string>> = {
     'source-shaped': 'The author observed a short Atlas build and a much longer vLLM build.',
     neutral: 'Two build durations were observed in an unspecified local development context.',
     repaired:
-      'Clean and incremental build durations were measured under a declared matched protocol.',
+      'Clean and incremental build durations should be measured under a declared matched protocol.',
   },
   buildSuperiority: {
     'source-shaped': 'Atlas offers a much faster development loop than vLLM.',
     neutral: 'Atlas has lower build latency than vLLM under comparable conditions.',
-    repaired: 'Atlas had lower build latency in the declared matched build matrix.',
+    repaired: 'A matched build matrix can test whether Atlas has lower build latency.',
   },
   atlasIteration: {
     'source-shaped': 'Atlas used AI to improve accelerator kernels through iterative feedback.',
@@ -237,7 +237,7 @@ function baseClaims(style: TextStyle): readonly ClaimNode[] {
     claim('monorepoPreference', style, 'normative', 'unspecified'),
     claim('monorepoOutcome', style, repaired ? 'comparative' : 'causal', 'unspecified'),
     claim('buildObservation', style, 'descriptive', 'one'),
-    claim('buildSuperiority', style, 'comparative', 'unspecified'),
+    claim('buildSuperiority', style, repaired ? 'descriptive' : 'comparative', 'unspecified'),
     claim('atlasIteration', style, 'descriptive', 'one'),
     claim(
       'priority',
@@ -255,7 +255,7 @@ function baseClaims(style: TextStyle): readonly ClaimNode[] {
   ];
 }
 
-function baseEvidence(repaired: boolean): readonly EvidenceReceipt[] {
+function baseEvidence(): readonly EvidenceReceipt[] {
   const evidence: EvidenceReceipt[] = [
     {
       kind: 'evidence',
@@ -309,18 +309,6 @@ function baseEvidence(repaired: boolean): readonly EvidenceReceipt[] {
       source: atlasContributing,
     },
   ];
-  if (repaired) {
-    evidence.push({
-      kind: 'evidence',
-      id: 'matched-build-matrix',
-      claimId: 'buildSuperiority',
-      stance: 'supports',
-      evidenceKind: 'measurement',
-      summary:
-        'Placeholder receipt for a preregistered matched build matrix; a real run must replace it before publication.',
-      source: article,
-    });
-  }
   return evidence;
 }
 
@@ -334,9 +322,10 @@ function baseInferences(repaired: boolean): readonly InferenceEdge[] {
         conclusionId: 'buildSuperiority',
         warrant: {
           kind: 'empirical',
-          statement: 'The declared matrix compares equivalent clean and incremental build targets.',
+          statement:
+            'A proposed matrix would compare equivalent clean and incremental build targets.',
         },
-        evidenceIds: ['matched-build-matrix'],
+        evidenceIds: [],
         challenge: buildChallenge,
       },
       {
@@ -433,7 +422,7 @@ function makeSpecimen(style: TextStyle): ForgeSpecimen {
     variant: style,
     source: article,
     claims: baseClaims(style),
-    evidence: baseEvidence(repaired),
+    evidence: baseEvidence(),
     inferences: baseInferences(repaired),
     studyDesigns: [authorshipDesign(repaired)],
     hardNegativeClaimIds: ['hardwareSpecialization', 'benchmarkGates', 'sbio'],

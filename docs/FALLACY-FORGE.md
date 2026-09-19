@@ -37,6 +37,35 @@ Three hard-negative claims must remain unflagged: hardware/model specialization,
 benchmark gates, and separating business logic from I/O. They prevent the evaluator from receiving
 credit for indiscriminate hostility.
 
+## Second fixture: `typesafe-jev-002`
+
+The second specimen models TypeSafe AI's
+[Jev announcement](https://typesafe.ai/blog/introducing-system-one-models-and-jev), with evidence
+from its [workflow-evaluation methodology](https://evals.typesafe.ai/),
+[Choice documentation](https://docs.typesafe.ai/primitives/choice), and
+[confidence documentation](https://docs.typesafe.ai/confidence). It focuses on three construct
+bridges and one unscoped guarantee:
+
+- closed schema validity does not establish semantic correctness or eliminate wrong in-schema
+  decisions;
+- agreement with two reference models measures agreement, not independently adjudicated task
+  correctness; and
+- a concentration-derived confidence value does not, by itself, establish empirical probability
+  calibration.
+- "mathematically impossible" type errors requires a defined error predicate, a scope (model
+  choice or complete API response), and the assumptions under which a decoder/schema invariant
+  holds. A single invalid successful response would refute an end-to-end zero-error claim; it
+  would not refute a correctly stated conditional theorem whose assumptions that response violated.
+
+The third is an **evidence gap**, not a finding that Jev is miscalibrated. Reliability against held-out
+outcomes would settle it. The site explicitly describes its reference labels as model consensus,
+and the blog acknowledges that some demo and workflow choices favor Jev. The fixture does not
+presume intentional deception or that the reported latency and price are false.
+
+Hard negatives include closed-choice output validity, parallel question evaluation, and a narrowly
+scoped report of low latency in the company's own tests. As with the Atlas fixture, promotional and
+neutral paraphrases must agree, and the repaired claims must be accepted.
+
 ## Presentation controls
 
 The fixture has three forms:
@@ -60,11 +89,15 @@ produce no findings. These are controls for tone sensitivity and contrarianism.
 
 Passing this fixture establishes only deterministic behavior on the checked graph. It does not show
 that an automatic extractor can recover that graph from prose, that the evidence receipts are true,
-or that the taxonomy covers every reasoning defect.
+or that the taxonomy covers every reasoning defect. Fixture precision and recall compare the rules
+with fixture-authored expectations; they are internal consistency checks, not an independently
+validated real-world accuracy score.
 
 ## Run
 
 ```text
 bun test test/fallacy-forge/atlas-seven-tenets.test.ts
+bun test test/fallacy-forge/typesafe-jev.test.ts
 bun run fallacy-forge:demo
+bun run fallacy-forge:jev
 ```

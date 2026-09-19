@@ -17,6 +17,7 @@ export type {
   ForgeScore,
   ForgeSpecimen,
   InferenceEdge,
+  MeasuredConstruct,
   Severity,
   SourceLocator,
   StudyArm,

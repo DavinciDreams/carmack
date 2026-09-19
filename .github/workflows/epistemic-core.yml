@@ -31,3 +31,6 @@ jobs:
 
       - name: Exercise Fallacy Forge fixture
         run: bun run fallacy-forge:demo
+
+      - name: Exercise Jev construct bridges
+        run: bun run fallacy-forge:jev

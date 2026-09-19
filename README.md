@@ -89,8 +89,10 @@ also define the proposed silent, rubber-duck, and Socratic control arms.
 The deterministic Fallacy Forge evaluates typed claim graphs without equating disagreement or
 factual error with logical fallacy. Its first gold fixture stress-tests the Atlas Inference “Seven
 Tenets” essay using source-shaped, neutral, and repaired variants plus explicit hard negatives.
+The second fixture tests the Jev announcement's bridges from type safety to semantic truth,
+reference-model agreement to correctness, and confidence concentration to calibration.
 
-Run `bun run fallacy-forge:demo` or read the
+Run `bun run fallacy-forge:demo` and `bun run fallacy-forge:jev`, or read the
 [Fallacy Forge reference specification](./docs/FALLACY-FORGE.md).
 
 ## 🤖 Automated Testing & Error Resolution

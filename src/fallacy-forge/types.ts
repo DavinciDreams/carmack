@@ -42,7 +42,18 @@ export type DefectKind =
   | 'selection-bias'
   | 'asymmetric-verification'
   | 'scope-ambiguity'
-  | 'metaphor-as-mechanism';
+  | 'metaphor-as-mechanism'
+  | 'schema-semantics-conflation'
+  | 'reference-standard-substitution'
+  | 'calibration-evidence-gap';
+
+export type MeasuredConstruct =
+  | 'schema-validity'
+  | 'semantic-correctness'
+  | 'model-consensus'
+  | 'real-world-accuracy'
+  | 'distribution-concentration'
+  | 'empirical-calibration';
 
 export type Severity = 'low' | 'medium' | 'high';
 
@@ -99,6 +110,10 @@ export interface InferenceEdge {
   readonly conclusionId: string;
   readonly warrant?: Warrant;
   readonly evidenceIds: readonly string[];
+  readonly constructBridge?: {
+    readonly measured: MeasuredConstruct;
+    readonly inferred: MeasuredConstruct;
+  };
   readonly challenge?: ChallengeProtocol;
 }
 

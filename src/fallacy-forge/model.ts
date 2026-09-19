@@ -237,6 +237,52 @@ function inspectInference(
   const receipts = evidenceFor(edge, evidenceById);
   const findings: ForgeFinding[] = [];
 
+  const bridge = edge.constructBridge;
+  const substitutedConstructs = [
+    {
+      measured: 'schema-validity',
+      inferred: 'semantic-correctness',
+      defectKind: 'schema-semantics-conflation',
+      explanation:
+        'A response limited to valid schema values can still select an unsupported or incorrect value.',
+    },
+    {
+      measured: 'model-consensus',
+      inferred: 'real-world-accuracy',
+      defectKind: 'reference-standard-substitution',
+      explanation:
+        'Agreement with reference models measures agreement, not correctness against independently observed outcomes.',
+    },
+    {
+      measured: 'distribution-concentration',
+      inferred: 'empirical-calibration',
+      defectKind: 'calibration-evidence-gap',
+      explanation:
+        'The reported confidence definition alone does not establish calibration; held-out outcome reliability evidence is needed.',
+    },
+  ] as const;
+  for (const substitution of substitutedConstructs) {
+    if (bridge?.measured === substitution.measured && bridge.inferred === substitution.inferred) {
+      findings.push(
+        finding({
+          ruleId: `inference.${substitution.defectKind}`,
+          targetId: edge.id,
+          claimIds: [...edge.premiseIds, edge.conclusionId],
+          family:
+            substitution.defectKind === 'calibration-evidence-gap'
+              ? 'evidence-gap'
+              : 'measurement-defect',
+          defectKind: substitution.defectKind,
+          severity: 'high',
+          confidence: 0.98,
+          explanation: substitution.explanation,
+          evidenceIds: receipts.map(({ id }) => id),
+          ...(edge.challenge === undefined ? {} : { challenge: edge.challenge }),
+        })
+      );
+    }
+  }
+
   if (
     conclusion.claimKind === 'comparative' &&
     !receipts.some(
