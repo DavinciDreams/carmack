@@ -84,6 +84,15 @@ shift at the learning edge. The
 [reference specification and preregistered hypotheses](./docs/EPISTEMIC-REFERENCE-MODEL.md)
 also define the proposed silent, rubber-duck, and Socratic control arms.
 
+## Fallacy Forge
+
+The deterministic Fallacy Forge evaluates typed claim graphs without equating disagreement or
+factual error with logical fallacy. Its first gold fixture stress-tests the Atlas Inference “Seven
+Tenets” essay using source-shaped, neutral, and repaired variants plus explicit hard negatives.
+
+Run `bun run fallacy-forge:demo` or read the
+[Fallacy Forge reference specification](./docs/FALLACY-FORGE.md).
+
 ## 🤖 Automated Testing & Error Resolution
 
 Carmack Coder includes a **comprehensive automated system** that continuously improves code quality and prevents errors from reaching the repository:

@@ -1,0 +1,26 @@
+export { runFallacyForge, validateSpecimen } from './model';
+
+export type {
+  AmbiguityCue,
+  ChallengeProtocol,
+  ClaimKind,
+  ClaimNode,
+  ClaimQuantifier,
+  DefectFamily,
+  DefectKind,
+  EvidenceKind,
+  EvidenceReceipt,
+  EvidenceStance,
+  ForgeExpectation,
+  ForgeFinding,
+  ForgeRun,
+  ForgeScore,
+  ForgeSpecimen,
+  InferenceEdge,
+  Severity,
+  SourceLocator,
+  StudyArm,
+  StudyDesignNode,
+  Warrant,
+  WarrantKind,
+} from './types';
