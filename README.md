@@ -106,6 +106,19 @@ pilot arena, not the complete Wikipedia game or a Jev/Astra comparison.
 Run `bun run wikiracing:baselines` and see the
 [baseline protocol and limitations](./docs/WIKIRACING-BASELINES.md).
 
+## Deterministic question compiler
+
+The question compiler recognizes a deliberately small English grammar and emits a Zod-validated
+question AST with a boolean, cardinality, closed-choice, or text answer contract. It uses no LLM.
+Ambiguous and unsupported questions remain explicit outcomes rather than being forced into a slot.
+A dedicated abstract Dafny specification proves answer-kind preservation and closed-choice
+membership; it does not claim to prove that an English interpretation is correct. The v0 AST is a
+front end; the documented next IR is an ontology-mediated conjunctive-query algebra with typed
+relational results and inspectable derivation receipts.
+
+Run `bun run question:demo`, `bun run question:verify`, or read the
+[question compiler trust boundary](./docs/QUESTION-COMPILER.md).
+
 ## 🤖 Automated Testing & Error Resolution
 
 Carmack Coder includes a **comprehensive automated system** that continuously improves code quality and prevents errors from reaching the repository:
