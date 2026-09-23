@@ -35,5 +35,16 @@ jobs:
       - name: Exercise Jev construct bridges
         run: bun run fallacy-forge:jev
 
+      - name: Exercise deterministic question compiler
+        run: bun run question:demo
+
+      - name: Setup Dafny
+        uses: dafny-lang/setup-dafny-action@v1.9.1
+        with:
+          dafny-version: '4.10.0'
+
+      - name: Verify question answer contracts
+        run: bun run question:verify
+
       - name: Exercise frozen Wikiracing baselines
         run: bun run wikiracing:baselines

@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "src/question-compiler/**/*.ts",
+    "demo/question-compiler.ts",
+    "scripts/compile-question.ts",
+    "test/question-compiler/**/*.test.ts"
+  ],
+  "exclude": ["node_modules", "dist"]
+}
